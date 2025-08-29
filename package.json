@@ -1,0 +1,27 @@
+{
+  "name": "boards",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source creative toolkit for AI-generated content",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "turbo": "^2.0.9",
+    "typescript": "^5.5.3"
+  },
+  "packageManager": "pnpm@9.5.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
