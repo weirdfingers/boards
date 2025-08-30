@@ -10,7 +10,7 @@ Boards is an open-source creative toolkit for AI-generated content (images, vide
 
 **Monorepo Structure:**
 - `/packages/` - Shared libraries (Python SDK, React hooks)
-- `/apps/` - Applications (Next.js example app)
+- `/apps/` - Applications (Next.js example app, Docusaurus docs)
 - `/design/` - Architecture and design documents
 
 **Tech Stack:**
@@ -32,6 +32,12 @@ make docker-up           # Start PostgreSQL and Redis
 # Development
 make dev                 # Start all development servers
 pnpm turbo dev          # Alternative: start dev servers via Turbo
+
+# Documentation
+make docs               # Start documentation development server
+make docs-dev           # Start documentation development server (same as above)
+make docs-build         # Build documentation for production
+make docs-serve         # Serve built documentation
 
 # Testing
 make test               # Run all tests (Python pytest + Node tests)
