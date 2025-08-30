@@ -25,8 +25,11 @@
 
 ### AuthAdapter Interface
 ```python
+from typing import Literal, Protocol, TypedDict, NotRequired
+from uuid import UUID
+
 class Principal(TypedDict):
-    provider: str            # 'supabase' | 'clerk' | 'auth0' | 'oidc' | 'jwt'
+    provider: Literal['supabase', 'clerk', 'auth0', 'oidc', 'jwt']
     subject: str             # provider user id (sub)
     email: NotRequired[str]
     display_name: NotRequired[str]
@@ -136,10 +139,10 @@ interface AuthState {
 ```
 
 - Implementations:
-  - `@toolkit/auth-supabase`: wraps Supabase JS; maps session user → above shape.
-  - `@toolkit/auth-clerk`: wraps Clerk JS.
-  - `@toolkit/auth-auth0`: wraps Auth0 SPA SDK.
-  - `@toolkit/auth-jwt`: local token storage with backend-issued JWT.
+  - `@weirdfingers/auth-supabase`: wraps Supabase JS; maps session user → above shape.
+  - `@weirdfingers/auth-clerk`: wraps Clerk JS.
+  - `@weirdfingers/auth-auth0`: wraps Auth0 SPA SDK.
+  - `@weirdfingers/auth-jwt`: local token storage with backend-issued JWT.
 
 ### Token Wiring
 - Apollo/urql `authLink` calls `getToken()`.
