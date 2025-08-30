@@ -16,6 +16,7 @@ A client-server toolkit for creatives to generate, manage, and collaborate on AI
 2. [Database Schema](02-database-schema.md)
 3. [Background Tasks](03-background-tasks.md)
 4. [Auth & Authorization](04-auth-authorization.md)
+4a. [Auth & Authorization - Detailed Design](04-auth-authorization-detailed.md)
 5. [Board UI](05-board-ui.md)
 6. [LoRA Support](06-lora-support.md)
 7. [Documentation Strategy](07-docs-strategy.md)
