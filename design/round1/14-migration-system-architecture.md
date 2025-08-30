@@ -37,7 +37,7 @@ migrations/001_initial_schema.sql
 
 # 2. Model Generation (automated)
 python scripts/generate_models.py
-  → packages/backend-sdk/src/boards/database/models.py
+  → packages/backend/src/boards/database/models.py
 
 # 3. Migration Generation (automated)
 python scripts/generate_migration.py
@@ -51,7 +51,7 @@ python scripts/apply_migrations.py
 ## File Structure
 
 ```
-packages/backend-sdk/
+packages/backend/
 ├── migrations/
 │   ├── schemas/                    # DDL source files
 │   │   ├── 001_initial_schema.sql
@@ -468,16 +468,16 @@ weirdfingers-cli migrate status
 ```makefile
 # Database operations
 migrate-up: ## Apply all pending migrations
-	cd packages/backend-sdk && python scripts/apply_migrations.py up
+	cd packages/backend && python scripts/apply_migrations.py up
 
 migrate-down: ## Rollback last migration
-	cd packages/backend-sdk && python scripts/apply_migrations.py down --target $(TARGET)
+	cd packages/backend && python scripts/apply_migrations.py down --target $(TARGET)
 
 generate-models: ## Generate SQLAlchemy models from DDL
-	cd packages/backend-sdk && python scripts/generate_models.py
+	cd packages/backend && python scripts/generate_models.py
 
 create-migration: ## Create new migration from schema changes
-	cd packages/backend-sdk && python scripts/generate_migration.py --name $(NAME)
+	cd packages/backend && python scripts/generate_migration.py --name $(NAME)
 ```
 
 ## Key Benefits

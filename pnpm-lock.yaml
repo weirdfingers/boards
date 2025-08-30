@@ -59,7 +59,7 @@ importers:
     dependencies:
       '@weirdfingers/boards':
         specifier: workspace:*
-        version: link:../../packages/frontend-hooks
+        version: link:../../packages/frontend
       next:
         specifier: 14.2.5
         version: 14.2.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -89,7 +89,7 @@ importers:
         specifier: ^5.5.3
         version: 5.9.2
 
-  packages/frontend-hooks:
+  packages/frontend:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
@@ -115,10 +115,10 @@ importers:
         version: 8.57.1
       tsup:
         specifier: ^8.1.0
-        version: 8.5.0(jiti@1.21.7)(postcss@8.5.6)(typescript@5.9.2)
+        version: 8.5.0(jiti@1.21.7)(postcss@8.5.6)(typescript@5.6.3)
       typescript:
         specifier: ^5.5.3
-        version: 5.9.2
+        version: 5.6.3
       vitest:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.11)(terser@5.43.1)
@@ -14261,7 +14261,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.0(jiti@1.21.7)(postcss@8.5.6)(typescript@5.9.2):
+  tsup@8.5.0(jiti@1.21.7)(postcss@8.5.6)(typescript@5.6.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.25.9)
       cac: 6.7.14
@@ -14282,7 +14282,7 @@ snapshots:
       tree-kill: 1.2.2
     optionalDependencies:
       postcss: 8.5.6
-      typescript: 5.9.2
+      typescript: 5.6.3
     transitivePeerDependencies:
       - jiti
       - supports-color

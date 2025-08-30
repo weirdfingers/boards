@@ -6,7 +6,7 @@
 
 ## CI/CD (GitHub Actions)
 - Lint, typecheck (mypy/ruff, tsc), tests.
-- Build & publish: PyPI (`packages/backend-sdk`), npm (`packages/frontend-hooks`, auth adapters).
+- Build & publish: PyPI (`packages/backend`), npm (`packages/frontend`, auth adapters).
 - Canaries: pre-release tags (`next`) for both registries.
 - Example apps use pinned ranges.
 

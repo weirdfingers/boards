@@ -9,7 +9,7 @@ Boards is an open-source creative toolkit for AI-generated content (images, vide
 ## Architecture
 
 **Monorepo Structure:**
-- `/packages/` - Shared libraries (Python SDK, React hooks)
+- `/packages/` - Shared libraries (Python backend, React frontend)
 - `/apps/` - Applications (Next.js example app, Docusaurus docs)
 - `/design/` - Architecture and design documents
 
