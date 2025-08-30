@@ -81,7 +81,13 @@ lint: ## Run linters
 
 typecheck: ## Run type checking
 	@echo "Running type checking..."
-	@# Python type checking (handled in lint)
+	@# Python type checking
+	@for dir in packages/*/; do \
+		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
+			echo "Type checking Python package in $$dir..."; \
+			cd "$$dir" && uv run pyright .; \
+		fi; \
+	done
 	@# Node type checking
 	pnpm turbo typecheck
 
