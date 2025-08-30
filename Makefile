@@ -1,4 +1,4 @@
-.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs
+.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs docs-dev docs-build docs-serve
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -102,3 +102,17 @@ docker-down: ## Stop Docker services
 
 docker-logs: ## Show Docker logs
 	docker-compose logs -f
+
+docs: docs-dev ## Start documentation development server (alias)
+
+docs-dev: ## Start documentation development server  
+	@echo "Starting documentation development server..."
+	cd apps/docs && pnpm start
+
+docs-build: ## Build documentation for production
+	@echo "Building documentation..."
+	cd apps/docs && pnpm build
+
+docs-serve: ## Serve built documentation
+	@echo "Serving documentation..."
+	cd apps/docs && pnpm serve
