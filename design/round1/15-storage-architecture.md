@@ -27,9 +27,59 @@ The Boards storage system needs to handle diverse artifact types (images, videos
 
 ```python
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, AsyncIterator
+from typing import Optional, Dict, Any, AsyncIterator, Union
 from pathlib import Path
 from datetime import datetime, timedelta
+from dataclasses import dataclass
+import json
+import re
+import logging
+from urllib.parse import quote
+import aiofiles
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+class StorageConfig:
+    """Configuration for storage system."""
+    default_provider: str
+    providers: Dict[str, Dict[str, Any]]
+    routing_rules: list[Dict[str, Any]]
+    max_file_size: int = 100 * 1024 * 1024  # 100MB default
+    allowed_content_types: set[str] = None
+    
+    def __post_init__(self):
+        if self.allowed_content_types is None:
+            self.allowed_content_types = {
+                'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+                'video/mp4', 'video/webm', 'video/quicktime',
+                'audio/mpeg', 'audio/wav', 'audio/ogg',
+                'text/plain', 'application/json', 'text/markdown',
+                'application/octet-stream'  # For model files
+            }
+
+@dataclass 
+class ArtifactReference:
+    """Reference to a stored artifact."""
+    artifact_id: str
+    storage_key: str
+    storage_provider: str
+    storage_url: str
+    content_type: str
+    size: int = 0
+    created_at: datetime = None
+    
+class StorageException(Exception):
+    """Base exception for storage operations."""
+    pass
+
+class SecurityException(StorageException):
+    """Security-related storage exception."""
+    pass
+
+class ValidationException(StorageException):
+    """Content validation exception."""
+    pass
 
 class StorageProvider(ABC):
     """Abstract base class for all storage providers."""
@@ -38,11 +88,25 @@ class StorageProvider(ABC):
     async def upload(
         self, 
         key: str, 
-        content: bytes | AsyncIterator[bytes],
+        content: Union[bytes, AsyncIterator[bytes]],
         content_type: str,
-        metadata: Dict[str, Any] = None
+        metadata: Optional[Dict[str, Any]] = None
     ) -> str:
-        """Upload content and return public URL or storage reference."""
+        """Upload content and return public URL or storage reference.
+        
+        Args:
+            key: Storage key (must be validated before calling)
+            content: File content as bytes or async iterator
+            content_type: MIME type (must be validated)
+            metadata: Optional metadata dictionary
+            
+        Returns:
+            Public URL or storage reference
+            
+        Raises:
+            StorageException: On upload failure
+            SecurityException: On security validation failure
+        """
         pass
     
     @abstractmethod
@@ -95,6 +159,38 @@ class StorageManager:
         self.providers: Dict[str, StorageProvider] = {}
         self.default_provider = config.default_provider
         self.routing_rules = config.routing_rules
+        self.config = config
+        
+    def _validate_storage_key(self, key: str) -> str:
+        """Validate and sanitize storage key to prevent path traversal."""
+        # Remove any path traversal attempts
+        if '..' in key or key.startswith('/') or '\\' in key:
+            raise SecurityException(f"Invalid storage key: {key}")
+            
+        # Sanitize key components
+        key_parts = key.split('/')
+        sanitized_parts = []
+        
+        for part in key_parts:
+            # Remove dangerous characters, keep alphanumeric, hyphens, underscores
+            sanitized = re.sub(r'[^a-zA-Z0-9._-]', '', part)
+            if not sanitized:
+                raise SecurityException(f"Invalid key component: {part}")
+            sanitized_parts.append(sanitized)
+            
+        return '/'.join(sanitized_parts)
+        
+    def _validate_content_type(self, content_type: str) -> None:
+        """Validate content type against allowed types."""
+        if content_type not in self.config.allowed_content_types:
+            raise ValidationException(f"Content type not allowed: {content_type}")
+            
+    def _validate_file_size(self, content_size: int) -> None:
+        """Validate file size against limits."""
+        if content_size > self.config.max_file_size:
+            raise ValidationException(
+                f"File size {content_size} exceeds limit {self.config.max_file_size}"
+            )
         
     def register_provider(self, name: str, provider: StorageProvider):
         """Register a storage provider."""
@@ -103,43 +199,91 @@ class StorageManager:
     async def store_artifact(
         self,
         artifact_id: str,
-        content: bytes,
+        content: Union[bytes, AsyncIterator[bytes]],
         artifact_type: str,
+        content_type: str,
         tenant_id: Optional[str] = None,
         board_id: Optional[str] = None
     ) -> ArtifactReference:
-        """Store artifact with appropriate provider selection."""
+        """Store artifact with comprehensive validation and error handling."""
         
-        # Generate storage key with hierarchy
-        key = self._generate_storage_key(
-            artifact_id, artifact_type, tenant_id, board_id
-        )
-        
-        # Select provider based on routing rules
-        provider_name = self._select_provider(artifact_type, content)
-        provider = self.providers[provider_name]
-        
-        # Store the content
-        storage_url = await provider.upload(
-            key=key,
-            content=content,
-            content_type=self._get_content_type(artifact_type),
-            metadata={
+        try:
+            # Validate content type
+            self._validate_content_type(content_type)
+            
+            # Validate content size if it's bytes
+            if isinstance(content, bytes):
+                self._validate_file_size(len(content))
+            
+            # Generate and validate storage key
+            key = self._generate_storage_key(
+                artifact_id, artifact_type, tenant_id, board_id
+            )
+            validated_key = self._validate_storage_key(key)
+            
+            # Select provider based on routing rules
+            provider_name = self._select_provider(artifact_type, content)
+            if provider_name not in self.providers:
+                raise StorageException(f"Provider not found: {provider_name}")
+                
+            provider = self.providers[provider_name]
+            
+            # Prepare metadata
+            metadata = {
                 'artifact_id': artifact_id,
                 'artifact_type': artifact_type,
                 'tenant_id': tenant_id,
                 'board_id': board_id,
-                'uploaded_at': datetime.utcnow().isoformat()
+                'uploaded_at': datetime.utcnow().isoformat(),
+                'content_type': content_type
             }
-        )
+            
+            # Store the content with retry logic
+            storage_url = await self._upload_with_retry(
+                provider, validated_key, content, content_type, metadata
+            )
+            
+            logger.info(f"Successfully stored artifact {artifact_id} at {validated_key}")
+            
+            return ArtifactReference(
+                artifact_id=artifact_id,
+                storage_key=validated_key,
+                storage_provider=provider_name,
+                storage_url=storage_url,
+                content_type=content_type,
+                size=len(content) if isinstance(content, bytes) else 0,
+                created_at=datetime.utcnow()
+            )
+            
+        except (SecurityException, ValidationException) as e:
+            logger.error(f"Validation failed for artifact {artifact_id}: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to store artifact {artifact_id}: {e}")
+            raise StorageException(f"Storage operation failed: {e}") from e
+            
+    async def _upload_with_retry(
+        self, 
+        provider: StorageProvider, 
+        key: str, 
+        content: Union[bytes, AsyncIterator[bytes]], 
+        content_type: str, 
+        metadata: Dict[str, Any],
+        max_retries: int = 3
+    ) -> str:
+        """Upload with exponential backoff retry logic."""
+        import asyncio
         
-        return ArtifactReference(
-            artifact_id=artifact_id,
-            storage_key=key,
-            storage_provider=provider_name,
-            storage_url=storage_url,
-            content_type=self._get_content_type(artifact_type)
-        )
+        for attempt in range(max_retries):
+            try:
+                return await provider.upload(key, content, content_type, metadata)
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise
+                    
+                wait_time = 2 ** attempt  # Exponential backoff
+                logger.warning(f"Upload attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s")
+                await asyncio.sleep(wait_time)
 ```
 
 ### 3. Provider Implementations
@@ -147,74 +291,312 @@ class StorageManager:
 #### Local Filesystem Provider
 ```python
 class LocalStorageProvider(StorageProvider):
-    """Local filesystem storage for development and self-hosted."""
+    """Local filesystem storage for development and self-hosted with security."""
     
-    def __init__(self, base_path: Path, public_url_base: str = None):
-        self.base_path = Path(base_path)
+    def __init__(self, base_path: Path, public_url_base: Optional[str] = None):
+        self.base_path = Path(base_path).resolve()  # Resolve to absolute path
         self.public_url_base = public_url_base
         self.base_path.mkdir(parents=True, exist_ok=True)
         
-    async def upload(self, key: str, content: bytes, content_type: str, metadata=None):
-        file_path = self.base_path / key
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+    def _get_safe_file_path(self, key: str) -> Path:
+        """Get file path with security validation."""
+        # Ensure the resolved path is within base_path
+        file_path = (self.base_path / key).resolve()
         
-        file_path.write_bytes(content)
-        
-        # Store metadata as sidecar file
-        if metadata:
-            metadata_path = file_path.with_suffix(file_path.suffix + '.meta')
-            metadata_path.write_text(json.dumps(metadata))
+        # Check that resolved path is within base directory
+        try:
+            file_path.relative_to(self.base_path)
+        except ValueError:
+            raise SecurityException(f"Path traversal detected: {key}")
             
-        return self._get_public_url(key)
+        return file_path
+        
+    async def upload(self, key: str, content: Union[bytes, AsyncIterator[bytes]], 
+                    content_type: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+        try:
+            file_path = self._get_safe_file_path(key)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Handle both bytes and async iterator content
+            if isinstance(content, bytes):
+                # Use async file I/O for better performance
+                async with aiofiles.open(file_path, 'wb') as f:
+                    await f.write(content)
+            else:
+                # Stream async iterator content
+                async with aiofiles.open(file_path, 'wb') as f:
+                    async for chunk in content:
+                        await f.write(chunk)
+            
+            # Store metadata atomically
+            if metadata:
+                try:
+                    metadata_path = file_path.with_suffix(file_path.suffix + '.meta')
+                    metadata_json = json.dumps(metadata, indent=2)
+                    
+                    async with aiofiles.open(metadata_path, 'w') as f:
+                        await f.write(metadata_json)
+                except Exception as e:
+                    logger.warning(f"Failed to write metadata for {key}: {e}")
+                    # Continue - metadata failure shouldn't fail the upload
+                    
+            logger.debug(f"Successfully uploaded {key} to local storage")
+            return self._get_public_url(key)
+            
+        except OSError as e:
+            logger.error(f"File system error uploading {key}: {e}")
+            raise StorageException(f"Failed to write file: {e}") from e
+        except Exception as e:
+            logger.error(f"Unexpected error uploading {key}: {e}")
+            raise StorageException(f"Upload failed: {e}") from e
+            
+    def _get_public_url(self, key: str) -> str:
+        """Generate public URL for the stored file."""
+        if self.public_url_base:
+            # URL-encode the key for safety
+            encoded_key = quote(key, safe='/')
+            return f"{self.public_url_base.rstrip('/')}/{encoded_key}"
+        else:
+            return f"file://{self.base_path / key}"
 ```
 
 #### Supabase Storage Provider
 ```python
+from supabase import create_client, AsyncClient
+import asyncio
+
 class SupabaseStorageProvider(StorageProvider):
-    """Supabase storage with integrated auth and CDN."""
+    """Supabase storage with integrated auth, CDN, and proper async patterns."""
     
     def __init__(self, url: str, key: str, bucket: str):
-        self.client = create_client(url, key)
+        # Use async client for proper async operations
+        self.client: AsyncClient = create_client(url, key)
         self.bucket = bucket
+        self.url = url
         
-    async def upload(self, key: str, content: bytes, content_type: str, metadata=None):
-        response = self.client.storage.from_(self.bucket).upload(
-            path=key,
-            file=content,
-            file_options={
-                'content-type': content_type,
-                'metadata': metadata or {}
-            }
-        )
-        
-        if response.error:
-            raise StorageException(f"Upload failed: {response.error}")
+    async def upload(self, key: str, content: Union[bytes, AsyncIterator[bytes]], 
+                    content_type: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+        try:
+            # Handle streaming content for large files
+            if isinstance(content, bytes):
+                file_content = content
+            else:
+                # Collect async iterator into bytes (consider streaming for very large files)
+                chunks = []
+                async for chunk in content:
+                    chunks.append(chunk)
+                file_content = b''.join(chunks)
             
-        return self.client.storage.from_(self.bucket).get_public_url(key)
+            # Use async Supabase client methods
+            response = await self.client.storage.from_(self.bucket).upload(
+                path=key,
+                file=file_content,
+                file_options={
+                    'content-type': content_type,
+                    'metadata': metadata or {},
+                    'upsert': False  # Prevent accidental overwrites
+                }
+            )
+            
+            if response.error:
+                error_msg = str(response.error)
+                logger.error(f"Supabase upload failed for {key}: {error_msg}")
+                
+                # Handle specific error types
+                if 'already exists' in error_msg.lower():
+                    raise StorageException(f"File already exists: {key}")
+                elif 'storage quota' in error_msg.lower():
+                    raise StorageException(f"Storage quota exceeded")
+                else:
+                    raise StorageException(f"Upload failed: {error_msg}")
+            
+            # Get public URL - use async method if available
+            try:
+                public_url = await self.client.storage.from_(self.bucket).get_public_url(key)
+            except AttributeError:
+                # Fallback to sync method if async not available
+                public_url = self.client.storage.from_(self.bucket).get_public_url(key)
+                
+            logger.debug(f"Successfully uploaded {key} to Supabase storage")
+            return public_url
+            
+        except Exception as e:
+            if isinstance(e, StorageException):
+                raise
+            logger.error(f"Unexpected error uploading {key} to Supabase: {e}")
+            raise StorageException(f"Supabase upload failed: {e}") from e
+            
+    async def download(self, key: str) -> bytes:
+        """Download file content from Supabase storage."""
+        try:
+            response = await self.client.storage.from_(self.bucket).download(key)
+            if response.error:
+                raise StorageException(f"Download failed: {response.error}")
+            return response.data
+        except Exception as e:
+            logger.error(f"Failed to download {key} from Supabase: {e}")
+            raise StorageException(f"Download failed: {e}") from e
+            
+    async def get_presigned_upload_url(
+        self, 
+        key: str, 
+        content_type: str, 
+        expires_in: timedelta = timedelta(hours=1)
+    ) -> Dict[str, Any]:
+        """Generate presigned URL for direct client uploads."""
+        try:
+            response = await self.client.storage.from_(self.bucket).create_signed_upload_url(
+                path=key,
+                expires_in=int(expires_in.total_seconds())
+            )
+            
+            if response.error:
+                raise StorageException(f"Failed to create signed URL: {response.error}")
+                
+            return {
+                'url': response.data['signedURL'],
+                'fields': {},  # Supabase doesn't use form fields like S3
+                'expires_at': (datetime.utcnow() + expires_in).isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Failed to create presigned upload URL for {key}: {e}")
+            raise StorageException(f"Presigned URL creation failed: {e}") from e
 ```
 
 ## Storage Key Hierarchy
 
 ### Key Structure
 ```
-{tenant_id}/{artifact_type}/{board_id}/{artifact_id}/{variant}
+{tenant_id}/{artifact_type}/{board_id}/{artifact_id}_{timestamp}_{uuid}/{variant}
+```
+
+### Key Generation with Collision Prevention
+```python
+import uuid
+from datetime import datetime
+
+class StorageManager:
+    # ... other methods ...
+    
+    def _generate_storage_key(
+        self, 
+        artifact_id: str, 
+        artifact_type: str, 
+        tenant_id: Optional[str] = None, 
+        board_id: Optional[str] = None,
+        variant: str = "original"
+    ) -> str:
+        """Generate hierarchical storage key with collision prevention."""
+        
+        # Use tenant_id or default
+        tenant = tenant_id or "default"
+        
+        # Add timestamp and UUID for uniqueness
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        unique_suffix = str(uuid.uuid4())[:8]
+        
+        if board_id:
+            # Board-scoped artifact
+            return f"{tenant}/{artifact_type}/{board_id}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"
+        else:
+            # Global artifact (like LoRA models)
+            return f"{tenant}/{artifact_type}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"
+            
+    def _select_provider(self, artifact_type: str, content: Union[bytes, AsyncIterator[bytes]]) -> str:
+        """Select storage provider based on routing rules."""
+        content_size = len(content) if isinstance(content, bytes) else 0
+        
+        for rule in self.routing_rules:
+            condition = rule.get('condition', {})
+            
+            # Check artifact type condition
+            if 'artifact_type' in condition:
+                if condition['artifact_type'] != artifact_type:
+                    continue
+                    
+            # Check size condition  
+            if 'size_gt' in condition:
+                size_limit = self._parse_size(condition['size_gt'])
+                if content_size <= size_limit:
+                    continue
+                    
+            # If all conditions match, return this provider
+            return rule['provider']
+            
+        # Return default if no rules match
+        return self.default_provider
+        
+    def _parse_size(self, size_str: str) -> int:
+        """Parse size string like '100MB' to bytes."""
+        size_str = size_str.upper()
+        if size_str.endswith('KB'):
+            return int(size_str[:-2]) * 1024
+        elif size_str.endswith('MB'):
+            return int(size_str[:-2]) * 1024 * 1024
+        elif size_str.endswith('GB'):
+            return int(size_str[:-2]) * 1024 * 1024 * 1024
+        else:
+            return int(size_str)
 ```
 
 ### Examples
 ```
-# User-generated image in board
-default/image/board_123/artifact_456/original.png
-default/image/board_123/artifact_456/thumbnail.webp
+# User-generated image in board (with collision prevention)
+default/image/board_123/artifact_456_20241230143000_a1b2c3d4/original.png
+default/image/board_123/artifact_456_20241230143000_a1b2c3d4/thumbnail.webp
 
 # LoRA model files  
-default/model/lora_789/weights.safetensors
-default/model/lora_789/config.json
+default/model/lora_789_20241230143001_e5f6g7h8/weights.safetensors
+default/model/lora_789_20241230143001_e5f6g7h8/config.json
 
 # Training data
-tenant_abc/dataset/training_001/img_001.jpg
+tenant_abc/dataset/training_001_20241230143002_i9j0k1l2/img_001.jpg
 
-# Temporary generation assets
+# Temporary generation assets (auto-cleanup after 24h)
 temp/generation_xyz/input_mask.png
+```
+
+### Temporary File Cleanup
+```python
+class TempFileCleanup:
+    """Background service for cleaning up temporary files."""
+    
+    def __init__(self, storage_manager: StorageManager, ttl_hours: int = 24):
+        self.storage_manager = storage_manager
+        self.ttl = timedelta(hours=ttl_hours)
+        self.cleanup_interval = timedelta(hours=1)
+        
+    async def start_cleanup_service(self):
+        """Start background cleanup task."""
+        while True:
+            try:
+                await self.cleanup_expired_files()
+            except Exception as e:
+                logger.error(f"Cleanup service error: {e}")
+            await asyncio.sleep(self.cleanup_interval.total_seconds())
+            
+    async def cleanup_expired_files(self):
+        """Remove temporary files older than TTL."""
+        cutoff_time = datetime.utcnow() - self.ttl
+        
+        for provider_name, provider in self.storage_manager.providers.items():
+            try:
+                # List files in temp/ hierarchy
+                temp_files = await self._list_temp_files(provider)
+                
+                for file_info in temp_files:
+                    if file_info['modified'] < cutoff_time:
+                        await provider.delete(file_info['key'])
+                        logger.debug(f"Cleaned up temp file: {file_info['key']}")
+                        
+            except Exception as e:
+                logger.warning(f"Cleanup failed for provider {provider_name}: {e}")
+                
+    async def _list_temp_files(self, provider: StorageProvider) -> list[Dict[str, Any]]:
+        """List files in temp/ hierarchy with metadata."""
+        # Implementation would depend on provider capabilities
+        # This is a simplified version
+        return []
 ```
 
 ## Configuration System
@@ -261,6 +643,12 @@ storage:
       
     # Default rule
     - provider: "supabase"
+    
+  # Cleanup configuration
+  cleanup:
+    temp_file_ttl_hours: 24
+    cleanup_interval_hours: 1
+    max_cleanup_batch_size: 1000
 ```
 
 ## Security and Access Control
