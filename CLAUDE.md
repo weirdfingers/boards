@@ -45,7 +45,7 @@ pnpm turbo test         # Run Node tests only
 uv run pytest tests/    # Run Python tests in a specific package
 
 # Code Quality
-make lint               # Run all linters (ruff, mypy for Python; ESLint for JS)
+make lint               # Run all linters (ruff, pyright for Python; ESLint for JS)
 make typecheck          # Run TypeScript type checking
 pnpm turbo lint         # Run Node linters only
 pnpm turbo typecheck    # Run TypeScript checking only

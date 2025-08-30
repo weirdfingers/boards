@@ -8,10 +8,8 @@ version = "0.1.0"
 description = "Backend for Boards - AI creative toolkit"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
-authors = [
-    {name = "Boards Contributors", email = "dev@boards.io"},
-]
+license = { text = "MIT" }
+authors = [{ name = "Boards Contributors", email = "dev@boards.io" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -23,6 +21,7 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "supabase>=2.0.0",
     "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
     "httpx>=0.24.0",
     "python-dotenv>=1.0.0",
     "strawberry-graphql[fastapi]>=0.200.0",
@@ -42,7 +41,7 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
-    "mypy>=1.0.0",
+    "pyright>=1.1.0",
     "black>=23.0.0",
     "pre-commit>=3.0.0",
 ]
@@ -74,13 +73,6 @@ select = [
     "UP", # pyupgrade
 ]
 
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -92,7 +84,7 @@ dev-dependencies = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
-    "mypy>=1.0.0",
+    "pyright>=1.1.0",
     "black>=23.0.0",
     "pre-commit>=3.0.0",
 ]

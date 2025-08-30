@@ -48,7 +48,7 @@ def create_app() -> FastAPI:
     
     # Health check endpoint
     @app.get("/health")
-    async def health_check():
+    async def health_check():  # pyright: ignore [reportUnusedFunction]
         """Health check endpoint."""
         return {"status": "healthy", "version": "0.1.0"}
     

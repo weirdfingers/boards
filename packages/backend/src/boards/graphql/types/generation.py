@@ -78,19 +78,19 @@ class Generation:
     updated_at: datetime
     
     @strawberry.field
-    async def board(self, info) -> "Board":
+    async def board(self, info: strawberry.Info) -> "Board":
         """Get the board this generation belongs to."""
         from ..resolvers.generation import resolve_generation_board
         return await resolve_generation_board(self, info)
     
     @strawberry.field
-    async def user(self, info) -> "User":
+    async def user(self, info: strawberry.Info) -> "User":
         """Get the user who created this generation."""
         from ..resolvers.generation import resolve_generation_user
         return await resolve_generation_user(self, info)
     
     @strawberry.field
-    async def parent(self, info) -> Optional["Generation"]:
+    async def parent(self, info: strawberry.Info) -> Optional["Generation"]:
         """Get the parent generation if any."""
         if not self.parent_generation_id:
             return None
@@ -98,7 +98,7 @@ class Generation:
         return await resolve_generation_parent(self, info)
     
     @strawberry.field
-    async def inputs(self, info) -> List["Generation"]:
+    async def inputs(self, info: strawberry.Info) -> List["Generation"]:
         """Get input generations used for this generation."""
         if not self.input_generation_ids:
             return []
@@ -106,7 +106,7 @@ class Generation:
         return await resolve_generation_inputs(self, info)
     
     @strawberry.field
-    async def children(self, info) -> List["Generation"]:
+    async def children(self, info: strawberry.Info) -> List["Generation"]:
         """Get child generations derived from this one."""
         from ..resolvers.generation import resolve_generation_children
         return await resolve_generation_children(self, info)

@@ -72,7 +72,7 @@ jobs:
         run: |
           cd packages/backend
           uv run ruff check .
-          uv run mypy .
+          uv run pyright .
       
       # Lint TypeScript
       - name: Lint TypeScript

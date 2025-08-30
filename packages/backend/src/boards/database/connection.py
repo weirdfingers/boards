@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from contextlib import contextmanager, asynccontextmanager
-from typing import Generator, AsyncGenerator
+from typing import Generator, AsyncGenerator, Optional
 import logging
 
 from ..config import settings
@@ -21,7 +21,7 @@ SessionLocal = None
 async_engine = None
 AsyncSessionLocal = None
 
-def init_database(database_url: str = None):
+def init_database(database_url: Optional[str] = None):
     """Initialize database connections."""
     global engine, SessionLocal, async_engine, AsyncSessionLocal
     
@@ -66,6 +66,8 @@ def get_session() -> Generator[Session, None, None]:
     if SessionLocal is None:
         init_database()
     
+    if SessionLocal is None:
+        raise RuntimeError("Database not initialized")
     session = SessionLocal()
     try:
         yield session
