@@ -10,7 +10,7 @@ Automated release pipeline that publishes to PyPI and npm when a GitHub release 
 - **Version Files**:
   - Python: `pyproject.toml` (version field)
   - TypeScript: `package.json` (version field)
-- **Git Tags**: Format `package-name@version` (e.g., `backend-sdk@1.2.0`, `frontend-hooks@2.1.0`)
+- **Git Tags**: Format `package-name@version` (e.g., `backend@1.2.0`, `frontend@2.1.0`)
 
 ### Release Triggers
 1. Manual: Create GitHub release with tag
@@ -61,7 +61,7 @@ jobs:
       # Install dependencies
       - name: Install Python dependencies
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           uv pip install -e ".[dev]"
       
       - name: Install Node dependencies
@@ -70,7 +70,7 @@ jobs:
       # Lint Python
       - name: Lint Python
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           uv run ruff check .
           uv run mypy .
       
@@ -81,7 +81,7 @@ jobs:
       # Test Python
       - name: Test Python
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           uv run pytest tests/ --cov
       
       # Test TypeScript
@@ -114,10 +114,10 @@ jobs:
         id: detect
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          if [[ $TAG == backend-sdk@* ]]; then
-            echo "packages=[\"backend-sdk\"]" >> $GITHUB_OUTPUT
-          elif [[ $TAG == frontend-hooks@* ]]; then
-            echo "packages=[\"frontend-hooks\"]" >> $GITHUB_OUTPUT
+          if [[ $TAG == backend@* ]]; then
+            echo "packages=[\"backend\"]" >> $GITHUB_OUTPUT
+          elif [[ $TAG == frontend@* ]]; then
+            echo "packages=[\"frontend\"]" >> $GITHUB_OUTPUT
           elif [[ $TAG == weirdfingers-cli@* ]]; then
             echo "packages=[\"weirdfingers-cli\"]" >> $GITHUB_OUTPUT
           else
@@ -126,7 +126,7 @@ jobs:
 
   release-python:
     needs: detect-packages
-    if: contains(needs.detect-packages.outputs.packages, 'backend-sdk')
+    if: contains(needs.detect-packages.outputs.packages, 'backend')
     runs-on: ubuntu-latest
     
     steps:
@@ -139,17 +139,17 @@ jobs:
         id: version
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#backend-sdk@}"
+          VERSION="${TAG#backend@}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Update version in pyproject.toml
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           sed -i "s/^version = .*/version = \"${{ steps.version.outputs.version }}\"/" pyproject.toml
       
       - name: Build package
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           uv build
       
       - name: Publish to PyPI
@@ -157,12 +157,12 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           uv publish
 
   release-npm:
     needs: detect-packages
-    if: contains(needs.detect-packages.outputs.packages, 'frontend-hooks')
+    if: contains(needs.detect-packages.outputs.packages, 'frontend')
     runs-on: ubuntu-latest
     
     steps:
@@ -182,12 +182,12 @@ jobs:
         id: version
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#frontend-hooks@}"
+          VERSION="${TAG#frontend@}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Update version
         run: |
-          cd packages/frontend-hooks
+          cd packages/frontend
           npm version ${{ steps.version.outputs.version }} --no-git-tag-version
       
       - name: Install dependencies
@@ -195,12 +195,12 @@ jobs:
       
       - name: Build package
         run: |
-          cd packages/frontend-hooks
+          cd packages/frontend
           pnpm build
       
       - name: Publish to npm
         run: |
-          cd packages/frontend-hooks
+          cd packages/frontend
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -257,8 +257,8 @@ on:
         required: true
         type: choice
         options:
-          - backend-sdk
-          - frontend-hooks
+          - backend
+          - frontend
           - weirdfingers-cli
       bump_type:
         description: 'Bump type'
@@ -284,9 +284,9 @@ jobs:
           git config user.email "actions@github.com"
       
       - name: Bump Python package version
-        if: inputs.package == 'backend-sdk'
+        if: inputs.package == 'backend'
         run: |
-          cd packages/backend-sdk
+          cd packages/backend
           # Parse current version and bump
           CURRENT=$(grep "^version = " pyproject.toml | cut -d'"' -f2)
           # Use semver tool or custom script to bump
@@ -308,7 +308,7 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
       
       - name: Bump npm package version
-        if: inputs.package != 'backend-sdk'
+        if: inputs.package != 'backend'
         run: |
           cd packages/${{ inputs.package }}
           npm version ${{ inputs.bump_type }} --no-git-tag-version
@@ -342,7 +342,7 @@ jobs:
 
 # Interactive release script for local use
 
-PACKAGES=("backend-sdk" "frontend-hooks" "weirdfingers-cli")
+PACKAGES=("backend" "frontend" "weirdfingers-cli")
 
 echo "Which package do you want to release?"
 select PACKAGE in "${PACKAGES[@]}"; do
@@ -398,10 +398,10 @@ NPM_TOKEN=npm_xxx
 
 ## Package Publishing Configuration
 
-### Python (`packages/backend-sdk/pyproject.toml`)
+### Python (`packages/backend/pyproject.toml`)
 ```toml
 [project]
-name = "boards-backend-sdk"
+name = "boards-backend"
 dynamic = ["version"]  # Version managed by CI
 
 [project.urls]
@@ -412,7 +412,7 @@ Repository = "https://github.com/weirdfingers/boards"
 version = {attr = "boards.__version__"}
 ```
 
-### npm (`packages/frontend-hooks/package.json`)
+### npm (`packages/frontend/package.json`)
 ```json
 {
   "name": "@weirdfingers/boards",

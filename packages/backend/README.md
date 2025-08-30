@@ -1,6 +1,6 @@
-# Boards Backend SDK
+# Boards Backend
 
-Backend SDK for the Boards open-source creative toolkit for AI-generated content.
+Backend for the Boards open-source creative toolkit for AI-generated content.
 
 ## Features
 
@@ -17,7 +17,7 @@ Backend SDK for the Boards open-source creative toolkit for AI-generated content
 
 ```bash
 # Install with uv
-cd packages/backend-sdk
+cd packages/backend
 uv pip install -e ".[dev]"
 
 # Or with pip
@@ -99,7 +99,7 @@ python scripts/generate_models.py
 ## Project Structure
 
 ```
-packages/backend-sdk/
+packages/backend/
 ├── migrations/
 │   ├── schemas/          # SQL DDL source files
 │   ├── generated/        # Generated migration scripts

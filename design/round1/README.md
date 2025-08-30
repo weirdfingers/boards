@@ -24,7 +24,7 @@ A client-server toolkit for creatives to generate, manage, and collaborate on AI
 10. [Frontend Hooks API](10-frontend-hooks.md)
 
 ## Package Layout (proposed)
-- `packages/backend-sdk` (Python, PyPI): DB models, provider adapters, job API client
-- `packages/frontend-hooks` (TypeScript, npm): **React hooks** for data access, auth, generation
+- `packages/backend` (Python, PyPI): DB models, provider adapters, job API client
+- `packages/frontend` (TypeScript, npm): **React hooks** for data access, auth, generation
 - `packages/provider-plugins/*` (both sides as needed)
 - `apps/examples/*` (minimal UIs that consume hooks)

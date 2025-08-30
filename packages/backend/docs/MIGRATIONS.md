@@ -29,7 +29,7 @@ Schema files are stored in `migrations/schemas/` and processed in alphabetical o
 #### Creating a New Schema File
 
 ```bash
-cd packages/backend-sdk
+cd packages/backend
 
 # Create new schema file with incremental numbering
 vim migrations/schemas/002_add_user_preferences.sql
@@ -440,7 +440,7 @@ pg_dump boards_dev --schema-only > current_schema.sql
 ## File Structure Reference
 
 ```
-packages/backend-sdk/
+packages/backend/
 ├── migrations/
 │   ├── schemas/              # DDL source files (edit these)
 │   │   ├── 001_initial_schema.sql

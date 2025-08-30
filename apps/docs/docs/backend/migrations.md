@@ -274,7 +274,7 @@ pg_dump boards_dev --schema-only > current_schema.sql
 ## File Structure
 
 ```
-packages/backend-sdk/
+packages/backend/
 ├── migrations/
 │   ├── schemas/              # DDL source files (edit these)
 │   │   ├── 001_initial_schema.sql

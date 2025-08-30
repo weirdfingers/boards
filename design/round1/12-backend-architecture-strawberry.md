@@ -14,7 +14,7 @@ Python backend using Strawberry GraphQL, SQLAlchemy, and a plugin-based provider
 ## Project Structure
 
 ```
-packages/backend-sdk/
+packages/backend/
 ├── src/
 │   └── boards/
 │       ├── __init__.py
@@ -312,7 +312,7 @@ settings = Settings()
 ## Client-Side GraphQL (React)
 
 ```typescript
-// packages/frontend-hooks/src/graphql/client.ts
+// packages/frontend/src/graphql/client.ts
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 

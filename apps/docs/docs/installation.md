@@ -90,7 +90,7 @@ This creates:
 Initialize the database schema:
 
 ```bash
-cd packages/backend-sdk
+cd packages/backend
 
 # Create virtual environment and install dependencies
 uv venv
@@ -112,7 +112,7 @@ make dev
 
 # Or start individually:
 # Backend only:
-cd packages/backend-sdk && uvicorn boards.api.app:app --reload --port 8000
+cd packages/backend && uvicorn boards.api.app:app --reload --port 8000
 
 # Frontend only:
 cd apps/example-nextjs && pnpm dev
@@ -155,7 +155,7 @@ make docker-up
 **Python dependency issues:**
 ```bash
 # Clean and reinstall
-cd packages/backend-sdk
+cd packages/backend
 rm -rf .venv
 uv venv
 uv pip install -e ".[dev]"

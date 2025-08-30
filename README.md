@@ -42,7 +42,7 @@ make install
 make docker-up
 
 # Initialize database
-cd packages/backend-sdk
+cd packages/backend
 psql boards_dev < migrations/schemas/001_initial_schema.sql
 python scripts/generate_models.py
 cd ../..
@@ -62,11 +62,11 @@ This will start:
 ```
 boards/
 ├── packages/
-│   ├── backend-sdk/          # Python backend SDK
+│   ├── backend/              # Python backend
 │   │   ├── migrations/       # SQL DDL-first migration system
 │   │   ├── src/boards/       # Core backend implementation
 │   │   └── scripts/          # Model & migration generators
-│   └── frontend-hooks/       # React hooks library (@weirdfingers/boards)
+│   └── frontend/             # React hooks library (@weirdfingers/boards)
 ├── apps/
 │   ├── example-nextjs/       # Example Next.js application
 │   └── docs/                 # Docusaurus documentation site
@@ -107,7 +107,7 @@ make dev                # Start all development servers
 make docs               # Start documentation at http://localhost:4500
 
 # Database Migrations
-cd packages/backend-sdk
+cd packages/backend
 python scripts/generate_migration.py --name your_migration
 python scripts/generate_models.py
 
@@ -135,7 +135,7 @@ Boards uses a **SQL DDL-first migration system**:
 3. Apply migration: `psql boards_dev < migrations/generated/*_up.sql`
 4. Regenerate models: `python scripts/generate_models.py`
 
-📖 See [Migration Documentation](./packages/backend-sdk/docs/MIGRATIONS.md) for details.
+📖 See [Migration Documentation](./packages/backend/docs/MIGRATIONS.md) for details.
 
 ## Documentation
 

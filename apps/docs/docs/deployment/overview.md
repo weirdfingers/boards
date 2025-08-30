@@ -16,7 +16,7 @@ The simplest deployment option using Docker containers:
 # docker-compose.prod.yml
 services:
   api:
-    build: ./packages/backend-sdk
+    build: ./packages/backend
     environment:
       - BOARDS_DATABASE_URL=postgresql://user:pass@db/boards
       - BOARDS_REDIS_URL=redis://redis:6379

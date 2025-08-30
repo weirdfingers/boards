@@ -20,7 +20,7 @@ The Boards backend is built with:
 ## Project Structure
 
 ```
-packages/backend-sdk/
+packages/backend/
 ├── migrations/
 │   ├── schemas/          # SQL DDL source files (edit these)
 │   ├── generated/        # Auto-generated migration scripts
@@ -44,7 +44,7 @@ packages/backend-sdk/
 ### 1. Environment Setup
 
 ```bash
-cd packages/backend-sdk
+cd packages/backend
 
 # Create virtual environment
 uv venv
