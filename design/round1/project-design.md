@@ -36,6 +36,19 @@ Like the vibe coder/entrepreneur, but they prefer to use cloud-based vibe coding
 
 Like the technical use case, but they customize the configuration, potentially adding their own providers (even local ones) or generators, customizing storage, doing cloud based deployments using advanced platform features, implementing their own plugins for auth, storage, database etc They have their own database and have advanced requirements around integrating with boards storage (both DB and storage). Eventually, in order to achieve their goals, they may need to fork the repo and make custom changes to the source code.
 
+## Use case 5: model/LoRA author wants to integrate their models/custom generators with boards
+
+Boards provide a great infrastructure for testing and demoing new models and LoRAs. In order to enable this functionality, we need to make it very easy to integrate new generators. This includes providing great documentation for this specific use case (examples/documentation tutorials/videos). Scenarios include:
+
+- Created a LoRA via Civit AI or Huggingface and want to be able to generate/store/share
+- Created a new custom model/workflow available on Replicate
+- Runs a custom LoRA locally and wants to make a generator for Boards.
+
+In order to support these scenarios, we need to
+
+- minimize the amount of work to incorporate a custom generator, both on the backend and on the frontend with the authoring experience.
+- provide great examples/tutorials/videos.
+
 ## Key Concepts
 
 **Generator** : a component of the system which takes inputs and generates outputs of one of the supported artifact types (image, audio, video, LoRA, …). This can be based on an AI model, e.g. flux, veo, etc.  
