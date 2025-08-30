@@ -61,7 +61,7 @@ BOARDS_REPLICATE_API_TOKEN=your_token
 BOARDS_OPENAI_API_KEY=your_key
 
 # Fal.ai
-BOARDS_FAL_API_KEY=your_key
+BOARDS_FAL_API_TOKEN=your_token
 ```
 
 ## Next Steps

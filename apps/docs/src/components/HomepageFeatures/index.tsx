@@ -11,32 +11,32 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Multi-modal AI Generation',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Generate and combine text, images, video, and audio using advanced AI models. 
+        Boards enables seamless multi-modal content creation for your projects.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'Collaborative Workspace',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Work together in real-time with your team. Share, edit, and organize ideas 
+        collaboratively within a unified workspace with drag-and-drop organization.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Provider Integrations',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Connect with multiple AI providers and data sources. Boards integrates with 
+        Replicate, OpenAI, Fal.ai, and more to streamline your workflow.
       </>
     ),
   },
