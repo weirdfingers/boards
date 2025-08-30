@@ -182,12 +182,12 @@ jobs:
         id: version
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#frontend-hooks@}"
+          VERSION="${TAG#frontend@}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       
       - name: Update version
         run: |
-          cd packages/frontend-hooks
+          cd packages/frontend
           npm version ${{ steps.version.outputs.version }} --no-git-tag-version
       
       - name: Install dependencies
@@ -195,12 +195,12 @@ jobs:
       
       - name: Build package
         run: |
-          cd packages/frontend-hooks
+          cd packages/frontend
           pnpm build
       
       - name: Publish to npm
         run: |
-          cd packages/frontend-hooks
+          cd packages/frontend
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -257,8 +257,8 @@ on:
         required: true
         type: choice
         options:
-          - backend-sdk
-          - frontend-hooks
+          - backend
+          - frontend
           - weirdfingers-cli
       bump_type:
         description: 'Bump type'
@@ -284,7 +284,7 @@ jobs:
           git config user.email "actions@github.com"
       
       - name: Bump Python package version
-        if: inputs.package == 'backend-sdk'
+        if: inputs.package == 'backend'
         run: |
           cd packages/backend
           # Parse current version and bump
@@ -308,7 +308,7 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
       
       - name: Bump npm package version
-        if: inputs.package != 'backend-sdk'
+        if: inputs.package != 'backend'
         run: |
           cd packages/${{ inputs.package }}
           npm version ${{ inputs.bump_type }} --no-git-tag-version
@@ -342,7 +342,7 @@ jobs:
 
 # Interactive release script for local use
 
-PACKAGES=("backend-sdk" "frontend-hooks" "weirdfingers-cli")
+PACKAGES=("backend" "frontend" "weirdfingers-cli")
 
 echo "Which package do you want to release?"
 select PACKAGE in "${PACKAGES[@]}"; do
@@ -398,10 +398,10 @@ NPM_TOKEN=npm_xxx
 
 ## Package Publishing Configuration
 
-### Python (`packages/backend-sdk/pyproject.toml`)
+### Python (`packages/backend/pyproject.toml`)
 ```toml
 [project]
-name = "boards-backend-sdk"
+name = "boards-backend"
 dynamic = ["version"]  # Version managed by CI
 
 [project.urls]
@@ -412,7 +412,7 @@ Repository = "https://github.com/weirdfingers/boards"
 version = {attr = "boards.__version__"}
 ```
 
-### npm (`packages/frontend-hooks/package.json`)
+### npm (`packages/frontend/package.json`)
 ```json
 {
   "name": "@weirdfingers/boards",
