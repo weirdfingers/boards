@@ -75,16 +75,26 @@ python -m boards.api.app
 
 Open http://localhost:8000/graphql in your browser.
 
-### Generate migrations
+### Database migrations
 
-When you modify the SQL DDL schema files:
+When you need to change the database schema, follow our DDL-first migration workflow.
 
+**Quick reference:**
 ```bash
-# Generate a new migration
-python scripts/generate_migration.py --name describe_your_change
+# 1. Edit schema files
+vim migrations/schemas/002_add_feature.sql
 
-# This creates UP and DOWN migration scripts in migrations/generated/
+# 2. Generate migration scripts  
+python scripts/generate_migration.py --name add_feature
+
+# 3. Apply migration
+psql boards_dev < migrations/generated/*_add_feature_up.sql
+
+# 4. Regenerate models
+python scripts/generate_models.py
 ```
+
+📖 **For detailed migration workflow, see [docs/MIGRATIONS.md](docs/MIGRATIONS.md)**
 
 ## Project Structure
 
