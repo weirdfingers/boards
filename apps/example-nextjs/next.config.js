@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@boards/frontend-hooks'],
+  transpilePackages: ['@weirdfingers/boards'],
 }
 
 module.exports = nextConfig

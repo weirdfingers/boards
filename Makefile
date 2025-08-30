@@ -1,4 +1,4 @@
-.PHONY: help install dev build test lint typecheck clean setup-python setup-node
+.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -12,11 +12,11 @@ setup-python: ## Install Python dependencies for all packages
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ] || [ -f "$$dir/requirements.txt" ]; then \
 			echo "Installing $$dir..."; \
 			if [ -f "$$dir/pyproject.toml" ]; then \
-				cd "$$dir" && pip install -e .; \
+				cd "$$dir" && uv pip install -e .; \
 			elif [ -f "$$dir/setup.py" ]; then \
-				cd "$$dir" && pip install -e .; \
+				cd "$$dir" && uv pip install -e .; \
 			elif [ -f "$$dir/requirements.txt" ]; then \
-				pip install -r "$$dir/requirements.txt"; \
+				uv pip install -r "$$dir/requirements.txt"; \
 			fi; \
 		fi; \
 	done
@@ -40,7 +40,7 @@ build: ## Build all packages
 	@for dir in packages/*/; do \
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
 			echo "Building Python package in $$dir..."; \
-			cd "$$dir" && python -m build; \
+			cd "$$dir" && uv build; \
 		fi; \
 	done
 	@# Build Node packages
@@ -53,7 +53,7 @@ test: ## Run all tests
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
 			if [ -d "$$dir/tests" ]; then \
 				echo "Testing Python package in $$dir..."; \
-				cd "$$dir" && python -m pytest tests/; \
+				cd "$$dir" && uv run pytest tests/; \
 			fi; \
 		fi; \
 	done
@@ -66,7 +66,7 @@ lint: ## Run linters
 	@for dir in packages/*/; do \
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
 			echo "Linting Python package in $$dir..."; \
-			cd "$$dir" && ruff check . && mypy .; \
+			cd "$$dir" && uv run ruff check . && uv run mypy .; \
 		fi; \
 	done
 	@# Lint Node packages
