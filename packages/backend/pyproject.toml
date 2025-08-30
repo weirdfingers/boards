@@ -8,10 +8,8 @@ version = "0.1.0"
 description = "Backend for Boards - AI creative toolkit"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
-authors = [
-    {name = "Boards Contributors", email = "dev@boards.io"},
-]
+license = { text = "MIT" }
+authors = [{ name = "Boards Contributors", email = "dev@boards.io" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -74,12 +72,6 @@ select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
-
-[tool.pyright]
-include = ["src"]
-exclude = [".venv", "**/__pycache__"]
-pythonVersion = "3.12"
-pythonPlatform = "All"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
