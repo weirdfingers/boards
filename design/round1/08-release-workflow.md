@@ -5,7 +5,7 @@
 - Shared version policy: independent versions per package, with a **compatibility matrix** documented.
 
 ## CI/CD (GitHub Actions)
-- Lint, typecheck (mypy/ruff, tsc), tests.
+- Lint, typecheck (pyright/ruff, tsc), tests.
 - Build & publish: PyPI (`packages/backend`), npm (`packages/frontend`, auth adapters).
 - Canaries: pre-release tags (`next`) for both registries.
 - Example apps use pinned ranges.

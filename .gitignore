@@ -32,6 +32,9 @@ MANIFEST
 htmlcov/
 .tox/
 .hypothesis/
+.venv/
+venv/
+env/
 
 # Production
 /build

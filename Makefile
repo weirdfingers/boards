@@ -10,14 +10,21 @@ setup-python: ## Install Python dependencies for all packages
 	@echo "Setting up Python packages..."
 	@for dir in packages/*/; do \
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ] || [ -f "$$dir/requirements.txt" ]; then \
-			echo "Installing $$dir..."; \
-			if [ -f "$$dir/pyproject.toml" ]; then \
-				cd "$$dir" && uv pip install -e .; \
-			elif [ -f "$$dir/setup.py" ]; then \
-				cd "$$dir" && uv pip install -e .; \
-			elif [ -f "$$dir/requirements.txt" ]; then \
-				uv pip install -r "$$dir/requirements.txt"; \
-			fi; \
+			echo "Setting up $$dir..."; \
+			cd "$$dir" && \
+			if [ ! -d ".venv" ]; then \
+				echo "Creating virtual environment in $$dir"; \
+				uv venv; \
+			fi && \
+			echo "Installing dependencies in $$dir"; \
+			if [ -f "pyproject.toml" ]; then \
+				uv pip install -e ".[dev]"; \
+			elif [ -f "setup.py" ]; then \
+				uv pip install -e .; \
+			elif [ -f "requirements.txt" ]; then \
+				uv pip install -r "requirements.txt"; \
+			fi && \
+			cd ..; \
 		fi; \
 	done
 
@@ -66,7 +73,7 @@ lint: ## Run linters
 	@for dir in packages/*/; do \
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
 			echo "Linting Python package in $$dir..."; \
-			cd "$$dir" && uv run ruff check . && uv run mypy .; \
+			cd "$$dir" && uv run ruff check . && uv run pyright .; \
 		fi; \
 	done
 	@# Lint Node packages
