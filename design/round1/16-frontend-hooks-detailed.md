@@ -9,7 +9,7 @@ This document provides a detailed technical specification for the frontend hooks
 ### 1. Framework Agnostic
 - **Requirement**: All hooks must work across React environments (Next.js, Vite, Create React App, etc.)
 - **Implementation**: No framework-specific dependencies, pure React hooks using standard APIs
-- **Dependencies**: React Query for data fetching, Zustand for state management
+- **Dependencies**: TanStack Query (React Query) v5 for data fetching, Zustand for state management
 
 ### 2. Provider Pluggability
 - **Requirement**: Support multiple auth providers, API endpoints, and transport layers
@@ -60,7 +60,7 @@ interface User {
 - **Token Management**: Automatic refresh with configurable intervals
 - **Provider Support**: Supabase, Clerk, Auth0, custom JWT/OIDC
 - **Error Handling**: Standardized error types with retry mechanisms
-- **Persistence**: Secure token storage (localStorage with encryption for web, secure storage for mobile)
+- **Persistence**: Secure token storage (httpOnly cookies preferred for web due to security; encrypted localStorage has limitations due to client-side key exposure, secure storage for mobile)
 
 #### Configuration Example
 ```typescript
@@ -265,6 +265,7 @@ interface GenerationResult {
   artifacts: Artifact[];
   credits: {
     cost: number;
+    balanceBefore: number;
     balance: number;
   };
   performance: {
@@ -449,6 +450,8 @@ class BoardsError extends Error {
   statusCode?: number;
   details?: Record<string, unknown>;
   retryable: boolean;
+  timestamp: Date;
+  requestId?: string;
 }
 
 class AuthenticationError extends BoardsError {
@@ -477,11 +480,12 @@ class InsufficientCreditsError extends BoardsError {
 ```
 
 ### Retry Strategy
-- Exponential backoff for transient errors
-- Circuit breaker pattern for provider failures
-- User-configurable retry policies
-- Automatic retry for network issues
+- Exponential backoff for transient errors (starting at 1s, max 30s)
+- Circuit breaker pattern for provider failures (5 failures in 60s)
+- User-configurable retry policies per operation type
+- Automatic retry for network issues (max 3 attempts)
 - Manual retry option for failed generations
+- Client-side rate limiting to prevent API flooding
 
 ## Performance Considerations
 
@@ -509,7 +513,7 @@ class InsufficientCreditsError extends BoardsError {
 ## Security Considerations
 
 ### Token Management
-- Secure token storage (encrypted localStorage)
+- Secure token storage (httpOnly cookies for sensitive tokens; avoid encrypted localStorage due to client-side key exposure)
 - Automatic token rotation
 - XSS protection for token access
 - CSRF protection for API calls
@@ -579,6 +583,7 @@ class InsufficientCreditsError extends BoardsError {
 
 ### Phase 1: Core Hooks
 - [ ] Authentication (`useAuth`)
+- [ ] Error handling and basic retry logic
 - [ ] Basic board management (`useBoards`, `useBoard`)
 - [ ] Artifact management (`useArtifacts`)
 - [ ] Provider configuration system
@@ -587,7 +592,7 @@ class InsufficientCreditsError extends BoardsError {
 - [ ] Generation hooks (`useGeneration`)
 - [ ] Provider adapters (Replicate, fal.ai)
 - [ ] Progress tracking and SSE integration
-- [ ] Error handling and retry logic
+- [ ] Advanced error handling and retry policies
 
 ### Phase 3: Advanced Features
 - [ ] Credits management (`useCredits`)
