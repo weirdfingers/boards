@@ -14,9 +14,11 @@ This document provides a detailed technical design for the background task syste
 - **Storage**: Redis for queue persistence and pub/sub
 
 ```python
+import os
+
 # Configuration
 QUEUE_CONFIG = {
-    "redis_url": "redis://localhost:6379",
+    "redis_url": os.getenv("BOARDS_REDIS_URL", "redis://redis:6379"),
     "default_queue": "boards-jobs",
     "high_priority_queue": "boards-priority",
     "low_priority_queue": "boards-bulk",
@@ -101,12 +103,8 @@ class GenerationWorker:
             raise
 ```
 
-**Specialized Workers:**
-- `ImageGenerationWorker` - Image generation (FLUX, DALL-E, etc.)
-- `VideoGenerationWorker` - Video generation (Veo, Sora, etc.)  
-- `AudioGenerationWorker` - Audio generation (MusicLM, etc.)
-- `TextGenerationWorker` - Text generation (GPT, Claude, etc.)
-- `LoRATrainingWorker` - Custom model training jobs
+**Worker Design Note:**
+Since each provider has a consistent API across media types, we use a single `GenerationWorker` that delegates to provider-specific implementations rather than specialized workers per media type. The provider abstraction handles the differences between image, video, audio, and text generation.
 
 #### 3.3 Progress Tracking System
 
@@ -213,11 +211,16 @@ The existing `generations` table supports job tracking:
 ```sql
 -- Key fields for background jobs
 external_job_id VARCHAR(255),     -- Provider's job ID
-status VARCHAR(50) NOT NULL,      -- 'pending', 'processing', 'completed', 'failed', 'cancelled'
+status generation_status_enum NOT NULL,  -- ENUM: 'pending', 'processing', 'completed', 'failed', 'cancelled'
 progress DECIMAL(5,2),            -- 0.00 to 100.00
 error_message TEXT,               -- Error details if failed
 started_at TIMESTAMP WITH TIME ZONE,
 completed_at TIMESTAMP WITH TIME ZONE
+
+-- Create enum type for job status
+CREATE TYPE generation_status_enum AS ENUM (
+    'pending', 'processing', 'completed', 'failed', 'cancelled'
+);
 ```
 
 #### 4.2 Job Queue State Table
@@ -245,17 +248,24 @@ CREATE TABLE job_queue_state (
 #### 5.1 Retry Strategy
 
 ```python
-RETRY_CONFIG = {
-    "max_retries": 3,
-    "backoff_base": 2,      # Exponential backoff: 2^attempt seconds
-    "backoff_max": 300,     # Maximum 5 minutes
-    "jitter": True,         # Add randomness to prevent thundering herd
-    "retry_exceptions": [
+from typing import List, Literal
+from pydantic import BaseSettings
+
+# Configurable retry settings - can be overridden via environment or config file
+class RetryConfig(BaseSettings):
+    max_retries: int = 3
+    backoff_base: float = 2.0     # Exponential backoff: 2^attempt seconds
+    backoff_max: int = 300        # Maximum 5 minutes
+    jitter: bool = True           # Add randomness to prevent thundering herd
+    retry_exceptions: List[str] = [
         "ProviderTimeoutError",
-        "ProviderRateLimitError",
+        "ProviderRateLimitError", 
         "ProviderTemporaryError"
     ]
-}
+    
+    class Config:
+        env_prefix = "BOARDS_RETRY_"
+        # Allows setting via BOARDS_RETRY_MAX_RETRIES=5, etc.
 ```
 
 #### 5.2 Circuit Breaker
@@ -269,7 +279,7 @@ class ProviderCircuitBreaker:
         self.recovery_timeout = recovery_timeout
         self.failure_count = 0
         self.last_failure_time = None
-        self.state = "closed"  # "closed", "open", "half-open"
+        self.state: Literal["closed", "open", "half-open"] = "closed"
 ```
 
 #### 5.3 Dead Letter Queue
@@ -376,10 +386,19 @@ async def jobs_health_check():
 #### 8.1 Environment Configuration
 
 ```python
+import os
+from pydantic import BaseSettings, Field, validator
+
 # Additional settings for background tasks
 class BackgroundTaskSettings(BaseSettings):
-    # Queue settings
-    redis_url: str = "redis://localhost:6379"
+    # Queue settings  
+    redis_url: str = Field(default_factory=lambda: os.getenv("BOARDS_REDIS_URL", "redis://redis:6379"))
+    
+    @validator('redis_url', pre=True)
+    def validate_redis_url(cls, v):
+        if not v or v.startswith('redis://localhost'):
+            raise ValueError('Redis URL must not use localhost for production deployments')
+        return v
     job_queue_name: str = "boards-jobs"
     max_concurrent_jobs: int = 10
     job_timeout: int = 3600  # 1 hour
@@ -411,9 +430,12 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # Bind to localhost only
     volumes:
       - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD:-boards_dev_redis}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-boards_dev_redis}
       
   worker:
     build: .
@@ -422,7 +444,7 @@ services:
       - redis
       - postgres
     environment:
-      - BOARDS_REDIS_URL=redis://redis:6379
+      - BOARDS_REDIS_URL=redis://:${REDIS_PASSWORD:-boards_dev_redis}@redis:6379
       - BOARDS_DATABASE_URL=postgresql://boards:boards_dev@postgres/boards_dev
     deploy:
       replicas: 4
@@ -500,10 +522,7 @@ packages/backend/src/boards/
 │   ├── __init__.py
 │   ├── main.py            # Worker entry point
 │   ├── base.py            # BaseWorker class
-│   ├── image.py           # ImageGenerationWorker
-│   ├── video.py           # VideoGenerationWorker
-│   ├── audio.py           # AudioGenerationWorker
-│   └── text.py            # TextGenerationWorker
+│   └── generation.py      # GenerationWorker (handles all media types)
 ├── providers/
 │   ├── __init__.py
 │   ├── base.py            # BaseProvider abstract class
