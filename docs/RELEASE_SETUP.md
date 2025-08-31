@@ -18,7 +18,7 @@ The release workflow automatically:
 Add these secrets in your GitHub repository settings (`Settings > Secrets and variables > Actions`):
 
 #### NPM_TOKEN
-1. Go to [npmjs.com](https://www.npmjs.com) and sign in to the `weirdfingers` organization account
+1. Go to [www.npmjs.com](https://www.npmjs.com) and sign in to the `weirdfingers` organization account
 2. Navigate to `Account > Access Tokens > Generate New Token`
 3. Select "Automation" token type with "Read and write" permissions  
 4. Copy the token and add it as `NPM_TOKEN` in GitHub secrets
