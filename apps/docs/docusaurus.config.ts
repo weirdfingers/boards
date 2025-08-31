@@ -76,7 +76,7 @@ const config: Config = {
       title: 'Boards',
       logo: {
         alt: 'Boards Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo120.png',
       },
       items: [
         {
