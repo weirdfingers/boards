@@ -69,7 +69,7 @@ Key configuration options:
 BOARDS_DATABASE_URL=postgresql://boards:boards_dev@localhost/boards_dev
 
 # Redis
-BOARDS_REDIS_URL=redis://localhost:6379/0
+BOARDS_REDIS_URL=redis://localhost:6380/0
 
 # Storage
 BOARDS_STORAGE_PROVIDER=local

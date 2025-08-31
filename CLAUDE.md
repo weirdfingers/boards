@@ -78,5 +78,5 @@ make clean              # Remove all build artifacts and dependencies
 ## Database Configuration
 
 Local development uses Docker Compose with:
-- PostgreSQL 15 on port 5432 (user: boards, password: boards_dev, database: boards_dev)
-- Redis 7 on port 6379
+- PostgreSQL 15 on port 5433 (user: boards, password: boards_dev, database: boards_dev)
+- Redis 7 on port 6380

@@ -58,7 +58,7 @@ def create_temp_database(base_url: str | None = None) -> tuple[str, str]:
     # Connect to PostgreSQL to create temp database
     conn = psycopg2.connect(
         host=host.split(":")[0],
-        port=int(host.split(":")[1]) if ":" in host else 5432,
+        port=int(host.split(":")[1]) if ":" in host else 5433,
         user=user,
         password=password,
         database="postgres",
@@ -86,7 +86,7 @@ def drop_temp_database(base_url: str, db_name: str):
     # Connect and drop database
     conn = psycopg2.connect(
         host=host.split(":")[0],
-        port=int(host.split(":")[1]) if ":" in host else 5432,
+        port=int(host.split(":")[1]) if ":" in host else 5433,
         user=user,
         password=password,
         database="postgres",
