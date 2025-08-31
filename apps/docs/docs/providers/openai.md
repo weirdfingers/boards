@@ -1,4 +1,7 @@
 ---
+title: OpenAI Provider
+description: Configure and use the OpenAI provider for text and image generation.
+sidebar_position: 3
 ---
 
 # OpenAI Provider

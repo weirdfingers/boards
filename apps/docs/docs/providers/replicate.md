@@ -1,4 +1,7 @@
 ---
+title: Replicate Provider
+description: Configure and use the Replicate provider for image and text generation.
+sidebar_position: 2
 ---
 
 # Replicate Provider

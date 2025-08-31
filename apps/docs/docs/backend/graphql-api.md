@@ -1,4 +1,7 @@
 ---
+title: GraphQL API
+description: Schema, queries, mutations, and usage of the backend GraphQL API.
+sidebar_position: 3
 ---
 
 # GraphQL API

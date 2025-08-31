@@ -1,4 +1,7 @@
 ---
+title: Custom Providers
+description: Implement custom providers compatible with the Boards provider interface.
+sidebar_position: 4
 ---
 
 # Custom Providers

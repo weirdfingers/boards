@@ -1,4 +1,7 @@
 ---
+title: Backend Testing
+description: How to run and write tests for the Boards Python backend.
+sidebar_position: 4
 ---
 
 # Backend Testing
