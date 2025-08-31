@@ -289,7 +289,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://boards:boards_dev@localhost/boards_dev"
     
     # Redis (for job queue)
-    redis_url: str = "redis://localhost:6379"
+    redis_url: str = "redis://localhost:6380"
     
     # Storage
     storage_provider: str = "local"  # 'local', 'supabase', 's3', 'gcs'
