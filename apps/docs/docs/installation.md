@@ -79,11 +79,11 @@ make docker-up
 ```
 
 This creates:
-- **PostgreSQL 15** on port 5432
+- **PostgreSQL 15** on port 5433
   - Database: `boards_dev`
   - User: `boards`
   - Password: `boards_dev`
-- **Redis 7** on port 6379
+- **Redis 7** on port 6380
 
 ### 4. Database Setup
 
@@ -144,8 +144,8 @@ Open http://localhost:3000 in your browser to see the example Next.js applicatio
 **Docker services won't start:**
 ```bash
 # Check if ports are in use
-lsof -i :5432  # PostgreSQL
-lsof -i :6379  # Redis
+lsof -i :5433  # PostgreSQL
+lsof -i :6380  # Redis
 
 # Reset Docker containers
 make docker-down

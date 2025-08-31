@@ -10,12 +10,12 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    database_url: str = "postgresql://boards:boards_dev@localhost/boards_dev"
+    database_url: str = "postgresql://boards:boards_dev@localhost:5433/boards_dev"
     database_pool_size: int = 10
     database_max_overflow: int = 20
     
     # Redis (for job queue)
-    redis_url: str = "redis://localhost:6379"
+    redis_url: str = "redis://localhost:6380"
     
     # Storage
     storage_provider: str = "local"  # 'local', 'supabase', 's3', 'gcs'
