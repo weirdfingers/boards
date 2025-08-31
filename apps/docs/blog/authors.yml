@@ -15,3 +15,15 @@ weirdfingers:
   page: true
   socials:
     github: weirdfingers
+
+slorber:
+  name: Sébastien Lorber
+  title: Docusaurus Maintainer
+  url: https://github.com/slorber
+  image_url: https://github.com/slorber.png
+
+yangshun:
+  name: Yangshun Tay
+  title: Docusaurus Maintainer
+  url: https://github.com/yangshun
+  image_url: https://github.com/yangshun.png
