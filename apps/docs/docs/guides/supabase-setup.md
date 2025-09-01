@@ -240,10 +240,15 @@ AS $$
 BEGIN
   -- Add tenant_id from user metadata to JWT
   IF event->>'user_id' IS NOT NULL THEN
-    SELECT tenant_id INTO event
-    FROM public.users 
-    WHERE auth_subject = (event->>'user_id')
-    AND auth_provider = 'supabase';
+    DECLARE tenant_id TEXT;
+    SELECT u.tenant_id INTO tenant_id
+    FROM public.users u
+    WHERE u.auth_subject = (event->>'user_id')
+    AND u.auth_provider = 'supabase';
+    
+    IF tenant_id IS NOT NULL THEN
+      event := jsonb_set(event, '{tenant_id}', to_jsonb(tenant_id), true);
+    END IF;
   END IF;
   
   RETURN event;
@@ -343,30 +348,41 @@ async def migrate_to_supabase():
     local_engine = create_engine(local_url)
     supabase_engine = create_engine(supabase_url)
     
-    # Tables to migrate (in dependency order)
-    tables = ['tenants', 'users', 'boards', 'board_members', 'generations']
-    
-    for table in tables:
-        print(f"Migrating {table}...")
+    try:
+        # Tables to migrate (in dependency order)
+        tables = ['tenants', 'users', 'boards', 'board_members', 'generations']
         
-        # Export from local
-        with local_engine.connect() as local_conn:
-            result = local_conn.execute(text(f"SELECT * FROM {table}"))
-            rows = result.fetchall()
-            columns = result.keys()
-        
-        # Import to Supabase
-        if rows:
-            with supabase_engine.connect() as supabase_conn:
-                # Build INSERT statement
-                placeholders = ", ".join([f":{col}" for col in columns])
-                insert_sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
-                
-                # Insert data
-                supabase_conn.execute(text(insert_sql), [dict(row) for row in rows])
-                supabase_conn.commit()
-        
-        print(f"Migrated {len(rows)} rows from {table}")
+        for table in tables:
+            print(f"Migrating {table}...")
+            
+            # Export from local
+            with local_engine.connect() as local_conn:
+                result = local_conn.execute(text(f"SELECT * FROM {table}"))
+                rows = result.fetchall()
+                columns = result.keys()
+            
+            # Import to Supabase
+            if rows:
+                with supabase_engine.connect() as supabase_conn:
+                    # Build INSERT statement with conflict handling
+                    placeholders = ", ".join([f":{col}" for col in columns])
+                    insert_sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders}) ON CONFLICT DO NOTHING"
+                    
+                    # Insert data with error handling
+                    try:
+                        supabase_conn.execute(text(insert_sql), [dict(row) for row in rows])
+                        supabase_conn.commit()
+                        print(f"Migrated {len(rows)} rows from {table}")
+                    except Exception as e:
+                        print(f"Error migrating table {table}: {e}")
+                        supabase_conn.rollback()
+                        continue
+            else:
+                print(f"No data to migrate for {table}")
+    finally:
+        # Properly close database connections
+        local_engine.dispose()
+        supabase_engine.dispose()
 
 if __name__ == "__main__":
     asyncio.run(migrate_to_supabase())
