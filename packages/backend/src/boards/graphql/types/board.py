@@ -60,8 +60,8 @@ class Board:
     title: str
     description: Optional[str]
     is_public: bool
-    settings: strawberry.scalars.JSON
-    metadata: strawberry.scalars.JSON
+    settings: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
+    metadata: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
     created_at: datetime
     updated_at: datetime
 
@@ -81,7 +81,10 @@ class Board:
 
     @strawberry.field
     async def generations(
-        self, info: strawberry.Info, limit: Optional[int] = 50, offset: Optional[int] = 0
+        self,
+        info: strawberry.Info,
+        limit: Optional[int] = 50,
+        offset: Optional[int] = 0,
     ) -> List["Generation"]:
         """Get generations in this board."""
         from ..resolvers.board import resolve_board_generations
