@@ -9,7 +9,7 @@ Python backend using Strawberry GraphQL, SQLAlchemy, and a plugin-based provider
 - **Server**: FastAPI (REST endpoints) + Strawberry GraphQL
 - **Job Queue**: Dramatiq with Redis backend
 - **Storage**: Pluggable (Supabase, S3, GCS, local)
-- **Client Libraries**: Apollo Client or urql for React
+- **Client Libraries**: urql for React
 
 ## Project Structure
 
@@ -313,27 +313,36 @@ settings = Settings()
 
 ```typescript
 // packages/frontend/src/graphql/client.ts
-import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+import { Client, cacheExchange, fetchExchange } from 'urql';
+import { authExchange } from '@urql/exchange-auth';
 
-const httpLink = createHttpLink({
-  uri: process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:8000/graphql',
+const client = new Client({
+  url: process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:8000/graphql',
+  exchanges: [
+    cacheExchange,
+    authExchange(async (utils) => {
+      const token = localStorage.getItem('auth_token');
+      return {
+        addAuthToOperation(operation) {
+          if (!token) return operation;
+          return utils.appendHeaders(operation, {
+            Authorization: `Bearer ${token}`,
+          });
+        },
+        didAuthError(error) {
+          return error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED');
+        },
+        async refreshAuth() {
+          // Handle token refresh logic here if needed
+          return null;
+        },
+      };
+    }),
+    fetchExchange,
+  ],
 });
 
-const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('auth_token');
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : "",
-    }
-  }
-});
-
-export const apolloClient = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache: new InMemoryCache()
-});
+export { client as urqlClient };
 ```
 
 ## Key Features
