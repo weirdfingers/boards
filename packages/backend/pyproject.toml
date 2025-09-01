@@ -33,6 +33,7 @@ dependencies = [
     "psycopg2-binary>=2.9.0",
     "sqlacodegen-v2>=0.1.4",
     "migra>=3.0.0",
+    "structlog>=23.0.0",
 ]
 
 [project.optional-dependencies]

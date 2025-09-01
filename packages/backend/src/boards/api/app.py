@@ -5,13 +5,16 @@ Main FastAPI application for Boards backend
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import logging
 
 from ..config import settings
 from ..database import init_database
 from ..graphql.schema import create_graphql_router
+from ..logging import configure_logging, get_logger
+from ..middleware import LoggingContextMiddleware
 
-logger = logging.getLogger(__name__)
+# Configure logging before creating logger
+configure_logging(debug=settings.debug)
+logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,6 +39,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         debug=settings.debug,
     )
+    
+    # Add logging context middleware first
+    app.add_middleware(LoggingContextMiddleware)
     
     # CORS configuration
     app.add_middleware(
