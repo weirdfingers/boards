@@ -27,7 +27,7 @@ class Query:
         """Get a user by ID."""
         from ..resolvers.user import resolve_user_by_id
 
-        return await resolve_user_by_id(info, id)
+        return await resolve_user_by_id(info, str(id))
 
     @strawberry.field
     async def board(self, info: strawberry.Info, id: UUID) -> Optional[Board]:

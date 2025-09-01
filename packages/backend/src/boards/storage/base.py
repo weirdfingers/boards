@@ -88,7 +88,7 @@ class StorageProvider(ABC):
         content_type: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Upload content and return public URL or storage reference.
+        """Upload content and return storage reference.
 
         Args:
             key: Storage key (must be validated before calling)
@@ -97,7 +97,7 @@ class StorageProvider(ABC):
             metadata: Optional metadata dictionary
 
         Returns:
-            Public URL or storage reference
+            storage reference
 
         Raises:
             StorageException: On upload failure

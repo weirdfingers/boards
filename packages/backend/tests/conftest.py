@@ -1,10 +1,10 @@
+# type: ignore[reportUnknownParameterType]
 """
 Shared pytest fixtures and configuration for all tests.
 """
 
 import os
 import sys
-import time
 import pytest
 from pathlib import Path
 
@@ -13,11 +13,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from alembic.config import Config  # type: ignore[reportMissingImports]
 from alembic import command  # type: ignore[reportMissingImports]
-from src.boards.config import settings
 
 
-@pytest.fixture(scope="session", autouse=True)
-def alembic_migrate(postgresql_proc, postgresql):
+@pytest.fixture(scope="function", autouse=False)
+def alembic_migrate(postgresql_proc, postgresql):  # type: ignore[reportUnknownParameterType]
     """Run Alembic upgrade to head against the pytest-postgresql instance."""
     dsn = (
         f"postgresql://{postgresql.user}:{postgresql.password}"
@@ -31,7 +30,7 @@ def alembic_migrate(postgresql_proc, postgresql):
 
 
 @pytest.fixture(scope="function")
-def test_database(postgresql):
+def test_database(postgresql):  # type: ignore[reportUnknownParameterType]
     """Return the DSN for the running pytest-postgresql database."""
     dsn = (
         f"postgresql://{postgresql.user}:{postgresql.password}"
@@ -41,7 +40,7 @@ def test_database(postgresql):
 
 
 @pytest.fixture(scope="function")
-def db_connection(postgresql):
+def db_connection(postgresql):  # type: ignore[reportUnknownParameterType]
     """Provide a psycopg2 connection via pytest-postgresql (if needed by tests)."""
     conn = postgresql.cursor().connection
     yield conn
@@ -58,7 +57,7 @@ def reset_environment():
 
 
 # Test markers
-def pytest_configure(config):
+def pytest_configure(config):  # type: ignore[reportUnknownParameterType]
     """Register custom markers."""
     config.addinivalue_line(
         "markers", "requires_db: mark test as requiring database connection"

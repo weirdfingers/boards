@@ -1,6 +1,21 @@
 {
   "include": [
+    "src",
+    "tests"
+  ],
+  "extraPaths": [
     "src"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "src"
+    },
+    {
+      "root": "tests",
+      "extraPaths": [
+        "src"
+      ]
+    }
   ],
   "exclude": [
     ".venv",
@@ -17,6 +32,7 @@
   "typeCheckingMode": "strict",
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
+  "stubPath": "src",
   "reportImportCycles": false,
   "reportUnusedImport": false,
   "reportUnusedVariable": false,

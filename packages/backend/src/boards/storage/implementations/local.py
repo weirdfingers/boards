@@ -49,20 +49,15 @@ class LocalStorageProvider(StorageProvider):
 
             # Handle both bytes-like and async iterable content
             if isinstance(content, (bytes, bytearray, memoryview)):
-                data = content if isinstance(content, bytes) else bytes(content)
+                # aiofiles accepts bytes-like objects directly
                 async with aiofiles.open(file_path, "wb") as f:
-                    await f.write(data)
+                    await f.write(content)
             else:  # isinstance(content, AsyncIterable):
                 async with aiofiles.open(file_path, "wb") as f:
                     async for chunk in content:
-                        # Accept bytes-like chunks too
-                        if not isinstance(chunk, (bytes, bytearray, memoryview)):
-                            raise StorageException(
-                                "Async content yielded non-bytes data"
-                            )
-                        await f.write(
-                            chunk if isinstance(chunk, bytes) else bytes(chunk)
-                        )
+                        # Just write the chunk directly - aiofiles accepts bytes-like objects
+                        # It will raise an error if chunk is not bytes-like
+                        await f.write(chunk)
 
             # Store metadata atomically
             if metadata:
