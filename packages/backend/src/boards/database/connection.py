@@ -7,11 +7,11 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from contextlib import contextmanager, asynccontextmanager
 from typing import Generator, AsyncGenerator, Optional
-import logging
 
 from ..config import settings
+from ..logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Sync engine and session factory
 engine = None
@@ -52,7 +52,7 @@ def init_database(database_url: Optional[str] = None):
             autoflush=False,
         )
     
-    logger.info(f"Database initialized: {db_url}")
+    logger.info("Database initialized", database_url=db_url)
 
 def get_engine():
     """Get the SQLAlchemy engine."""
