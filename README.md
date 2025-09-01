@@ -22,7 +22,7 @@ Boards provides a **collaborative workspace** for organizing AI-generated conten
 
 ### Prerequisites
 
-- **Node.js** 18+ 
+- **Node.js** 18+
 - **Python** 3.12+
 - **pnpm** 9+
 - **Docker** and Docker Compose (for local services)
@@ -43,8 +43,7 @@ make docker-up
 
 # Initialize database
 cd packages/backend
-psql boards_dev < migrations/schemas/001_initial_schema.sql
-python scripts/generate_models.py
+uv run alembic upgrade head
 cd ../..
 
 # Start development servers
@@ -52,6 +51,7 @@ make dev
 ```
 
 This will start:
+
 - 🚀 **Backend API** at http://localhost:8000
 - 💻 **Frontend Example** at http://localhost:3000
 - 📚 **Documentation** at http://localhost:4500
@@ -63,9 +63,9 @@ This will start:
 boards/
 ├── packages/
 │   ├── backend/              # Python backend
-│   │   ├── migrations/       # SQL DDL-first migration system
-│   │   ├── src/boards/       # Core backend implementation
-│   │   └── scripts/          # Model & migration generators
+│   │   ├── alembic/          # Alembic migrations (async)
+│   │   ├── src/boards/       # Core backend implementation (includes dbmodels)
+│   │   └── tests/            # Backend tests
 │   └── frontend/             # React hooks library (@weirdfingers/boards)
 ├── apps/
 │   ├── example-nextjs/       # Example Next.js application
@@ -77,14 +77,17 @@ boards/
 ## Tech Stack
 
 ### Backend
+
 - **Python 3.12** with type hints
 - **FastAPI** for high-performance APIs
 - **Strawberry GraphQL** with code-first schema
-- **SQLAlchemy 2.0** with auto-generated models
+- **SQLAlchemy 2.0** models in `boards.dbmodels`
+- **Alembic** for database migrations (async, timestamped filenames)
 - **PostgreSQL** with multi-tenant architecture
 - **Redis** for job queue and caching
 
 ### Frontend
+
 - **React 18+** with hooks-first design
 - **TypeScript** for type safety
 - **Next.js** compatible (App Router & Pages Router)
@@ -92,6 +95,7 @@ boards/
 - **Optimistic updates** for better UX
 
 ### Infrastructure
+
 - **Docker Compose** for local development
 - **pnpm workspaces** for monorepo management
 - **Turborepo** for build orchestration
@@ -108,8 +112,8 @@ make docs               # Start documentation at http://localhost:4500
 
 # Database Migrations
 cd packages/backend
-python scripts/generate_migration.py --name your_migration
-python scripts/generate_models.py
+uv run alembic revision -m "your_migration" --autogenerate
+uv run alembic upgrade head
 
 # Testing
 make test               # Run all tests
@@ -128,14 +132,7 @@ make docker-logs        # View service logs
 
 ### Database Migrations
 
-Boards uses a **SQL DDL-first migration system**:
-
-1. Edit schema files in `migrations/schemas/`
-2. Generate migration: `python scripts/generate_migration.py --name feature`
-3. Apply migration: `psql boards_dev < migrations/generated/*_up.sql`
-4. Regenerate models: `python scripts/generate_models.py`
-
-📖 See [Migration Documentation](./packages/backend/docs/MIGRATIONS.md) for details.
+Boards uses **Alembic** with async engines and timestamped filenames. Revisions are autogenerable from models in `src/boards/dbmodels` and support reversible `downgrade()` functions and data migrations.
 
 ## Documentation
 
@@ -177,13 +174,3 @@ We welcome contributions! Please see our [Contributing Guide](http://localhost:4
 ## License
 
 MIT - See [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-Built with ❤️ using:
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Strawberry GraphQL](https://strawberry.rocks/)
-- [SQLAlchemy](https://www.sqlalchemy.org/)
-- [React](https://react.dev/)
-- [Next.js](https://nextjs.org/)
-- [Docusaurus](https://docusaurus.io/)

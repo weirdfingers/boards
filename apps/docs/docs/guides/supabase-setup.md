@@ -61,61 +61,29 @@ Create or update your environment file:
 ```bash
 # packages/backend/.env.supabase
 # Database Configuration
-DATABASE_URL=postgresql://postgres.abcdefghij:your_password@db.abcdefghij.supabase.co:5432/postgres
+BOARDS_DATABASE_URL=postgresql://postgres.abcdefghij:your_password@db.abcdefghij.supabase.co:5432/postgres
 
-# Supabase API Configuration  
+# Supabase API Configuration
 SUPABASE_URL=https://abcdefghij.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # For production, use connection pooling:
-# DATABASE_URL=postgresql://postgres.abcdefghij:your_password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+# BOARDS_DATABASE_URL=postgresql://postgres.abcdefghij:your_password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
 
 **Security Note**: Never commit the service role key to version control. Use environment variables or secure secret management.
 
 ## 4. Apply Database Schema
 
-Apply your existing schema to the Supabase database:
-
-### Option A: Direct SQL Application
+Apply your schema to Supabase using Alembic:
 
 ```bash
-# Navigate to backend directory
 cd packages/backend
-
-# Apply schema directly to Supabase
-psql $DATABASE_URL < migrations/schemas/001_initial_schema.sql
+uv run alembic upgrade head
 ```
 
-### Option B: Using Migration System
-
-```bash
-# Generate migration comparing empty DB to your schema
-python scripts/generate_migration.py --name initial_supabase_setup --current-db $DATABASE_URL
-
-# Review the generated migration
-cat migrations/generated/*_initial_supabase_setup_up.sql
-
-# Apply the migration
-psql $DATABASE_URL < migrations/generated/*_initial_supabase_setup_up.sql
-```
-
-### Option C: Using Supabase CLI
-
-```bash
-# Install Supabase CLI
-npm install -g supabase
-
-# Initialize Supabase in your project
-supabase init
-
-# Link to your remote project
-supabase link --project-ref your-project-ref
-
-# Push your local schema to Supabase
-supabase db push
-```
+This will create all tables and required extensions (e.g., `uuid-ossp`).
 
 ## 5. Configure Storage
 
@@ -138,7 +106,7 @@ In the Supabase dashboard:
 CREATE POLICY "Users can upload to their tenant folder" ON storage.objects
 FOR INSERT TO authenticated
 WITH CHECK (
-  bucket_id = 'generations' 
+  bucket_id = 'generations'
   AND (storage.foldername(name))[1] = auth.jwt() ->> 'tenant_id'
 );
 
@@ -171,27 +139,18 @@ THUMBNAIL_BUCKET = 'thumbnails'
 
 ## 6. Row Level Security (RLS)
 
-Enable RLS for multi-tenant data isolation:
+Enable RLS for multi-tenant data isolation using Alembic revisions (see Database Migrations guide for patterns). Example:
 
-```sql
--- Enable RLS on all tables
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE boards ENABLE ROW LEVEL SECURITY;
-ALTER TABLE generations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE credit_transactions ENABLE ROW LEVEL SECURITY;
+```python
+from alembic import op
 
--- Create policies for tenant isolation
--- Users can only see their own tenant's data
-CREATE POLICY "Users can access their tenant data" ON boards
-FOR ALL TO authenticated
-USING (tenant_id = auth.jwt() ->> 'tenant_id');
+def upgrade() -> None:
+    op.execute("ALTER TABLE users ENABLE ROW LEVEL SECURITY;")
+    # ... create policies with IF NOT EXISTS guards ...
 
-CREATE POLICY "Users can access their tenant generations" ON generations
-FOR ALL TO authenticated  
-USING (tenant_id = auth.jwt() ->> 'tenant_id');
-
--- Similar policies for other tables...
+def downgrade() -> None:
+    # ... drop policies if exist, then disable RLS ...
+    op.execute("ALTER TABLE users DISABLE ROW LEVEL SECURITY;")
 ```
 
 ## 7. Authentication Integration
@@ -215,7 +174,7 @@ async def create_user(email: str, password: str, tenant_id: str):
             }
         }
     })
-    
+
     # Create user record in your database
     user_record = await create_user_record(
         auth_subject=auth_response.user.id,
@@ -223,7 +182,7 @@ async def create_user(email: str, password: str, tenant_id: str):
         email=email,
         tenant_id=tenant_id
     )
-    
+
     return user_record
 ```
 
@@ -245,12 +204,12 @@ BEGIN
     FROM public.users u
     WHERE u.auth_subject = (event->>'user_id')
     AND u.auth_provider = 'supabase';
-    
+
     IF tenant_id IS NOT NULL THEN
       event := jsonb_set(event, '{tenant_id}', to_jsonb(tenant_id), true);
     END IF;
   END IF;
-  
+
   RETURN event;
 END;
 $$;
@@ -267,7 +226,7 @@ Use your Supabase project directly for development:
 
 ```bash
 # Use remote database URL
-export DATABASE_URL="postgresql://postgres.xxx:password@db.xxx.supabase.co:5432/postgres"
+export BOARDS_DATABASE_URL="postgresql://postgres.xxx:password@db.xxx.supabase.co:5432/postgres"
 
 # Start development
 make dev
@@ -306,7 +265,7 @@ For production, use connection pooling to handle high load:
 
 ```bash
 # Use pooled connection string
-DATABASE_URL=postgresql://postgres.xxx:password@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true
+BOARDS_DATABASE_URL=postgresql://postgres.xxx:password@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
 
 ### Performance Optimization
@@ -325,152 +284,23 @@ CREATE INDEX CONCURRENTLY idx_generations_created_at ON generations(created_at D
 Set up monitoring in Supabase dashboard:
 
 1. **Database** tab → Monitor connection count, query performance
-2. **API** tab → Monitor request volume and errors  
+2. **API** tab → Monitor request volume and errors
 3. **Storage** tab → Monitor storage usage and bandwidth
 
-## 10. Migration Script
-
-Create a helper script to migrate existing data:
-
-```python
-# scripts/migrate_to_supabase.py
-import os
-import asyncio
-from sqlalchemy import create_engine, text
-
-async def migrate_to_supabase():
-    """Migrate existing local data to Supabase."""
-    
-    # Source (local) and destination (Supabase) databases
-    local_url = "postgresql://boards:boards_dev@localhost:5433/boards_dev"
-    supabase_url = os.environ.get('DATABASE_URL')
-    
-    local_engine = create_engine(local_url)
-    supabase_engine = create_engine(supabase_url)
-    
-    try:
-        # Tables to migrate (in dependency order)
-        tables = ['tenants', 'users', 'boards', 'board_members', 'generations']
-        
-        for table in tables:
-            print(f"Migrating {table}...")
-            
-            # Export from local
-            with local_engine.connect() as local_conn:
-                result = local_conn.execute(text(f"SELECT * FROM {table}"))
-                rows = result.fetchall()
-                columns = result.keys()
-            
-            # Import to Supabase
-            if rows:
-                with supabase_engine.connect() as supabase_conn:
-                    # Build INSERT statement with conflict handling
-                    placeholders = ", ".join([f":{col}" for col in columns])
-                    insert_sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders}) ON CONFLICT DO NOTHING"
-                    
-                    # Insert data with error handling
-                    try:
-                        supabase_conn.execute(text(insert_sql), [dict(row) for row in rows])
-                        supabase_conn.commit()
-                        print(f"Migrated {len(rows)} rows from {table}")
-                    except Exception as e:
-                        print(f"Error migrating table {table}: {e}")
-                        supabase_conn.rollback()
-                        continue
-            else:
-                print(f"No data to migrate for {table}")
-    finally:
-        # Properly close database connections
-        local_engine.dispose()
-        supabase_engine.dispose()
-
-if __name__ == "__main__":
-    asyncio.run(migrate_to_supabase())
-```
-
-Run the migration:
-
-```bash
-python scripts/migrate_to_supabase.py
-```
-
-## 11. Testing Your Setup
+## 10. Testing Your Setup
 
 Verify everything works:
 
 ```bash
 # Test database connection
-psql $DATABASE_URL -c "SELECT version();"
+psql $BOARDS_DATABASE_URL -c "SELECT version();"
 
 # Test your application
 cd packages/backend
-python -c "
-from boards.database.models import User, Board
-from sqlalchemy import create_engine
-engine = create_engine('$DATABASE_URL')
-print('✅ Database connection successful')
-"
+python -c "from boards.dbmodels import Users, Boards; print('✅ import ok')"
 
 # Start the development server
 make dev
-```
-
-## Troubleshooting
-
-### Connection Issues
-
-**Problem**: `connection to server failed`
-```bash
-# Check your connection string format
-echo $DATABASE_URL
-
-# Test direct connection
-psql "postgresql://postgres.xxx:password@db.xxx.supabase.co:5432/postgres" -c "SELECT 1;"
-```
-
-**Problem**: SSL connection errors
-```bash
-# Add SSL mode to connection string
-DATABASE_URL="postgresql://...?sslmode=require"
-```
-
-### Schema Issues
-
-**Problem**: Missing extensions
-```sql
--- Enable required extensions in Supabase SQL editor
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- for text search
-```
-
-**Problem**: Permission denied
-- Ensure you're using the correct connection string
-- Use service role key for backend operations
-- Check RLS policies aren't blocking your queries
-
-### Performance Issues
-
-**Problem**: Slow queries
-```sql
--- Check for missing indexes
-EXPLAIN ANALYZE SELECT * FROM generations WHERE tenant_id = 'xxx';
-
--- Add missing indexes
-CREATE INDEX CONCURRENTLY idx_missing ON table_name(column_name);
-```
-
-### RLS Policy Issues
-
-**Problem**: No data returned with RLS enabled
-```sql
--- Test without RLS first
-ALTER TABLE boards DISABLE ROW LEVEL SECURITY;
-
--- Check JWT claims
-SELECT auth.jwt();
-
--- Verify policy logic
-SELECT * FROM boards WHERE tenant_id = auth.jwt() ->> 'tenant_id';
 ```
 
 ## Next Steps
@@ -479,10 +309,8 @@ With Supabase configured, you can now:
 
 1. **Deploy to production** using the same Supabase project
 2. **Set up Supabase Storage** for file uploads and serving
-3. **Configure Supabase Auth** for user authentication  
+3. **Configure Supabase Auth** for user authentication
 4. **Use Supabase Realtime** for live updates
 5. **Set up Edge Functions** for webhooks and background jobs
 
 For detailed migration workflows, see the [Database Migrations guide](../backend/migrations.md).
-
-For deployment strategies, check the [Deployment Overview](../deployment/overview.md).
