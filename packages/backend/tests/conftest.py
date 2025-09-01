@@ -8,14 +8,9 @@ import pytest
 from pathlib import Path
 from typing import Any, Generator, Tuple, TYPE_CHECKING
 
-if TYPE_CHECKING:
-    # Import types only for type checking, not at runtime
-    from pytest_postgresql.executor import PostgreSQLExecutor  # type: ignore[import]
-    from psycopg import Connection  # type: ignore[import]
-else:
-    # Runtime fallbacks
-    PostgreSQLExecutor = Any
-    Connection = Any
+# Import types only for type checking, not at runtime
+from pytest_postgresql.executor import PostgreSQLExecutor  # type: ignore[import]
+from psycopg import Connection  # type: ignore[import]
 
 # Add src directory to path so imports work
 sys.path.insert(0, str(Path(__file__).parent.parent))
