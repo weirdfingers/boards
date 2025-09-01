@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+
+## Python Tooling: Use uv (not Poetry or pip)
+
+- **Policy**: Use `uv` for Python dependency management, virtual environments, and scripts.
+- **Prohibited**: Do not use `poetry` or `pip` for project tasks in this repository.
+- **Canonical project files**: [packages/backend/pyproject.toml](mdc:packages/backend/pyproject.toml), [packages/backend/uv.lock](mdc:packages/backend/uv.lock)
+
+### Common uv commands
+
+- **Install deps / sync env**: `uv sync`
+- **Run a command in project env**: `uv run <command>` (examples: `uv run pytest`, `uv run alembic upgrade head`)
+- **Add dependency**: `uv add <package>` (use `--dev` for dev-only)
+- **Remove dependency**: `uv remove <package>`
+- **Manage venv explicitly (optional)**: `uv venv`
+
+### Notes
+
+- `uv` reads and updates `pyproject.toml` and maintains `uv.lock`.
+- Prefer `uv run ...` in CI and docs for any Python CLI (tests, linters, Alembic, scripts).
