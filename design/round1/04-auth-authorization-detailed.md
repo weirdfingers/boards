@@ -145,7 +145,7 @@ interface AuthState {
   - `@weirdfingers/auth-jwt`: local token storage with backend-issued JWT.
 
 ### Token Wiring
-- Apollo/urql `authLink` calls `getToken()`.
+- urql `authExchange` calls `getToken()`.
 - SSR/Next.js: support token storage via cookies; `getToken` reads from cookie when in server context.
 
 ### Multi-tenant Header
