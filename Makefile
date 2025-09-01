@@ -81,6 +81,8 @@ lint: ## Run linters
 
 typecheck: ## Run type checking
 	@echo "Running type checking..."
+	@# Node type checking
+	pnpm turbo typecheck
 	@# Python type checking
 	@for dir in packages/*/; do \
 		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
@@ -88,8 +90,6 @@ typecheck: ## Run type checking
 			cd "$$dir" && uv run pyright .; \
 		fi; \
 	done
-	@# Node type checking
-	pnpm turbo typecheck
 
 clean: ## Clean all build artifacts and dependencies
 	@echo "Cleaning workspace..."

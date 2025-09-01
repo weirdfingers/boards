@@ -33,7 +33,7 @@ class TestLocalStorageProvider:
         assert provider.public_url_base is None
         assert temp_dir.exists()
 
-    def test_init_with_public_url(self, temp_dir: Path):
+    def test_init_with_public_url(self, temp_dir: Path) -> None:
         provider = LocalStorageProvider(
             temp_dir, public_url_base="http://example.com/files"
         )
@@ -42,31 +42,31 @@ class TestLocalStorageProvider:
 
     def test_get_safe_file_path_valid(
         self, provider: LocalStorageProvider, temp_dir: Path
-    ):
-        path = provider._get_safe_file_path("folder/file.txt")  # type: ignore
+    ) -> None:
+        path = provider._get_safe_file_path("folder/file.txt")
         expected = temp_dir / "folder" / "file.txt"
         # Compare resolved paths to handle symlinks (e.g. /var vs /private/var on macOS)
         assert path.resolve() == expected.resolve()
 
-    def test_get_safe_file_path_traversal_attack(self, provider: LocalStorageProvider):
+    def test_get_safe_file_path_traversal_attack(self, provider: LocalStorageProvider) -> None:
         # Path traversal attempts should fail
         with pytest.raises(SecurityException):
-            provider._get_safe_file_path("../../../etc/passwd")  # type: ignore
+            provider._get_safe_file_path("../../../etc/passwd")
 
         with pytest.raises(SecurityException):
-            provider._get_safe_file_path("folder/../../../etc/passwd")  # type: ignore
+            provider._get_safe_file_path("folder/../../../etc/passwd")
 
-    def test_get_public_url_with_base(self, provider: LocalStorageProvider):
-        url = provider._get_public_url("folder/file.txt")  # type: ignore
+    def test_get_public_url_with_base(self, provider: LocalStorageProvider) -> None:
+        url = provider._get_public_url("folder/file.txt")
         assert url == "http://localhost:8000/storage/folder/file.txt"
 
-    def test_get_public_url_with_special_chars(self, provider: LocalStorageProvider):
-        url = provider._get_public_url("folder/file with spaces.txt")  # type: ignore
+    def test_get_public_url_with_special_chars(self, provider: LocalStorageProvider) -> None:
+        url = provider._get_public_url("folder/file with spaces.txt")
         assert url == "http://localhost:8000/storage/folder/file%20with%20spaces.txt"
 
-    def test_get_public_url_without_base(self, temp_dir: Path):
+    def test_get_public_url_without_base(self, temp_dir: Path) -> None:
         provider = LocalStorageProvider(temp_dir)
-        url = provider._get_public_url("file.txt")  # type: ignore
+        url = provider._get_public_url("file.txt")
         assert url.startswith("file://")
         assert url.endswith("file.txt")
 

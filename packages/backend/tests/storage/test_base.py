@@ -1,6 +1,3 @@
-# pyright: ignore[reportProtectedMemberAccess]
-# pyright: ignore[reportPrivateUsage]
-# pyright: ignore[reportUnusedImport]
 """Tests for storage base classes and manager."""
 
 import pytest
@@ -144,7 +141,7 @@ class TestStorageManager:
 
     def test_validate_file_size_too_large(self, manager: StorageManager):
         with pytest.raises(ValidationException):
-            manager._validate_file_size(
+            manager._validate_file_size(  # type: ignore
                 2 * 1024 * 1024
             )  # 2MB > 1MB limit  # type: ignore # noqa: E501
 
