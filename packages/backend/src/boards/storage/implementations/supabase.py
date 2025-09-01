@@ -6,10 +6,14 @@ import os
 from typing import Optional, Dict, Any, Union, AsyncIterator, TYPE_CHECKING
 from datetime import datetime, timedelta, timezone
 
+import aiofiles
+
 if TYPE_CHECKING:
     from supabase import create_async_client, AsyncClient
 
 try:
+    from supabase import create_async_client, AsyncClient
+
     _supabase_available = True
 except ImportError:
     # Handle case where supabase is not installed
@@ -58,16 +62,19 @@ class SupabaseStorageProvider(StorageProvider):
             else:
                 # Stream to temp file to avoid memory issues
                 with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                    tmp_file_path = tmp_file.name
+
+                # Use async file operations for streaming content
+                async with aiofiles.open(tmp_file_path, "wb") as f:
                     async for chunk in content:
-                        tmp_file.write(chunk)
-                    tmp_file.flush()
+                        await f.write(chunk)
 
-                    # Read the temp file and upload
-                    with open(tmp_file.name, "rb") as f:
-                        file_content = f.read()
+                # Read the temp file asynchronously and upload
+                async with aiofiles.open(tmp_file_path, "rb") as f:
+                    file_content = await f.read()
 
-                    # Clean up temp file
-                    os.unlink(tmp_file.name)
+                # Clean up temp file
+                os.unlink(tmp_file_path)
 
             # Use async Supabase client methods
             response = await client.storage.from_(self.bucket).upload(
