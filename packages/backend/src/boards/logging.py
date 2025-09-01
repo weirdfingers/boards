@@ -3,6 +3,7 @@ Centralized logging configuration using structlog
 """
 
 import logging
+import secrets
 import sys
 import time
 import base64
@@ -112,22 +113,25 @@ def get_logger(name: str) -> structlog.BoundLogger:
 
 
 def generate_request_id() -> str:
-    """Generate a compact, high-fidelity timestamp-based request ID.
+    """Generate a compact, secure request ID with timestamp and randomness.
     
-    Uses microsecond precision timestamp encoded as base64 for compactness.
-    Format: 8-character base64 string (e.g., 'Ab3X9mF2')
+    Uses microsecond precision timestamp with added randomness for security.
+    Format: 11-character base64 string (e.g., 'Ab3X9mF2xYz')
     
-    Note: Not guaranteed globally unique, but very high probability of uniqueness
-    within the same process/server for reasonable request volumes.
+    Provides high uniqueness probability while preventing predictable enumeration.
     """
-    # Get microseconds since epoch (16 bytes when encoded as int64)
+    # Get microseconds since epoch (8 bytes when encoded as int64)
     timestamp_us = int(time.time() * 1_000_000)
     
-    # Convert to bytes (8 bytes for int64) 
+    # Add 2 bytes of cryptographically secure randomness
+    random_bytes = secrets.token_bytes(2)
+    
+    # Convert timestamp to bytes (8 bytes for int64) and combine with random bytes
     timestamp_bytes = timestamp_us.to_bytes(8, byteorder='big')
+    combined_bytes = timestamp_bytes + random_bytes
     
     # Encode as base64 and strip padding
-    b64 = base64.urlsafe_b64encode(timestamp_bytes).decode('ascii').rstrip('=')
+    b64 = base64.urlsafe_b64encode(combined_bytes).decode('ascii').rstrip('=')
     
     return b64
 

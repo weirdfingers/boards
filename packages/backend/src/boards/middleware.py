@@ -2,13 +2,39 @@
 Middleware for request context and logging
 """
 
-from typing import Callable
+from typing import Callable, Dict, Any
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .logging import set_request_context, clear_request_context, extract_user_id_from_request, get_logger
 
 logger = get_logger(__name__)
+
+
+def sanitize_query_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove sensitive query parameters from logging.
+    
+    Args:
+        params: Dictionary of query parameters
+        
+    Returns:
+        Dictionary with sensitive parameters redacted
+    """
+    sensitive_keys = {
+        'password', 'token', 'api_key', 'secret', 'auth', 'authorization',
+        'access_token', 'refresh_token', 'key', 'private_key', 'jwt',
+        'session', 'session_id', 'cookie', 'credentials'
+    }
+    
+    sanitized = {}
+    for key, value in params.items():
+        # Check if any sensitive keyword is in the parameter name (case insensitive)
+        if any(sensitive in key.lower() for sensitive in sensitive_keys):
+            sanitized[key] = '[REDACTED]'
+        else:
+            sanitized[key] = value
+    
+    return sanitized
 
 
 class LoggingContextMiddleware(BaseHTTPMiddleware):
@@ -24,12 +50,17 @@ class LoggingContextMiddleware(BaseHTTPMiddleware):
         set_request_context(user_id=user_id)
         
         try:
+            # Sanitize query parameters for logging
+            sanitized_params = None
+            if request.query_params:
+                sanitized_params = sanitize_query_params(dict(request.query_params))
+            
             # Log request start
             logger.info(
                 "Request started",
                 method=request.method,
                 path=request.url.path,
-                query_params=str(request.query_params) if request.query_params else None,
+                query_params=sanitized_params,
                 user_agent=request.headers.get("user-agent"),
                 remote_addr=request.client.host if request.client else None,
             )
@@ -54,7 +85,6 @@ class LoggingContextMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 path=request.url.path,
                 error=str(e),
-                exc_info=True,
             )
             raise
             
