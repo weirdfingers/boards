@@ -12,7 +12,7 @@ async def resolve_current_user(info: strawberry.Info) -> User | None:
     raise NotImplementedError
 
 
-async def resolve_user_by_id(info: strawberry.Info, id) -> User | None:
+async def resolve_user_by_id(info: strawberry.Info, id: str) -> User | None:
     raise NotImplementedError
 
 

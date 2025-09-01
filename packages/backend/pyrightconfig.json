@@ -1,5 +1,7 @@
 {
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "exclude": [
     ".venv",
     "**/__pycache__",
@@ -38,8 +40,8 @@
   "reportMissingSuperCall": false,
   "reportUninitializedInstanceVariable": false,
   "reportInvalidStringEscapeSequence": true,
-  "reportUnknownParameterType": false,
-  "reportUnknownArgumentType": false,
+  "reportUnknownParameterType": true,
+  "reportUnknownArgumentType": true,
   "reportUnknownLambdaType": false,
   "reportUnknownVariableType": false,
   "reportUnknownMemberType": false,

@@ -23,9 +23,14 @@ The Boards storage system needs to handle diverse artifact types (images, videos
 
 ## Architecture Components
 
+Storage components are implemented in the backend package at:
+- `packages/backend/src/boards/storage/base.py` - Core interfaces and manager
+- `packages/backend/src/boards/storage/implementations/` - Provider implementations
+
 ### 1. Storage Abstraction Layer
 
 ```python
+# packages/backend/src/boards/storage/base.py
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, AsyncIterator, Union
 from pathlib import Path
@@ -290,6 +295,7 @@ class StorageManager:
 
 #### Local Filesystem Provider
 ```python
+# packages/backend/src/boards/storage/implementations/local.py
 class LocalStorageProvider(StorageProvider):
     """Local filesystem storage for development and self-hosted with security."""
     
@@ -362,6 +368,7 @@ class LocalStorageProvider(StorageProvider):
 
 #### Supabase Storage Provider
 ```python
+# packages/backend/src/boards/storage/implementations/supabase.py
 from supabase import create_client, AsyncClient
 import asyncio
 
@@ -781,17 +788,18 @@ storage_manager.register_provider("custom", CustomStorageProvider.from_config({
 
 ## Implementation Roadmap
 
-### Phase 1: Core Infrastructure
-- [ ] Implement base StorageProvider interface
-- [ ] Create LocalStorageProvider for development
-- [ ] Build StorageManager with basic routing
-- [ ] Add configuration system
+### Phase 1: Core Infrastructure ✅
+- [x] Implement base StorageProvider interface
+- [x] Create LocalStorageProvider for development
+- [x] Build StorageManager with basic routing
+- [x] Add configuration system
 
 ### Phase 2: Cloud Integration  
-- [ ] Implement SupabaseStorageProvider
+- [x] Implement SupabaseStorageProvider
 - [ ] Add S3StorageProvider
-- [ ] Implement presigned URL generation
-- [ ] Add security and access control
+- [ ] Add GCSStorageProvider (moved from Phase 2)
+- [x] Implement presigned URL generation
+- [x] Add security and access control
 
 ### Phase 3: Advanced Features
 - [ ] Add caching and performance optimizations
@@ -804,5 +812,24 @@ storage_manager.register_provider("custom", CustomStorageProvider.from_config({
 - [ ] Implement resilience features
 - [ ] Performance testing and optimization
 - [ ] Documentation and examples
+
+## Job Integration
+
+The storage system integrates with the job system for temporary file management:
+
+```python
+# packages/backend/src/boards/jobs/tasks.py
+class GenerationJob:
+    def __init__(self, job_id: str):
+        self.job_id = job_id
+        self.temp_files = []
+    
+    async def cleanup(self):
+        """Clean up temp files when job completes/fails."""
+        for temp_key in self.temp_files:
+            await storage_manager.delete_temp_file(temp_key)
+```
+
+This approach provides better control over temporary file lifecycle compared to time-based cleanup.
 
 This storage architecture provides a robust, scalable, and extensible foundation for handling all artifact storage needs in the Boards system while maintaining simplicity for basic use cases and power for advanced deployments.
