@@ -1,59 +1,67 @@
-# Providers and Generators: Detailed Design
+# Generators: Detailed Design
 
 ## Overview
 
-This document presents a detailed design for the Boards providers and generators system, enabling users to integrate with any AI generation service through a unified, extensible, and agentic-friendly architecture.
+This document presents a detailed design for the Boards generators system, enabling users to integrate with any AI generation service through a unified, type-safe, and developer-friendly architecture.
 
 ## Core Requirements
 
-1. **User Choice**: Users select which providers and generators their system uses
-2. **Agentic Extensibility**: AI agents can add new generators with minimal prompting by referencing documentation
-3. **Minimal Generator Code**: Generator-specific implementation should be as small as possible
-4. **Well-Documented Process**: Creating new providers must be thoroughly documented
+1. **Minimal Generator Code**: Generator creation should require only Pydantic schema definitions
+2. **Type Safety**: Full-stack type safety from Python → GraphQL → TypeScript → UI  
+3. **Artifact Resolution**: Declarative specification of artifact dependencies between generations
+4. **Direct SDK Usage**: Generators use provider SDKs directly with no abstraction layer
 
 ## Architecture Principles
 
-### 1. Separation of Concerns
-- **Provider**: Handles authentication, API communication, and service-specific logic
-- **Generator**: Defines input/output schemas and orchestrates the generation process
-- **Registry**: Manages discovery, registration, and lifecycle of providers/generators
+### 1. Pydantic-First Generators
+- **Generators** define input/output schemas as Pydantic models
+- Automatic JSON Schema generation for frontend type generation
+- Built-in validation and serialization
 
-### 2. Declarative Configuration
-- YAML/JSON configuration files describe providers and generators
-- Minimal code required for standard REST API integrations
-- Configuration-driven approach enables agentic tools to add new integrations
+### 2. Direct SDK Integration
+- Generators import and use provider SDKs directly
+- No wrapper layers or generic REST clients
+- Full access to provider-specific features and authentication
 
-### 3. Plugin-based Architecture
-- Dynamic discovery and loading of providers/generators
-- Support for both built-in and user-defined implementations
-- Hot-swappable configurations for development
+### 3. Declarative Artifact Resolution
+- Input fields can reference other Generation artifacts by type
+- Automatic file resolution and preparation
+- Type-safe drag/drop UI generation
 
 ## System Components
 
-### Core Abstractions
+### Artifact Types
 
 ```python
-# Base Provider Interface
-class BaseProvider(ABC):
-    """Abstract base for all providers"""
-    name: str
-    description: str
-    auth_type: str  # 'api_key', 'oauth', 'bearer_token', 'custom'
-    
-    @abstractmethod
-    async def authenticate(self, credentials: Dict[str, Any]) -> bool
-    
-    @abstractmethod
-    async def validate_credentials(self) -> bool
-    
-    @abstractmethod
-    def get_supported_generators(self) -> List[str]
+# Artifact Types for Input/Output Schemas
+class AudioArtifact(BaseModel):
+    generation_id: str
+    storage_url: str
+    duration: Optional[float] = None
+    format: str
 
-# Base Generator Interface  
+class VideoArtifact(BaseModel):
+    generation_id: str
+    storage_url: str
+    duration: Optional[float] = None
+    width: int
+    height: int
+    format: str
+
+class ImageArtifact(BaseModel):
+    generation_id: str
+    storage_url: str
+    width: int
+    height: int
+    format: str
+```
+
+### Base Generator Interface
+
+```python
 class BaseGenerator(ABC):
-    """Abstract base for all generators"""
+    """Defines generation inputs/outputs and handles generation logic"""
     name: str
-    provider: str
     artifact_type: str  # 'image', 'video', 'audio', 'text', 'lora'
     description: str
     
@@ -61,402 +69,243 @@ class BaseGenerator(ABC):
     def get_input_schema(self) -> Type[BaseModel]
     
     @abstractmethod
-    def get_output_schema(self) -> Type[BaseModel]
-    
-    @abstractmethod
-    async def generate(
-        self, 
-        inputs: BaseModel, 
-        progress_callback: Optional[Callable] = None
-    ) -> BaseModel
+    async def generate(self, inputs: BaseModel) -> BaseModel
     
     @abstractmethod
     async def estimate_cost(self, inputs: BaseModel) -> float
 ```
 
-### Registry System
+### Example Generator Implementation
 
 ```python
-class ProviderRegistry:
-    """Central registry for provider discovery and management"""
+# Example: Lipsync Generator
+class LipsyncInput(BaseModel):
+    audio_source: AudioArtifact  # Drag/drop slot for audio
+    video_source: VideoArtifact  # Drag/drop slot for video
+    prompt: Optional[str] = None
+
+class LipsyncOutput(BaseModel):
+    video: VideoArtifact
+
+class LipsyncGenerator(BaseGenerator):
+    name = "lipsync"
+    artifact_type = "video"
+    description = "Sync lips in video to audio"
     
-    def __init__(self):
-        self._providers: Dict[str, BaseProvider] = {}
-        self._generators: Dict[str, BaseGenerator] = {}
+    def get_input_schema(self) -> Type[LipsyncInput]:
+        return LipsyncInput
     
-    def register_provider(self, provider: BaseProvider) -> None
-    def register_generator(self, generator: BaseGenerator) -> None
-    def get_provider(self, name: str) -> Optional[BaseProvider]
-    def get_generator(self, name: str) -> Optional[BaseGenerator]
-    def list_providers(self) -> List[str]
-    def list_generators(self, artifact_type: str = None) -> List[str]
+    async def generate(self, inputs: LipsyncInput) -> LipsyncOutput:
+        # Import SDK directly
+        import replicate
+        
+        # System automatically resolves artifacts to file paths
+        audio_file = await resolve_artifact(inputs.audio_source)
+        video_file = await resolve_artifact(inputs.video_source)
+        
+        # Use SDK directly - no wrapper layer
+        result = await replicate.async_run(
+            "replicate/lipsync-model",
+            input={
+                "audio": audio_file,
+                "video": video_file
+            }
+        )
+        
+        # Store output and create artifact
+        video_artifact = await store_video_result(result)
+        return LipsyncOutput(video=video_artifact)
     
-    async def load_from_config(self, config_path: str) -> None
-    async def validate_all_providers(self) -> Dict[str, bool]
+    async def estimate_cost(self, inputs: LipsyncInput) -> float:
+        # Simple cost estimation logic
+        return 0.05  # $0.05 per generation
 ```
 
 ## Configuration System
 
-### Provider Configuration
+### Environment Variables Only
 
-```yaml
-# providers.yaml
-providers:
-  replicate:
-    type: rest_api
-    description: "Replicate.com API access"
-    auth:
-      type: api_key
-      header: "Authorization"
-      prefix: "Bearer "
-    endpoints:
-      base_url: "https://api.replicate.com/v1"
-      models: "/collections/text-to-image/models"
-    generators:
-      - flux-1-1-pro
-      - sdxl
-      
-  fal_ai:
-    type: rest_api  
-    description: "Fal.ai API access"
-    auth:
-      type: api_key
-      header: "Authorization"  
-      prefix: "Key "
-    endpoints:
-      base_url: "https://fal.run"
-    generators:
-      - qwen-image
-      - flux-general
-      
-  openai:
-    type: rest_api
-    description: "OpenAI API access"
-    auth:
-      type: api_key
-      header: "Authorization"
-      prefix: "Bearer "
-    endpoints:
-      base_url: "https://api.openai.com/v1"
-    generators:
-      - dall-e-3
-      - whisper
+```bash
+# .env - Simple environment-based configuration
+REPLICATE_API_TOKEN=r8_your_token_here
+FAL_KEY=your_fal_key_here  
+OPENAI_API_KEY=sk-your_openai_key_here
+ELEVENLABS_API_KEY=your_elevenlabs_key_here
+
+# Optional: Storage configuration
+BOARDS_STORAGE_BACKEND=s3  # or local, gcs, etc.
+AWS_ACCESS_KEY_ID=your_aws_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret
 ```
 
-### Generator Configuration
+**Benefits:**
+- No YAML configuration needed at all
+- Standard environment variable approach
+- Each generator handles its own SDK authentication
+- Simple setup process
 
-```yaml
-# generators.yaml
-generators:
-  flux-1-1-pro:
-    provider: replicate
-    artifact_type: image
-    description: "FLUX.1.1 [pro] by Black Forest Labs"
-    api_spec:
-      endpoint: "/models/black-forest-labs/flux-1.1-pro/predictions"
-      method: POST
-      input_schema:
-        type: object
-        properties:
-          prompt:
-            type: string
-            description: "Text prompt for image generation"
-            required: true
-          aspect_ratio:
-            type: string
-            enum: ["1:1", "16:9", "21:9", "2:3", "3:2", "4:5", "5:4", "9:16", "9:21"]
-            default: "1:1"
-          safety_tolerance:
-            type: integer
-            minimum: 1
-            maximum: 5
-            default: 2
-      output_mapping:
-        storage_url: "output[0]"
-        metadata:
-          model_version: "version"
-          seed: "seed"
-          
-  qwen-image:
-    provider: fal_ai
-    artifact_type: image
-    description: "Qwen image generation via fal.ai"
-    api_spec:
-      endpoint: "/fal-ai/qwen-image"
-      method: POST
-      input_schema:
-        type: object
-        properties:
-          prompt:
-            type: string
-            description: "Image description prompt"
-            required: true
-          image_size:
-            type: string
-            enum: ["square", "portrait", "landscape"]
-            default: "square"
-      output_mapping:
-        storage_url: "images[0].url"
-        metadata:
-          inference_time: "timings.inference"
-```
+## Generator Registry
 
-## REST Spec Generator
-
-A key innovation is the `RestSpecGenerator` - a generic generator that can execute any REST API based on YAML configuration:
+### Simple Discovery System
 
 ```python
-class RestSpecGenerator(BaseGenerator):
-    """Generic generator that executes REST APIs based on YAML specifications"""
+class GeneratorRegistry:
+    def __init__(self):
+        self._generators: Dict[str, BaseGenerator] = {}
     
-    def __init__(self, config: Dict[str, Any], provider: BaseProvider):
-        self.config = config
-        self.provider = provider
-        self.name = config['name']
-        self.artifact_type = config['artifact_type']
-        self.api_spec = config['api_spec']
-        
-    def get_input_schema(self) -> Type[BaseModel]:
-        """Dynamically create Pydantic model from OpenAPI-style schema"""
-        return create_model_from_schema(self.api_spec['input_schema'])
+    def register(self, generator: BaseGenerator) -> None:
+        """Register a generator instance"""
+        self._generators[generator.name] = generator
     
-    async def generate(self, inputs: BaseModel, progress_callback=None) -> BaseModel:
-        """Execute the REST API call as specified in configuration"""
-        
-        # Build request
-        url = f"{self.provider.base_url}{self.api_spec['endpoint']}"
-        payload = inputs.dict()
-        headers = await self.provider.get_auth_headers()
-        
-        # Execute request
-        async with httpx.AsyncClient() as client:
-            response = await client.request(
-                method=self.api_spec['method'],
-                url=url,
-                json=payload,
-                headers=headers
-            )
-            
-        # Handle response
-        result_data = response.json()
-        
-        # Map output using JSONPath expressions
-        output_data = {}
-        for key, path in self.api_spec['output_mapping'].items():
-            output_data[key] = extract_jsonpath(result_data, path)
-            
-        return GenerationOutput(**output_data)
+    def get(self, name: str) -> Optional[BaseGenerator]:
+        """Get generator by name"""
+        return self._generators.get(name)
+    
+    def list_all(self) -> List[BaseGenerator]:
+        """List all registered generators"""
+        return list(self._generators.values())
+    
+    def list_by_artifact_type(self, artifact_type: str) -> List[BaseGenerator]:
+        """List generators that produce specific artifact types"""
+        return [g for g in self._generators.values() 
+                if g.artifact_type == artifact_type]
+
+# Global registry instance
+registry = GeneratorRegistry()
+
+# Generators register themselves on import
+registry.register(LipsyncGenerator())
+registry.register(FluxProGenerator()) 
+registry.register(DallE3Generator())
 ```
 
 ## Directory Structure
 
 ```
 packages/backend/src/boards/
-├── providers/
-│   ├── __init__.py              # Registry exports
-│   ├── base.py                  # BaseProvider abstract class
-│   ├── registry.py              # ProviderRegistry implementation
-│   ├── rest_provider.py         # Generic REST API provider
-│   ├── config_loader.py         # YAML configuration loading
-│   └── builtin/                 # Built-in provider implementations
-│       ├── __init__.py
-│       ├── replicate.py         # Custom Replicate provider (if needed)
-│       ├── openai.py            # Custom OpenAI provider (if needed)
-│       └── fal.py               # Custom Fal.ai provider (if needed)
-│
 ├── generators/
-│   ├── __init__.py              # Registry exports  
+│   ├── __init__.py              # Registry and base exports  
 │   ├── base.py                  # BaseGenerator abstract class
-│   ├── registry.py              # GeneratorRegistry implementation
-│   ├── rest_spec_generator.py   # Generic REST API executor
-│   ├── schema_utils.py          # Dynamic Pydantic model creation
-│   └── builtin/                 # Custom generator implementations
-│       ├── __init__.py
-│       └── comfyui_generator.py # Example custom generator
+│   ├── registry.py              # Generator discovery and management
+│   ├── artifacts.py             # Artifact type definitions
+│   ├── resolution.py            # Artifact resolution utilities
+│   └── implementations/         # Generator implementations
+│       ├── __init__.py          # Registers all generators on import
+│       ├── image/               # Image generators
+│       │   ├── flux_pro.py
+│       │   ├── dalle3.py
+│       │   └── qwen_image.py
+│       ├── video/               # Video generators
+│       │   ├── lipsync.py
+│       │   └── upscale.py
+│       └── audio/               # Audio generators
+│           └── whisper.py
 │
-└── config/
-    ├── providers.yaml           # Provider configurations
-    ├── generators.yaml          # Generator configurations
-    └── examples/                # Example configurations
-        ├── replicate-flux.yaml
-        ├── fal-qwen.yaml
-        └── openai-dalle.yaml
+├── storage/                     # Storage system integration
+│   └── ...                     # (existing pluggable storage)
+│
+└── database/                    # Database models for generations
+    └── ...                     # Generation, Board models, etc.
 ```
 
-## Agentic Integration Strategy
+## Type Safety & Frontend Integration
 
-### 1. Documentation Structure
+### Pydantic → TypeScript Pipeline
 
-Create comprehensive documentation that enables AI agents to add new integrations:
-
-```markdown
-# ADDING_A_GENERATOR.md
-
-## Quick Start for AI Agents
-
-To add a new generator, follow these steps:
-
-1. **Identify the API**: Find the API documentation (e.g., https://replicate.com/black-forest-labs/flux-1.1-pro/api)
-
-2. **Create generator entry**: Add to `config/generators.yaml`:
-   ```yaml
-   generators:
-     your-generator-name:
-       provider: provider-name
-       artifact_type: image|video|audio|text
-       description: "Brief description"
-       api_spec:
-         endpoint: "/path/to/endpoint"
-         method: POST|GET|PUT
-         input_schema:
-           # OpenAPI 3.0 schema definition
-         output_mapping:
-           # JSONPath mappings
-   ```
-
-3. **Test the integration**: Run `boards test-generator your-generator-name`
-
-### API Documentation Templates
-
-The system includes templates for common API patterns that agents can reference:
-
-- `templates/rest-api-generator.yaml` - Standard REST API pattern
-- `templates/replicate-style-generator.yaml` - Replicate.com API pattern  
-- `templates/polling-generator.yaml` - APIs that require polling for results
-```
-
-### 2. Generator Templates
-
-```yaml
-# templates/rest-api-generator.yaml
-generators:
-  template-generator:
-    provider: PROVIDER_NAME
-    artifact_type: ARTIFACT_TYPE  # image, video, audio, text
-    description: "DESCRIPTION"
-    api_spec:
-      endpoint: "API_ENDPOINT_PATH"
-      method: POST
-      input_schema:
-        type: object
-        properties:
-          prompt:
-            type: string
-            description: "Main generation prompt"
-            required: true
-          # ADD_ADDITIONAL_PARAMETERS_HERE
-      output_mapping:
-        storage_url: "OUTPUT_PATH_TO_MEDIA_URL"
-        metadata:
-          # MAP_ADDITIONAL_METADATA_HERE
-```
-
-### 3. Self-Documenting Schema
-
-The system automatically generates documentation from configurations:
-
+1. **Generator defines Pydantic schema**:
 ```python
-@app.get("/api/generators/{generator_name}/schema")
-async def get_generator_schema(generator_name: str):
-    """Return OpenAPI schema for a generator's inputs"""
-    generator = registry.get_generator(generator_name)
-    return generator.get_input_schema().schema()
-
-@app.get("/api/generators")
-async def list_generators():
-    """Return all available generators with their descriptions"""
-    return [
-        {
-            "name": gen.name,
-            "provider": gen.provider,
-            "artifact_type": gen.artifact_type,
-            "description": gen.description,
-            "input_schema": gen.get_input_schema().schema()
-        }
-        for gen in registry.list_all_generators()
-    ]
+class LipsyncInput(BaseModel):
+    audio_source: AudioArtifact
+    video_source: VideoArtifact
+    prompt: Optional[str] = None
 ```
 
-## Implementation Phases
+2. **JSON Schema generation**:
+```python
+@app.get("/api/generators/{name}/input-schema")
+async def get_input_schema(name: str):
+    generator = registry.get_generator(name)
+    return generator.get_input_schema().model_json_schema()
+```
 
-### Phase 1: Core Infrastructure (Week 1-2)
-- [x] Implement base classes and registry system
-- [x] Create configuration loading system
-- [x] Implement RestSpecGenerator
-- [x] Create basic provider implementations (Replicate, Fal.ai, OpenAI)
+3. **Frontend gets TypeScript types** (via user's tooling):
+```typescript
+interface LipsyncInput {
+    audio_source: AudioArtifact;  // Drag/drop knows: audio only
+    video_source: VideoArtifact;  // Drag/drop knows: video only  
+    prompt?: string;              // Text input field
+}
+```
 
-### Phase 2: Integration & Testing (Week 3)
-- [ ] Integrate with existing GraphQL schema
-- [ ] Add provider/generator management to admin interface
-- [ ] Implement comprehensive test suite
-- [ ] Create CLI tools for testing integrations
+4. **UI auto-generates** from schema:
+   - Artifact fields → drag/drop zones with type validation
+   - String fields → text inputs
+   - Enums → select dropdowns
+   - Optional fields → collapsible sections
 
-### Phase 3: Documentation & Examples (Week 4)
-- [ ] Write comprehensive documentation for adding providers/generators
-- [ ] Create example integrations for popular services
-- [ ] Develop agentic integration guides
-- [ ] Create video tutorials
+## Adding New Generators
 
-### Phase 4: Advanced Features (Week 5-6)
-- [ ] Implement cost estimation and credit tracking
-- [ ] Add support for streaming/progress callbacks
-- [ ] Implement caching for repeated generations
-- [ ] Add support for batch operations
+### Simple Process for Developers
 
-## Security Considerations
+1. **Create Pydantic input/output schemas**:
+```python
+class MyGeneratorInput(BaseModel):
+    prompt: str
+    image_input: Optional[ImageArtifact] = None
+    
+class MyGeneratorOutput(BaseModel):
+    result: ImageArtifact
+```
 
-### API Key Management
-- Never store API keys in configuration files
-- Use environment variables or secure key management services
-- Implement key rotation capabilities
-- Support multiple authentication methods per provider
+2. **Implement generator class**:
+```python
+class MyGenerator(BaseGenerator):
+    name = "my-generator"
+    provider = "replicate"
+    artifact_type = "image"
+    description = "My custom generator"
+    
+    def get_input_schema(self) -> Type[MyGeneratorInput]:
+        return MyGeneratorInput
+        
+    async def generate(self, inputs: MyGeneratorInput) -> MyGeneratorOutput:
+        # Use provider SDK + artifact resolution
+        # Return structured output
+```
 
-### Input Validation
-- Validate all inputs against provider-specific schemas
-- Implement rate limiting and quota management
-- Sanitize user inputs to prevent injection attacks
-- Log all generation requests for audit purposes
+3. **Register with system** (happens automatically via discovery or manual registration)
 
-### Output Handling
-- Validate generated content before storage
-- Implement content filtering and moderation
-- Support different storage backends for sensitive content
-- Maintain audit trail of all generation activities
+4. **Frontend automatically gets**:
+   - TypeScript types for the input schema
+   - Drag/drop UI for artifact inputs
+   - Form fields for primitive inputs
 
-## Monitoring & Observability
+## Key Benefits
 
-### Metrics Collection
-- Track generation success/failure rates per provider
-- Monitor API response times and error rates
-- Collect cost and usage statistics
-- Track user adoption of different generators
+### For Developers
+- **Minimal Code**: Only Pydantic schemas + simple generation logic
+- **Type Safety**: Full-stack type safety from Python to TypeScript
+- **Direct SDKs**: Use any provider SDK directly with no wrappers
+- **Auto UI**: Frontend generation forms created automatically
+- **No Configuration**: Just environment variables, no YAML needed
 
-### Logging Strategy
-- Structured logging with correlation IDs
-- Separate logs for business logic vs. technical issues
-- Log level configuration per provider
-- Integration with centralized logging systems
+### For Users  
+- **Simple Setup**: Just set environment variables for API keys
+- **Drag/Drop UX**: Type-safe artifact connections between generators
+- **Provider Agnostic**: Use any combination of services (Replicate, OpenAI, Fal, etc.)
+- **Extensible**: Easy to add custom generators
 
-## Migration & Compatibility
-
-### Backward Compatibility
-- Maintain compatibility with existing generation jobs
-- Support gradual migration from hardcoded integrations
-- Version configuration schemas appropriately
-- Provide migration tools for existing data
-
-### Future Extensibility
-- Design for additional artifact types (3D models, animations)
-- Support for complex multi-step workflows
-- Integration with local/on-premise generation services
-- Support for custom preprocessing/postprocessing pipelines
+### For the System
+- **Storage Integration**: Automatic artifact storage and retrieval  
+- **Database Integration**: Generation history and metadata tracking
+- **Billing Integration**: Cost estimation and credit tracking
+- **GraphQL API**: Structured data access for frontend
 
 ## Success Criteria
 
-1. **Developer Experience**: Adding a new REST API generator takes < 15 minutes
-2. **AI Agent Compatibility**: Agents can successfully add new generators using only documentation
-3. **Performance**: No significant overhead compared to hardcoded integrations
-4. **Reliability**: 99.9% uptime for core registry and execution systems
-5. **Adoption**: 80% of new generators use the configuration-based approach within 3 months
+1. **Generator Creation**: Adding a new generator requires < 50 lines of Python code
+2. **Type Safety**: Zero runtime type errors between frontend/backend  
+3. **Performance**: Artifact resolution adds < 100ms overhead per generation
+4. **Developer Experience**: New developers can add generators in < 30 minutes
 
-This design provides a robust, extensible foundation for the Boards providers and generators system while maintaining the flexibility and ease-of-use required for rapid AI-driven development.
+This simplified design focuses on the core value: making it trivial to add new AI generation capabilities while maintaining full type safety and excellent developer experience.
