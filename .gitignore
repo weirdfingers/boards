@@ -88,3 +88,6 @@ docker-compose.override.yml
 
 # Docusaurus
 apps/docs/.docusaurus/
+
+# storage
+ungitable/

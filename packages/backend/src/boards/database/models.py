@@ -1,3 +1,5 @@
+# type: ignore[reportMissingImports]
+
 """
 Compatibility shim: re-export models from boards.dbmodels
 This file remains to avoid breaking existing imports like `from boards.database.models import ...`.
