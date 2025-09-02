@@ -154,12 +154,18 @@ class TestS3StorageProvider:
 
     @pytest.mark.asyncio
     async def test_get_presigned_download_url_with_cloudfront(self, s3_provider_with_cloudfront):
-        """Test presigned download URL returns CloudFront URL when configured."""
+        """Test presigned download URL uses native S3 signing even with CloudFront configured."""
         test_key = "test/file.txt"
+        test_url = "https://test-bucket.s3.amazonaws.com/presigned-download"
 
-        result = await s3_provider_with_cloudfront.get_presigned_download_url(test_key)
+        with patch.object(s3_provider_with_cloudfront, "_get_session") as mock_session:
+            mock_client = AsyncMock()
+            mock_client.generate_presigned_url.return_value = test_url
+            mock_session.return_value.client.return_value.__aenter__.return_value = mock_client
 
-        assert result == f"https://d123456.cloudfront.net/{test_key}"
+            result = await s3_provider_with_cloudfront.get_presigned_download_url(test_key)
+
+            assert result == test_url
 
     @pytest.mark.asyncio
     async def test_delete_success(self, s3_provider):

@@ -3,13 +3,10 @@
 import json
 import logging
 import os
-import tempfile
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
-import aiofiles
 
 if TYPE_CHECKING:
     from google.cloud import storage
@@ -114,7 +111,7 @@ class GCSStorageProvider(StorageProvider):
 
         return self._client
 
-    async def _run_sync(self, func, *args, **kwargs):
+    async def _run_sync(self, func, *args, **kwargs) -> Any:
         """Run synchronous GCS operations in thread pool."""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, func, *args, **kwargs)
@@ -157,21 +154,20 @@ class GCSStorageProvider(StorageProvider):
             if isinstance(content, bytes):
                 file_content = content
             else:
-                # Stream to temp file for large uploads
-                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    tmp_file_path = tmp_file.name
-
-                # Use async file operations for streaming content
-                async with aiofiles.open(tmp_file_path, "wb") as f:
-                    async for chunk in content:
-                        await f.write(chunk)
-
-                # Read the temp file asynchronously
-                async with aiofiles.open(tmp_file_path, "rb") as f:
-                    file_content = await f.read()
-
-                # Clean up temp file
-                os.unlink(tmp_file_path)
+                # Collect streaming content into memory for upload
+                # For very large files, consider using resumable uploads
+                chunks = []
+                total_size = 0
+                async for chunk in content:
+                    chunks.append(chunk)
+                    total_size += len(chunk)
+                    # For files larger than 100MB, we could implement resumable upload
+                    if total_size > 100 * 1024 * 1024:
+                        logger.warning(
+                            f"Large file upload ({total_size} bytes) - consider implementing resumable upload for key: {key}"
+                        )
+                
+                file_content = b"".join(chunks)
 
             # Upload using thread pool to avoid blocking
             await self._run_sync(
@@ -257,10 +253,7 @@ class GCSStorageProvider(StorageProvider):
             expires_in = timedelta(hours=1)
 
         try:
-            # If using CDN, return the CDN URL (in production, you'd want signed URLs for CDN too)
-            if self.cdn_domain:
-                return f"https://{self.cdn_domain}/{key}"
-
+            # Always use GCS native signed URLs for security
             # Get client (initializes on first use)
             client = self._get_client()
             bucket = client.bucket(self.bucket_name)

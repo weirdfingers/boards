@@ -1,13 +1,9 @@
 """AWS S3 storage provider with IAM auth and CloudFront CDN support."""
 
 import logging
-import os
-import tempfile
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
-
-import aiofiles
 
 if TYPE_CHECKING:
     import boto3
@@ -116,22 +112,20 @@ class S3StorageProvider(StorageProvider):
             if isinstance(content, bytes):
                 upload_params["Body"] = content
             else:
-                # Stream to temp file to handle large uploads efficiently
-                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    tmp_file_path = tmp_file.name
-
-                # Use async file operations for streaming content
-                async with aiofiles.open(tmp_file_path, "wb") as f:
-                    async for chunk in content:
-                        await f.write(chunk)
-
-                # Read the temp file asynchronously and upload
-                async with aiofiles.open(tmp_file_path, "rb") as f:
-                    file_content = await f.read()
-                    upload_params["Body"] = file_content
-
-                # Clean up temp file
-                os.unlink(tmp_file_path)
+                # Collect streaming content into memory for upload
+                # For very large files, consider using S3 multipart upload
+                chunks = []
+                total_size = 0
+                async for chunk in content:
+                    chunks.append(chunk)
+                    total_size += len(chunk)
+                    # For files larger than 100MB, we could implement multipart upload
+                    if total_size > 100 * 1024 * 1024:
+                        logger.warning(
+                            f"Large file upload ({total_size} bytes) - consider implementing multipart upload for key: {key}"
+                        )
+                
+                upload_params["Body"] = b"".join(chunks)
 
             # Upload using aioboto3
             async with session.client(
@@ -221,11 +215,7 @@ class S3StorageProvider(StorageProvider):
             expires_in = timedelta(hours=1)
 
         try:
-            # If using CloudFront, use CloudFront signed URLs for better performance
-            if self.cloudfront_domain:
-                # For now, return the CloudFront URL (in production, you'd want CloudFront signed URLs)
-                return f"https://{self.cloudfront_domain}/{key}"
-
+            # Always use S3 native presigned URLs for security
             session = self._get_session()
             async with session.client(
                 "s3", config=self.config, endpoint_url=self.endpoint_url
