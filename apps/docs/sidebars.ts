@@ -35,6 +35,20 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Generators',
+      collapsed: false,
+      items: [
+        'generators/overview',
+        'generators/getting-started',
+        'generators/creating-generators', 
+        'generators/artifact-types',
+        'generators/testing',
+        'generators/examples',
+        'generators/api-reference',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Providers',
       collapsed: true,
       items: [
