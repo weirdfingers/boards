@@ -1,0 +1,19 @@
+---
+description: Run backend and frontend tests via the project Makefile
+alwaysApply: false
+---
+
+# Tests (Backend + Frontend)
+
+Use the root Makefile target to run all tests across the monorepo.
+
+- Backend: Python tests via pytest (run under uv-managed envs)
+- Frontend: Workspace test scripts via Turbo/pnpm
+
+Command (run at repository root):
+
+```bash
+make test
+```
+
+Reference: [Makefile](mdc:Makefile) target `test`.

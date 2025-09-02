@@ -3,10 +3,11 @@ Whisper audio transcription using OpenAI API.
 
 Demonstrates audio processing generator that outputs text.
 """
+
 from typing import Type
 from pydantic import BaseModel, Field
 
-from ...base import BaseGenerator
+from ...base import BaseGenerator, GeneratorExecutionContext
 from ...artifacts import AudioArtifact, TextArtifact
 from ...resolution import resolve_artifact
 from ...registry import registry
@@ -14,59 +15,65 @@ from ...registry import registry
 
 class WhisperInput(BaseModel):
     """Input schema for Whisper transcription."""
+
     audio_source: AudioArtifact = Field(description="Audio file to transcribe")
-    language: str = Field(default="en", description="Language code (e.g., 'en', 'es', 'fr')")
-    prompt: str = Field(default="", description="Optional prompt to guide transcription")
+    language: str = Field(
+        default="en", description="Language code (e.g., 'en', 'es', 'fr')"
+    )
+    prompt: str = Field(
+        default="", description="Optional prompt to guide transcription"
+    )
 
 
 class WhisperOutput(BaseModel):
     """Output schema for Whisper transcription."""
+
     text: TextArtifact
 
 
 class WhisperGenerator(BaseGenerator):
     """Whisper speech-to-text transcription using OpenAI API."""
-    
+
     name = "whisper"
     artifact_type = "text"
     description = "OpenAI Whisper - speech-to-text transcription"
-    
+
     def get_input_schema(self) -> Type[WhisperInput]:
         return WhisperInput
-    
+
     def get_output_schema(self) -> Type[WhisperOutput]:
         return WhisperOutput
-    
-    async def generate(self, inputs: WhisperInput) -> WhisperOutput:
+
+    async def generate(
+        self, inputs: WhisperInput, context: GeneratorExecutionContext
+    ) -> WhisperOutput:
         """Transcribe audio using OpenAI Whisper."""
         try:
             from openai import AsyncOpenAI  # type: ignore
         except ImportError:
             raise ValueError("Required dependencies not available")
-        
+
         client = AsyncOpenAI()
-        
-        # Resolve audio artifact to file path
-        audio_file_path = await resolve_artifact(inputs.audio_source)
-        
+
+        # Resolve audio artifact to file path via context
+        audio_file_path = await context.resolve_artifact(inputs.audio_source)
+
         # Use OpenAI SDK for transcription
         with open(audio_file_path, "rb") as audio_file:
             transcript = await client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file,
                 language=inputs.language,
-                prompt=inputs.prompt
+                prompt=inputs.prompt,
             )
-        
+
         # Create text artifact
         text_artifact = TextArtifact(
-            generation_id="temp_gen_id",  # TODO: Get from context
-            content=transcript.text,
-            format="plain"
+            generation_id=context.generation_id, content=transcript.text, format="plain"
         )
-        
+
         return WhisperOutput(text=text_artifact)
-    
+
     async def estimate_cost(self, inputs: WhisperInput) -> float:
         """Estimate cost for Whisper transcription."""
         # Whisper pricing is $0.006 per minute

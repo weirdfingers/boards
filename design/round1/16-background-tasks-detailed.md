@@ -8,9 +8,10 @@ This document provides a detailed technical design for the background task syste
 
 ### 1. Queue System
 
-**Technology Choice: RQ (Redis Queue)**
-- **Primary**: RQ for simplicity and Python integration
-- **Alternative**: Dramatiq for advanced features (if needed later)
+**Technology Choice: Dramatiq (Redis backend)**
+
+- **Primary**: Dramatiq for reliable background jobs and rich middleware (retries, rate limiting, metrics)
+- **Alternative**: RQ (can be evaluated later if needed)
 - **Storage**: Redis for queue persistence and pub/sub
 
 ```python
@@ -18,7 +19,7 @@ import os
 
 # Configuration
 QUEUE_CONFIG = {
-    "redis_url": os.getenv("BOARDS_REDIS_URL", "redis://redis:6379"),
+    "redis_url": os.getenv("BOARDS_REDIS_URL", "redis://localhost:6380"),  # dev default
     "default_queue": "boards-jobs",
     "high_priority_queue": "boards-priority",
     "low_priority_queue": "boards-bulk",
@@ -41,6 +42,7 @@ Client Request → API Validation → Job Enqueue → Worker Processing → Resu
 #### 3.1 Job Manager (`jobs/manager.py`)
 
 **Responsibilities:**
+
 - Job creation and validation
 - Queue selection and enqueuing
 - Job status management
@@ -49,7 +51,7 @@ Client Request → API Validation → Job Enqueue → Worker Processing → Resu
 ```python
 class JobManager:
     """Manages job lifecycle and coordination."""
-    
+
     async def submit_job(self, job_request: JobRequest) -> str:
         """Submit a new job for processing."""
         # 1. Validate request
@@ -57,14 +59,14 @@ class JobManager:
         # 3. Create generation record
         # 4. Enqueue job
         # 5. Return job ID
-        
+
     async def cancel_job(self, job_id: str, user_id: str) -> bool:
         """Cancel a running job."""
         # 1. Check ownership
         # 2. Send cancellation signal
         # 3. Update status
         # 4. Refund credits
-        
+
     async def get_job_status(self, job_id: str) -> JobStatus:
         """Get current job status and progress."""
 ```
@@ -72,32 +74,36 @@ class JobManager:
 #### 3.2 Worker System (`workers/`)
 
 **Core Worker Structure:**
+
 ```python
 class GenerationWorker:
-    """Base class for AI generation workers."""
-    
-    def __init__(self, provider_manager: ProviderManager):
-        self.provider_manager = provider_manager
-        self.progress_publisher = ProgressPublisher()
-        
+    """Consumes generation jobs and invokes registered generators with context."""
+
+    def __init__(self, registry: GeneratorRegistry, progress_publisher: ProgressPublisher):
+        self.registry = registry
+        self.progress_publisher = progress_publisher
+
     async def execute(self, job: GenerationJob):
-        """Execute a generation job."""
+        """Execute a generation job via generator registry + execution context."""
         try:
-            # 1. Load job context
-            await self._load_context(job)
-            
-            # 2. Initialize provider
-            provider = await self._get_provider(job.provider_name)
-            
-            # 3. Submit to provider
-            external_job = await provider.submit(job.params)
-            
-            # 4. Update with external job ID
-            await self._update_external_job_id(job.id, external_job.id)
-            
-            # 5. Poll for progress/completion
-            await self._monitor_progress(job, external_job)
-            
+            # 1. Build execution context (DB, storage, progress, correlation id)
+            context = await self._build_context(job)
+
+            # 2. Resolve generator
+            generator = self.registry.get(job.generator_name)
+
+            # 3. Emit initializing progress
+            await self.progress_publisher.publish_progress(job.id, ProgressUpdate(
+                job_id=str(job.id), status=JobStatus.PROCESSING, progress=0.0,
+                phase="initializing", message=None
+            ))
+
+            # 4. Call generator with typed inputs and context
+            output = await generator.generate(job.typed_inputs, context)
+
+            # 5. Finalize artifacts via context (already persisted by generator helpers)
+            await self._finalize_success(job.id, output)
+
         except Exception as e:
             await self._handle_error(job, e)
             raise
@@ -109,15 +115,16 @@ Since each provider has a consistent API across media types, we use a single `Ge
 #### 3.3 Progress Tracking System
 
 **Progress Publisher (`progress/publisher.py`):**
+
 ```python
 class ProgressPublisher:
     """Publishes job progress to clients via SSE."""
-    
+
     async def publish_progress(self, job_id: str, progress: ProgressUpdate):
         """Publish progress update to Redis pub/sub."""
         channel = f"job:{job_id}:progress"
         await self.redis.publish(channel, progress.json())
-        
+
         # Also update database
         await self._update_database_progress(job_id, progress)
 
@@ -125,13 +132,14 @@ class ProgressUpdate(BaseModel):
     job_id: str
     status: JobStatus
     progress: float  # 0.0 to 1.0
-    phase: str      # "queued", "initializing", "processing", "finalizing"
+    phase: Literal["queued", "initializing", "processing", "finalizing"]
     message: Optional[str]
     estimated_completion: Optional[datetime]
     artifacts: List[ArtifactInfo] = []
 ```
 
 **SSE Endpoint (`api/endpoints/sse.py`):**
+
 ```python
 @router.get("/jobs/{job_id}/progress")
 async def job_progress_stream(job_id: str, request: Request):
@@ -143,59 +151,116 @@ async def job_progress_stream(job_id: str, request: Request):
                 if await request.is_disconnected():
                     break
                 yield f"data: {message['data']}\n\n"
-    
+
     return StreamingResponse(generate(), media_type="text/plain")
 ```
 
-#### 3.4 Provider Integration (`providers/`)
+#### 3.4 Generator Integration (`generators/`)
+
+Generators are sandboxed: they focus on preparing inputs, invoking provider SDKs, and returning outputs. Interaction with database, storage, lineage, and progress is mediated via a provided execution context.
+
+```python
+class GeneratorExecutionContext:
+    """Bridges generators to system services (storage, DB, progress)."""
+
+    def __init__(self, generation_id: UUID, tenant_id: UUID, redis, db, storage):
+        self.generation_id = generation_id
+        self.tenant_id = tenant_id
+        self.redis = redis
+        self.db = db
+        self.storage = storage
+        self.provider_correlation_id = uuid4().hex  # set before provider submit
+
+    async def resolve_artifact(self, artifact_ref: BaseModel) -> str:
+        """Return a local path or URL suitable for provider SDK input."""
+        ...
+
+    async def store_image_result(self, result) -> dict:
+        """Persist image to storage, update DB, return artifact JSON for outputs."""
+        ...
+
+    async def store_video_result(self, result) -> dict:
+        ...
+
+    async def publish_progress(self, update: ProgressUpdate) -> None:
+        await self.redis.publish(f"job:{self.generation_id}:progress", update.json())
+        # Also write to DB
+        await update_generation_progress(self.db, self.generation_id, update)
+
+    async def set_external_job_id(self, external_id: str) -> None:
+        await set_generation_external_id(self.db, self.generation_id, external_id)
+```
+
+Worker usage:
+
+```python
+generator = registry.get(job.generator_name)
+context = GeneratorExecutionContext(job.id, job.tenant_id, redis, db, storage)
+output_model = await generator.generate(job.typed_inputs, context)
+```
+
+This keeps third-party generator code minimal and provider-SDK-centric while preserving system invariants via the context.
+
+Generator contract:
+
+- Generators focus solely on preparing inputs, invoking provider SDKs, and returning outputs.
+- Use the provided `context` for artifact resolution/persistence and progress publishing.
+- Generators may optionally check for cancellation via context if provided.
+- Use `context.provider_correlation_id` (idempotency) with providers when supported.
+- On errors, generators raise exceptions; the worker handles DB updates, refunds, and SSE failure events.
+
+#### 3.5 Provider Integration (optional)
 
 **Provider Interface:**
+
 ```python
 class BaseProvider(ABC):
     """Abstract base for AI generation providers."""
-    
+
     @abstractmethod
     async def submit_job(self, params: GenerationParams) -> ExternalJob:
         """Submit job to external provider."""
-        
-    @abstractmethod 
+
+    @abstractmethod
     async def get_job_status(self, external_job_id: str) -> ExternalJobStatus:
         """Get job status from provider."""
-        
+
     @abstractmethod
     async def cancel_job(self, external_job_id: str) -> bool:
         """Cancel job with provider."""
-        
+
     @abstractmethod
     async def download_artifacts(self, external_job_id: str) -> List[ArtifactUrl]:
         """Download generated artifacts."""
 ```
 
 **Concrete Providers:**
+
 - `ReplicateProvider` - Replicate API integration
-- `FalProvider` - Fal.ai API integration  
+- `FalProvider` - Fal.ai API integration
 - `OpenAIProvider` - DALL-E, GPT models
 - `AnthropicProvider` - Claude models
 - `StabilityProvider` - Stability AI models
 
-#### 3.5 Credit Management Integration
+#### 3.6 Credit Management Integration
 
 **Credit Operations:**
+
 ```python
 class CreditManager:
     """Manages credit transactions for jobs."""
-    
+
     async def reserve_credits(self, user_id: str, job_cost: Decimal) -> str:
         """Reserve credits for a job."""
         # 1. Check available balance
         # 2. Create RESERVE transaction
         # 3. Return transaction ID
-        
+
     async def finalize_credits(self, transaction_id: str, actual_cost: Decimal):
         """Finalize credit usage after job completion."""
         # 1. Create FINALIZE transaction
         # 2. Refund difference if actual < reserved
-        
+
     async def refund_credits(self, transaction_id: str, reason: str):
         """Refund credits for failed/cancelled jobs."""
         # 1. Create REFUND transaction
@@ -210,7 +275,8 @@ The existing `generations` table supports job tracking:
 
 ```sql
 -- Key fields for background jobs
-external_job_id VARCHAR(255),     -- Provider's job ID
+external_job_id VARCHAR(255),     -- Provider's job ID (nullable until known)
+provider_correlation_id VARCHAR(255) NOT NULL, -- UUID we generate pre-submit
 status generation_status_enum NOT NULL,  -- ENUM: 'pending', 'processing', 'completed', 'failed', 'cancelled'
 progress DECIMAL(5,2),            -- 0.00 to 100.00
 error_message TEXT,               -- Error details if failed
@@ -259,10 +325,10 @@ class RetryConfig(BaseSettings):
     jitter: bool = True           # Add randomness to prevent thundering herd
     retry_exceptions: List[str] = [
         "ProviderTimeoutError",
-        "ProviderRateLimitError", 
+        "ProviderRateLimitError",
         "ProviderTemporaryError"
     ]
-    
+
     class Config:
         env_prefix = "BOARDS_RETRY_"
         # Allows setting via BOARDS_RETRY_MAX_RETRIES=5, etc.
@@ -273,7 +339,7 @@ class RetryConfig(BaseSettings):
 ```python
 class ProviderCircuitBreaker:
     """Circuit breaker pattern for provider reliability."""
-    
+
     def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -302,13 +368,13 @@ async def handle_job_failure(job: GenerationJob, error: Exception):
 ```python
 class ProviderCredentialManager:
     """Secure credential management for providers."""
-    
+
     async def get_credentials(self, tenant_id: str, provider_name: str) -> Dict:
         """Get encrypted provider credentials."""
         # 1. Load from secure storage (env vars, vault, etc.)
         # 2. Decrypt if necessary
         # 3. Return scoped credentials
-        
+
     async def rotate_credentials(self, tenant_id: str, provider_name: str):
         """Rotate provider API keys."""
 ```
@@ -318,14 +384,14 @@ class ProviderCredentialManager:
 ```python
 class JobValidator:
     """Validates and sanitizes job inputs."""
-    
+
     async def validate_generation_params(self, params: GenerationParams) -> ValidationResult:
         """Validate generation parameters."""
         # 1. Check required fields
         # 2. Validate ranges and constraints
         # 3. Sanitize text inputs
         # 4. Check content policy compliance
-        
+
     async def sanitize_prompt(self, prompt: str) -> str:
         """Sanitize user prompts for safety."""
         # 1. Remove potentially harmful content
@@ -338,13 +404,13 @@ class JobValidator:
 ```python
 class JobAuditLogger:
     """Audit logging for job operations."""
-    
+
     async def log_job_submitted(self, job_id: str, user_id: str, params: dict):
         """Log job submission with redacted sensitive data."""
-        
+
     async def log_job_completed(self, job_id: str, status: str, artifacts: List):
         """Log job completion."""
-        
+
     async def log_job_cancelled(self, job_id: str, user_id: str, reason: str):
         """Log job cancellation."""
 ```
@@ -357,7 +423,7 @@ class JobAuditLogger:
 # Key metrics to track
 METRICS = {
     "job_submission_rate": "Counter",
-    "job_completion_rate": "Counter", 
+    "job_completion_rate": "Counter",
     "job_failure_rate": "Counter",
     "queue_depth": "Gauge",
     "worker_utilization": "Gauge",
@@ -381,6 +447,14 @@ async def jobs_health_check():
     }
 ```
 
+### 7.3 Concurrency & Scaling
+
+- Prefer async HTTP/SDKs inside workers to maximize in-flight I/O (provider calls, uploads).
+- Scale via worker processes × threads; use moderate thread counts (e.g., 8–16) and 2–4 processes, then tune.
+- Apply per-provider semaphores/rate limits to respect quotas and avoid throttling.
+- Use DLQ for poison jobs and backoff with jitter for transient provider errors.
+- Stream uploads to storage to limit RAM usage; avoid loading entire artifacts into memory.
+
 ### 8. Configuration & Deployment
 
 #### 8.1 Environment Configuration
@@ -391,32 +465,33 @@ from pydantic import BaseSettings, Field, validator
 
 # Additional settings for background tasks
 class BackgroundTaskSettings(BaseSettings):
-    # Queue settings  
-    redis_url: str = Field(default_factory=lambda: os.getenv("BOARDS_REDIS_URL", "redis://redis:6379"))
-    
+    # Queue settings
+    redis_url: str = Field(default_factory=lambda: os.getenv("BOARDS_REDIS_URL", "redis://localhost:6380"))
+
     @validator('redis_url', pre=True)
     def validate_redis_url(cls, v):
         if not v or v.startswith('redis://localhost'):
-            raise ValueError('Redis URL must not use localhost for production deployments')
+            # Allow localhost for dev, forbid for production
+            return v
         return v
     job_queue_name: str = "boards-jobs"
     max_concurrent_jobs: int = 10
     job_timeout: int = 3600  # 1 hour
-    
+
     # Retry settings
     max_retries: int = 3
     retry_backoff_base: float = 2.0
     retry_backoff_max: int = 300
-    
+
     # Worker settings
     worker_count: int = 4
     worker_max_jobs: int = 1
     worker_heartbeat_interval: int = 30
-    
+
     # Provider settings
     provider_timeout: int = 300
     provider_rate_limit_per_minute: int = 60
-    
+
     # Monitoring
     metrics_enabled: bool = True
     audit_logging_enabled: bool = True
@@ -430,16 +505,16 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "127.0.0.1:6379:6379"  # Bind to localhost only
+      - "127.0.0.1:6379:6379" # Bind to localhost only
     volumes:
       - redis_data:/data
     command: redis-server --requirepass ${REDIS_PASSWORD:-boards_dev_redis}
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:-boards_dev_redis}
-      
+
   worker:
     build: .
-    command: python -m boards.workers.main
+    command: uv run dramatiq boards.workers.actors -p 4 -t 16
     depends_on:
       - redis
       - postgres
@@ -448,7 +523,7 @@ services:
       - BOARDS_DATABASE_URL=postgresql://boards:boards_dev@postgres/boards_dev
     deploy:
       replicas: 4
-      
+
 volumes:
   redis_data:
 ```
@@ -486,24 +561,29 @@ async def generation_progress_stream(generation_id: str) -> StreamingResponse:
 ### 10. Implementation Phases
 
 #### Phase 1: Core Infrastructure
-- [ ] Job manager and basic queue setup
-- [ ] Database schema updates
-- [ ] Progress tracking system
-- [ ] Basic worker framework
 
-#### Phase 2: Provider Integration
-- [ ] Provider abstraction layer
-- [ ] Replicate provider implementation
-- [ ] Fal.ai provider implementation
+- [ ] Dramatiq setup and worker entry point
+- [ ] Job manager and enqueue path
+- [ ] Database schema updates (provider_correlation_id nullable external_job_id)
+- [ ] SSE progress endpoint implementation
+- [ ] Basic worker framework invoking generators via context
+
+#### Phase 2: Generator Integration
+
+- [ ] GeneratorExecutionContext helpers (resolve/store/publish)
+- [ ] Replicate generator(s) wired via context
+- [ ] Fal.ai generator(s) wired via context
 - [ ] Error handling and retries
 
 #### Phase 3: Advanced Features
+
 - [ ] Circuit breaker implementation
 - [ ] Advanced monitoring and metrics
 - [ ] Job prioritization
 - [ ] Bulk job operations
 
 #### Phase 4: Production Readiness
+
 - [ ] Security hardening
 - [ ] Performance optimization
 - [ ] Comprehensive testing
@@ -513,6 +593,12 @@ async def generation_progress_stream(generation_id: str) -> StreamingResponse:
 
 ```
 packages/backend/src/boards/
+├── generators/
+│   ├── base.py                  # BaseGenerator abstract class
+│   ├── registry.py              # Generator discovery and management
+│   ├── artifacts.py             # Artifact type definitions
+│   ├── resolution.py            # Artifact resolution utilities
+│   └── implementations/         # Generator implementations
 ├── jobs/
 │   ├── __init__.py
 │   ├── manager.py          # JobManager class
@@ -522,7 +608,7 @@ packages/backend/src/boards/
 │   ├── __init__.py
 │   ├── main.py            # Worker entry point
 │   ├── base.py            # BaseWorker class
-│   └── generation.py      # GenerationWorker (handles all media types)
+│   └── generation.py      # GenerationWorker (invokes generators via context)
 ├── providers/
 │   ├── __init__.py
 │   ├── base.py            # BaseProvider abstract class

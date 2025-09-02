@@ -1,0 +1,19 @@
+---
+description: Typecheck backend and frontend using the project Makefile
+alwaysApply: false
+---
+
+# Typechecking (Backend + Frontend)
+
+Use the root Makefile target to typecheck the entire monorepo.
+
+- Backend: Python type checking via Pyright (run under uv-managed envs)
+- Frontend: TypeScript type checking via workspace scripts
+
+Command (run at repository root):
+
+```bash
+make typecheck
+```
+
+Reference: [Makefile](mdc:Makefile) target `typecheck`.

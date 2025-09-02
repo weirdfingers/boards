@@ -80,3 +80,5 @@ make clean              # Remove all build artifacts and dependencies
 Local development uses Docker Compose with:
 - PostgreSQL 15 on port 5433 (user: boards, password: boards_dev, database: boards_dev)
 - Redis 7 on port 6380
+- to typecheck the backend and frontend, run `make typecheck` at the root of the project
+- to run tests for the backend and frontend, run `make test` at the root of the project
