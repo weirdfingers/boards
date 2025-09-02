@@ -1,0 +1,65 @@
+generators:
+  - name: flux-1.1-pro
+    display_name: Flux 1.1 Pro
+    artifact_type: image
+    provider: replicate
+    docs: https://replicate.com/black-forest-labs/flux-1.1-pro/api
+    io:
+      input_schema:
+        type: object
+        properties:
+          prompt: { type: string }
+          width: { type: integer, default: 1024 }
+          height: { type: integer, default: 1024 }
+        required: [prompt]
+      output_schema:
+        type: object
+        properties:
+          images: { type: array, items: { type: string, format: uri } }
+    execution:
+      type: rest
+      submit:
+        method: POST
+        path: /predictions
+        json:
+          version: "<model-version-hash>"
+          input:
+            prompt: "${input.prompt}"
+            width: "${input.width}"
+            height: "${input.height}"
+      poll:
+        method: GET
+        path: /predictions/${job.id}
+      extract:
+        output_paths: ["output"]
+
+  - name: qwen-image
+    display_name: Qwen Image
+    artifact_type: image
+    provider: fal
+    docs: https://fal.ai/models/fal-ai/qwen-image/api
+    io:
+      input_schema:
+        type: object
+        properties:
+          prompt: { type: string }
+          size: { type: string, enum: ["1024x1024", "768x768"], default: "1024x1024" }
+        required: [prompt]
+      output_schema:
+        type: object
+        properties:
+          images: { type: array, items: { type: string, format: uri } }
+    execution:
+      type: rest
+      submit:
+        method: POST
+        path: /api/v1/models/fal-ai/qwen-image
+        json:
+          input:
+            prompt: "${input.prompt}"
+            size: "${input.size}"
+      poll:
+        method: GET
+        path: /api/v1/jobs/${job.id}
+      extract:
+        output_paths: ["data.images"]

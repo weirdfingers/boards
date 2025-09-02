@@ -1,0 +1,11 @@
+providers:
+  replicate:
+    type: replicate
+    config:
+      base_url: https://api.replicate.com/v1
+      api_key_env: REPLICATE_API_TOKEN
+  fal:
+    type: fal
+    config:
+      base_url: https://fal.run
+      api_key_env: FAL_KEY
