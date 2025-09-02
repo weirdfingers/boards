@@ -20,6 +20,24 @@ except ImportError:
     _supabase_available = False
     logger.warning("Supabase storage not available - install supabase-py to enable")
 
+try:
+    from .implementations.s3 import S3StorageProvider
+
+    _s3_available = True
+except ImportError:
+    S3StorageProvider = None
+    _s3_available = False
+    logger.warning("S3 storage not available - install boto3 and aioboto3 to enable")
+
+try:
+    from .implementations.gcs import GCSStorageProvider
+
+    _gcs_available = True
+except ImportError:
+    GCSStorageProvider = None
+    _gcs_available = False
+    logger.warning("GCS storage not available - install google-cloud-storage to enable")
+
 
 def create_storage_provider(
     provider_type: str, config: Dict[str, Any]
@@ -47,8 +65,17 @@ def create_storage_provider(
             )
         return _create_supabase_provider(config)
     elif provider_type == "s3":
-        # S3 provider would be implemented here
-        raise NotImplementedError("S3 storage provider not yet implemented")
+        if not _s3_available:
+            raise ImportError(
+                "S3 storage requires boto3 and aioboto3. Install with: pip install boto3 aioboto3"
+            )
+        return _create_s3_provider(config)
+    elif provider_type == "gcs":
+        if not _gcs_available:
+            raise ImportError(
+                "GCS storage requires google-cloud-storage. Install with: pip install google-cloud-storage"
+            )
+        return _create_gcs_provider(config)
     else:
         raise ValueError(f"Unknown storage provider type: {provider_type}")
 
@@ -78,6 +105,60 @@ def _create_supabase_provider(config: Dict[str, Any]) -> StorageProvider:
         raise ValueError("Supabase storage requires 'key' in configuration")
 
     return SupabaseStorageProvider(url=url, key=key, bucket=bucket)
+
+
+def _create_s3_provider(config: Dict[str, Any]) -> StorageProvider:
+    """Create S3 storage provider."""
+    if S3StorageProvider is None:
+        raise ImportError("S3 storage not available")
+
+    bucket = config.get("bucket")
+    if not bucket:
+        raise ValueError("S3 storage requires 'bucket' in configuration")
+
+    region = config.get("region", "us-east-1")
+    aws_access_key_id = config.get("aws_access_key_id")
+    aws_secret_access_key = config.get("aws_secret_access_key")
+    aws_session_token = config.get("aws_session_token")
+    endpoint_url = config.get("endpoint_url")
+    cloudfront_domain = config.get("cloudfront_domain")
+    upload_config = config.get("upload_config", {})
+
+    return S3StorageProvider(
+        bucket=bucket,
+        region=region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
+        endpoint_url=endpoint_url,
+        cloudfront_domain=cloudfront_domain,
+        upload_config=upload_config,
+    )
+
+
+def _create_gcs_provider(config: Dict[str, Any]) -> StorageProvider:
+    """Create GCS storage provider."""
+    if GCSStorageProvider is None:
+        raise ImportError("GCS storage not available")
+
+    bucket = config.get("bucket")
+    if not bucket:
+        raise ValueError("GCS storage requires 'bucket' in configuration")
+
+    project_id = config.get("project_id")
+    credentials_path = config.get("credentials_path")
+    credentials_json = config.get("credentials_json")
+    cdn_domain = config.get("cdn_domain")
+    upload_config = config.get("upload_config", {})
+
+    return GCSStorageProvider(
+        bucket=bucket,
+        project_id=project_id,
+        credentials_path=credentials_path,
+        credentials_json=credentials_json,
+        cdn_domain=cdn_domain,
+        upload_config=upload_config,
+    )
 
 
 def create_storage_manager(
