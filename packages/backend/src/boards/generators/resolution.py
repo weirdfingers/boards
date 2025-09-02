@@ -3,6 +3,7 @@ Artifact resolution utilities for converting Generation references to actual fil
 """
 import os
 import tempfile
+import uuid
 from typing import Union, Optional
 import httpx
 from .artifacts import AudioArtifact, VideoArtifact, ImageArtifact, TextArtifact, LoRArtifact
@@ -53,13 +54,18 @@ async def download_artifact_to_temp(artifact: Union[AudioArtifact, VideoArtifact
     # Determine file extension based on artifact type and format
     extension = _get_file_extension(artifact)
     
-    # Create temporary file with appropriate extension
-    temp_fd, temp_path = tempfile.mkstemp(suffix=extension, prefix=f"boards_artifact_{artifact.generation_id}_")
+    # Create temporary file with appropriate extension (use random prefix for security)
+    random_id = uuid.uuid4().hex[:8]
+    temp_fd, temp_path = tempfile.mkstemp(suffix=extension, prefix=f"boards_artifact_{random_id}_")
     
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(artifact.storage_url)
             response.raise_for_status()
+            
+            # Basic validation of content length
+            if len(response.content) == 0:
+                raise ValueError("Downloaded file is empty")
             
             # Write content to temporary file
             with os.fdopen(temp_fd, 'wb') as temp_file:

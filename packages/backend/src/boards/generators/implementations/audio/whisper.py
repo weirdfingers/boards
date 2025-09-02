@@ -42,7 +42,7 @@ class WhisperGenerator(BaseGenerator):
         try:
             from openai import AsyncOpenAI  # type: ignore
         except ImportError:
-            raise ValueError("openai package not installed. Run: pip install openai")
+            raise ValueError("Required dependencies not available")
         
         client = AsyncOpenAI()
         

@@ -44,20 +44,21 @@ class LipsyncGenerator(BaseGenerator):
         try:
             import replicate  # type: ignore
         except ImportError:
-            raise ValueError("replicate package not installed. Run: pip install replicate")
+            raise ValueError("Required dependencies not available")
         
         # System automatically resolves artifacts to file paths
         audio_file = await resolve_artifact(inputs.audio_source)
         video_file = await resolve_artifact(inputs.video_source)
         
-        # Use Replicate SDK directly
-        result = await replicate.async_run(
-            "cjwbw/wav2lip",
-            input={
-                "audio": open(audio_file, "rb"),
-                "video": open(video_file, "rb"),
-            }
-        )
+        # Use Replicate SDK directly with proper file handling
+        with open(audio_file, "rb") as audio_f, open(video_file, "rb") as video_f:
+            result = await replicate.async_run(
+                "cjwbw/wav2lip",
+                input={
+                    "audio": audio_f,
+                    "video": video_f,
+                }
+            )
         
         # Store output and create artifact
         video_artifact = await store_video_result(

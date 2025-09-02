@@ -55,13 +55,13 @@ class DallE3Generator(BaseGenerator):
         """Generate image using OpenAI DALL-E 3."""
         # Check for API key
         if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY environment variable is required")
+            raise ValueError("API configuration invalid")
         
         # Import SDK directly
         try:
             from openai import AsyncOpenAI  # type: ignore
         except ImportError:
-            raise ValueError("openai package not installed. Run: pip install openai")
+            raise ValueError("Required dependencies not available")
         
         client = AsyncOpenAI()
         

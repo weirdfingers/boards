@@ -54,13 +54,13 @@ class FluxProGenerator(BaseGenerator):
         """Generate image using Replicate FLUX.1.1 Pro model."""
         # Check for API key
         if not os.getenv("REPLICATE_API_TOKEN"):
-            raise ValueError("REPLICATE_API_TOKEN environment variable is required")
+            raise ValueError("API configuration invalid")
         
         # Import SDK directly - no wrapper layer
         try:
             import replicate  # type: ignore
         except ImportError:
-            raise ValueError("replicate package not installed. Run: pip install replicate")
+            raise ValueError("Required dependencies not available")
         
         # Use Replicate SDK directly
         prediction = await replicate.async_run(
