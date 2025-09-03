@@ -31,35 +31,31 @@ BOARDS_AUTH_CONFIG='{"url": "https://your-project.supabase.co", "service_role_ke
 ### Installation
 
 ```bash
-npm install @weirdfingers/boards-frontend @supabase/supabase-js
+npm install @weirdfingers/boards @supabase/supabase-js
 ```
 
 ### Provider Configuration
 
 ```typescript
-import { SupabaseAuthProvider, AuthProvider } from '@weirdfingers/boards-frontend';
+import { SupabaseAuthProvider, AuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new SupabaseAuthProvider({
   url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  tenantId: 'my-company', // optional
+  tenantId: "my-company", // optional
 });
 
 function App() {
-  return (
-    <AuthProvider provider={authProvider}>
-      {/* Your app */}
-    </AuthProvider>
-  );
+  return <AuthProvider provider={authProvider}>{/* Your app */}</AuthProvider>;
 }
 ```
 
 ### Configuration Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `url` | Required | Supabase project URL |
-| `anonKey` | Required | Supabase anonymous/public key |
+| Option     | Default     | Description                     |
+| ---------- | ----------- | ------------------------------- |
+| `url`      | Required    | Supabase project URL            |
+| `anonKey`  | Required    | Supabase anonymous/public key   |
 | `tenantId` | `undefined` | Tenant ID for multi-tenant apps |
 
 ## Usage
@@ -67,7 +63,7 @@ function App() {
 ### Email/Password Sign Up
 
 ```typescript
-import { useAuth } from '@weirdfingers/boards-frontend';
+import { useAuth } from "@weirdfingers/boards";
 
 function SignUpForm() {
   const { signIn } = useAuth();
@@ -75,20 +71,20 @@ function SignUpForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
     try {
       await signIn({
-        type: 'signup',
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
+        type: "signup",
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
         options: {
           data: {
-            display_name: formData.get('name') as string,
-          }
-        }
+            display_name: formData.get("name") as string,
+          },
+        },
       });
     } catch (error) {
-      console.error('Sign up failed:', error);
+      console.error("Sign up failed:", error);
     }
   };
 
@@ -112,14 +108,14 @@ function SignInForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
     try {
       await signIn({
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
       });
     } catch (error) {
-      console.error('Sign in failed:', error);
+      console.error("Sign in failed:", error);
     }
   };
 
@@ -141,13 +137,13 @@ function SocialAuth() {
 
   return (
     <div>
-      <button onClick={() => signIn({ provider: 'google' })}>
+      <button onClick={() => signIn({ provider: "google" })}>
         Continue with Google
       </button>
-      <button onClick={() => signIn({ provider: 'github' })}>
+      <button onClick={() => signIn({ provider: "github" })}>
         Continue with GitHub
       </button>
-      <button onClick={() => signIn({ provider: 'discord' })}>
+      <button onClick={() => signIn({ provider: "discord" })}>
         Continue with Discord
       </button>
     </div>
@@ -162,11 +158,13 @@ function SocialAuth() {
 Configure these redirect URLs in your Supabase project:
 
 **Development:**
+
 ```
 http://localhost:3000/auth/callback
 ```
 
 **Production:**
+
 ```
 https://yourdomain.com/auth/callback
 ```
@@ -176,7 +174,7 @@ https://yourdomain.com/auth/callback
 Customize email templates in Auth > Templates:
 
 - Confirm signup
-- Reset password  
+- Reset password
 - Magic link
 - Email change confirmation
 
@@ -201,15 +199,15 @@ function MagicLinkForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
     await signIn({
-      email: formData.get('email') as string,
+      email: formData.get("email") as string,
       options: {
         shouldCreateUser: true,
-      }
+      },
     });
-    
-    alert('Check your email for the magic link!');
+
+    alert("Check your email for the magic link!");
   };
 
   return (
@@ -225,8 +223,8 @@ function MagicLinkForm() {
 
 ```typescript
 function PasswordReset() {
-  const [email, setEmail] = useState('');
-  
+  const [email, setEmail] = useState("");
+
   const handleReset = async () => {
     // This would call Supabase's resetPasswordForEmail
     // Implementation depends on your auth provider setup
@@ -234,8 +232,8 @@ function PasswordReset() {
 
   return (
     <div>
-      <input 
-        type="email" 
+      <input
+        type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Enter your email"
@@ -261,7 +259,7 @@ ALTER TABLE boards ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can access own tenant data" ON boards
   FOR ALL USING (
     tenant_id = (
-      SELECT tenant_id FROM users 
+      SELECT tenant_id FROM users
       WHERE auth_subject = auth.uid()::text
     )
   );
@@ -270,7 +268,7 @@ CREATE POLICY "Users can access own tenant data" ON boards
 ### Service Role Key
 
 - Never expose service role key in frontend code
-- Use environment variables for server-side configuration  
+- Use environment variables for server-side configuration
 - Rotate keys regularly
 - Monitor usage in Supabase dashboard
 
@@ -283,16 +281,19 @@ Supabase automatically handles CORS for your domain, but verify your settings in
 ### Common Issues
 
 **"Invalid login credentials" error:**
+
 - Check email/password are correct
 - Verify user has confirmed their email
 - Check Auth > Users in Supabase dashboard
 
 **Redirect not working:**
+
 - Verify redirect URLs are configured correctly
 - Check for typos in URLs
 - Ensure HTTPS in production
 
 **Token not persisting:**
+
 - Check Supabase session configuration
 - Verify localStorage isn't being cleared
 - Check browser privacy settings
@@ -307,13 +308,14 @@ const authProvider = new SupabaseAuthProvider({
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   options: {
     debug: true,
-  }
+  },
 });
 ```
 
 ### Checking Supabase Logs
 
 Monitor authentication in your Supabase dashboard:
+
 - Go to Auth > Logs to see authentication attempts
 - Check Logs > API for request details
 - Use Logs > Realtime for live debugging

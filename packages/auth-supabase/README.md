@@ -11,21 +11,17 @@ npm install @weirdfingers/auth-supabase @supabase/supabase-js
 ## Usage
 
 ```typescript
-import { SupabaseAuthProvider } from '@weirdfingers/auth-supabase';
-import { AuthProvider } from '@weirdfingers/boards-frontend';
+import { SupabaseAuthProvider } from "@weirdfingers/auth-supabase";
+import { AuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new SupabaseAuthProvider({
   url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  tenantId: 'my-company', // optional
+  tenantId: "my-company", // optional
 });
 
 function App() {
-  return (
-    <AuthProvider provider={authProvider}>
-      {/* Your app */}
-    </AuthProvider>
-  );
+  return <AuthProvider provider={authProvider}>{/* Your app */}</AuthProvider>;
 }
 ```
 

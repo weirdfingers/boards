@@ -23,48 +23,44 @@ BOARDS_AUTH_CONFIG='{"default_user_id": "my-dev-user", "default_tenant": "dev-te
 
 ### Configuration Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
+| Option            | Default      | Description                      |
+| ----------------- | ------------ | -------------------------------- |
 | `default_user_id` | `"dev-user"` | User ID for the development user |
-| `default_tenant` | `"default"` | Tenant ID for development |
+| `default_tenant`  | `"default"`  | Tenant ID for development        |
 
 ## Frontend Setup
 
 ### Installation
 
 ```bash
-npm install @weirdfingers/boards-frontend
+npm install @weirdfingers/boards
 ```
 
 ### Provider Configuration
 
 ```typescript
-import { NoAuthProvider, AuthProvider } from '@weirdfingers/boards-frontend';
+import { NoAuthProvider, AuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new NoAuthProvider({
-  defaultUserId: 'dev-user',
-  defaultEmail: 'dev@example.com',
-  defaultDisplayName: 'Development User',
-  tenantId: 'my-company', // optional
+  defaultUserId: "dev-user",
+  defaultEmail: "dev@example.com",
+  defaultDisplayName: "Development User",
+  tenantId: "my-company", // optional
 });
 
 function App() {
-  return (
-    <AuthProvider provider={authProvider}>
-      {/* Your app */}
-    </AuthProvider>
-  );
+  return <AuthProvider provider={authProvider}>{/* Your app */}</AuthProvider>;
 }
 ```
 
 ### Configuration Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `defaultUserId` | `"dev-user"` | User ID for development |
-| `defaultEmail` | `"dev@example.com"` | Email for development user |
+| Option               | Default              | Description                       |
+| -------------------- | -------------------- | --------------------------------- |
+| `defaultUserId`      | `"dev-user"`         | User ID for development           |
+| `defaultEmail`       | `"dev@example.com"`  | Email for development user        |
 | `defaultDisplayName` | `"Development User"` | Display name for development user |
-| `tenantId` | `undefined` | Tenant ID for multi-tenant apps |
+| `tenantId`           | `undefined`          | Tenant ID for multi-tenant apps   |
 
 ## Usage
 
@@ -73,14 +69,14 @@ function App() {
 With no-auth mode, your components work exactly the same as with real authentication:
 
 ```typescript
-import { useAuth } from '@weirdfingers/boards-frontend';
+import { useAuth } from "@weirdfingers/boards";
 
 function MyComponent() {
   const { user, status, signIn, signOut } = useAuth();
 
   // Status is always 'authenticated' in no-auth mode
   console.log(status); // 'authenticated'
-  
+
   // User is always the configured development user
   console.log(user); // { id: 'dev-user', email: 'dev@example.com', ... }
 
@@ -102,14 +98,14 @@ API requests work without authentication headers, but you can still send them:
 
 ```typescript
 // This works without any token
-fetch('/api/boards')
+fetch("/api/boards");
 
 // This also works - any token is accepted
-fetch('/api/boards', {
+fetch("/api/boards", {
   headers: {
-    'Authorization': 'Bearer anything-goes'
-  }
-})
+    Authorization: "Bearer anything-goes",
+  },
+});
 ```
 
 ### GraphQL Client
@@ -117,12 +113,12 @@ fetch('/api/boards', {
 The GraphQL client automatically handles no-auth mode:
 
 ```typescript
-import { createGraphQLClient, NoAuthProvider } from '@weirdfingers/boards-frontend';
+import { createGraphQLClient, NoAuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new NoAuthProvider();
 
 const client = createGraphQLClient({
-  url: 'http://localhost:8000/graphql',
+  url: "http://localhost:8000/graphql",
   auth: authProvider, // Will provide fake tokens
 });
 
@@ -140,7 +136,7 @@ const result = await client.query(GET_BOARDS).toPromise();
 
 ```typescript
 // Absolute minimal setup
-import { NoAuthProvider, AuthProvider } from '@weirdfingers/boards-frontend';
+import { NoAuthProvider, AuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new NoAuthProvider();
 
@@ -158,6 +154,7 @@ function App() {
 When you're ready to add real authentication:
 
 1. **Change the provider**:
+
 ```typescript
 // From this:
 const authProvider = new NoAuthProvider();
@@ -169,6 +166,7 @@ const authProvider = new JWTAuthProvider({
 ```
 
 2. **Set environment variables**:
+
 ```bash
 BOARDS_AUTH_PROVIDER=jwt
 BOARDS_JWT_SECRET=your-secret-key
@@ -181,11 +179,13 @@ BOARDS_JWT_SECRET=your-secret-key
 You'll see warning messages to remind you that no-auth is active:
 
 **Backend Console:**
+
 ```
 WARNING:boards.auth.adapters.none:NoAuthAdapter is active - ALL requests will be treated as authenticated! This should ONLY be used in development.
 ```
 
 **Frontend Console:**
+
 ```
 🚨 NoAuthProvider is active - authentication is disabled! This should ONLY be used in development environments.
 ```
@@ -216,7 +216,7 @@ The development user is created in your database just like a real user:
 ```sql
 -- This user will be created automatically
 INSERT INTO users (
-  id, tenant_id, auth_provider, auth_subject, 
+  id, tenant_id, auth_provider, auth_subject,
   email, display_name
 ) VALUES (
   '...', 'default', 'none', 'dev-user',
@@ -231,19 +231,20 @@ You can test with different development users by configuring multiple instances:
 ```typescript
 // Different development users
 const adminUser = new NoAuthProvider({
-  defaultUserId: 'dev-admin',
-  defaultEmail: 'admin@example.com',
-  defaultDisplayName: 'Admin User',
+  defaultUserId: "dev-admin",
+  defaultEmail: "admin@example.com",
+  defaultDisplayName: "Admin User",
 });
 
 const regularUser = new NoAuthProvider({
-  defaultUserId: 'dev-user',
-  defaultEmail: 'user@example.com', 
-  defaultDisplayName: 'Regular User',
+  defaultUserId: "dev-user",
+  defaultEmail: "user@example.com",
+  defaultDisplayName: "Regular User",
 });
 
 // Switch between them as needed
-const authProvider = process.env.NODE_ENV === 'development' ? adminUser : regularUser;
+const authProvider =
+  process.env.NODE_ENV === "development" ? adminUser : regularUser;
 ```
 
 ## Security Reminders
@@ -295,8 +296,8 @@ If you need different permissions, create multiple boards with different owners:
 
 ```python
 # Board owned by dev-admin
-board1 = await create_board(owner_id="dev-admin") 
+board1 = await create_board(owner_id="dev-admin")
 
-# Board owned by dev-user  
+# Board owned by dev-user
 board2 = await create_board(owner_id="dev-user")
 ```

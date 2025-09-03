@@ -20,48 +20,44 @@ BOARDS_AUTH_CONFIG='{"secret_key": "your-secret", "algorithm": "HS256", "issuer"
 
 ### Configuration Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `secret_key` | Required | Secret key for JWT signing/verification |
-| `algorithm` | `"HS256"` | JWT signing algorithm |
-| `issuer` | `"boards"` | JWT issuer claim |
-| `audience` | `"boards-api"` | JWT audience claim |
+| Option       | Default        | Description                             |
+| ------------ | -------------- | --------------------------------------- |
+| `secret_key` | Required       | Secret key for JWT signing/verification |
+| `algorithm`  | `"HS256"`      | JWT signing algorithm                   |
+| `issuer`     | `"boards"`     | JWT issuer claim                        |
+| `audience`   | `"boards-api"` | JWT audience claim                      |
 
 ## Frontend Setup
 
 ### Installation
 
 ```bash
-npm install @weirdfingers/boards-frontend
+npm install @weirdfingers/boards
 ```
 
 ### Provider Configuration
 
 ```typescript
-import { JWTAuthProvider, AuthProvider } from '@weirdfingers/boards-frontend';
+import { JWTAuthProvider, AuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new JWTAuthProvider({
   apiUrl: process.env.NEXT_PUBLIC_API_URL!,
-  tenantId: 'my-company', // optional
+  tenantId: "my-company", // optional
 });
 
 function App() {
-  return (
-    <AuthProvider provider={authProvider}>
-      {/* Your app */}
-    </AuthProvider>
-  );
+  return <AuthProvider provider={authProvider}>{/* Your app */}</AuthProvider>;
 }
 ```
 
 ### Configuration Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `apiUrl` | Required | Your backend API URL |
-| `tenantId` | `undefined` | Tenant ID for multi-tenant apps |
-| `tokenStorageKey` | `"boards_jwt_token"` | localStorage key for token |
-| `userStorageKey` | `"boards_user_info"` | localStorage key for user data |
+| Option            | Default              | Description                     |
+| ----------------- | -------------------- | ------------------------------- |
+| `apiUrl`          | Required             | Your backend API URL            |
+| `tenantId`        | `undefined`          | Tenant ID for multi-tenant apps |
+| `tokenStorageKey` | `"boards_jwt_token"` | localStorage key for token      |
+| `userStorageKey`  | `"boards_user_info"` | localStorage key for user data  |
 
 ## Usage
 
@@ -70,7 +66,7 @@ function App() {
 The JWT provider expects your backend to have a login endpoint that returns a JWT token:
 
 ```typescript
-import { useAuth } from '@weirdfingers/boards-frontend';
+import { useAuth } from "@weirdfingers/boards";
 
 function LoginForm() {
   const { signIn, status } = useAuth();
@@ -78,14 +74,14 @@ function LoginForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    
+
     try {
       await signIn({
-        email: formData.get('email'),
-        password: formData.get('password'),
+        email: formData.get("email"),
+        password: formData.get("password"),
       });
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
     }
   };
 
@@ -93,7 +89,7 @@ function LoginForm() {
     <form onSubmit={handleSubmit}>
       <input name="email" type="email" required />
       <input name="password" type="password" required />
-      <button type="submit" disabled={status === 'loading'}>
+      <button type="submit" disabled={status === "loading"}>
         Sign In
       </button>
     </form>
@@ -125,7 +121,7 @@ async def login(request: LoginRequest):
     user = await validate_user_credentials(request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     # Issue JWT token
     adapter = get_auth_adapter()
     token = await adapter.issue_token(
@@ -135,7 +131,7 @@ async def login(request: LoginRequest):
             "name": user.display_name,
         }
     )
-    
+
     return LoginResponse(token=token)
 ```
 
@@ -145,14 +141,14 @@ The JWT tokens should contain these standard claims:
 
 ```json
 {
-  "iss": "boards",           // Issuer
-  "aud": "boards-api",       // Audience  
-  "sub": "user-uuid",        // Subject (user ID)
-  "iat": 1640995200,         // Issued at
-  "exp": 1641081600,         // Expiration
+  "iss": "boards", // Issuer
+  "aud": "boards-api", // Audience
+  "sub": "user-uuid", // Subject (user ID)
+  "iat": 1640995200, // Issued at
+  "exp": 1641081600, // Expiration
   "email": "user@example.com", // Optional: user email
-  "name": "John Doe",        // Optional: display name
-  "picture": "https://...",  // Optional: avatar URL
+  "name": "John Doe", // Optional: display name
+  "picture": "https://..." // Optional: avatar URL
 }
 ```
 
@@ -200,16 +196,19 @@ openssl rand -base64 64
 ### Common Issues
 
 **"Invalid token" errors:**
+
 - Check that `BOARDS_JWT_SECRET` matches between client and server
 - Verify token hasn't expired
 - Ensure clock synchronization between services
 
 **Token not persisting:**
+
 - Check browser localStorage is enabled
 - Verify `tokenStorageKey` configuration
 - Check for browser privacy settings blocking storage
 
 **Authentication loops:**
+
 - Verify API endpoint returns proper JWT format
 - Check network tab for authentication requests
 - Ensure backend and frontend are using same secret

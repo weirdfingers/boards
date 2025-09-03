@@ -21,13 +21,13 @@ graph TB
     API[Backend API]
     Adapter[Auth Adapter]
     DB[Database]
-    
+
     Frontend --> Hook
     Hook --> Provider
     Provider --> API
     API --> Adapter
     Adapter --> DB
-    
+
     Provider -.->|JWT Token| API
     API -.->|User Context| Frontend
 ```
@@ -35,7 +35,7 @@ graph TB
 ### Backend Components
 
 - **AuthAdapter Interface**: Provider-agnostic token verification
-- **AuthContext**: Runtime authentication context for requests  
+- **AuthContext**: Runtime authentication context for requests
 - **Middleware**: Extracts tokens, verifies with adapters, provides context
 - **JIT Provisioning**: Auto-creates local users from external identities
 - **RBAC System**: Board-scoped permissions with helper functions
@@ -53,40 +53,40 @@ graph TB
 
 ```typescript
 // No Auth (development only - included in core package)
-import { NoAuthProvider } from '@weirdfingers/boards-frontend';
+import { NoAuthProvider } from "@weirdfingers/boards";
 const authProvider = new NoAuthProvider();
 
 // JWT (self-managed - separate package)
-import { JWTAuthProvider } from '@weirdfingers/auth-jwt';
+import { JWTAuthProvider } from "@weirdfingers/auth-jwt";
 const authProvider = new JWTAuthProvider({
-  apiUrl: 'http://localhost:8000/api',
-  tenantId: 'my-company'
+  apiUrl: "http://localhost:8000/api",
+  tenantId: "my-company",
 });
 
 // Supabase (separate package)
-import { SupabaseAuthProvider } from '@weirdfingers/auth-supabase';
+import { SupabaseAuthProvider } from "@weirdfingers/auth-supabase";
 const authProvider = new SupabaseAuthProvider({
   url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 });
 
 // Clerk (separate package)
-import { ClerkAuthProvider } from '@weirdfingers/auth-clerk';
+import { ClerkAuthProvider } from "@weirdfingers/auth-clerk";
 const authProvider = new ClerkAuthProvider({
-  publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 });
 ```
 
 ### 2. Set Up Your App
 
 ```typescript
-import { AuthProvider, createGraphQLClient } from '@weirdfingers/boards-frontend';
+import { AuthProvider, createGraphQLClient } from "@weirdfingers/boards";
 
 function App() {
   const graphqlClient = createGraphQLClient({
-    url: 'http://localhost:8000/graphql',
+    url: "http://localhost:8000/graphql",
     auth: authProvider,
-    tenantId: 'my-company'
+    tenantId: "my-company",
   });
 
   return (
@@ -102,13 +102,13 @@ function App() {
 ### 3. Use in Components
 
 ```typescript
-import { useAuth } from '@weirdfingers/boards-frontend';
+import { useAuth } from "@weirdfingers/boards";
 
 function MyComponent() {
   const { user, status, signIn, signOut } = useAuth();
 
-  if (status === 'loading') return <div>Loading...</div>;
-  if (status === 'unauthenticated') {
+  if (status === "loading") return <div>Loading...</div>;
+  if (status === "unauthenticated") {
     return <button onClick={() => signIn()}>Sign In</button>;
   }
 
@@ -149,11 +149,11 @@ Install the core package and your chosen auth provider:
 
 ```bash
 # Core package (always required)
-npm install @weirdfingers/boards-frontend
+npm install @weirdfingers/boards
 
 # Choose one or more auth providers:
 npm install @weirdfingers/auth-supabase @supabase/supabase-js
-npm install @weirdfingers/auth-clerk @clerk/clerk-js  
+npm install @weirdfingers/auth-clerk @clerk/clerk-js
 npm install @weirdfingers/auth-auth0 @auth0/auth0-spa-js
 npm install @weirdfingers/auth-jwt
 ```
@@ -162,15 +162,16 @@ npm install @weirdfingers/auth-jwt
 
 Each auth provider is in its own package to keep your bundle size minimal:
 
-| Package | Dependencies | Bundle Impact |
-|---------|-------------|---------------|
-| `@weirdfingers/boards-frontend` | None | ~15KB (core only) |
-| `@weirdfingers/auth-supabase` | `@supabase/supabase-js` | ~40KB |
-| `@weirdfingers/auth-clerk` | `@clerk/clerk-js` | ~50KB |
-| `@weirdfingers/auth-auth0` | `@auth0/auth0-spa-js` | ~25KB |
-| `@weirdfingers/auth-jwt` | None | ~5KB |
+| Package                       | Dependencies            | Bundle Impact     |
+| ----------------------------- | ----------------------- | ----------------- |
+| `@weirdfingers/boards`        | None                    | ~15KB (core only) |
+| `@weirdfingers/auth-supabase` | `@supabase/supabase-js` | ~40KB             |
+| `@weirdfingers/auth-clerk`    | `@clerk/clerk-js`       | ~50KB             |
+| `@weirdfingers/auth-auth0`    | `@auth0/auth0-spa-js`   | ~25KB             |
+| `@weirdfingers/auth-jwt`      | None                    | ~5KB              |
 
 **Benefits:**
+
 - 🌲 **Tree-shakable**: Only bundle what you use
 - 📦 **Small bundles**: Core package is tiny
 - 🔄 **Easy migration**: Swap providers without breaking changes
@@ -179,7 +180,7 @@ Each auth provider is in its own package to keep your bundle size minimal:
 ## Next Steps
 
 - **Getting Started**: [No Auth Setup](./providers/none.md) - Perfect for development
-- **Production Setup**: [JWT](./providers/jwt.md) or [Supabase](./providers/supabase.md) 
+- **Production Setup**: [JWT](./providers/jwt.md) or [Supabase](./providers/supabase.md)
 - [Authorization](./backend/authorization.md) - RBAC and permissions
 - [Frontend Integration](./frontend/getting-started.md) - Frontend usage patterns
 - [Backend Integration](./backend/auth-adapters.md) - Backend implementation details
