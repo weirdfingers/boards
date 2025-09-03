@@ -1,0 +1,32 @@
+---
+description: Backend logging should use the centralized logger utilities
+globs: packages/backend/**/*.py
+---
+
+# Backend Logging Standard
+
+Always use the centralized logging utilities in [packages/backend/src/boards/logging.py](mdc:packages/backend/src/boards/logging.py).
+
+- Use `get_logger(__name__)` to create module loggers
+- Do not use `print(...)` or `logging.getLogger(...)` directly in backend code
+- Configure once at app startup using `configure_logging(debug=settings.debug)`
+- Prefer structured logs; include request/user context via provided helpers
+
+Example (module usage):
+
+```python
+from boards.logging import get_logger
+
+logger = get_logger(__name__)
+
+async def handler():
+    logger.info("processing", step="start")
+```
+
+Example (app setup):
+
+```python
+from boards.logging import configure_logging
+
+configure_logging(debug=settings.debug)
+```

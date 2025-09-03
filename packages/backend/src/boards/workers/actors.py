@@ -57,15 +57,9 @@ async def _process_generation_async(generation_id: str) -> None:
             ),
         )
         
-        # Load generation from DB with transaction safety
+        # Load generation from DB
         async with get_async_session() as session:
-            try:
-                gen = await jobs_repo.get_generation(session, generation_id)
-                await session.commit()
-            except Exception as e:
-                logger.error("Failed to load generation", generation_id=generation_id, error=str(e), exc_info=True)
-                await session.rollback()
-                raise
+            gen = await jobs_repo.get_generation(session, generation_id)
         
         # Validate generator exists
         generator = generator_registry.get(gen.generator_name)
@@ -80,7 +74,7 @@ async def _process_generation_async(generation_id: str) -> None:
             typed_inputs = input_schema.model_validate(gen.input_params)
         except Exception as e:
             error_msg = "Invalid input parameters"
-            logger.error(error_msg, generation_id=generation_id, error=str(e), exc_info=True)
+            logger.error(error_msg, generation_id=generation_id, error=str(e))
             raise ValueError(f"Invalid input parameters: {e}")
         
         # Build context and run generator
@@ -108,34 +102,24 @@ async def _process_generation_async(generation_id: str) -> None:
             
             # Update job status to failed
             async with get_async_session() as session:
-                try:
-                    await jobs_repo.update_progress(
-                        session,
-                        generation_id,
-                        status="failed",
-                        progress=0.0,
-                        error_message=error_msg,
-                    )
-                    await session.commit()
-                except Exception as db_error:
-                    logger.error("Failed to update job status", error=str(db_error), exc_info=True)
-                    await session.rollback()
+                await jobs_repo.update_progress(
+                    session,
+                    generation_id,
+                    status="failed",
+                    progress=0.0,
+                    error_message=error_msg,
+                )
             
             # TODO: Refund credits here if applicable
             # await refund_credits(gen.user_id, gen.estimated_cost)
             
             raise
         
-        # Finalize DB with transaction safety
+        # Finalize DB
         async with get_async_session() as session:
-            try:
-                await jobs_repo.finalize_success(session, generation_id)
-                await session.commit()
-                logger.info("Job finalized successfully", generation_id=generation_id)
-            except Exception as e:
-                logger.error("Failed to finalize job", generation_id=generation_id, error=str(e), exc_info=True)
-                await session.rollback()
-                raise
+            await jobs_repo.finalize_success(session, generation_id)
+        
+        logger.info("Job finalized successfully", generation_id=generation_id)
         
         # Publish completion
         await publisher.publish_progress(
@@ -166,12 +150,12 @@ async def _process_generation_async(generation_id: str) -> None:
                 ),
             )
         except Exception as pub_error:
-            logger.error("Failed to publish error status", error=str(pub_error), exc_info=True)
+            logger.error("Failed to publish error status", error=str(pub_error))
         
         # Update database with failure status if not already done
         if gen is not None:
-            async with get_async_session() as session:
-                try:
+            try:
+                async with get_async_session() as session:
                     await jobs_repo.update_progress(
                         session,
                         generation_id,
@@ -179,10 +163,8 @@ async def _process_generation_async(generation_id: str) -> None:
                         progress=0.0,
                         error_message=str(e),
                     )
-                    await session.commit()
-                except Exception as db_error:
-                    logger.error("Failed to update job failure status", error=str(db_error), exc_info=True)
-                    await session.rollback()
+            except Exception as db_error:
+                logger.error("Failed to update job failure status", error=str(db_error), exc_info=True)
         
         # Re-raise for Dramatiq retry mechanism
         raise
