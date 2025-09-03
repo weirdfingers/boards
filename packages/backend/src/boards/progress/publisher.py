@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 import json
-import redis.asyncio as redis
+import logging
 from typing import Any
 
 from ..config import Settings
 from .models import ProgressUpdate
 from ..database.connection import get_async_session
 from ..jobs import repository as jobs_repo
+from ..redis_pool import get_redis_client
+
+logger = logging.getLogger(__name__)
 
 
 class ProgressPublisher:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings()
-        self._redis = redis.from_url(self.settings.redis_url, decode_responses=True)
+        # Use the shared Redis connection pool
+        self._redis = get_redis_client()
 
     async def publish_progress(self, job_id: str, update: ProgressUpdate) -> None:
         channel = f"job:{job_id}:progress"

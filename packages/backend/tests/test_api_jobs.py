@@ -41,7 +41,9 @@ def test_submit_generation_smoke(monkeypatch):
         },
     }
 
-    resp = client.post("/api/jobs/generations", json=payload)
+    # Include authorization header for the test
+    headers = {"Authorization": "Bearer test-token-please-replace"}
+    resp = client.post("/api/jobs/generations", json=payload, headers=headers)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert "generation_id" in data
