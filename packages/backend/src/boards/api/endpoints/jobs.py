@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+import logging
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ...database.connection import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...jobs import repository as jobs_repo
 from ...workers.actors import process_generation
+from ..auth import AuthenticatedUser, get_current_user
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
@@ -32,17 +36,44 @@ class SubmitGenerationResponse(BaseModel):
 async def submit_generation(
     body: SubmitGenerationRequest,
     db: AsyncSession = Depends(get_db_session),
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> SubmitGenerationResponse:
-    gen = await jobs_repo.create_generation(
-        db,
-        tenant_id=body.tenant_id,
-        board_id=body.board_id,
-        user_id=body.user_id,
-        generator_name=body.generator_name,
-        provider_name=body.provider_name,
-        artifact_type=body.artifact_type,
-        input_params=body.input_params,
-    )
-    # Enqueue job
-    process_generation.send(str(gen.id))
-    return SubmitGenerationResponse(generation_id=str(gen.id))
+    """Submit a new generation job.
+    
+    Requires authentication. The authenticated user's ID and tenant will be used
+    for the generation, overriding any values provided in the request body.
+    """
+    try:
+        # Validate that user has access to the specified board
+        # TODO: Add board access validation logic here
+        
+        # Override user_id and tenant_id with authenticated values for security
+        # This prevents users from submitting jobs on behalf of others
+        gen = await jobs_repo.create_generation(
+            db,
+            tenant_id=current_user.tenant_id,  # Use authenticated tenant
+            board_id=body.board_id,
+            user_id=current_user.user_id,  # Use authenticated user
+            generator_name=body.generator_name,
+            provider_name=body.provider_name,
+            artifact_type=body.artifact_type,
+            input_params=body.input_params,
+        )
+        
+        # Commit the transaction to ensure job is persisted before enqueueing
+        await db.commit()
+        logger.info(f"Created generation job {gen.id} for user {current_user.user_id}")
+        
+        # Enqueue job for processing
+        process_generation.send(str(gen.id))
+        logger.info(f"Enqueued generation job {gen.id}")
+        
+        return SubmitGenerationResponse(generation_id=str(gen.id))
+        
+    except Exception as e:
+        logger.error(f"Failed to submit generation: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit generation: {str(e)}"
+        )
