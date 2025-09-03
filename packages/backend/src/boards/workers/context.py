@@ -30,7 +30,7 @@ class GeneratorExecutionContext:
             logger.debug("Artifact resolved successfully", result=result)
             return result
         except Exception as e:
-            logger.error("Failed to resolve artifact", error=str(e), exc_info=True)
+            logger.error("Failed to resolve artifact", error=str(e))
             raise
 
     async def store_image_result(self, *args, **kwargs):
@@ -41,7 +41,7 @@ class GeneratorExecutionContext:
             logger.info("Image result stored", generation_id=self.generation_id)
             return result
         except Exception as e:
-            logger.error("Failed to store image result", error=str(e), exc_info=True)
+            logger.error("Failed to store image result", error=str(e))
             raise
 
     async def store_video_result(self, *args, **kwargs):
@@ -52,7 +52,7 @@ class GeneratorExecutionContext:
             logger.info("Video result stored", generation_id=self.generation_id)
             return result
         except Exception as e:
-            logger.error("Failed to store video result", error=str(e), exc_info=True)
+            logger.error("Failed to store video result", error=str(e))
             raise
 
     async def store_audio_result(self, *args, **kwargs):
@@ -63,7 +63,7 @@ class GeneratorExecutionContext:
             logger.info("Audio result stored", generation_id=self.generation_id)
             return result
         except Exception as e:
-            logger.error("Failed to store audio result", error=str(e), exc_info=True)
+            logger.error("Failed to store audio result", error=str(e))
             raise
 
     async def publish_progress(self, update: ProgressUpdate) -> None:
@@ -72,7 +72,7 @@ class GeneratorExecutionContext:
             "Publishing progress",
             generation_id=self.generation_id,
             status=update.status,
-            progress=update.progress
+            progress=update.progress,
         )
         try:
             await self.publisher.publish_progress(self.generation_id, update)
@@ -82,7 +82,11 @@ class GeneratorExecutionContext:
 
     async def set_external_job_id(self, external_id: str) -> None:
         """Set the external job ID from the provider."""
-        logger.info("Setting external job ID", external_job_id=external_id, generation_id=self.generation_id)
+        logger.info(
+            "Setting external job ID",
+            external_job_id=external_id,
+            generation_id=self.generation_id,
+        )
         async with get_async_session() as session:
             await jobs_repo.set_external_job_id(
                 session, self.generation_id, external_id

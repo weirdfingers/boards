@@ -23,29 +23,31 @@ async def get_auth_context(
 ) -> AuthContext:
     """
     Extract authentication context from request headers.
-    
+
     This function:
     1. Extracts Bearer token from Authorization header
     2. Verifies token using the configured auth adapter
     3. Resolves tenant (defaults to 'default' for single-tenant)
     4. Performs JIT user provisioning
     5. Returns AuthContext for the request
-    
+
     For no-auth mode, any token (or "dev-token") will work.
-    
+
     Args:
         authorization: Authorization header (Bearer token)
         x_tenant: Tenant identifier header
-        
+
     Returns:
         AuthContext with user, tenant, and token info
     """
     tenant_id = x_tenant or "default"
     adapter = get_auth_adapter_cached()
-    
+
     # Check if we're in no-auth mode
-    is_no_auth_mode = hasattr(adapter, 'default_user_id')  # NoAuthAdapter has this attribute
-    
+    is_no_auth_mode = hasattr(
+        adapter, "default_user_id"
+    )  # NoAuthAdapter has this attribute
+
     # Handle unauthenticated requests
     if not authorization:
         if is_no_auth_mode:
@@ -58,7 +60,7 @@ async def get_auth_context(
                 principal=None,
                 token=None,
             )
-    
+
     # Extract Bearer token
     if not authorization.startswith("Bearer "):
         logger.warning("Invalid authorization format received")
@@ -67,9 +69,9 @@ async def get_auth_context(
             detail="Invalid authorization format. Expected: Bearer <token>",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     token = authorization[7:]  # Remove "Bearer " prefix
-    
+
     if not token:
         logger.warning("Empty token provided")
         raise HTTPException(
@@ -77,36 +79,37 @@ async def get_auth_context(
             detail="Empty token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         # Verify token with auth adapter
         principal = await adapter.verify_token(token)
-        
+
         # Get database session for JIT user provisioning
         try:
             from ..database.connection import get_async_session
+
             async with get_async_session() as db:
                 user_id = await ensure_local_user(db, tenant_id, principal)
         except ImportError:
             # Database module not available, use fallback
             user_id = uuid4()
-        
+
         return AuthContext(
             user_id=user_id,
             tenant_id=tenant_id,
             principal=principal,
             token=token,
         )
-        
+
     except AuthenticationError as e:
-        logger.warning(f"Authentication failed: {e}")
+        logger.warning("Authentication failed", error=str(e))
         raise HTTPException(
             status_code=401,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
     except Exception as e:
-        logger.error(f"Unexpected authentication error: {e}")
+        logger.error("Unexpected authentication error", error=str(e))
         raise HTTPException(
             status_code=401,
             detail="Authentication failed",
@@ -120,7 +123,7 @@ async def get_auth_context_optional(
 ) -> AuthContext:
     """
     Optional authentication - returns unauthenticated context if no token.
-    
+
     Use this for endpoints that work both authenticated and unauthenticated.
     """
     try:

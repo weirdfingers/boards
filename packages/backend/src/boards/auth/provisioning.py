@@ -2,36 +2,17 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# from ..models.users import User  # TODO: Implement when models are ready
-
-# Temporary User model for testing
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String
-from uuid import UUID
-
-class Base(DeclarativeBase):
-    pass
-
-class User(Base):
-    __tablename__ = "users"
-    id: Mapped[str] = mapped_column(String, primary_key=True)
-    tenant_id: Mapped[str] = mapped_column(String)
-    auth_provider: Mapped[str] = mapped_column(String)
-    auth_subject: Mapped[str] = mapped_column(String)
-    email: Mapped[str] = mapped_column(String, nullable=True)
-    display_name: Mapped[str] = mapped_column(String, nullable=True)
-    avatar_url: Mapped[str] = mapped_column(String, nullable=True)
-    user_metadata: Mapped[str] = mapped_column(String, nullable=True)  # JSON field
+from ..dbmodels import Users
 from .adapters.base import Principal
+from ..logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def ensure_local_user(
@@ -56,12 +37,24 @@ async def ensure_local_user(
     provider = principal["provider"]
     subject = principal["subject"]
     
+    # Convert tenant_id to UUID if it's a string
+    if isinstance(tenant_id, str):
+        try:
+            tenant_uuid = UUID(tenant_id)
+        except ValueError:
+            # If tenant_id is not a valid UUID string, we might need to look it up
+            # For now, generate a UUID from the string (this might not be ideal)
+            import hashlib
+            tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
+    else:
+        tenant_uuid = tenant_id
+
     # Try to find existing user
-    stmt = select(User).where(
+    stmt = select(Users).where(
         and_(
-            User.tenant_id == tenant_id,
-            User.auth_provider == provider,
-            User.auth_subject == subject,
+            Users.tenant_id == tenant_uuid,
+            Users.auth_provider == provider,
+            Users.auth_subject == subject,
         )
     )
     
@@ -89,40 +82,40 @@ async def ensure_local_user(
         
         if updated:
             await db.commit()
-            logger.info(f"Updated user info for user_id={user.id}")
+            logger.info("Updated user info", user_id=str(user.id))
         
-        return UUID(user.id)
+        return user.id
     
-    # Create new user
-    new_user_id = str(uuid4())
-    user = User(
-        id=new_user_id,
-        tenant_id=tenant_id,
+    # Create new user  
+    user = Users(
+        tenant_id=tenant_uuid,
         auth_provider=provider,
         auth_subject=subject,
         email=principal.get("email"),
         display_name=principal.get("display_name"),
         avatar_url=principal.get("avatar_url"),
-        user_metadata=str({
+        metadata_={
             "created_via": "jit_provisioning",
             "provider_claims": principal.get("claims", {}),
-        })
+        }
     )
     
     db.add(user)
     await db.commit()
     
     logger.info(
-        f"Created new user via JIT provisioning: "
-        f"user_id={user.id}, tenant_id={tenant_id}, provider={provider}"
+        "Created new user via JIT provisioning",
+        user_id=str(user.id),
+        tenant_id=tenant_id,
+        provider=provider
     )
     
-    return UUID(user.id)
+    return user.id
 
 
-async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
+async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[Users]:
     """Get a user by ID."""
-    stmt = select(User).where(User.id == str(user_id))
+    stmt = select(Users).where(Users.id == user_id)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
@@ -132,13 +125,23 @@ async def get_user_by_auth_info(
     tenant_id: str,
     auth_provider: str,
     auth_subject: str
-) -> Optional[User]:
+) -> Optional[Users]:
     """Get a user by auth provider information."""
-    stmt = select(User).where(
+    # Convert tenant_id to UUID if it's a string
+    if isinstance(tenant_id, str):
+        try:
+            tenant_uuid = UUID(tenant_id)
+        except ValueError:
+            import hashlib
+            tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
+    else:
+        tenant_uuid = tenant_id
+    
+    stmt = select(Users).where(
         and_(
-            User.tenant_id == tenant_id,
-            User.auth_provider == auth_provider,
-            User.auth_subject == auth_subject,
+            Users.tenant_id == tenant_uuid,
+            Users.auth_provider == auth_provider,
+            Users.auth_subject == auth_subject,
         )
     )
     result = await db.execute(stmt)
