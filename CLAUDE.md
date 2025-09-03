@@ -9,11 +9,13 @@ Boards is an open-source creative toolkit for AI-generated content (images, vide
 ## Architecture
 
 **Monorepo Structure:**
+
 - `/packages/` - Shared libraries (Python backend, React frontend)
 - `/apps/` - Applications (Next.js example app, Docusaurus docs)
 - `/design/` - Architecture and design documents
 
 **Tech Stack:**
+
 - **Backend**: Python 3.12 with SQLAlchemy + Supabase (storage and optional auth)
 - **Frontend**: React + Next.js with TypeScript
 - **Job System**: Framework-agnostic queue (RQ or Dramatiq) with workers
@@ -78,5 +80,9 @@ make clean              # Remove all build artifacts and dependencies
 ## Database Configuration
 
 Local development uses Docker Compose with:
+
 - PostgreSQL 15 on port 5433 (user: boards, password: boards_dev, database: boards_dev)
 - Redis 7 on port 6380
+- to typecheck the backend and frontend, run `make typecheck` at the root of the project
+- to run tests for the backend and frontend, run `make test` at the root of the project
+- for backend logging, always use @packages/backend/src/boards/logging.py which is based on `structlog`. Avoid f-strings in favor of kwargs
