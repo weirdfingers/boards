@@ -19,6 +19,13 @@
     "resolveJsonModule": true,
     "moduleResolution": "node"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/__tests__/**/*", "src/test-setup.ts", "src/graphql/client.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/__tests__/**/*"
+  ]
 }
