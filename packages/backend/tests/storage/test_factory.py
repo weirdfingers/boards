@@ -40,9 +40,42 @@ class TestCreateStorageProvider:
         with pytest.raises(ValueError, match="Unknown storage provider type"):
             create_storage_provider("unknown", {})
 
-    def test_create_s3_not_implemented(self):
-        with pytest.raises(NotImplementedError):
+    @patch("boards.storage.factory._s3_available", True)
+    @patch("boards.storage.factory.S3StorageProvider")
+    def test_create_s3_provider(self, mock_s3):  # type: ignore[reportUnknownArgumentType]
+        config = {
+            "bucket": "test-bucket",
+            "region": "us-west-2",
+            "aws_access_key_id": "test-key",
+            "aws_secret_access_key": "test-secret",
+        }
+
+        create_storage_provider("s3", config)
+
+        mock_s3.assert_called_once()  # type: ignore[reportUnknownMemberType]
+
+    @patch("boards.storage.factory._s3_available", False)
+    def test_create_s3_not_available(self):
+        with pytest.raises(ImportError, match="S3 storage requires"):
             create_storage_provider("s3", {})
+
+    @patch("boards.storage.factory._gcs_available", True)
+    @patch("boards.storage.factory.GCSStorageProvider")
+    def test_create_gcs_provider(self, mock_gcs):  # type: ignore[reportUnknownArgumentType]
+        config = {
+            "bucket": "test-bucket",
+            "project_id": "test-project",
+            "credentials_path": "/path/to/creds.json",
+        }
+
+        create_storage_provider("gcs", config)
+
+        mock_gcs.assert_called_once()  # type: ignore[reportUnknownMemberType]
+
+    @patch("boards.storage.factory._gcs_available", False)
+    def test_create_gcs_not_available(self):
+        with pytest.raises(ImportError, match="GCS storage requires"):
+            create_storage_provider("gcs", {})
 
     @patch("boards.storage.factory._supabase_available", True)
     @patch("boards.storage.factory.SupabaseStorageProvider")
