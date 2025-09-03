@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import logging
+import os
 from uuid import UUID
 
-from .base import AuthAdapter, Principal, AuthenticationError
+from .base import Principal, AuthenticationError
+from ...logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class NoAuthAdapter:
@@ -21,9 +22,34 @@ class NoAuthAdapter:
     def __init__(self, default_user_id: str = "dev-user", default_tenant: str = "default"):
         self.default_user_id = default_user_id
         self.default_tenant = default_tenant
+        
+        # Production safety checks
+        environment = os.getenv("ENVIRONMENT", "").lower()
+        if environment in ("production", "prod"):
+            logger.error(
+                "NoAuthAdapter detected in production environment! "
+                "This is a security risk and should never be used in production.",
+                environment=environment
+            )
+            raise RuntimeError(
+                "NoAuthAdapter cannot be used in production environments. "
+                "Please configure a proper authentication provider."
+            )
+        
+        # Check for production-like domains
+        api_url = os.getenv("BOARDS_API_URL", "")
+        if api_url and not any(domain in api_url for domain in ["localhost", "127.0.0.1", "dev.", "staging."]):
+            logger.warning(
+                "NoAuthAdapter detected with production-like URL. "
+                "Ensure this is intentional and not deployed to production.",
+                api_url=api_url
+            )
+        
         logger.warning(
             "NoAuthAdapter is active - ALL requests will be treated as authenticated! "
-            "This should ONLY be used in development."
+            "This should ONLY be used in development.",
+            user_id=default_user_id,
+            environment=os.getenv("ENVIRONMENT", "unknown")
         )
     
     async def verify_token(self, token: str) -> Principal:

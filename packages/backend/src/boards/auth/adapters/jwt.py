@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import json
-import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any
 from uuid import UUID
 
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-from .base import AuthAdapter, Principal, AuthenticationError
+from .base import Principal, AuthenticationError
+from ...logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class JWTAuthAdapter:
@@ -24,12 +23,14 @@ class JWTAuthAdapter:
         secret_key: str, 
         algorithm: str = "HS256",
         issuer: str = "boards",
-        audience: str = "boards-api"
+        audience: str = "boards-api",
+        token_expiry_hours: int = 24
     ):
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.issuer = issuer
         self.audience = audience
+        self.token_expiry_hours = token_expiry_hours
     
     async def verify_token(self, token: str) -> Principal:
         """Verify a JWT token and return the principal."""
@@ -75,8 +76,8 @@ class JWTAuthAdapter:
             # Re-raise our own authentication errors
             raise
         except InvalidTokenError as e:
-            logger.warning(f"JWT token validation failed: {e}")
-            raise AuthenticationError(f"Invalid token: {e}")
+            logger.warning("JWT token validation failed", error=str(e))
+            raise AuthenticationError("Invalid token")
         except Exception as e:
             logger.error(f"Unexpected error verifying JWT token: {e}")
             raise AuthenticationError("Token verification failed")
@@ -94,7 +95,7 @@ class JWTAuthAdapter:
             "aud": self.audience,
             "iat": now,
             "nbf": now,
-            "exp": now + timedelta(hours=24),  # 24 hour expiry
+            "exp": now + timedelta(hours=self.token_expiry_hours),
         }
         
         if user_id:
@@ -112,9 +113,15 @@ class JWTAuthAdapter:
                 token,
                 self.secret_key,
                 algorithms=[self.algorithm],
-                options={"verify_signature": False}  # Already verified in verify_token
+                issuer=self.issuer,
+                audience=self.audience,
+                options={
+                    "verify_exp": True,
+                    "verify_nbf": True,
+                    "verify_iat": True,
+                }
             )
             return payload
         except Exception as e:
-            logger.warning(f"Failed to decode JWT for user info: {e}")
+            logger.warning("Failed to decode JWT for user info", error=str(e))
             return {}

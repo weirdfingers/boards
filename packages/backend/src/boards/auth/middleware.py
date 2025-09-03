@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from fastapi import Header, HTTPException
 
@@ -13,8 +12,9 @@ from .adapters.base import AuthenticationError
 from .context import AuthContext
 from .factory import get_auth_adapter_cached
 from .provisioning import ensure_local_user
+from ..logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def get_auth_context(
@@ -61,7 +61,7 @@ async def get_auth_context(
     
     # Extract Bearer token
     if not authorization.startswith("Bearer "):
-        logger.warning(f"Invalid authorization format: {authorization[:20]}...")
+        logger.warning("Invalid authorization format received")
         raise HTTPException(
             status_code=401,
             detail="Invalid authorization format. Expected: Bearer <token>",

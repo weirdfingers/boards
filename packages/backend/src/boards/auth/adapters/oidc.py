@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import logging
 import httpx
 from typing import Any, Dict
 from uuid import UUID
 import jwt
-from jwt.algorithms import RSAAlgorithm, ECAlgorithm
 
-from .base import AuthAdapter, Principal, AuthenticationError
+from .base import Principal, AuthenticationError
+from ...logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OIDCAdapter:
@@ -65,11 +64,8 @@ class OIDCAdapter:
             key = None
             for jwk in jwks.get("keys", []):
                 if jwk.get("kid") == kid:
-                    # Support both RSA and EC keys
-                    if jwk.get("kty") == "RSA":
-                        key = RSAAlgorithm.from_jwk(jwk)
-                    elif jwk.get("kty") == "EC":
-                        key = ECAlgorithm.from_jwk(jwk)
+                    # Store the JWK - PyJWT handles RSA/EC conversion internally
+                    key = jwk
                     break
             
             if not key:
