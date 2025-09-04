@@ -226,8 +226,10 @@ class TestAuthIntegration:
     @patch("boards.auth.middleware.ensure_local_user")
     def test_jit_provisioning_called(self, mock_ensure_user, client):
         """Test that JIT provisioning is called correctly."""
-        # Setup mocks (note: JIT provisioning is not called in tests due to missing db module)
-        mock_ensure_user.return_value = "provisioned-user-uuid"
+        # Setup mocks - JIT provisioning is now called since database module is available
+        from uuid import uuid4
+        mock_user_id = uuid4()
+        mock_ensure_user.return_value = mock_user_id
         
         # Clear adapter cache
         import boards.auth.factory
@@ -237,9 +239,17 @@ class TestAuthIntegration:
         
         assert response.status_code == 200
         
-        # In test environment, JIT provisioning is not called due to missing database module
-        # The middleware uses a fallback UUID instead
-        mock_ensure_user.assert_not_called()
+        # JIT provisioning should now be called since database module is available
+        mock_ensure_user.assert_called_once()
+        
+        # Verify the call arguments
+        call_args = mock_ensure_user.call_args
+        _, tenant_id, principal = call_args[0]
+        
+        assert tenant_id == "default"
+        assert principal["provider"] == "none"
+        assert principal["subject"] == "dev-user"
+        assert principal["email"] == "dev@example.com"
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "unsupported"})
     def test_unsupported_provider_error(self, client):

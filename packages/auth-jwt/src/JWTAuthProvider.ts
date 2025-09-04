@@ -138,14 +138,54 @@ export class JWTAuthProvider extends BaseAuthProvider {
     }
   }
 
+  /**
+   * Parse a JWT and return its payload, with robust error handling.
+   */
   private parseJWT(token: string): JWTPayload {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      throw new Error('Invalid JWT format');
+      throw new Error('Invalid JWT format: token must have exactly 3 parts separated by dots');
     }
+    
+    try {
+      const payloadJson = this.base64UrlDecode(parts[1]);
+      const payload = JSON.parse(payloadJson);
+      
+      if (typeof payload !== 'object' || payload === null) {
+        throw new Error('Invalid JWT payload: payload must be a JSON object');
+      }
+      
+      return payload;
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('Invalid JWT')) {
+        // Re-throw our own validation errors
+        throw err;
+      }
+      throw new Error('Failed to decode or parse JWT payload: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  }
 
-    const payload = JSON.parse(atob(parts[1]));
-    return payload;
+  /**
+   * Decodes a base64url-encoded string.
+   */
+  private base64UrlDecode(input: string): string {
+    // Replace non-url compatible chars with base64 standard chars
+    input = input.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Pad out with standard base64 required padding characters
+    const pad = input.length % 4;
+    if (pad) {
+      if (pad === 1) {
+        throw new Error('Invalid base64url encoding: incorrect padding');
+      }
+      input += '='.repeat(4 - pad);
+    }
+    
+    try {
+      return atob(input);
+    } catch (e) {
+      throw new Error('Invalid base64url encoding: ' + (e instanceof Error ? e.message : String(e)));
+    }
   }
 
   private isTokenExpired(token: string): boolean {

@@ -2,7 +2,7 @@
  * Tests for NoAuthProvider.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NoAuthProvider } from '../none';
 
 // Mock console.warn to avoid warnings in tests
@@ -42,40 +42,55 @@ describe('NoAuthProvider', () => {
   it('should show warning on initialization', () => {
     new NoAuthProvider();
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('NoAuthProvider is active')
+      '🚨 [AUTH] NoAuthProvider is active - authentication is disabled!',
+      expect.objectContaining({
+        environment: 'test',
+        message: 'This should ONLY be used in development environments',
+        provider: 'none',
+      })
     );
   });
 
   it('should handle signIn as no-op', async () => {
     await provider.initialize();
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     
     await provider.signIn({ email: 'test@example.com', password: 'password' });
     
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'SignIn called in no-auth mode - no action taken'
+    expect(infoSpy).toHaveBeenCalledWith(
+      '[AUTH] SignIn called in no-auth mode - no action taken',
+      expect.objectContaining({
+        provider: 'none',
+        action: 'signIn',
+        status: 'ignored',
+      })
     );
     
     const state = await provider.getAuthState();
     expect(state.status).toBe('authenticated');
     
-    consoleSpy.mockRestore();
+    infoSpy.mockRestore();
   });
 
   it('should handle signOut as no-op', async () => {
     await provider.initialize();
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     
     await provider.signOut();
     
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'SignOut called in no-auth mode - no action taken'
+    expect(infoSpy).toHaveBeenCalledWith(
+      '[AUTH] SignOut called in no-auth mode - no action taken',
+      expect.objectContaining({
+        provider: 'none',
+        action: 'signOut',
+        status: 'ignored',
+      })
     );
     
     const state = await provider.getAuthState();
     expect(state.status).toBe('authenticated'); // Still authenticated
     
-    consoleSpy.mockRestore();
+    infoSpy.mockRestore();
   });
 
   it('should return fake token', async () => {

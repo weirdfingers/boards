@@ -62,7 +62,7 @@ class NoAuthAdapter:
             raise AuthenticationError("Token required (even in no-auth mode)")
         
         # Return a default principal for development
-        return Principal(
+        principal = Principal(
             provider="none",
             subject=self.default_user_id,
             email="dev@example.com",
@@ -72,6 +72,9 @@ class NoAuthAdapter:
                 "token": token[:20] + "..." if len(token) > 20 else token,
             }
         )
+        # avatar_url is NotRequired, so we can add it as None if needed for tests
+        principal["avatar_url"] = None
+        return principal
     
     async def issue_token(
         self, 

@@ -2,7 +2,7 @@
  * Test setup for Vitest.
  */
 
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = {

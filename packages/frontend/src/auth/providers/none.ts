@@ -33,6 +33,20 @@ export class NoAuthProvider extends BaseAuthProvider {
 
   constructor(config: NoAuthConfig = {}) {
     super(config);
+    
+    // Production safety check
+    const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : '';
+    const isDevelopment = nodeEnv === 'development' || nodeEnv === '' || nodeEnv === 'test';
+    
+    if (!isDevelopment) {
+      const error = new Error(
+        'NoAuthProvider cannot be used in production environments. ' +
+        'Please configure a proper authentication provider (JWT, Supabase, Clerk, etc.)'
+      );
+      console.error('🚨 SECURITY ERROR:', error.message);
+      throw error;
+    }
+
     this.config = {
       defaultUserId: 'dev-user',
       defaultEmail: 'dev@example.com',
@@ -57,10 +71,17 @@ export class NoAuthProvider extends BaseAuthProvider {
       getToken: this.getToken.bind(this),
     };
 
-    console.warn(
-      '🚨 NoAuthProvider is active - authentication is disabled! ' +
-      'This should ONLY be used in development environments.'
-    );
+    // Use structured warning instead of console.warn
+    if (console.warn) {
+      console.warn(
+        '🚨 [AUTH] NoAuthProvider is active - authentication is disabled!',
+        {
+          message: 'This should ONLY be used in development environments',
+          environment: nodeEnv || 'unknown',
+          provider: 'none',
+        }
+      );
+    }
   }
 
   async initialize(): Promise<void> {
@@ -74,12 +95,24 @@ export class NoAuthProvider extends BaseAuthProvider {
 
   async signIn(_opts?: Record<string, unknown>): Promise<void> {
     // No-op in no-auth mode - already signed in
-    console.log('SignIn called in no-auth mode - no action taken');
+    if (console.info) {
+      console.info('[AUTH] SignIn called in no-auth mode - no action taken', {
+        provider: 'none',
+        action: 'signIn',
+        status: 'ignored'
+      });
+    }
   }
 
   async signOut(): Promise<void> {
     // No-op in no-auth mode - can't sign out
-    console.log('SignOut called in no-auth mode - no action taken');
+    if (console.info) {
+      console.info('[AUTH] SignOut called in no-auth mode - no action taken', {
+        provider: 'none', 
+        action: 'signOut',
+        status: 'ignored'
+      });
+    }
   }
 
   async getToken(): Promise<string | null> {

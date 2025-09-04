@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import Optional
-from uuid import uuid4
 
 from fastapi import Header, HTTPException
 
@@ -90,9 +89,47 @@ async def get_auth_context(
 
             async with get_async_session() as db:
                 user_id = await ensure_local_user(db, tenant_id, principal)
-        except ImportError:
-            # Database module not available, use fallback
-            user_id = uuid4()
+        except ImportError as e:
+            # Database module not available, use deterministic fallback
+            logger.warning(
+                "Database connection not available, using fallback user ID generation",
+                error=str(e),
+                principal_provider=principal.get("provider"),
+                principal_subject=principal.get("subject"),
+                fallback_mode="deterministic_uuid"
+            )
+            
+            # Create a deterministic UUID based on principal's subject and provider
+            # This ensures the same user gets the same ID across requests
+            import hashlib
+            stable_input = f"{principal.get('provider', 'unknown')}:{principal.get('subject', 'anonymous')}:{tenant_id}"
+            user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
+            # Create a valid UUID from the hash
+            formatted_uuid = f"{user_id_hash[:8]}-{user_id_hash[8:12]}-{user_id_hash[12:16]}-{user_id_hash[16:20]}-{user_id_hash[20:32]}"
+            from uuid import UUID
+            user_id = UUID(formatted_uuid)
+            
+            logger.info(
+                "Generated deterministic fallback user ID",
+                user_id=str(user_id),
+                tenant_id=tenant_id,
+                provider=principal.get("provider")
+            )
+        except Exception as db_error:
+            # Database connection failed, use the same deterministic fallback
+            logger.error(
+                "Database connection failed, using fallback user ID generation", 
+                error=str(db_error),
+                principal_provider=principal.get("provider"),
+                principal_subject=principal.get("subject")
+            )
+            
+            import hashlib
+            stable_input = f"{principal.get('provider', 'unknown')}:{principal.get('subject', 'anonymous')}:{tenant_id}"
+            user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
+            formatted_uuid = f"{user_id_hash[:8]}-{user_id_hash[8:12]}-{user_id_hash[12:16]}-{user_id_hash[16:20]}-{user_id_hash[20:32]}"
+            from uuid import UUID
+            user_id = UUID(formatted_uuid)
 
         return AuthContext(
             user_id=user_id,
