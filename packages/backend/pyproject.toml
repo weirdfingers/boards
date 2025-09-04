@@ -4,13 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boards-backend"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Backend API server for Boards - AI creative toolkit with GraphQL, auth adapters, and generation workers"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Boards Contributors", email = "dev@boards.io" }]
-keywords = ["ai", "creative", "toolkit", "graphql", "fastapi", "strawberry", "auth", "generation"]
+keywords = [
+    "ai",
+    "creative",
+    "toolkit",
+    "graphql",
+    "fastapi",
+    "strawberry",
+    "auth",
+    "generation",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -62,13 +71,8 @@ providers = [
     "replicate>=0.25.0",
     "together>=1.0.0",
 ]
-storage-s3 = [
-    "boto3>=1.34.0",
-    "aioboto3>=12.0.0",
-]
-storage-gcs = [
-    "google-cloud-storage>=2.10.0",
-]
+storage-s3 = ["boto3>=1.34.0", "aioboto3>=12.0.0"]
+storage-gcs = ["google-cloud-storage>=2.10.0"]
 
 [project.urls]
 Homepage = "https://github.com/weirdfingers/boards"
@@ -102,6 +106,9 @@ select = [
 testpaths = ["tests"]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+
+[tool.setuptools.dynamic]
+version = { attr = "boards.__version__" }
 
 [tool.uv]
 dev-dependencies = [

@@ -7,6 +7,7 @@ import sys
 
 import click
 import uvicorn
+from boards import __version__
 from boards.logging import configure_logging, get_logger
 
 logger = get_logger(__name__)
@@ -42,7 +43,7 @@ logger = get_logger(__name__)
     type=click.Choice(["debug", "info", "warning", "error"]),
     help="Log level (default: info)",
 )
-@click.version_option(version="0.1.0", prog_name="boards-server")
+@click.version_option(version=__version__, prog_name="boards-server")
 def main(
     host: str,
     port: int,
@@ -51,10 +52,10 @@ def main(
     log_level: str,
 ) -> None:
     """Start the Boards API server."""
-    
+
     # Configure logging
     configure_logging(debug=(log_level == "debug"))
-    
+
     logger.info(
         "Starting Boards API server",
         host=host,
@@ -63,17 +64,19 @@ def main(
         workers=workers,
         log_level=log_level,
     )
-    
+
     # Import app after logging is configured
     from boards.api.app import app
-    
+
     try:
         uvicorn.run(
             app,
             host=host,
             port=port,
             reload=reload,
-            workers=workers if not reload else 1,  # reload doesn't work with multiple workers
+            workers=(
+                workers if not reload else 1
+            ),  # reload doesn't work with multiple workers
             log_level=log_level,
             access_log=True,
         )

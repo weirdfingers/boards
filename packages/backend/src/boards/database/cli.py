@@ -10,6 +10,7 @@ import click
 from alembic import command
 from alembic.config import Config
 from boards.logging import configure_logging, get_logger
+from boards import __version__
 
 logger = get_logger(__name__)
 
@@ -19,10 +20,10 @@ def get_alembic_config() -> Config:
     # Find alembic.ini in the package directory
     package_dir = Path(__file__).parent.parent.parent.parent
     alembic_ini = package_dir / "alembic.ini"
-    
+
     if not alembic_ini.exists():
         raise FileNotFoundError(f"alembic.ini not found at {alembic_ini}")
-    
+
     return Config(str(alembic_ini))
 
 
@@ -33,7 +34,7 @@ def get_alembic_config() -> Config:
     type=click.Choice(["debug", "info", "warning", "error"]),
     help="Log level (default: info)",
 )
-@click.version_option(version="0.1.0", prog_name="boards-migrate")
+@click.version_option(version=__version__, prog_name="boards-migrate")
 def main(log_level: str) -> None:
     """Boards database migration management."""
     configure_logging(debug=(log_level == "debug"))
@@ -69,12 +70,16 @@ def downgrade(revision: str) -> None:
 
 @main.command()
 @click.option("-m", "--message", required=True, help="Revision message")
-@click.option("--autogenerate/--no-autogenerate", default=True, help="Auto-generate migration")
+@click.option(
+    "--autogenerate/--no-autogenerate", default=True, help="Auto-generate migration"
+)
 def revision(message: str, autogenerate: bool) -> None:
     """Create a new migration revision."""
     try:
         config = get_alembic_config()
-        logger.info("Creating new migration", message=message, autogenerate=autogenerate)
+        logger.info(
+            "Creating new migration", message=message, autogenerate=autogenerate
+        )
         command.revision(config, message=message, autogenerate=autogenerate)
         logger.info("Migration created successfully")
     except Exception as e:
