@@ -2,7 +2,7 @@
  * Hook for managing multiple boards.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'urql';
 import { GET_BOARDS, CREATE_BOARD, DELETE_BOARD, CreateBoardInput } from '../graphql/operations';
 
@@ -41,15 +41,38 @@ interface BoardsHook {
   deleteBoard: (boardId: string) => Promise<void>;
   searchBoards: (query: string) => Promise<Board[]>;
   refresh: () => Promise<void>;
+  setSearchQuery: (query: string) => void;
+  searchQuery: string;
+}
+
+// Custom hook for debouncing search queries
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 export function useBoards(options: UseBoardsOptions = {}): BoardsHook {
-  const { limit = 50, offset = 0, search } = options;
+  const { limit = 50, offset = 0 } = options;
+  const [searchQuery, setSearchQuery] = useState(options.search || '');
   
-  // Query for boards
+  // Debounce search query to avoid excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
+  // Query for boards with debounced search
   const [{ data, fetching, error }, reexecuteQuery] = useQuery({
     query: GET_BOARDS,
-    variables: { limit, offset, search },
+    variables: { limit, offset, search: debouncedSearchQuery },
   });
 
   // Mutations
@@ -59,21 +82,46 @@ export function useBoards(options: UseBoardsOptions = {}): BoardsHook {
   const boards = useMemo(() => data?.boards || [], [data?.boards]);
 
   const createBoard = useCallback(async (input: CreateBoardInput): Promise<Board> => {
-    const result = await createBoardMutation({ input });
-    
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-    
-    if (!result.data?.createBoard) {
-      throw new Error('Failed to create board');
-    }
 
-    // Refresh the boards list to include the new board
-    reexecuteQuery({ requestPolicy: 'network-only' });
+    // Retry logic for network failures
+    let lastError: Error | null = null;
+    const maxRetries = 3;
     
-    return result.data.createBoard;
-  }, [createBoardMutation, reexecuteQuery]);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await createBoardMutation({ input });
+        
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+        
+        if (!result.data?.createBoard) {
+          throw new Error('Failed to create board');
+        }
+
+        return result.data.createBoard;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        // Don't retry on certain types of errors
+        if (lastError.message.includes('validation') || 
+            lastError.message.includes('unauthorized') ||
+            lastError.message.includes('forbidden')) {
+          throw lastError;
+        }
+        
+        // If this was the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw lastError;
+        }
+        
+        // Wait with exponential backoff before retrying
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+      }
+    }
+    
+    throw lastError || new Error('Failed to create board after retries');
+  }, [createBoardMutation]);
 
   const deleteBoard = useCallback(async (boardId: string): Promise<void> => {
     const result = await deleteBoardMutation({ id: boardId });
@@ -85,25 +133,25 @@ export function useBoards(options: UseBoardsOptions = {}): BoardsHook {
     if (!result.data?.deleteBoard?.success) {
       throw new Error('Failed to delete board');
     }
-
-    // Refresh the boards list to remove the deleted board
-    reexecuteQuery({ requestPolicy: 'network-only' });
-  }, [deleteBoardMutation, reexecuteQuery]);
+  }, [deleteBoardMutation]);
 
   const searchBoards = useCallback(async (query: string): Promise<Board[]> => {
-    // For search, we trigger a new query execution
-    reexecuteQuery({
-      variables: { limit, offset: 0, search: query },
-      requestPolicy: 'network-only'
-    });
+    // Set search query which will trigger debounced search via useEffect
+    setSearchQuery(query);
     
-    // Return current boards - this is a simplified implementation
-    // In practice, you might want to use a separate query for search
-    return boards.filter((board: Board) => 
-      board.title.toLowerCase().includes(query.toLowerCase()) ||
-      board.description?.toLowerCase().includes(query.toLowerCase())
-    );
-  }, [reexecuteQuery, limit, boards]);
+    // Return promise that resolves when search completes
+    // This is a simplified implementation - in a real app you might want
+    // to return the actual search results from the API
+    return new Promise((resolve) => {
+      // Wait for debounce delay plus a bit more for API response
+      setTimeout(() => {
+        resolve(boards.filter((board: Board) => 
+          board.title.toLowerCase().includes(query.toLowerCase()) ||
+          board.description?.toLowerCase().includes(query.toLowerCase())
+        ));
+      }, 350);
+    });
+  }, [boards]);
 
   const refresh = useCallback(async (): Promise<void> => {
     await reexecuteQuery({ requestPolicy: 'network-only' });
@@ -117,5 +165,7 @@ export function useBoards(options: UseBoardsOptions = {}): BoardsHook {
     deleteBoard,
     searchBoards,
     refresh,
+    setSearchQuery,
+    searchQuery,
   };
 }

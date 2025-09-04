@@ -135,7 +135,7 @@ export function useGeneration(): GenerationHook {
         setProgress(progressData);
 
         // If generation is complete, handle the result
-        if (progressData.status === 'completed' || progressData.status === 'failed') {
+        if (progressData.status === 'completed' || progressData.status === 'failed' || progressData.status === 'cancelled') {
           setIsGenerating(false);
           
           if (progressData.status === 'completed') {
@@ -154,17 +154,23 @@ export function useGeneration(): GenerationHook {
             
             setResult(mockResult);
             setHistory(prev => [...prev, mockResult]);
-          } else {
+          } else if (progressData.status === 'failed') {
             setError(new Error('Generation failed'));
           }
+          // For cancelled, just stop generating without error
           
-          // Close SSE connection
+          // Always close SSE connection and clean up when done
           eventSource.close();
           sseConnections.current.delete(jobId);
         }
       } catch (err) {
         console.error('Failed to parse SSE message:', err);
         setError(new Error('Failed to parse progress update'));
+        setIsGenerating(false);
+        
+        // Close SSE connection on parse error and clean up
+        eventSource.close();
+        sseConnections.current.delete(jobId);
       }
     };
 
@@ -180,45 +186,74 @@ export function useGeneration(): GenerationHook {
   }, []);
 
   const submit = useCallback(async (request: GenerationRequest): Promise<string> => {
-    try {
-      setError(null);
-      setProgress(null);
-      setResult(null);
-      setIsGenerating(true);
+    setError(null);
+    setProgress(null);
+    setResult(null);
+    setIsGenerating(true);
 
-      // Convert the request to the GraphQL input format
-      const input: CreateGenerationInput = {
-        boardId: request.boardId,
-        providerName: request.provider,
-        generatorName: request.model,
-        inputParams: {
-          ...request.inputs,
-          ...request.options,
-        },
-      };
+    // Convert the request to the GraphQL input format
+    const input: CreateGenerationInput = {
+      boardId: request.boardId,
+      providerName: request.provider,
+      generatorName: request.model,
+      inputParams: {
+        ...request.inputs,
+        ...request.options,
+      },
+    };
 
-      // Submit generation via GraphQL
-      const result = await createGenerationMutation({ input });
-      
-      if (result.error) {
-        throw new Error(result.error.message);
+    // Retry logic for generation submission
+    let lastError: Error | null = null;
+    const maxRetries = 2; // Fewer retries for generation as it's expensive
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Submit generation via GraphQL
+        const result = await createGenerationMutation({ input });
+        
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+        
+        if (!result.data?.createGeneration) {
+          throw new Error('Failed to create generation');
+        }
+
+        const jobId = result.data.createGeneration.id;
+        
+        // Connect to SSE for progress updates
+        connectToSSE(jobId);
+        
+        return jobId;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error('Failed to submit generation');
+        
+        // Don't retry on certain types of errors
+        if (lastError.message.includes('insufficient credits') || 
+            lastError.message.includes('validation') ||
+            lastError.message.includes('unauthorized') ||
+            lastError.message.includes('forbidden')) {
+          setError(lastError);
+          setIsGenerating(false);
+          throw lastError;
+        }
+        
+        // If this was the last attempt, throw the error
+        if (attempt === maxRetries) {
+          setError(lastError);
+          setIsGenerating(false);
+          throw lastError;
+        }
+        
+        // Wait before retrying (shorter delay for generations)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      
-      if (!result.data?.createGeneration) {
-        throw new Error('Failed to create generation');
-      }
-
-      const jobId = result.data.createGeneration.id;
-      
-      // Connect to SSE for progress updates
-      connectToSSE(jobId);
-      
-      return jobId;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to submit generation'));
-      setIsGenerating(false);
-      throw err;
     }
+    
+    const finalError = lastError || new Error('Failed to submit generation after retries');
+    setError(finalError);
+    setIsGenerating(false);
+    throw finalError;
   }, [createGenerationMutation, connectToSSE]);
 
   const cancel = useCallback(async (jobId: string): Promise<void> => {

@@ -4,6 +4,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'urql';
+import { useAuth } from '../auth/hooks/useAuth';
 import { 
   GET_BOARD, 
   UPDATE_BOARD, 
@@ -100,6 +101,8 @@ interface BoardHook {
 }
 
 export function useBoard(boardId: string): BoardHook {
+  const { user } = useAuth();
+  
   // Query for board data
   const [{ data, fetching, error }, reexecuteQuery] = useQuery({
     query: GET_BOARD,
@@ -119,7 +122,7 @@ export function useBoard(boardId: string): BoardHook {
 
   // Calculate permissions based on user role
   const permissions = useMemo((): BoardPermissions => {
-    if (!board) {
+    if (!board || !user) {
       return {
         canEdit: false,
         canDelete: false,
@@ -130,20 +133,26 @@ export function useBoard(boardId: string): BoardHook {
       };
     }
 
-    // TODO: Get current user from auth context and check their role
-    // For now, assume owner has all permissions
-    const isOwner = true; // Replace with actual auth check
-    const isAdmin = true; // Replace with actual role check
+    // Check if user is the board owner
+    const isOwner = board.ownerId === user.id;
+    
+    // Find user's role in board members
+    const userMember = members.find((member: BoardMember) => member.userId === user.id);
+    const userRole = userMember?.role;
+    
+    const isAdmin = userRole === BoardRole.ADMIN;
+    const isEditor = userRole === BoardRole.EDITOR || isAdmin;
+    const isViewer = userRole === BoardRole.VIEWER || isEditor;
 
     return {
-      canEdit: isOwner || isAdmin,
+      canEdit: isOwner || isAdmin || isEditor,
       canDelete: isOwner,
       canAddMembers: isOwner || isAdmin,
       canRemoveMembers: isOwner || isAdmin,
-      canGenerate: true, // Most users can generate
-      canExport: true, // Most users can export
+      canGenerate: isOwner || isAdmin || isEditor,
+      canExport: isViewer, // Even viewers can export
     };
-  }, [board]);
+  }, [board, user, members]);
 
   const updateBoard = useCallback(async (updates: Partial<UpdateBoardInput>): Promise<Board> => {
     if (!boardId) {

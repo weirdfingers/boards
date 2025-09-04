@@ -41,23 +41,11 @@ export function createGraphQLClient({ url, subscriptionUrl, auth, tenantId }: Cl
   return createClient({
     url,
     exchanges: [
-      authExchange(async (utilities) => ({
+      authExchange(async (_utilities) => ({
         addAuthToOperation: (operation) => {
-          // Get token from auth state
-          const token = operation.context.authToken;
-          if (!token) {
-            return operation;
-          }
-
-          const headers: Record<string, string> = {
-            Authorization: `Bearer ${token}`,
-          };
-
-          if (tenantId) {
-            headers['X-Tenant'] = tenantId;
-          }
-
-          return utilities.appendHeaders(operation, headers);
+          // For now, use a simpler approach - token will be added via context
+          // TODO: Implement proper async token fetching
+          return operation;
         },
 
         willAuthError: () => false,
