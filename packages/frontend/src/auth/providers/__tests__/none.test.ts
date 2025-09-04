@@ -32,10 +32,13 @@ describe('NoAuthProvider', () => {
     expect(state.user).toEqual({
       id: 'test-user',
       email: 'test@example.com',
-      displayName: 'Test User',
-      avatarUrl: undefined,
-      provider: 'none',
-      subject: 'test-user',
+      name: 'Test User',
+      avatar: undefined,
+      metadata: { provider: 'none' },
+      credits: {
+        balance: 1000,
+        reserved: 0,
+      },
     });
   });
 
@@ -107,10 +110,13 @@ describe('NoAuthProvider', () => {
     expect(user).toEqual({
       id: 'test-user',
       email: 'test@example.com',
-      displayName: 'Test User',
-      avatarUrl: undefined,
-      provider: 'none',
-      subject: 'test-user',
+      name: 'Test User',
+      avatar: undefined,
+      metadata: { provider: 'none' },
+      credits: {
+        balance: 1000,
+        reserved: 0,
+      },
     });
   });
 
@@ -124,12 +130,13 @@ describe('NoAuthProvider', () => {
     expect(mockCallback).toHaveBeenCalledWith({
       user: expect.objectContaining({
         id: 'test-user',
-        provider: 'none',
+        metadata: { provider: 'none' },
       }),
       status: 'authenticated',
       signIn: expect.any(Function),
       signOut: expect.any(Function),
       getToken: expect.any(Function),
+      refreshToken: expect.any(Function),
     });
     
     unsubscribe();

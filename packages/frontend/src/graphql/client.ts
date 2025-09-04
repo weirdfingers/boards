@@ -41,54 +41,50 @@ export function createGraphQLClient({ url, subscriptionUrl, auth, tenantId }: Cl
   return createClient({
     url,
     exchanges: [
-      authExchange(async (utilities) => {
-        return {
-          addAuthToOperation(operation) {
-            const token = operation.context.authToken;
-            if (!token) {
-              return operation;
-            }
+      authExchange(async (utilities) => ({
+        addAuthToOperation: (operation) => {
+          // Get token from auth state
+          const token = operation.context.authToken;
+          if (!token) {
+            return operation;
+          }
 
-            const headers: Record<string, string> = {
-              ...operation.context.fetchOptions?.headers,
-              Authorization: `Bearer ${token}`,
-            };
+          const headers: Record<string, string> = {
+            Authorization: `Bearer ${token}`,
+          };
 
-            if (tenantId) {
-              headers['X-Tenant'] = tenantId;
-            }
+          if (tenantId) {
+            headers['X-Tenant'] = tenantId;
+          }
 
-            return utilities.appendHeaders(operation, headers);
-          },
+          return utilities.appendHeaders(operation, headers);
+        },
 
-          willAuthError() {
-            // Check if we should expect an auth error
-            return false;
-          },
+        willAuthError: () => false,
 
-          didAuthError(error) {
-            // Check if the error is an auth error
-            return error.graphQLErrors.some(e => 
-              e.extensions?.code === 'UNAUTHENTICATED' ||
-              e.extensions?.code === 'UNAUTHORIZED'
-            );
-          },
+        didAuthError: (error) => {
+          return error.graphQLErrors.some(e => 
+            e.extensions?.code === 'UNAUTHENTICATED' ||
+            e.extensions?.code === 'UNAUTHORIZED'
+          );
+        },
 
-          async refreshAuth() {
-            // Get fresh token
-            const token = await auth.getToken();
-            return { authToken: token };
-          },
-        };
-      }),
+        refreshAuth: async () => {
+          await auth.getToken();
+          return;
+        },
+      })),
       fetchExchange,
-      ...(wsClient ? [subscriptionExchange({ forwardSubscription: (operation) => {
-        return {
+      ...(wsClient ? [subscriptionExchange({ 
+        forwardSubscription: (operation) => ({
           subscribe: (sink) => ({
-            unsubscribe: wsClient.subscribe(operation, sink),
+            unsubscribe: wsClient.subscribe({
+              query: operation.query || '',
+              variables: operation.variables,
+            }, sink),
           }),
-        };
-      }})] : []),
+        })
+      })] : []),
     ],
     fetchOptions: () => ({
       // Will be overridden by authExchange

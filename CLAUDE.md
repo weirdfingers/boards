@@ -19,7 +19,7 @@ Boards is an open-source creative toolkit for AI-generated content (images, vide
 - **Backend**: Python 3.12 with SQLAlchemy + Supabase (storage and optional auth)
 - **Frontend**: React + Next.js with TypeScript
 - **Job System**: Framework-agnostic queue (RQ or Dramatiq) with workers
-- **API**: GraphQL (Ariadne) for data/relations; REST + SSE for job submission/progress
+- **API**: GraphQL (Strawberry) with urql client; SSE for job progress
 - **Infrastructure**: PostgreSQL, Redis (via Docker Compose)
 - **Package Management**: pnpm (Node) and uv (Python)
 - **Build System**: Turborepo for orchestrating builds

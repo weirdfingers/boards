@@ -20,6 +20,7 @@ export function AuthProvider({ provider, children }: AuthProviderProps) {
     signIn: async () => {},
     signOut: async () => {},
     getToken: async () => null,
+    refreshToken: async () => null,
   });
   const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<Error | null>(null);

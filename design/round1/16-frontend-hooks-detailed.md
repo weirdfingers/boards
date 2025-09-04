@@ -9,7 +9,7 @@ This document provides a detailed technical specification for the frontend hooks
 ### 1. Framework Agnostic
 - **Requirement**: All hooks must work across React environments (Next.js, Vite, Create React App, etc.)
 - **Implementation**: No framework-specific dependencies, pure React hooks using standard APIs
-- **Dependencies**: TanStack Query (React Query) v5 for data fetching, Zustand for state management
+- **Dependencies**: urql for GraphQL data fetching, React Context for local state management
 
 ### 2. Provider Pluggability
 - **Requirement**: Support multiple auth providers, API endpoints, and transport layers
@@ -56,7 +56,7 @@ interface User {
 ```
 
 #### Implementation Details
-- **State Management**: Zustand store for auth state persistence
+- **State Management**: React Context with localStorage for auth state persistence
 - **Token Management**: Automatic refresh with configurable intervals
 - **Provider Support**: Supabase, Clerk, Auth0, custom JWT/OIDC
 - **Error Handling**: Standardized error types with retry mechanisms
@@ -399,8 +399,7 @@ interface AuthConfig {
 }
 
 interface ApiConfig {
-  baseUrl: string;
-  transport: 'graphql' | 'rest';
+  graphqlUrl: string;
   timeout: number;
   retries: number;
   headers?: Record<string, string>;
@@ -490,7 +489,7 @@ class InsufficientCreditsError extends BoardsError {
 ## Performance Considerations
 
 ### Caching Strategy
-- React Query for server state caching
+- urql normalized caching for GraphQL state
 - Optimistic updates for user actions
 - Background prefetching for related data
 - CDN integration for artifact URLs
