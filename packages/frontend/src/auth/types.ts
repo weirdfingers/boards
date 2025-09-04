@@ -4,19 +4,36 @@
 
 export interface User {
   id: string;
-  email?: string;
-  displayName?: string;
-  avatarUrl?: string;
-  provider: 'supabase' | 'clerk' | 'auth0' | 'oidc' | 'jwt' | 'none';
-  subject: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  metadata: Record<string, unknown>;
+  credits: {
+    balance: number;
+    reserved: number;
+  };
+}
+
+export interface AuthProvider {
+  id: string;
+  name: string;
+  type: 'oauth' | 'email' | 'magic-link' | 'custom';
+  config: Record<string, unknown>;
+}
+
+export interface SignInOptions {
+  provider?: string;
+  redirectTo?: string;
+  [key: string]: unknown;
 }
 
 export interface AuthState {
   user: User | null;
-  status: 'unauthenticated' | 'loading' | 'authenticated';
-  signIn: (opts?: Record<string, unknown>) => Promise<void>;
+  status: 'loading' | 'authenticated' | 'unauthenticated' | 'error';
+  signIn: (provider?: AuthProvider, options?: SignInOptions) => Promise<void>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
+  refreshToken: () => Promise<string | null>;
 }
 
 export interface AuthProviderConfig {

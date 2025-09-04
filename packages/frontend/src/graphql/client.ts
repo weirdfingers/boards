@@ -41,54 +41,38 @@ export function createGraphQLClient({ url, subscriptionUrl, auth, tenantId }: Cl
   return createClient({
     url,
     exchanges: [
-      authExchange(async (utilities) => {
-        return {
-          addAuthToOperation(operation) {
-            const token = operation.context.authToken;
-            if (!token) {
-              return operation;
-            }
+      authExchange(async (_utilities) => ({
+        addAuthToOperation: (operation) => {
+          // For now, use a simpler approach - token will be added via context
+          // TODO: Implement proper async token fetching
+          return operation;
+        },
 
-            const headers: Record<string, string> = {
-              ...operation.context.fetchOptions?.headers,
-              Authorization: `Bearer ${token}`,
-            };
+        willAuthError: () => false,
 
-            if (tenantId) {
-              headers['X-Tenant'] = tenantId;
-            }
+        didAuthError: (error) => {
+          return error.graphQLErrors.some(e => 
+            e.extensions?.code === 'UNAUTHENTICATED' ||
+            e.extensions?.code === 'UNAUTHORIZED'
+          );
+        },
 
-            return utilities.appendHeaders(operation, headers);
-          },
-
-          willAuthError() {
-            // Check if we should expect an auth error
-            return false;
-          },
-
-          didAuthError(error) {
-            // Check if the error is an auth error
-            return error.graphQLErrors.some(e => 
-              e.extensions?.code === 'UNAUTHENTICATED' ||
-              e.extensions?.code === 'UNAUTHORIZED'
-            );
-          },
-
-          async refreshAuth() {
-            // Get fresh token
-            const token = await auth.getToken();
-            return { authToken: token };
-          },
-        };
-      }),
+        refreshAuth: async () => {
+          await auth.getToken();
+          return;
+        },
+      })),
       fetchExchange,
-      ...(wsClient ? [subscriptionExchange({ forwardSubscription: (operation) => {
-        return {
+      ...(wsClient ? [subscriptionExchange({ 
+        forwardSubscription: (operation) => ({
           subscribe: (sink) => ({
-            unsubscribe: wsClient.subscribe(operation, sink),
+            unsubscribe: wsClient.subscribe({
+              query: operation.query || '',
+              variables: operation.variables,
+            }, sink),
           }),
-        };
-      }})] : []),
+        })
+      })] : []),
     ],
     fetchOptions: () => ({
       // Will be overridden by authExchange

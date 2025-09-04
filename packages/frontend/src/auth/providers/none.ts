@@ -56,11 +56,14 @@ export class NoAuthProvider extends BaseAuthProvider {
 
     this.defaultUser = {
       id: this.config.defaultUserId!,
-      email: this.config.defaultEmail,
-      displayName: this.config.defaultDisplayName,
-      avatarUrl: undefined,
-      provider: 'none',
-      subject: this.config.defaultUserId!,
+      email: this.config.defaultEmail!,
+      name: this.config.defaultDisplayName,
+      avatar: undefined,
+      metadata: { provider: 'none' },
+      credits: {
+        balance: 1000,
+        reserved: 0,
+      },
     };
 
     this.currentState = {
@@ -69,6 +72,7 @@ export class NoAuthProvider extends BaseAuthProvider {
       signIn: this.signIn.bind(this),
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
+      refreshToken: this.refreshToken.bind(this),
     };
 
     // Use structured warning instead of console.warn
@@ -93,7 +97,7 @@ export class NoAuthProvider extends BaseAuthProvider {
     return this.currentState;
   }
 
-  async signIn(_opts?: Record<string, unknown>): Promise<void> {
+  async signIn(): Promise<void> {
     // No-op in no-auth mode - already signed in
     if (console.info) {
       console.info('[AUTH] SignIn called in no-auth mode - no action taken', {
@@ -117,6 +121,11 @@ export class NoAuthProvider extends BaseAuthProvider {
 
   async getToken(): Promise<string | null> {
     // Return a fake development token
+    return 'dev-token|no-auth-mode|always-valid';
+  }
+
+  async refreshToken(): Promise<string | null> {
+    // Return the same fake token since it doesn't expire
     return 'dev-token|no-auth-mode|always-valid';
   }
 

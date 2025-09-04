@@ -20,11 +20,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0",
     "@urql/exchange-auth": "^3.0.0",
     "graphql-ws": "^6.0.6",
-    "urql": "^5.0.1",
-    "zustand": "^4.5.0"
+    "urql": "^5.0.1"
   },
   "peerDependencies": {
     "react": "^18.0.0",
