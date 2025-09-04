@@ -15,12 +15,15 @@
   "scripts": {
     "dev": "tsup --watch",
     "build": "tsup",
-    "test": "vitest",
+    "test": "vitest --run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@urql/exchange-auth": "^3.0.0",
+    "graphql-ws": "^6.0.6",
+    "urql": "^5.0.1",
     "zustand": "^4.5.0"
   },
   "peerDependencies": {
@@ -31,6 +34,7 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "eslint": "^8.57.0",
+    "jsdom": "^26.1.0",
     "tsup": "^8.1.0",
     "typescript": "^5.5.3",
     "vitest": "^1.6.0"

@@ -86,3 +86,4 @@ Local development uses Docker Compose with:
 - to typecheck the backend and frontend, run `make typecheck` at the root of the project
 - to run tests for the backend and frontend, run `make test` at the root of the project
 - for backend logging, always use @packages/backend/src/boards/logging.py which is based on `structlog`. Avoid f-strings in favor of kwargs
+- when logging, do not use `exc_info=True`

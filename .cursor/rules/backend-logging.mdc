@@ -11,6 +11,7 @@ Always use the centralized logging utilities in [packages/backend/src/boards/log
 - Do not use `print(...)` or `logging.getLogger(...)` directly in backend code
 - Configure once at app startup using `configure_logging(debug=settings.debug)`
 - Prefer structured logs; include request/user context via provided helpers
+- unless logging errors, never use `exc_info=True`
 
 Example (module usage):
 

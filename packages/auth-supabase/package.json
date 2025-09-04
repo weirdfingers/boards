@@ -1,0 +1,45 @@
+{
+  "name": "@weirdfingers/auth-supabase",
+  "version": "0.1.0",
+  "description": "Supabase authentication provider for Boards",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest --run --passWithNoTests"
+  },
+  "keywords": [
+    "boards",
+    "authentication", 
+    "supabase",
+    "auth",
+    "react"
+  ],
+  "author": "WeirdFingers",
+  "license": "MIT",
+  "peerDependencies": {
+    "@weirdfingers/boards": "workspace:*",
+    "@supabase/supabase-js": "^2.0.0",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "vitest": "^1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weirdfingers/boards.git",
+    "directory": "packages/auth-supabase"
+  }
+}

@@ -1,0 +1,29 @@
+---
+description: Use pnpm to manage Node dependencies across the monorepo
+globs: package.json,packages/**/package.json,apps/**/package.json,*.js,*.ts,*.tsx
+---
+
+# Node Package Management (pnpm)
+
+Always use pnpm for Node dependency management in this repository.
+
+- Do not use npm or yarn
+- Monorepo commands run from the repo root unless a package-specific script is needed
+- Workspace is defined via [pnpm-workspace.yaml](mdc:pnpm-workspace.yaml)
+
+Common commands:
+
+```bash
+# Install deps
+pnpm install
+
+# Add dependencies
+pnpm add <pkg>
+pnpm add -D <pkg>
+
+# Run scripts (workspace-aware)
+pnpm run <script>
+pnpm turbo <task>
+```
+
+Make targets integrate pnpm where appropriate; prefer Makefile for unified flows when available.

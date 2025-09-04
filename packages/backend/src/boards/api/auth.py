@@ -1,8 +1,4 @@
-"""Authentication dependencies for API endpoints.
-
-This is a placeholder implementation. In production, this should be replaced
-with proper authentication using JWT tokens, OAuth, or your preferred auth provider.
-"""
+"""Authentication dependencies for API endpoints."""
 
 from __future__ import annotations
 
@@ -10,6 +6,9 @@ import logging
 from typing import Optional
 from fastapi import HTTPException, Header, Depends
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..auth import get_auth_context, get_auth_context_optional, AuthContext
 
 logger = logging.getLogger(__name__)
 
@@ -22,97 +21,54 @@ class AuthenticatedUser(BaseModel):
 
 
 async def get_current_user(
-    authorization: Optional[str] = Header(None)
+    auth_context: AuthContext = Depends(get_auth_context)
 ) -> AuthenticatedUser:
     """
-    Verify the authorization header and return the current user.
-    
-    This is a placeholder implementation. In production, this should:
-    1. Validate the JWT token or API key
-    2. Verify the token signature
-    3. Check token expiration
-    4. Extract user information from the token
-    5. Optionally check against a user database or cache
+    Get the current authenticated user from the auth context.
     
     Args:
-        authorization: The Authorization header value (e.g., "Bearer <token>")
+        auth_context: Authentication context from middleware
     
     Returns:
         AuthenticatedUser object with user information
     
     Raises:
-        HTTPException: If authentication fails
+        HTTPException: If user is not authenticated
     """
-    if not authorization:
-        logger.warning("Missing authorization header")
+    if not auth_context.is_authenticated or not auth_context.user_id:
         raise HTTPException(
             status_code=401,
-            detail="Missing authorization header",
+            detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Check for Bearer token format
-    if not authorization.startswith("Bearer "):
-        logger.warning(f"Invalid authorization format: {authorization[:20]}...")
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authorization format. Expected: Bearer <token>",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    token = authorization[7:]  # Remove "Bearer " prefix
-    
-    if not token:
-        logger.warning("Empty token provided")
-        raise HTTPException(
-            status_code=401,
-            detail="Empty token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # TODO: Implement actual token validation here
-    # For now, this is a placeholder that accepts any non-empty token
-    # In production, you would:
-    # 1. Decode the JWT token
-    # 2. Verify the signature
-    # 3. Check expiration
-    # 4. Extract user claims
-    
-    # Placeholder: Extract user info from token
-    # In a real implementation, this would come from the decoded JWT
-    if token == "test-token-please-replace":
-        # Development/test token
-        return AuthenticatedUser(
-            user_id="test-user-id",
-            tenant_id="test-tenant-id",
-            email="test@example.com",
-        )
-    
-    # For production, implement proper token validation
-    logger.info(f"Token validation not yet implemented. Token: {token[:20]}...")
-    
-    # For now, create a placeholder user from the token
-    # This is NOT secure and should be replaced with proper validation
     return AuthenticatedUser(
-        user_id=f"user-{token[:8]}",
-        tenant_id="default-tenant",
-        email=None,
+        user_id=str(auth_context.user_id),
+        tenant_id=auth_context.tenant_id,
+        email=auth_context.principal.get("email") if auth_context.principal else None,
     )
 
 
 async def get_current_user_optional(
-    authorization: Optional[str] = Header(None)
+    auth_context: AuthContext = Depends(get_auth_context_optional)
 ) -> Optional[AuthenticatedUser]:
     """
-    Optional authentication - returns None if no auth header is present.
+    Optional authentication - returns None if not authenticated.
     
     Use this for endpoints that can work both authenticated and unauthenticated,
     but may provide different functionality based on auth status.
     """
-    if not authorization:
+    if not auth_context.is_authenticated or not auth_context.user_id:
         return None
     
-    try:
-        return await get_current_user(authorization)
-    except HTTPException:
-        return None
+    return AuthenticatedUser(
+        user_id=str(auth_context.user_id),
+        tenant_id=auth_context.tenant_id,
+        email=auth_context.principal.get("email") if auth_context.principal else None,
+    )
+
+
+# Legacy support - keep the old function names for backward compatibility
+async def get_auth_context_dependency() -> AuthContext:
+    """Get auth context directly (for advanced use cases)."""
+    return await get_auth_context()
