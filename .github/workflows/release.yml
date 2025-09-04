@@ -39,12 +39,17 @@ jobs:
           TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#backend@}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      - name: Update version in pyproject.toml (__version__ source)
+      - name: Update version in src/boards/__init__.py safely
         shell: bash
         run: |
           cd packages/backend
-          # Update boards/__init__.py to match release version
-          sed -i "" -e "s/__version__ = \".*\"/__version__ = \"${{ steps.version.outputs.version }}\"/" src/boards/__init__.py || sed -i -e "s/__version__ = \".*\"/__version__ = \"${{ steps.version.outputs.version }}\"/" src/boards/__init__.py
+          python - <<PY
+          import re, sys
+          p = 'src/boards/__init__.py'
+          content = open(p).read()
+          content = re.sub(r"__version__\s*=\s*\"[^\"]*\"", f"__version__ = \"${{ steps.version.outputs.version }}\"", content)
+          open(p, 'w').write(content)
+          PY
       - name: Build package
         run: |
           cd packages/backend

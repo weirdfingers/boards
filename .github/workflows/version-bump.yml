@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'Package to bump'
+        description: "Package to bump"
         required: true
         type: choice
         options:
           - backend
           - frontend
       bump_type:
-        description: 'Bump type'
+        description: "Bump type"
         required: true
         type: choice
         options:
@@ -38,41 +38,47 @@ jobs:
         run: |
           cd packages/backend
           CURRENT=$(python - <<'PY'
-from pathlib import Path
-import re
-p = Path('src/boards/__init__.py').read_text()
-m = re.search(r"__version__\s*=\s*\"([^\"]+)\"", p)
-print(m.group(1))
-PY
-)
+            from pathlib import Path
+            import re
+            p = Path('src/boards/__init__.py').read_text()
+            m = re.search(r"__version__\s*=\s*\"([^\"]+)\"", p)
+            print(m.group(1))
+          PY
+          )
           python - <<PY
-import os
-cur = os.environ['CURRENT']
-parts = cur.split('.')
-bt = os.environ['BUMP_TYPE']
-if bt == 'major':
-    parts[0] = str(int(parts[0]) + 1); parts[1] = '0'; parts[2] = '0'
-elif bt == 'minor':
-    parts[1] = str(int(parts[1]) + 1); parts[2] = '0'
-else:
-    parts[2] = str(int(parts[2]) + 1)
-print('.'.join(parts))
-PY
+            import os
+            cur = os.environ['CURRENT']
+            parts = cur.split('.')
+            bt = os.environ['BUMP_TYPE']
+            if bt == 'major':
+                parts[0] = str(int(parts[0]) + 1); parts[1] = '0'; parts[2] = '0'
+            elif bt == 'minor':
+                parts[1] = str(int(parts[1]) + 1); parts[2] = '0'
+            else:
+                parts[2] = str(int(parts[2]) + 1)
+            print('.'.join(parts))
+          PY
           NEW_VERSION=$(python - <<'PY'
-import os
-cur = os.environ['CURRENT']
-parts = cur.split('.')
-bt = os.environ.get('BUMP_TYPE', 'patch')
-if bt == 'major':
-    parts[0] = str(int(parts[0]) + 1); parts[1] = '0'; parts[2] = '0'
-elif bt == 'minor':
-    parts[1] = str(int(parts[1]) + 1); parts[2] = '0'
-else:
-    parts[2] = str(int(parts[2]) + 1)
-print('.'.join(parts))
-PY
-)
-          sed -i "" -e "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" src/boards/__init__.py || sed -i -e "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" src/boards/__init__.py
+            import os
+            cur = os.environ['CURRENT']
+            parts = cur.split('.')
+            bt = os.environ.get('BUMP_TYPE', 'patch')
+            if bt == 'major':
+                parts[0] = str(int(parts[0]) + 1); parts[1] = '0'; parts[2] = '0'
+            elif bt == 'minor':
+                parts[1] = str(int(parts[1]) + 1); parts[2] = '0'
+            else:
+                parts[2] = str(int(parts[2]) + 1)
+            print('.'.join(parts))
+          PY
+          )
+          python - <<PY
+            import re
+            p = 'src/boards/__init__.py'
+            content = open(p).read()
+            content = re.sub(r"__version__\s*=\s*\"[^\"]*\"", f"__version__ = \"$NEW_VERSION\"", content)
+            open(p, 'w').write(content)
+          PY
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
         env:
           BUMP_TYPE: ${{ inputs.bump_type }}
@@ -101,5 +107,3 @@ PY
           release_name: "${{ inputs.package }} v${{ env.NEW_VERSION }}"
           draft: false
           prerelease: false
-
-
