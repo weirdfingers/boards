@@ -3,10 +3,12 @@ Base generator classes and interfaces for the Boards generators system.
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, Optional, Protocol, runtime_checkable, Any
+from typing import Any, Protocol, runtime_checkable
+
 from pydantic import BaseModel
-from .artifacts import ImageArtifact, VideoArtifact, AudioArtifact
+
 from ..progress.models import ProgressUpdate
+from .artifacts import AudioArtifact, ImageArtifact, VideoArtifact
 
 
 class BaseGenerator(ABC):
@@ -23,7 +25,7 @@ class BaseGenerator(ABC):
     description: str
 
     @abstractmethod
-    def get_input_schema(self) -> Type[BaseModel]:
+    def get_input_schema(self) -> type[BaseModel]:
         """
         Return the Pydantic model class that defines the input schema for this generator.
 
@@ -60,7 +62,7 @@ class BaseGenerator(ABC):
         """
         pass
 
-    def get_output_schema(self) -> Type[BaseModel]:
+    def get_output_schema(self) -> type[BaseModel]:
         """
         Return the Pydantic model class that defines the output schema for this generator.
 

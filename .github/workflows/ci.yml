@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        node-version: ["20.x"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cache pnpm store
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+
+      # Setup Python via uv
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
+
+      # Install dependencies
+      - name: Install Python dependencies (uv sync)
+        run: |
+          cd packages/backend
+          uv sync
+
+      - name: Install Node dependencies (pnpm)
+        run: pnpm install
+
+      # Lint + Typecheck + Test via Make targets
+      - name: Lint
+        run: make lint
+      - name: Typecheck
+        run: make typecheck
+      - name: Test
+        run: make test
+
+      # Docs build
+      - name: Build Docs
+        run: make docs-build

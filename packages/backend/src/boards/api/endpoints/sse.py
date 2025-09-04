@@ -6,15 +6,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from fastapi import APIRouter, Request, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...config import Settings
 from ...database.connection import get_db_session
 from ...jobs import repository as jobs_repo
-from ..auth import AuthenticatedUser, get_current_user
 from ...redis_pool import get_redis_client
+from ..auth import AuthenticatedUser, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +38,11 @@ async def generation_progress_stream(
     Requires authentication. Users can only monitor progress for their own generations
     or generations within their tenant (depending on access control policy).
     """
-    
+
     # Verify user has access to this generation
     try:
         generation = await jobs_repo.get_generation(db, generation_id)
-        
+
         # Check if user owns this generation or belongs to the same tenant
         if generation.user_id != current_user.user_id:
             # Allow tenant-level access (users in same tenant can see each other's jobs)
@@ -55,9 +56,9 @@ async def generation_progress_stream(
                     status_code=403,
                     detail="You don't have permission to access this generation"
                 )
-        
+
         logger.info(f"User {current_user.user_id} connected to progress stream for {generation_id}")
-        
+
     except HTTPException:
         raise
     except Exception as e:

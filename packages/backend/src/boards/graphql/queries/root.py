@@ -2,13 +2,13 @@
 Root GraphQL query definitions
 """
 
-import strawberry
-from typing import Optional, List
 from uuid import UUID
 
-from ..types.user import User
+import strawberry
+
 from ..types.board import Board
-from ..types.generation import Generation, GenerationStatus, ArtifactType
+from ..types.generation import ArtifactType, Generation, GenerationStatus
+from ..types.user import User
 
 
 @strawberry.type
@@ -16,21 +16,21 @@ class Query:
     """Root GraphQL query type."""
 
     @strawberry.field
-    async def me(self, info: strawberry.Info) -> Optional[User]:
+    async def me(self, info: strawberry.Info) -> User | None:
         """Get the current authenticated user."""
         from ..resolvers.auth import resolve_current_user
 
         return await resolve_current_user(info)
 
     @strawberry.field
-    async def user(self, info: strawberry.Info, id: UUID) -> Optional[User]:
+    async def user(self, info: strawberry.Info, id: UUID) -> User | None:
         """Get a user by ID."""
         from ..resolvers.user import resolve_user_by_id
 
         return await resolve_user_by_id(info, str(id))
 
     @strawberry.field
-    async def board(self, info: strawberry.Info, id: UUID) -> Optional[Board]:
+    async def board(self, info: strawberry.Info, id: UUID) -> Board | None:
         """Get a board by ID."""
         from ..resolvers.board import resolve_board_by_id
 
@@ -38,8 +38,8 @@ class Query:
 
     @strawberry.field
     async def my_boards(
-        self, info: strawberry.Info, limit: Optional[int] = 50, offset: Optional[int] = 0
-    ) -> List[Board]:
+        self, info: strawberry.Info, limit: int | None = 50, offset: int | None = 0
+    ) -> list[Board]:
         """Get boards owned by or shared with the current user."""
         from ..resolvers.board import resolve_my_boards
 
@@ -47,15 +47,15 @@ class Query:
 
     @strawberry.field
     async def public_boards(
-        self, info: strawberry.Info, limit: Optional[int] = 50, offset: Optional[int] = 0
-    ) -> List[Board]:
+        self, info: strawberry.Info, limit: int | None = 50, offset: int | None = 0
+    ) -> list[Board]:
         """Get public boards."""
         from ..resolvers.board import resolve_public_boards
 
         return await resolve_public_boards(info, limit or 50, offset or 0)
 
     @strawberry.field
-    async def generation(self, info: strawberry.Info, id: UUID) -> Optional[Generation]:
+    async def generation(self, info: strawberry.Info, id: UUID) -> Generation | None:
         """Get a generation by ID."""
         from ..resolvers.generation import resolve_generation_by_id
 
@@ -65,12 +65,12 @@ class Query:
     async def recent_generations(
         self,
         info: strawberry.Info,
-        board_id: Optional[UUID] = None,
-        status: Optional[GenerationStatus] = None,
-        artifact_type: Optional[ArtifactType] = None,
-        limit: Optional[int] = 50,
-        offset: Optional[int] = 0,
-    ) -> List[Generation]:
+        board_id: UUID | None = None,
+        status: GenerationStatus | None = None,
+        artifact_type: ArtifactType | None = None,
+        limit: int | None = 50,
+        offset: int | None = 0,
+    ) -> list[Generation]:
         """Get recent generations with optional filters."""
         from ..resolvers.generation import resolve_recent_generations
 
@@ -80,8 +80,8 @@ class Query:
 
     @strawberry.field
     async def search_boards(
-        self, info: strawberry.Info, query: str, limit: Optional[int] = 50, offset: Optional[int] = 0
-    ) -> List[Board]:
+        self, info: strawberry.Info, query: str, limit: int | None = 50, offset: int | None = 0
+    ) -> list[Board]:
         """Search for boards by title or description."""
         from ..resolvers.board import search_boards
 

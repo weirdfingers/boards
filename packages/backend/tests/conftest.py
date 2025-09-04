@@ -4,19 +4,21 @@ Shared pytest fixtures and configuration for all tests.
 
 import os
 import sys
-import pytest
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Generator, Tuple, TYPE_CHECKING
+from typing import Any
+
+import pytest
+from psycopg import Connection  # type: ignore[import]
 
 # Import types only for type checking, not at runtime
 from pytest_postgresql.executor import PostgreSQLExecutor  # type: ignore[import]
-from psycopg import Connection  # type: ignore[import]
 
 # Add src directory to path so imports work
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from alembic.config import Config
 from alembic import command
+from alembic.config import Config
 
 
 @pytest.fixture(scope="function", autouse=False)
@@ -39,7 +41,7 @@ def alembic_migrate(
 @pytest.fixture(scope="function")
 def test_database(
     postgresql: Connection[Any],
-) -> Generator[Tuple[str, str], None, None]:
+) -> Generator[tuple[str, str], None, None]:
     """Return the DSN for the running pytest-postgresql database."""
     dsn = (
         f"postgresql://{postgresql.user}:{postgresql.password}"  # type: ignore[reportUnknownMemberType]

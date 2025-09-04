@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...database.connection import get_db_session
-from sqlalchemy.ext.asyncio import AsyncSession
 from ...jobs import repository as jobs_repo
 from ...workers.actors import process_generation
 from ..auth import AuthenticatedUser, get_current_user
@@ -46,7 +47,7 @@ async def submit_generation(
     try:
         # Validate that user has access to the specified board
         # TODO: Add board access validation logic here
-        
+
         # Override user_id and tenant_id with authenticated values for security
         # This prevents users from submitting jobs on behalf of others
         gen = await jobs_repo.create_generation(
@@ -59,17 +60,17 @@ async def submit_generation(
             artifact_type=body.artifact_type,
             input_params=body.input_params,
         )
-        
+
         # Commit the transaction to ensure job is persisted before enqueueing
         await db.commit()
         logger.info(f"Created generation job {gen.id} for user {current_user.user_id}")
-        
+
         # Enqueue job for processing
         process_generation.send(str(gen.id))
         logger.info(f"Enqueued generation job {gen.id}")
-        
+
         return SubmitGenerationResponse(generation_id=str(gen.id))
-        
+
     except Exception as e:
         logger.error(f"Failed to submit generation: {e}")
         await db.rollback()

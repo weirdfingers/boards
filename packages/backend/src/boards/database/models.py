@@ -7,13 +7,13 @@ This file remains to avoid breaking existing imports like `from boards.database.
 
 from boards.dbmodels import (  # noqa: F401
     Base,
-    Tenants,
-    ProviderConfigs,
-    Users,
-    Boards,
-    LoraModels,
     BoardMembers,
-    Generations,
+    Boards,
     CreditTransactions,
+    Generations,
+    LoraModels,
+    ProviderConfigs,
+    Tenants,
+    Users,
     target_metadata,
 )

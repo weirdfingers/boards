@@ -22,20 +22,20 @@ Example usage:
     result = await flux.generate(inputs)
 """
 
-from .base import BaseGenerator
-from .registry import registry, GeneratorRegistry
 from .artifacts import (
     AudioArtifact,
-    VideoArtifact, 
     ImageArtifact,
-    TextArtifact,
     LoRArtifact,
+    TextArtifact,
+    VideoArtifact,
 )
+from .base import BaseGenerator
+from .registry import GeneratorRegistry, registry
 from .resolution import (
     resolve_artifact,
+    store_audio_result,
     store_image_result,
     store_video_result,
-    store_audio_result,
 )
 
 __all__ = [
@@ -43,17 +43,17 @@ __all__ = [
     "BaseGenerator",
     "GeneratorRegistry",
     "registry",
-    
+
     # Artifact types
     "AudioArtifact",
-    "VideoArtifact", 
+    "VideoArtifact",
     "ImageArtifact",
     "TextArtifact",
     "LoRArtifact",
-    
+
     # Utilities
     "resolve_artifact",
-    "store_image_result", 
+    "store_image_result",
     "store_video_result",
     "store_audio_result",
 ]

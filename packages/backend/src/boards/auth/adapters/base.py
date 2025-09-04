@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol, Literal, TypedDict, NotRequired
+from typing import Literal, NotRequired, Protocol, TypedDict
 from uuid import UUID
 
 
@@ -18,7 +18,7 @@ class Principal(TypedDict):
 
 class AuthAdapter(Protocol):
     """Provider-agnostic authentication adapter interface."""
-    
+
     async def verify_token(self, token: str) -> Principal:
         """
         Verify a token and return the principal identity.
@@ -33,7 +33,7 @@ class AuthAdapter(Protocol):
             AuthenticationError: If token is invalid or expired
         """
         ...
-    
+
     async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """
         Issue a new token (optional - not all providers support this).
@@ -46,7 +46,7 @@ class AuthAdapter(Protocol):
             Signed token string
         """
         ...
-    
+
     async def get_user_info(self, token: str) -> dict:
         """
         Get provider-specific user information (optional enrichment).
@@ -66,5 +66,5 @@ class AuthenticationError(Exception):
 
 
 class AuthorizationError(Exception):
-    """Raised when authorization fails.""" 
+    """Raised when authorization fails."""
     pass

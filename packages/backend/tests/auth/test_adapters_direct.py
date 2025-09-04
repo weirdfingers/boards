@@ -1,12 +1,12 @@
 """Direct tests for auth adapters without package imports."""
 
-import pytest
-import jwt
-import sys
-import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Literal, NotRequired, TypedDict
 from uuid import uuid4
-from typing import Protocol, Literal, TypedDict, NotRequired
+
+import jwt
+import pytest
+
 
 # Copy the adapter code directly to avoid import issues
 class Principal(TypedDict):
@@ -31,7 +31,7 @@ class TestJWTAdapter:
         self.algorithm = algorithm
         self.issuer = issuer
         self.audience = audience
-    
+
     async def verify_token(self, token: str) -> Principal:
         try:
             payload = jwt.decode(
@@ -46,31 +46,31 @@ class TestJWTAdapter:
                     "verify_iat": True,
                 }
             )
-            
+
             subject = payload.get("sub")
             if not subject:
                 raise AuthenticationError("Missing 'sub' claim in token")
-            
+
             principal = Principal(
                 provider="jwt",
                 subject=subject,
             )
-            
+
             if email := payload.get("email"):
                 principal["email"] = email
             if display_name := payload.get("name"):
                 principal["display_name"] = display_name
             if avatar_url := payload.get("picture"):
                 principal["avatar_url"] = avatar_url
-            
+
             principal["claims"] = payload
             return principal
-            
+
         except jwt.InvalidTokenError as e:
             raise AuthenticationError(f"Invalid token: {e}")
-    
+
     async def issue_token(self, user_id=None, claims=None):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "iss": self.issuer,
             "aud": self.audience,
@@ -78,25 +78,25 @@ class TestJWTAdapter:
             "nbf": now,
             "exp": now + timedelta(hours=24),
         }
-        
+
         if user_id:
             payload["sub"] = str(user_id)
-        
+
         if claims:
             payload.update(claims)
-        
+
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
 
-# Simplified NoAuth Adapter for testing  
+# Simplified NoAuth Adapter for testing
 class TestNoAuthAdapter:
     def __init__(self, default_user_id="dev-user"):
         self.default_user_id = default_user_id
-    
+
     async def verify_token(self, token: str) -> Principal:
         if not token:
             raise AuthenticationError("Token required (even in no-auth mode)")
-        
+
         return Principal(
             provider="none",
             subject=self.default_user_id,
@@ -107,7 +107,7 @@ class TestNoAuthAdapter:
                 "token": token[:20] + "..." if len(token) > 20 else token,
             }
         )
-    
+
     async def issue_token(self, user_id=None, claims=None):
         parts = ["dev-token", str(user_id) if user_id else self.default_user_id, "no-auth-mode"]
         if claims:
@@ -117,7 +117,7 @@ class TestNoAuthAdapter:
 
 class TestJWTAdapterDirect:
     """Test JWT authentication adapter directly."""
-    
+
     @pytest.fixture
     def secret_key(self):
         return "test-secret-key-for-testing-only"
@@ -129,10 +129,10 @@ class TestJWTAdapterDirect:
     @pytest.mark.asyncio
     async def test_verify_valid_token(self, jwt_adapter, secret_key):
         """Test verifying a valid JWT token."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "iss": "test-boards",
-            "aud": "test-api", 
+            "aud": "test-api",
             "sub": "test-user-123",
             "email": "test@example.com",
             "name": "Test User",
@@ -144,7 +144,7 @@ class TestJWTAdapterDirect:
         token = jwt.encode(payload, secret_key, algorithm="HS256")
 
         principal = await jwt_adapter.verify_token(token)
-        
+
         assert principal["provider"] == "jwt"
         assert principal["subject"] == "test-user-123"
         assert principal["email"] == "test@example.com"
@@ -154,11 +154,11 @@ class TestJWTAdapterDirect:
     @pytest.mark.asyncio
     async def test_verify_expired_token(self, jwt_adapter, secret_key):
         """Test verifying an expired JWT token fails."""
-        past_time = datetime.now(timezone.utc) - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
         payload = {
             "iss": "test-boards",
             "aud": "test-api",
-            "sub": "test-user-123", 
+            "sub": "test-user-123",
             "exp": past_time + timedelta(minutes=30),
         }
         expired_token = jwt.encode(payload, secret_key, algorithm="HS256")
@@ -171,17 +171,17 @@ class TestJWTAdapterDirect:
         """Test issuing and then verifying a token."""
         user_id = uuid4()
         claims = {"role": "admin"}
-        
+
         token = await jwt_adapter.issue_token(user_id=user_id, claims=claims)
         principal = await jwt_adapter.verify_token(token)
-        
+
         assert principal["subject"] == str(user_id)
         assert principal["claims"]["role"] == "admin"
 
 
 class TestNoAuthAdapterDirect:
     """Test NoAuth authentication adapter directly."""
-    
+
     @pytest.fixture
     def none_adapter(self):
         return TestNoAuthAdapter("test-dev-user")
@@ -191,7 +191,7 @@ class TestNoAuthAdapterDirect:
         """Test that any non-empty token is accepted."""
         token = "any-token-works"
         principal = await none_adapter.verify_token(token)
-        
+
         assert principal["provider"] == "none"
         assert principal["subject"] == "test-dev-user"
         assert principal["email"] == "dev@example.com"
@@ -209,7 +209,7 @@ class TestNoAuthAdapterDirect:
         """Test issuing a fake development token."""
         user_id = uuid4()
         token = await none_adapter.issue_token(user_id=user_id)
-        
+
         assert "dev-token" in token
         assert str(user_id) in token
         assert "no-auth-mode" in token

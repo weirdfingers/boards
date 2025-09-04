@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID, uuid4
 
-from ..progress.publisher import ProgressPublisher
-from ..progress.models import ProgressUpdate
-from ..generators import resolution
 from ..database.connection import get_async_session
+from ..generators import resolution
 from ..jobs import repository as jobs_repo
 from ..logging import get_logger
+from ..progress.models import ProgressUpdate
+from ..progress.publisher import ProgressPublisher
 
 logger = get_logger(__name__)
 

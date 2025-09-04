@@ -1,15 +1,16 @@
 """Tests for local storage provider."""
 
-import pytest
 import json
-import aiofiles
+from collections.abc import Generator
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from datetime import timedelta
-from typing import Generator
 
+import aiofiles
+import pytest
+
+from boards.storage.base import SecurityException, StorageException
 from boards.storage.implementations.local import LocalStorageProvider
-from boards.storage.base import StorageException, SecurityException
 
 
 class TestLocalStorageProvider:
@@ -104,7 +105,7 @@ class TestLocalStorageProvider:
         assert metadata_path.exists()
 
         # Check metadata content
-        async with aiofiles.open(metadata_path, "r") as f:
+        async with aiofiles.open(metadata_path) as f:
             stored_metadata = json.loads(await f.read())
         assert stored_metadata == metadata
 

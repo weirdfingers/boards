@@ -1,13 +1,14 @@
 """Core storage interfaces and manager implementation."""
 
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, AsyncIterator, Union
-from datetime import datetime, timedelta, timezone
-from dataclasses import dataclass, field
-import re
-import logging
-import uuid
 import asyncio
+import logging
+import re
+import uuid
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,8 @@ class StorageConfig:
     """Configuration for storage system."""
 
     default_provider: str
-    providers: Dict[str, Dict[str, Any]]
-    routing_rules: list[Dict[str, Any]]
+    providers: dict[str, dict[str, Any]]
+    routing_rules: list[dict[str, Any]]
     max_file_size: int = 100 * 1024 * 1024  # 100MB default
     allowed_content_types: set[str] = field(default_factory=set)
 
@@ -52,11 +53,11 @@ class ArtifactReference:
     storage_url: str
     content_type: str
     size: int = 0
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
 
 
 class StorageException(Exception):
@@ -84,9 +85,9 @@ class StorageProvider(ABC):
     async def upload(
         self,
         key: str,
-        content: Union[bytes, AsyncIterator[bytes]],
+        content: bytes | AsyncIterator[bytes],
         content_type: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Upload content and return storage reference.
 
@@ -112,14 +113,14 @@ class StorageProvider(ABC):
 
     @abstractmethod
     async def get_presigned_upload_url(
-        self, key: str, content_type: str, expires_in: Optional[timedelta] = None
-    ) -> Dict[str, Any]:
+        self, key: str, content_type: str, expires_in: timedelta | None = None
+    ) -> dict[str, Any]:
         """Generate presigned URL for direct client uploads."""
         pass
 
     @abstractmethod
     async def get_presigned_download_url(
-        self, key: str, expires_in: Optional[timedelta] = None
+        self, key: str, expires_in: timedelta | None = None
     ) -> str:
         """Generate presigned URL for secure downloads."""
         pass
@@ -135,7 +136,7 @@ class StorageProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_metadata(self, key: str) -> Dict[str, Any]:
+    async def get_metadata(self, key: str) -> dict[str, Any]:
         """Get file metadata (size, modified date, etc.)."""
         pass
 
@@ -144,7 +145,7 @@ class StorageManager:
     """Central storage coordinator handling provider selection and routing."""
 
     def __init__(self, config: StorageConfig):
-        self.providers: Dict[str, StorageProvider] = {}
+        self.providers: dict[str, StorageProvider] = {}
         self.default_provider = config.default_provider
         self.routing_rules = config.routing_rules
         self.config = config
@@ -187,11 +188,11 @@ class StorageManager:
     async def store_artifact(
         self,
         artifact_id: str,
-        content: Union[bytes, AsyncIterator[bytes]],
+        content: bytes | AsyncIterator[bytes],
         artifact_type: str,
         content_type: str,
-        tenant_id: Optional[str] = None,
-        board_id: Optional[str] = None,
+        tenant_id: str | None = None,
+        board_id: str | None = None,
     ) -> ArtifactReference:
         """Store artifact with comprehensive validation and error handling."""
 
@@ -222,7 +223,7 @@ class StorageManager:
                 "artifact_type": artifact_type,
                 "tenant_id": tenant_id,
                 "board_id": board_id,
-                "uploaded_at": datetime.now(timezone.utc).isoformat(),
+                "uploaded_at": datetime.now(UTC).isoformat(),
                 "content_type": content_type,
             }
 
@@ -242,7 +243,7 @@ class StorageManager:
                 storage_url=storage_url,
                 content_type=content_type,
                 size=len(content) if isinstance(content, bytes) else 0,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
         except (SecurityException, ValidationException) as e:
@@ -256,9 +257,9 @@ class StorageManager:
         self,
         provider: StorageProvider,
         key: str,
-        content: Union[bytes, AsyncIterator[bytes]],
+        content: bytes | AsyncIterator[bytes],
         content_type: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         max_retries: int = 3,
     ) -> str:
         """Upload with exponential backoff retry logic."""
@@ -286,8 +287,8 @@ class StorageManager:
         self,
         artifact_id: str,
         artifact_type: str,
-        tenant_id: Optional[str] = None,
-        board_id: Optional[str] = None,
+        tenant_id: str | None = None,
+        board_id: str | None = None,
         variant: str = "original",
     ) -> str:
         """Generate hierarchical storage key with collision prevention."""
@@ -296,7 +297,7 @@ class StorageManager:
         tenant = tenant_id or "default"
 
         # Add timestamp and UUID for uniqueness
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         unique_suffix = str(uuid.uuid4())[:8]
 
         if board_id:
@@ -307,7 +308,7 @@ class StorageManager:
             return f"{tenant}/{artifact_type}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"
 
     def _select_provider(
-        self, artifact_type: str, content: Union[bytes, AsyncIterator[bytes]]
+        self, artifact_type: str, content: bytes | AsyncIterator[bytes]
     ) -> str:
         """Select storage provider based on routing rules."""
         content_size = len(content) if isinstance(content, bytes) else 0

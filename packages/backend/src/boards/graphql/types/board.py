@@ -2,15 +2,16 @@
 Board GraphQL type definitions
 """
 
-import strawberry
-from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
-from uuid import UUID
 from enum import Enum
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
+
+import strawberry
 
 if TYPE_CHECKING:
-    from .user import User
     from .generation import Generation
+    from .user import User
 
 
 @strawberry.enum
@@ -30,7 +31,7 @@ class BoardMember:
     board_id: UUID
     user_id: UUID
     role: BoardRole
-    invited_by: Optional[UUID]
+    invited_by: UUID | None
     joined_at: datetime
 
     @strawberry.field
@@ -58,7 +59,7 @@ class Board:
     tenant_id: UUID
     owner_id: UUID
     title: str
-    description: Optional[str]
+    description: str | None
     is_public: bool
     settings: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
     metadata: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
@@ -73,7 +74,7 @@ class Board:
         return await resolve_board_owner(self, info)
 
     @strawberry.field
-    async def members(self, info: strawberry.Info) -> List[BoardMember]:
+    async def members(self, info: strawberry.Info) -> list[BoardMember]:
         """Get members of this board."""
         from ..resolvers.board import resolve_board_members
 
@@ -83,9 +84,9 @@ class Board:
     async def generations(
         self,
         info: strawberry.Info,
-        limit: Optional[int] = 50,
-        offset: Optional[int] = 0,
-    ) -> List["Generation"]:
+        limit: int | None = 50,
+        offset: int | None = 0,
+    ) -> list["Generation"]:
         """Get generations in this board."""
         from ..resolvers.board import resolve_board_generations
 

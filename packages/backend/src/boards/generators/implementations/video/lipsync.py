@@ -5,12 +5,11 @@ This demonstrates how generators can use multiple artifact inputs
 with automatic artifact resolution.
 """
 
-from typing import Type, Optional
+
 from pydantic import BaseModel, Field
 
-from ...base import BaseGenerator, GeneratorExecutionContext
 from ...artifacts import AudioArtifact, VideoArtifact
-from ...resolution import resolve_artifact, store_video_result
+from ...base import BaseGenerator, GeneratorExecutionContext
 from ...registry import registry
 
 
@@ -19,7 +18,7 @@ class LipsyncInput(BaseModel):
 
     audio_source: AudioArtifact = Field(description="Audio track for lip sync")
     video_source: VideoArtifact = Field(description="Video to sync lips in")
-    prompt: Optional[str] = Field(None, description="Optional prompt for generation")
+    prompt: str | None = Field(None, description="Optional prompt for generation")
 
 
 class LipsyncOutput(BaseModel):
@@ -35,10 +34,10 @@ class LipsyncGenerator(BaseGenerator):
     artifact_type = "video"
     description = "Sync lips in video to match audio track"
 
-    def get_input_schema(self) -> Type[LipsyncInput]:
+    def get_input_schema(self) -> type[LipsyncInput]:
         return LipsyncInput
 
-    def get_output_schema(self) -> Type[LipsyncOutput]:
+    def get_output_schema(self) -> type[LipsyncOutput]:
         return LipsyncOutput
 
     async def generate(

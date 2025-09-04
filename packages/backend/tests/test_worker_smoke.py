@@ -17,11 +17,11 @@ def test_worker_smoke(monkeypatch):
     sys.modules["replicate"] = FakeReplicate()  # type: ignore
 
     # Bypass DB in repository and persistence
-    from boards.jobs import repository as jobs_repo
+    from boards.generators.implementations.image.flux_pro import FluxProGenerator
 
     # Ensure generator registry contains flux-pro
     from boards.generators.registry import registry
-    from boards.generators.implementations.image.flux_pro import FluxProGenerator
+    from boards.jobs import repository as jobs_repo
 
     try:
         registry.register(FluxProGenerator())

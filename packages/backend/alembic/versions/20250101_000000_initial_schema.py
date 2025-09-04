@@ -6,9 +6,10 @@ Revises:
 Create Date: 2025-01-01 00:00:00
 """
 
-from alembic import op  # type: ignore[reportMissingImports]
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op  # type: ignore[reportMissingImports]
 
 # revision identifiers, used by Alembic.
 revision = "20250101_000000_initial_schema"
@@ -249,7 +250,8 @@ def upgrade() -> None:
             "board_id", "user_id", name="board_members_board_id_user_id_key"
         ),
         sa.CheckConstraint(
-            "role::text = ANY (ARRAY['viewer'::character varying, 'editor'::character varying, 'admin'::character varying]::text[])",
+            "role::text = ANY (ARRAY['viewer'::character varying, "
+            "'editor'::character varying, 'admin'::character varying]::text[])",
             name="board_members_role_check",
         ),
         sa.ForeignKeyConstraint(

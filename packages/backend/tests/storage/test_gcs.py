@@ -1,12 +1,13 @@
 """Tests for GCS storage provider."""
 
 import os
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import timedelta
+from unittest.mock import MagicMock, patch
 
-from boards.storage.implementations.gcs import GCSStorageProvider
+import pytest
+
 from boards.storage.base import StorageException
+from boards.storage.implementations.gcs import GCSStorageProvider
 
 # Skip tests if GCS dependencies are not available
 pytest.importorskip("google.cloud.storage", reason="google-cloud-storage not available")
@@ -51,7 +52,7 @@ class TestGCSStorageProvider:
             project_id="test-project",
             credentials_path="/nonexistent/path.json",
         )
-        
+
         # Client should not be created yet
         assert provider._client is None
         assert provider._bucket is None
@@ -67,7 +68,7 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -77,7 +78,7 @@ class TestGCSStorageProvider:
 
                 # Verify blob configuration
                 assert mock_blob.content_type == test_content_type
-                
+
                 # Verify upload was called
                 mock_run_sync.assert_called_once_with(
                     mock_blob.upload_from_string, test_content, content_type=test_content_type
@@ -97,7 +98,7 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -120,7 +121,7 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -135,7 +136,7 @@ class TestGCSStorageProvider:
     @pytest.mark.asyncio
     async def test_upload_streaming_content(self, gcs_provider):
         """Test upload with streaming content."""
-        
+
         async def content_generator():
             yield b"chunk1"
             yield b"chunk2"
@@ -148,7 +149,7 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -171,14 +172,14 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider, "_run_sync") as mock_run_sync:
                 mock_run_sync.return_value = test_content
-                
+
                 result = await gcs_provider.download(test_key)
 
                 mock_run_sync.assert_called_once_with(mock_blob.download_as_bytes)
@@ -195,14 +196,14 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider, "_run_sync") as mock_run_sync:
                 mock_run_sync.return_value = test_url
-                
+
                 result = await gcs_provider.get_presigned_upload_url(test_key, test_content_type)
 
                 assert result["url"] == test_url
@@ -220,14 +221,14 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider, "_run_sync") as mock_run_sync:
                 mock_run_sync.return_value = test_url
-                
+
                 result = await gcs_provider.get_presigned_download_url(test_key)
 
                 assert result == test_url
@@ -247,7 +248,7 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -267,14 +268,14 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider, "_run_sync") as mock_run_sync:
                 mock_run_sync.return_value = True
-                
+
                 result = await gcs_provider.exists(test_key)
 
                 mock_run_sync.assert_called_once_with(mock_blob.exists)
@@ -289,14 +290,14 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider, "_run_sync") as mock_run_sync:
                 mock_run_sync.side_effect = Exception("File not found")
-                
+
                 result = await gcs_provider.exists(test_key)
 
                 assert result is False
@@ -310,7 +311,7 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             # Mock blob attributes
             mock_blob.size = 1024
             mock_blob.updated = "2023-01-01T00:00:00Z"
@@ -323,7 +324,7 @@ class TestGCSStorageProvider:
             mock_blob.content_disposition = None
             mock_blob.content_language = None
             mock_blob.metadata = {"custom_key": "custom_value"}
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -332,7 +333,7 @@ class TestGCSStorageProvider:
                 result = await gcs_provider.get_metadata(test_key)
 
                 mock_run_sync.assert_called_once_with(mock_blob.reload)
-                
+
                 assert result["size"] == 1024
                 assert result["content_type"] == "text/plain"
                 assert result["etag"] == "abcd1234"
@@ -345,15 +346,15 @@ class TestGCSStorageProvider:
         """Test client initialization with JSON credentials."""
         with patch("boards.storage.implementations.gcs.storage") as mock_storage, \
              patch("google.oauth2.service_account") as mock_service_account:
-            
+
             mock_credentials = MagicMock()
             mock_service_account.Credentials.from_service_account_info.return_value = mock_credentials
             mock_client = MagicMock()
             mock_storage.Client.return_value = mock_client
-            
+
             # Trigger client initialization
             client = gcs_provider_with_json._get_client()
-            
+
             assert client == mock_client
             mock_service_account.Credentials.from_service_account_info.assert_called_once()
             mock_storage.Client.assert_called_once_with(
@@ -366,14 +367,14 @@ class TestGCSStorageProvider:
         with patch("boards.storage.implementations.gcs.storage") as mock_storage, \
              patch("pathlib.Path.exists") as mock_exists, \
              patch.dict("os.environ", {}, clear=True):
-            
+
             mock_exists.return_value = True
             mock_client = MagicMock()
             mock_storage.Client.return_value = mock_client
-            
+
             # Trigger client initialization
             client = gcs_provider._get_client()
-            
+
             assert client == mock_client
             assert os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") == "/path/to/credentials.json"
             mock_storage.Client.assert_called_once_with(project="test-project")
@@ -382,14 +383,14 @@ class TestGCSStorageProvider:
     async def test_client_initialization_with_default_credentials(self):
         """Test client initialization with default credentials."""
         provider = GCSStorageProvider(bucket="test-bucket", project_id="test-project")
-        
+
         with patch("boards.storage.implementations.gcs.storage") as mock_storage:
             mock_client = MagicMock()
             mock_storage.Client.return_value = mock_client
-            
+
             # Trigger client initialization
             client = provider._get_client()
-            
+
             assert client == mock_client
             mock_storage.Client.assert_called_once_with(project="test-project")
 
@@ -398,7 +399,7 @@ class TestGCSStorageProvider:
         """Test error handling during client initialization."""
         with patch("boards.storage.implementations.gcs.storage") as mock_storage:
             mock_storage.Client.side_effect = Exception("Auth failed")
-            
+
             with pytest.raises(StorageException, match="GCS client initialization failed"):
                 await gcs_provider.upload("test/key", b"content", "text/plain")
 
@@ -413,14 +414,14 @@ class TestGCSStorageProvider:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider, "_run_sync") as mock_run_sync:
                 mock_run_sync.side_effect = Exception("GCS error")
-                
+
                 with pytest.raises(StorageException) as exc_info:
                     await gcs_provider.upload(test_key, test_content, test_content_type)
 
@@ -437,12 +438,12 @@ class TestGCSStorageProvider:
         """Test that client is created on first use."""
         # Client should not exist initially
         assert gcs_provider._client is None
-        
+
         with patch.object(gcs_provider, "_get_client") as mock_get_client:
             mock_client = MagicMock()
             mock_bucket = MagicMock()
             mock_blob = MagicMock()
-            
+
             mock_get_client.return_value = mock_client
             mock_client.bucket.return_value = mock_bucket
             mock_bucket.blob.return_value = mock_blob
@@ -450,6 +451,6 @@ class TestGCSStorageProvider:
             with patch.object(gcs_provider, "_run_sync"):
                 # This should trigger client creation
                 await gcs_provider.upload("test/key", b"content", "text/plain")
-                
+
                 # Verify client creation was called
                 mock_get_client.assert_called()

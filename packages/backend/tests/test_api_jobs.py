@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import json
-from fastapi.testclient import TestClient
 from types import SimpleNamespace
+
+from fastapi.testclient import TestClient
 
 from boards.api.app import app
 
@@ -13,8 +13,8 @@ def test_submit_generation_smoke(monkeypatch):
     # Monkeypatch the actor send to avoid needing Redis during test
     sent = {}
 
-    from boards.workers import actors
     from boards.jobs import repository as jobs_repo
+    from boards.workers import actors
 
     def fake_send(gen_id: str):
         sent["id"] = gen_id

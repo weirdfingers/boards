@@ -1,18 +1,19 @@
 """Supabase storage provider with integrated auth and CDN support."""
 
-import tempfile
 import logging
 import os
-from typing import Optional, Dict, Any, Union, AsyncIterator, TYPE_CHECKING
-from datetime import datetime, timedelta, timezone
+import tempfile
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any
 
 import aiofiles
 
 if TYPE_CHECKING:
-    from supabase import create_async_client, AsyncClient
+    from supabase import AsyncClient, create_async_client
 
 try:
-    from supabase import create_async_client, AsyncClient
+    from supabase import AsyncClient, create_async_client
 
     _supabase_available = True
 except ImportError:
@@ -21,7 +22,7 @@ except ImportError:
     # AsyncClient = None
     _supabase_available = False
 
-from ..base import StorageProvider, StorageException
+from ..base import StorageException, StorageProvider
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class SupabaseStorageProvider(StorageProvider):
         self.url = url
         self.key = key
         self.bucket = bucket
-        self._client: Optional["AsyncClient"] = None
+        self._client: AsyncClient | None = None
 
     async def _get_client(self) -> "AsyncClient":
         """Get or create the async Supabase client."""
@@ -49,9 +50,9 @@ class SupabaseStorageProvider(StorageProvider):
     async def upload(
         self,
         key: str,
-        content: Union[bytes, AsyncIterator[bytes]],
+        content: bytes | AsyncIterator[bytes],
         content_type: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         try:
             client = await self._get_client()
@@ -112,8 +113,8 @@ class SupabaseStorageProvider(StorageProvider):
         self,
         key: str,
         content_type: str,
-        expires_in: Optional[timedelta] = None,
-    ) -> Dict[str, Any]:
+        expires_in: timedelta | None = None,
+    ) -> dict[str, Any]:
         """Generate presigned URL for direct client uploads."""
         if expires_in is None:
             expires_in = timedelta(hours=1)
@@ -127,7 +128,7 @@ class SupabaseStorageProvider(StorageProvider):
             return {
                 "url": response["signed_url"],
                 "fields": {},  # Supabase doesn't use form fields like S3
-                "expires_at": (datetime.now(timezone.utc) + expires_in).isoformat(),
+                "expires_at": (datetime.now(UTC) + expires_in).isoformat(),
             }
         except Exception as e:
             if isinstance(e, StorageException):
@@ -136,7 +137,7 @@ class SupabaseStorageProvider(StorageProvider):
             raise StorageException(f"Presigned URL creation failed: {e}") from e
 
     async def get_presigned_download_url(
-        self, key: str, expires_in: Optional[timedelta] = None
+        self, key: str, expires_in: timedelta | None = None
     ) -> str:
         """Generate presigned URL for secure downloads."""
         if expires_in is None:
@@ -182,7 +183,7 @@ class SupabaseStorageProvider(StorageProvider):
             # Any error means the file doesn't exist or we can't access it
             return False
 
-    async def get_metadata(self, key: str) -> Dict[str, Any]:
+    async def get_metadata(self, key: str) -> dict[str, Any]:
         """Get file metadata (size, modified date, etc.)."""
         try:
             client = await self._get_client()

@@ -1,16 +1,15 @@
 """Integration tests for authentication system."""
 
-import pytest
 import os
-from unittest.mock import patch, AsyncMock
-from fastapi import FastAPI, Depends
+from unittest.mock import patch
+
+import pytest
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from boards.auth import get_auth_context, AuthContext
-from boards.auth.factory import get_auth_adapter_cached
-from boards.auth.adapters.none import NoAuthAdapter
+from boards.auth import AuthContext, get_auth_context
 from boards.auth.adapters.jwt import JWTAuthAdapter
-
+from boards.auth.factory import get_auth_adapter_cached
 
 # Mock FastAPI app for testing
 app = FastAPI()
@@ -21,7 +20,7 @@ async def protected_endpoint(auth: AuthContext = Depends(get_auth_context)):
     """Test endpoint that requires authentication."""
     if not auth.is_authenticated:
         return {"error": "Not authenticated"}
-    
+
     return {
         "user_id": str(auth.user_id),
         "tenant_id": auth.tenant_id,
@@ -56,14 +55,14 @@ class TestAuthIntegration:
         """Test end-to-end authentication with none adapter."""
         # Setup mocks
         mock_ensure_user.return_value = "test-user-uuid"
-        
+
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # Test unauthenticated request (no-auth should auto-authenticate)
         response = client.get("/protected")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["authenticated"] is True
@@ -78,17 +77,17 @@ class TestAuthIntegration:
         """Test none auth with explicit Bearer token."""
         # Setup mocks
         mock_ensure_user.return_value = "test-user-uuid"
-        
+
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # Test with Bearer token
         response = client.get(
             "/protected",
             headers={"Authorization": "Bearer any-token-works"}
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["authenticated"] is True
@@ -103,15 +102,15 @@ class TestAuthIntegration:
         """Test end-to-end authentication with JWT adapter."""
         # Setup mocks
         mock_ensure_user.return_value = "jwt-user-uuid"
-        
+
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # Create valid JWT token
         adapter = get_auth_adapter_cached()
         assert isinstance(adapter, JWTAuthAdapter)
-        
+
         # Issue a token
         import asyncio
         from uuid import uuid4
@@ -120,13 +119,13 @@ class TestAuthIntegration:
             user_id=user_id,
             claims={"email": "test@example.com", "name": "Test User"}
         ))
-        
+
         # Test with valid JWT
         response = client.get(
             "/protected",
             headers={"Authorization": f"Bearer {token}"}
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["authenticated"] is True
@@ -143,13 +142,13 @@ class TestAuthIntegration:
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # Test with invalid JWT
         response = client.get(
             "/protected",
             headers={"Authorization": "Bearer invalid-jwt-token"}
         )
-        
+
         assert response.status_code == 401
         assert "Invalid token" in response.json()["detail"]
 
@@ -159,11 +158,11 @@ class TestAuthIntegration:
         """Test tenant header is processed correctly."""
         # Setup mocks
         mock_ensure_user.return_value = "test-user-uuid"
-        
+
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # Test with custom tenant
         response = client.get(
             "/protected",
@@ -172,7 +171,7 @@ class TestAuthIntegration:
                 "X-Tenant": "custom-tenant"
             }
         )
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["tenant_id"] == "custom-tenant"
@@ -183,10 +182,10 @@ class TestAuthIntegration:
         # Clear adapter cache to ensure we use JWT provider
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # For public endpoint, should work
         response = client.get("/public")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["authenticated"] is False
@@ -198,12 +197,12 @@ class TestAuthIntegration:
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         response = client.get(
             "/protected",
             headers={"Authorization": "InvalidFormat token"}
         )
-        
+
         assert response.status_code == 401
         assert "Invalid authorization format" in response.json()["detail"]
 
@@ -213,12 +212,12 @@ class TestAuthIntegration:
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         response = client.get(
             "/protected",
             headers={"Authorization": "Bearer "}
         )
-        
+
         assert response.status_code == 401
         assert "Empty token" in response.json()["detail"]
 
@@ -230,22 +229,22 @@ class TestAuthIntegration:
         from uuid import uuid4
         mock_user_id = uuid4()
         mock_ensure_user.return_value = mock_user_id
-        
+
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         response = client.get("/protected")
-        
+
         assert response.status_code == 200
-        
+
         # JIT provisioning should now be called since database module is available
         mock_ensure_user.assert_called_once()
-        
+
         # Verify the call arguments
         call_args = mock_ensure_user.call_args
         _, tenant_id, principal = call_args[0]
-        
+
         assert tenant_id == "default"
         assert principal["provider"] == "none"
         assert principal["subject"] == "dev-user"
@@ -257,7 +256,7 @@ class TestAuthIntegration:
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
+
         # This should fail when trying to get the adapter
         with pytest.raises(ValueError, match="Unsupported auth provider"):
             response = client.get("/protected")
@@ -269,15 +268,15 @@ class TestAuthIntegration:
         # Clear adapter cache
         import boards.auth.factory
         boards.auth.factory._adapter = None
-        
-        # Setup mocks to raise error (though this test is less relevant now 
+
+        # Setup mocks to raise error (though this test is less relevant now
         # since DB errors are caught by ImportError fallback)
         mock_ensure_user.side_effect = Exception("Database connection failed")
-        
+
         response = client.get(
             "/protected",
             headers={"Authorization": "Bearer test-token"}
         )
-        
+
         # Should succeed since we use fallback UUID when DB is not available
         assert response.status_code == 200

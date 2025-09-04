@@ -1,15 +1,16 @@
 """Tests for storage base classes and manager."""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
+import pytest
+
 from boards.storage.base import (
-    StorageConfig,
     ArtifactReference,
-    StorageManager,
-    StorageException,
     SecurityException,
+    StorageConfig,
+    StorageException,
+    StorageManager,
     ValidationException,
 )
 
@@ -70,7 +71,7 @@ class TestArtifactReference:
 
         # Should have been set automatically
         assert ref.created_at is not None
-        assert abs((datetime.now(timezone.utc) - ref.created_at).total_seconds()) < 1
+        assert abs((datetime.now(UTC) - ref.created_at).total_seconds()) < 1
 
 
 class TestStorageManager:

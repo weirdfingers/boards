@@ -2,15 +2,16 @@
 Generation GraphQL type definitions
 """
 
-import strawberry
-from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
-from uuid import UUID
 from enum import Enum
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
+
+import strawberry
 
 if TYPE_CHECKING:
-    from .user import User
     from .board import Board
+    from .user import User
 
 
 @strawberry.enum
@@ -60,27 +61,27 @@ class Generation:
     artifact_type: ArtifactType
 
     # Storage
-    storage_url: Optional[str]
-    thumbnail_url: Optional[str]
-    additional_files: List[AdditionalFile]
+    storage_url: str | None
+    thumbnail_url: str | None
+    additional_files: list[AdditionalFile]
 
     # Parameters and metadata
     input_params: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
     output_metadata: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
 
     # Lineage
-    parent_generation_id: Optional[UUID]
-    input_generation_ids: List[UUID]
+    parent_generation_id: UUID | None
+    input_generation_ids: list[UUID]
 
     # Job tracking
-    external_job_id: Optional[str]
+    external_job_id: str | None
     status: GenerationStatus
     progress: float
-    error_message: Optional[str]
+    error_message: str | None
 
     # Timestamps
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    started_at: datetime | None
+    completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -108,7 +109,7 @@ class Generation:
         return await resolve_generation_parent(self, info)
 
     @strawberry.field
-    async def inputs(self, info: strawberry.Info) -> List["Generation"]:
+    async def inputs(self, info: strawberry.Info) -> list["Generation"]:
         """Get input generations used for this generation."""
         if not self.input_generation_ids:
             return []
@@ -117,7 +118,7 @@ class Generation:
         return await resolve_generation_inputs(self, info)
 
     @strawberry.field
-    async def children(self, info: strawberry.Info) -> List["Generation"]:
+    async def children(self, info: strawberry.Info) -> list["Generation"]:
         """Get child generations derived from this one."""
         from ..resolvers.generation import resolve_generation_children
 

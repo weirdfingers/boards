@@ -7,7 +7,7 @@ across the application to reduce connection overhead and improve performance.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+
 import redis.asyncio as redis
 from redis.asyncio.connection import ConnectionPool
 
@@ -18,21 +18,21 @@ logger = logging.getLogger(__name__)
 
 class RedisPoolManager:
     """Singleton manager for Redis connection pool."""
-    
-    _instance: Optional[RedisPoolManager] = None
-    _pool: Optional[ConnectionPool] = None
-    _client: Optional[redis.Redis] = None
-    
+
+    _instance: RedisPoolManager | None = None
+    _pool: ConnectionPool | None = None
+    _client: redis.Redis | None = None
+
     def __new__(cls) -> RedisPoolManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-    
+
     def __init__(self):
         """Initialize the Redis pool manager."""
         if self._pool is None:
             settings = Settings()
-            
+
             # Create connection pool with sensible defaults
             # These can be tuned based on your application's needs
             self._pool = redis.ConnectionPool.from_url(
@@ -44,29 +44,29 @@ class RedisPoolManager:
                 retry_on_timeout=True,  # Retry on timeout
                 health_check_interval=30,  # Health check every 30 seconds
             )
-            
+
             # Create Redis client using the pool
             self._client = redis.Redis(connection_pool=self._pool)
-            
+
             logger.info(
-                f"Redis connection pool initialized with max_connections=50, "
-                f"health_check_interval=30s"
+                "Redis connection pool initialized with max_connections=50, "
+                "health_check_interval=30s"
             )
-    
+
     @property
     def client(self) -> redis.Redis:
         """Get the Redis client with connection pooling."""
         if self._client is None:
             raise RuntimeError("Redis pool not initialized")
         return self._client
-    
-    @property 
+
+    @property
     def pool(self) -> ConnectionPool:
         """Get the underlying connection pool."""
         if self._pool is None:
             raise RuntimeError("Redis pool not initialized")
         return self._pool
-    
+
     async def close(self):
         """Close the Redis connection pool."""
         if self._client:
@@ -75,7 +75,7 @@ class RedisPoolManager:
         if self._pool:
             await self._pool.disconnect()
             logger.info("Redis connection pool disconnected")
-    
+
     async def health_check(self) -> bool:
         """Check if Redis connection is healthy."""
         try:

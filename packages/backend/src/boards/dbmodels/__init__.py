@@ -5,8 +5,8 @@ This module defines the SQLAlchemy Base with a naming convention for stable
 Alembic autogenerate diffs, and exposes `target_metadata` for Alembic.
 """
 
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import (
@@ -28,7 +28,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
-
 
 # Naming convention for deterministic constraint/index names in Alembic diffs
 naming_convention = {
@@ -57,22 +56,22 @@ class Tenants(Base):
     created_at = mapped_column(DateTime(True), server_default=text("CURRENT_TIMESTAMP"))
     updated_at = mapped_column(DateTime(True), server_default=text("CURRENT_TIMESTAMP"))
 
-    provider_configs: Mapped[List["ProviderConfigs"]] = relationship(
+    provider_configs: Mapped[list["ProviderConfigs"]] = relationship(
         "ProviderConfigs", uselist=True, back_populates="tenant"
     )
-    users: Mapped[List["Users"]] = relationship(
+    users: Mapped[list["Users"]] = relationship(
         "Users", uselist=True, back_populates="tenant"
     )
-    boards: Mapped[List["Boards"]] = relationship(
+    boards: Mapped[list["Boards"]] = relationship(
         "Boards", uselist=True, back_populates="tenant"
     )
-    lora_models: Mapped[List["LoraModels"]] = relationship(
+    lora_models: Mapped[list["LoraModels"]] = relationship(
         "LoraModels", uselist=True, back_populates="tenant"
     )
-    generations: Mapped[List["Generations"]] = relationship(
+    generations: Mapped[list["Generations"]] = relationship(
         "Generations", uselist=True, back_populates="tenant"
     )
-    credit_transactions: Mapped[List["CreditTransactions"]] = relationship(
+    credit_transactions: Mapped[list["CreditTransactions"]] = relationship(
         "CreditTransactions", uselist=True, back_populates="tenant"
     )
 
@@ -139,28 +138,28 @@ class Users(Base):
     updated_at = mapped_column(DateTime(True), server_default=text("CURRENT_TIMESTAMP"))
 
     tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="users")
-    boards: Mapped[List["Boards"]] = relationship(
+    boards: Mapped[list["Boards"]] = relationship(
         "Boards", uselist=True, back_populates="owner"
     )
-    lora_models: Mapped[List["LoraModels"]] = relationship(
+    lora_models: Mapped[list["LoraModels"]] = relationship(
         "LoraModels", uselist=True, back_populates="user"
     )
-    board_members: Mapped[List["BoardMembers"]] = relationship(
+    board_members: Mapped[list["BoardMembers"]] = relationship(
         "BoardMembers",
         uselist=True,
         foreign_keys="[BoardMembers.invited_by]",
         back_populates="users",
     )
-    board_members_: Mapped[List["BoardMembers"]] = relationship(
+    board_members_: Mapped[list["BoardMembers"]] = relationship(
         "BoardMembers",
         uselist=True,
         foreign_keys="[BoardMembers.user_id]",
         back_populates="user",
     )
-    generations: Mapped[List["Generations"]] = relationship(
+    generations: Mapped[list["Generations"]] = relationship(
         "Generations", uselist=True, back_populates="user"
     )
-    credit_transactions: Mapped[List["CreditTransactions"]] = relationship(
+    credit_transactions: Mapped[list["CreditTransactions"]] = relationship(
         "CreditTransactions", uselist=True, back_populates="user"
     )
 
@@ -195,10 +194,10 @@ class Boards(Base):
 
     owner: Mapped["Users"] = relationship("Users", back_populates="boards")
     tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="boards")
-    board_members: Mapped[List["BoardMembers"]] = relationship(
+    board_members: Mapped[list["BoardMembers"]] = relationship(
         "BoardMembers", uselist=True, back_populates="board"
     )
-    generations: Mapped[List["Generations"]] = relationship(
+    generations: Mapped[list["Generations"]] = relationship(
         "Generations", uselist=True, back_populates="board"
     )
 
@@ -355,7 +354,7 @@ class Generations(Base):
         remote_side="Generations.id",
         back_populates="parent_generation_reverse",
     )
-    parent_generation_reverse: Mapped[List["Generations"]] = relationship(
+    parent_generation_reverse: Mapped[list["Generations"]] = relationship(
         "Generations",
         uselist=True,
         remote_side="Generations.parent_generation_id",
@@ -363,7 +362,7 @@ class Generations(Base):
     )
     tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="generations")
     user: Mapped["Users"] = relationship("Users", back_populates="generations")
-    credit_transactions: Mapped[List["CreditTransactions"]] = relationship(
+    credit_transactions: Mapped[list["CreditTransactions"]] = relationship(
         "CreditTransactions", uselist=True, back_populates="generation"
     )
 

@@ -1,11 +1,11 @@
 """Tests for S3 storage provider."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import timedelta
+from unittest.mock import AsyncMock, patch
 
-from boards.storage.implementations.s3 import S3StorageProvider
+import pytest
+
 from boards.storage.base import StorageException
+from boards.storage.implementations.s3 import S3StorageProvider
 
 # Skip tests if S3 dependencies are not available
 pytest.importorskip("boto3", reason="boto3 not available")

@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import Header, HTTPException
+
+from ..logging import get_logger
 
 # from ..db import get_database  # TODO: Implement when db module is ready
 from .adapters.base import AuthenticationError
 from .context import AuthContext
 from .factory import get_auth_adapter_cached
 from .provisioning import ensure_local_user
-from ..logging import get_logger
 
 logger = get_logger(__name__)
 
 
 async def get_auth_context(
-    authorization: Optional[str] = Header(None),
-    x_tenant: Optional[str] = Header(None, alias="X-Tenant"),
+    authorization: str | None = Header(None),
+    x_tenant: str | None = Header(None, alias="X-Tenant"),
 ) -> AuthContext:
     """
     Extract authentication context from request headers.
@@ -98,7 +97,7 @@ async def get_auth_context(
                 principal_subject=principal.get("subject"),
                 fallback_mode="deterministic_uuid"
             )
-            
+
             # Create a deterministic UUID based on principal's subject and provider
             # This ensures the same user gets the same ID across requests
             import hashlib
@@ -108,7 +107,7 @@ async def get_auth_context(
             formatted_uuid = f"{user_id_hash[:8]}-{user_id_hash[8:12]}-{user_id_hash[12:16]}-{user_id_hash[16:20]}-{user_id_hash[20:32]}"
             from uuid import UUID
             user_id = UUID(formatted_uuid)
-            
+
             logger.info(
                 "Generated deterministic fallback user ID",
                 user_id=str(user_id),
@@ -118,12 +117,12 @@ async def get_auth_context(
         except Exception as db_error:
             # Database connection failed, use the same deterministic fallback
             logger.error(
-                "Database connection failed, using fallback user ID generation", 
+                "Database connection failed, using fallback user ID generation",
                 error=str(db_error),
                 principal_provider=principal.get("provider"),
                 principal_subject=principal.get("subject")
             )
-            
+
             import hashlib
             stable_input = f"{principal.get('provider', 'unknown')}:{principal.get('subject', 'anonymous')}:{tenant_id}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
@@ -155,8 +154,8 @@ async def get_auth_context(
 
 
 async def get_auth_context_optional(
-    authorization: Optional[str] = Header(None),
-    x_tenant: Optional[str] = Header(None, alias="X-Tenant"),
+    authorization: str | None = Header(None),
+    x_tenant: str | None = Header(None, alias="X-Tenant"),
 ) -> AuthContext:
     """
     Optional authentication - returns unauthenticated context if no token.

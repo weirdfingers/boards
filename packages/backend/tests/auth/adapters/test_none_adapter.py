@@ -1,7 +1,8 @@
 """Tests for NoAuth authentication adapter."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from boards.auth.adapters.none import NoAuthAdapter
 
@@ -32,7 +33,7 @@ class TestNoAuthAdapter:
             assert principal["subject"] == "test-dev-user"
             assert principal["email"] == "dev@example.com"
             assert principal["display_name"] == "Development User"
-            assert principal["avatar_url"] is ""
+            assert principal["avatar_url"] == ""
             assert principal["claims"]["mode"] == "development"
             assert token[:20] in principal["claims"]["token"]
 

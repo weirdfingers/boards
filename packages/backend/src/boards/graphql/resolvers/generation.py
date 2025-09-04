@@ -1,29 +1,30 @@
 from __future__ import annotations
 
-import strawberry
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import UUID
 
+import strawberry
+
 if TYPE_CHECKING:
-    from ..types.generation import Generation, GenerationStatus, ArtifactType
-    from ..types.board import Board
-    from ..types.user import User
     from ..mutations.root import CreateGenerationInput
+    from ..types.board import Board
+    from ..types.generation import ArtifactType, Generation, GenerationStatus
+    from ..types.user import User
 
 
 # Query resolvers
-async def resolve_generation_by_id(info: strawberry.Info, id: UUID) -> Optional[Generation]:
+async def resolve_generation_by_id(info: strawberry.Info, id: UUID) -> Generation | None:
     raise NotImplementedError
 
 
 async def resolve_recent_generations(
     info: strawberry.Info,
-    board_id: Optional[UUID],
-    status: Optional[GenerationStatus],
-    artifact_type: Optional[ArtifactType],
+    board_id: UUID | None,
+    status: GenerationStatus | None,
+    artifact_type: ArtifactType | None,
     limit: int,
     offset: int,
-) -> List[Generation]:
+) -> list[Generation]:
     raise NotImplementedError
 
 
@@ -38,15 +39,15 @@ async def resolve_generation_user(generation: Generation, info: strawberry.Info)
 
 async def resolve_generation_parent(
     generation: Generation, info: strawberry.Info
-) -> Optional[Generation]:
+) -> Generation | None:
     raise NotImplementedError
 
 
-async def resolve_generation_inputs(generation: Generation, info: strawberry.Info) -> List[Generation]:
+async def resolve_generation_inputs(generation: Generation, info: strawberry.Info) -> list[Generation]:
     raise NotImplementedError
 
 
-async def resolve_generation_children(generation: Generation, info: strawberry.Info) -> List[Generation]:
+async def resolve_generation_children(generation: Generation, info: strawberry.Info) -> list[Generation]:
     raise NotImplementedError
 
 

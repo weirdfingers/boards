@@ -2,40 +2,39 @@
 Centralized logging configuration using structlog
 """
 
+import base64
 import logging
 import secrets
 import sys
 import time
-import base64
 from contextvars import ContextVar
-from typing import Any, Dict, Optional
+from typing import Any
 
 import structlog
 from fastapi import Request
 
-
 # Context variables for request tracking
-request_id_ctx: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
-user_id_ctx: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
+request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
+user_id_ctx: ContextVar[str | None] = ContextVar("user_id", default=None)
 
 
 class RequestContextFilter:
     """Add request context to log records."""
-    
-    def __call__(self, logger: Any, method_name: str, event_dict: Dict[str, Any]) -> Dict[str, Any]:
+
+    def __call__(self, logger: Any, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
         """Add request context to the event dict."""
         # Suppress unused parameter warnings - these are required by structlog interface
         _ = logger, method_name
-        
+
         request_id = request_id_ctx.get()
         user_id = user_id_ctx.get()
-        
+
         if request_id:
             event_dict["request_id"] = request_id
-        
+
         if user_id:
             event_dict["user_id"] = user_id
-            
+
         return event_dict
 
 
@@ -45,10 +44,10 @@ def configure_logging(debug: bool = False) -> None:
     Args:
         debug: If True, use human-readable console output. If False, use JSON.
     """
-    
+
     # Determine log level
     log_level = logging.DEBUG if debug else logging.INFO
-    
+
     # Configure stdlib logging
     logging.basicConfig(
         level=log_level,
@@ -56,7 +55,7 @@ def configure_logging(debug: bool = False) -> None:
         format="%(message)s",
         force=True,
     )
-    
+
     # Configure structlog processors
     processors = [
         # Filter out keys with underscores (internal)
@@ -78,7 +77,7 @@ def configure_logging(debug: bool = False) -> None:
         # Unicode decoder processor
         structlog.processors.UnicodeDecoder(),
     ]
-    
+
     if debug:
         # Development: human-readable console output
         processors.append(
@@ -89,7 +88,7 @@ def configure_logging(debug: bool = False) -> None:
         processors.append(
             structlog.processors.JSONRenderer()
         )
-    
+
     # Configure structlog
     structlog.configure(
         processors=processors,
@@ -122,21 +121,21 @@ def generate_request_id() -> str:
     """
     # Get microseconds since epoch (8 bytes when encoded as int64)
     timestamp_us = int(time.time() * 1_000_000)
-    
+
     # Add 2 bytes of cryptographically secure randomness
     random_bytes = secrets.token_bytes(2)
-    
+
     # Convert timestamp to bytes (8 bytes for int64) and combine with random bytes
     timestamp_bytes = timestamp_us.to_bytes(8, byteorder='big')
     combined_bytes = timestamp_bytes + random_bytes
-    
+
     # Encode as base64 and strip padding
     b64 = base64.urlsafe_b64encode(combined_bytes).decode('ascii').rstrip('=')
-    
+
     return b64
 
 
-def set_request_context(request_id: Optional[str] = None, user_id: Optional[str] = None) -> None:
+def set_request_context(request_id: str | None = None, user_id: str | None = None) -> None:
     """Set request context variables.
     
     Args:
@@ -145,7 +144,7 @@ def set_request_context(request_id: Optional[str] = None, user_id: Optional[str]
     """
     if request_id is None:
         request_id = generate_request_id()
-    
+
     request_id_ctx.set(request_id)
     if user_id is not None:
         user_id_ctx.set(user_id)
@@ -157,17 +156,17 @@ def clear_request_context() -> None:
     user_id_ctx.set(None)
 
 
-def get_request_id() -> Optional[str]:
+def get_request_id() -> str | None:
     """Get the current request ID."""
     return request_id_ctx.get()
 
 
-def get_user_id() -> Optional[str]:
+def get_user_id() -> str | None:
     """Get the current user ID."""
     return user_id_ctx.get()
 
 
-def extract_user_id_from_request(request: Request) -> Optional[str]:
+def extract_user_id_from_request(request: Request) -> str | None:
     """Extract user ID from FastAPI request.
     
     This should be customized based on your authentication implementation.
@@ -183,7 +182,7 @@ def extract_user_id_from_request(request: Request) -> Optional[str]:
     # - JWT token in Authorization header
     # - Session data
     # - Supabase auth token
-    
+
     # For now, look for a user ID in headers (customize as needed)
     auth_header = request.headers.get("authorization")
     if auth_header:
@@ -193,8 +192,8 @@ def extract_user_id_from_request(request: Request) -> Optional[str]:
         #     token = auth_header[7:]
         #     # Parse JWT token to extract user_id
         #     return parsed_user_id
-        
+
         # For now, return None until auth is implemented
         return None
-    
+
     return None
