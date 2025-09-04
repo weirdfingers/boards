@@ -1,0 +1,33 @@
+# Include important package files
+include README.md
+include LICENSE
+include pyproject.toml
+include alembic.ini
+include .env.example
+
+# Include all Python files
+recursive-include src *.py
+recursive-include src *.pyi
+
+# Include type information
+include src/boards/py.typed
+
+# Include Alembic migrations
+recursive-include alembic *.py
+recursive-include alembic *.mako
+
+# Exclude test files from distribution
+recursive-exclude tests *
+recursive-exclude **/__pycache__ *
+recursive-exclude **/*.pyc *
+recursive-exclude **/*.pyo *
+
+# Exclude development files
+exclude .env
+exclude .env.local
+exclude docker-compose.yml
+exclude Dockerfile*
+exclude .dockerignore
+recursive-exclude .venv *
+recursive-exclude venv *
+recursive-exclude node_modules *

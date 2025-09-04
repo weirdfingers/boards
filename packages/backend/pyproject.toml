@@ -5,17 +5,23 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "boards-backend"
 version = "0.1.0"
-description = "Backend for Boards - AI creative toolkit"
+description = "Backend API server for Boards - AI creative toolkit with GraphQL, auth adapters, and generation workers"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Boards Contributors", email = "dev@boards.io" }]
+keywords = ["ai", "creative", "toolkit", "graphql", "fastapi", "strawberry", "auth", "generation"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Framework :: FastAPI",
+    "Framework :: AsyncIO",
 ]
 dependencies = [
     "sqlalchemy>=2.0.0",
@@ -36,6 +42,7 @@ dependencies = [
     "alembic>=1.13.2",
     "aiofiles>=23.0.0",
     "pyyaml>=6.0.0",
+    "click>=8.0.0",
 ]
 
 [project.optional-dependencies]
@@ -64,9 +71,16 @@ storage-gcs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/boards/boards"
+Homepage = "https://github.com/weirdfingers/boards"
 Documentation = "https://docs.boards.io"
-Repository = "https://github.com/boards/boards"
+Repository = "https://github.com/weirdfingers/boards"
+Issues = "https://github.com/weirdfingers/boards/issues"
+Changelog = "https://github.com/weirdfingers/boards/blob/main/CHANGELOG.md"
+
+[project.scripts]
+boards-server = "boards.cli:main"
+boards-worker = "boards.workers.cli:main"
+boards-migrate = "boards.database.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -99,4 +113,6 @@ dev-dependencies = [
     "pyright>=1.1.0",
     "black>=23.0.0",
     "pre-commit>=3.0.0",
+    "build>=1.3.0",
+    "twine>=6.1.0",
 ]

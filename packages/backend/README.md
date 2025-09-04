@@ -16,8 +16,19 @@ Backend for the Boards open-source creative toolkit for AI-generated content.
 ## Installation
 
 ```bash
-# Install with uv
-cd packages/backend
+# Install from PyPI
+pip install boards-backend
+
+# Or with optional dependencies
+pip install boards-backend[providers,storage-s3,storage-gcs]
+```
+
+### Development Installation
+
+```bash
+# Clone the repository and install
+git clone https://github.com/weirdfingers/boards.git
+cd boards/packages/backend
 uv sync
 ```
 
@@ -53,7 +64,20 @@ uv run alembic upgrade head
 
 ## Development
 
-### Run the development server
+### Quick Start
+
+```bash
+# Start the API server (after installation and configuration)
+boards-server
+
+# Run database migrations
+boards-migrate upgrade head
+
+# Start background workers
+boards-worker
+```
+
+### Development Server
 
 ```bash
 # Using uvicorn directly
