@@ -43,12 +43,12 @@ def main(
     log_level: str,
 ) -> None:
     """Start Boards background workers."""
-    
+
     # Configure logging
     configure_logging(debug=(log_level == "debug"))
-    
+
     queue_list = [q.strip() for q in queues.split(",")]
-    
+
     logger.info(
         "Starting Boards workers",
         processes=processes,
@@ -56,34 +56,34 @@ def main(
         queues=queue_list,
         log_level=log_level,
     )
-    
+
     try:
         # Import workers to register them (if they exist)
         try:
-            from boards.workers import tasks  # noqa
+            from boards.workers import actors  # noqa
         except ImportError:
-            logger.warning("No worker tasks found - continuing with empty worker")
-        
+            logger.warning("No worker actors found - continuing with empty worker")
+
         # Start the worker
         from dramatiq.cli import main as dramatiq_main
-        
+
         # Build dramatiq CLI args
         args = [
             "dramatiq",
-            "boards.workers.tasks",
+            "boards.workers.actors",
             f"--processes={processes}",
             f"--threads={threads}",
         ]
-        
+
         for queue in queue_list:
             args.extend(["--queues", queue])
-            
+
         # Override sys.argv for dramatiq CLI
         original_argv = sys.argv
         sys.argv = args
-        
+
         dramatiq_main()
-        
+
     except KeyboardInterrupt:
         logger.info("Worker shutdown requested by user")
     except Exception as e:
