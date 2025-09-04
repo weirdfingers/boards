@@ -1,12 +1,13 @@
 """Tests for JWT authentication adapter."""
 
-import pytest
-import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from boards.auth.adapters.jwt import JWTAuthAdapter
+import jwt
+import pytest
+
 from boards.auth.adapters.base import AuthenticationError
+from boards.auth.adapters.jwt import JWTAuthAdapter
 
 
 @pytest.fixture
@@ -26,10 +27,10 @@ def jwt_adapter(secret_key):
 
 @pytest.fixture
 def valid_token(secret_key):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "iss": "test-boards",
-        "aud": "test-api", 
+        "aud": "test-api",
         "sub": "test-user-123",
         "email": "test@example.com",
         "name": "Test User",
@@ -43,11 +44,11 @@ def valid_token(secret_key):
 
 @pytest.fixture
 def expired_token(secret_key):
-    past_time = datetime.now(timezone.utc) - timedelta(hours=2)
+    past_time = datetime.now(UTC) - timedelta(hours=2)
     payload = {
         "iss": "test-boards",
         "aud": "test-api",
-        "sub": "test-user-123", 
+        "sub": "test-user-123",
         "email": "test@example.com",
         "iat": past_time,
         "nbf": past_time,
@@ -63,7 +64,7 @@ class TestJWTAdapter:
     async def test_verify_valid_token(self, jwt_adapter, valid_token):
         """Test verifying a valid JWT token."""
         principal = await jwt_adapter.verify_token(valid_token)
-        
+
         assert principal["provider"] == "jwt"
         assert principal["subject"] == "test-user-123"
         assert principal["email"] == "test@example.com"
@@ -86,17 +87,17 @@ class TestJWTAdapter:
             "iss": "test-boards",
             "aud": "test-api",
             "sub": "test-user-123",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
         }
         invalid_token = jwt.encode(payload, wrong_secret, algorithm="HS256")
-        
+
         with pytest.raises(AuthenticationError, match="Invalid token"):
             await jwt_adapter.verify_token(invalid_token)
 
     @pytest.mark.asyncio
     async def test_verify_missing_subject(self, jwt_adapter, secret_key):
         """Test verifying a token without subject fails."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "iss": "test-boards",
             "aud": "test-api",
@@ -106,7 +107,7 @@ class TestJWTAdapter:
             "exp": now + timedelta(hours=1),
         }
         token = jwt.encode(payload, secret_key, algorithm="HS256")
-        
+
         with pytest.raises(AuthenticationError, match="Missing 'sub' claim"):
             await jwt_adapter.verify_token(token)
 
@@ -117,8 +118,8 @@ class TestJWTAdapter:
             secret_key=secret_key,
             issuer="expected-issuer"
         )
-        
-        now = datetime.now(timezone.utc)
+
+        now = datetime.now(UTC)
         payload = {
             "iss": "wrong-issuer",
             "aud": "test-api",
@@ -127,7 +128,7 @@ class TestJWTAdapter:
             "exp": now + timedelta(hours=1),
         }
         token = jwt.encode(payload, secret_key, algorithm="HS256")
-        
+
         with pytest.raises(AuthenticationError, match="Invalid token"):
             await adapter.verify_token(token)
 
@@ -142,9 +143,9 @@ class TestJWTAdapter:
         """Test issuing a new JWT token."""
         user_id = uuid4()
         claims = {"role": "admin", "org": "test-org"}
-        
+
         token = await jwt_adapter.issue_token(user_id=user_id, claims=claims)
-        
+
         # Verify the issued token
         principal = await jwt_adapter.verify_token(token)
         assert principal["subject"] == str(user_id)
@@ -155,7 +156,7 @@ class TestJWTAdapter:
     async def test_issue_token_without_user_id(self, jwt_adapter):
         """Test issuing a token without user ID."""
         token = await jwt_adapter.issue_token(claims={"test": "value"})
-        
+
         # Should still be valid but without subject
         # We'll need to modify the verify logic to handle this case
         assert token is not None
@@ -165,7 +166,7 @@ class TestJWTAdapter:
     async def test_get_user_info(self, jwt_adapter, valid_token):
         """Test getting user info from token."""
         user_info = await jwt_adapter.get_user_info(valid_token)
-        
+
         assert user_info["sub"] == "test-user-123"
         assert user_info["email"] == "test@example.com"
         assert user_info["name"] == "Test User"
@@ -184,7 +185,7 @@ class TestJWTAdapter:
             issuer="custom-issuer",
             audience="custom-audience"
         )
-        
+
         assert adapter.secret_key == "test-key"
         assert adapter.algorithm == "HS512"
         assert adapter.issuer == "custom-issuer"
@@ -194,8 +195,8 @@ class TestJWTAdapter:
     async def test_minimal_token_claims(self, secret_key):
         """Test token with only required claims."""
         adapter = JWTAuthAdapter(secret_key=secret_key)
-        
-        now = datetime.now(timezone.utc)
+
+        now = datetime.now(UTC)
         payload = {
             "iss": "boards",
             "aud": "boards-api",
@@ -204,7 +205,7 @@ class TestJWTAdapter:
             "exp": now + timedelta(hours=1),
         }
         token = jwt.encode(payload, secret_key, algorithm="HS256")
-        
+
         principal = await adapter.verify_token(token)
         assert principal["provider"] == "jwt"
         assert principal["subject"] == "minimal-user"

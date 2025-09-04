@@ -9,6 +9,4 @@ Import this module to automatically register all built-in generators:
 """
 
 # Import all generator modules to trigger registration
-from . import image
-from . import video  
-from . import audio
+from . import audio, image, video

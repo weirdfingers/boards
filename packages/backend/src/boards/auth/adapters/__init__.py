@@ -1,20 +1,20 @@
 """Authentication adapters for different providers."""
 
+from .auth0 import Auth0OIDCAdapter
 from .base import AuthAdapter, Principal
-from .supabase import SupabaseAuthAdapter
+from .clerk import ClerkAuthAdapter
 from .jwt import JWTAuthAdapter
 from .none import NoAuthAdapter
-from .clerk import ClerkAuthAdapter
-from .auth0 import Auth0OIDCAdapter
 from .oidc import OIDCAdapter
+from .supabase import SupabaseAuthAdapter
 
 __all__ = [
     "AuthAdapter",
     "Principal",
-    "SupabaseAuthAdapter", 
+    "SupabaseAuthAdapter",
     "JWTAuthAdapter",
     "NoAuthAdapter",
     "ClerkAuthAdapter",
-    "Auth0OIDCAdapter", 
+    "Auth0OIDCAdapter",
     "OIDCAdapter",
 ]

@@ -2,18 +2,19 @@
 Tests for FluxProGenerator.
 """
 
-import pytest
 import os
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
+
+import pytest
 from pydantic import ValidationError
 
+from boards.generators.artifacts import ImageArtifact
+from boards.generators.base import GeneratorExecutionContext
 from boards.generators.implementations.image.flux_pro import (
     FluxProGenerator,
     FluxProInput,
     FluxProOutput,
 )
-from boards.generators.artifacts import ImageArtifact
-from boards.generators.base import GeneratorExecutionContext
 
 
 class TestFluxProInput:

@@ -2,11 +2,12 @@
 Database connection management
 """
 
+from collections.abc import AsyncGenerator, Generator
+from contextlib import asynccontextmanager, contextmanager
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from contextlib import contextmanager, asynccontextmanager
-from typing import Generator, AsyncGenerator, Optional
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from ..config import settings
 from ..logging import get_logger
@@ -21,12 +22,12 @@ SessionLocal = None
 async_engine = None
 AsyncSessionLocal = None
 
-def init_database(database_url: Optional[str] = None):
+def init_database(database_url: str | None = None):
     """Initialize database connections."""
     global engine, SessionLocal, async_engine, AsyncSessionLocal
-    
+
     db_url = database_url or settings.database_url
-    
+
     # Create sync engine
     engine = create_engine(
         db_url,
@@ -35,7 +36,7 @@ def init_database(database_url: Optional[str] = None):
         echo=settings.debug,
     )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    
+
     # Create async engine (if PostgreSQL)
     if db_url.startswith("postgresql://"):
         async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
@@ -51,7 +52,7 @@ def init_database(database_url: Optional[str] = None):
             autocommit=False,
             autoflush=False,
         )
-    
+
     logger.info("Database initialized", database_url=db_url)
 
 def get_engine():
@@ -65,7 +66,7 @@ def get_session() -> Generator[Session, None, None]:
     """Get a database session (sync)."""
     if SessionLocal is None:
         init_database()
-    
+
     if SessionLocal is None:
         raise RuntimeError("Database not initialized")
     session = SessionLocal()
@@ -83,10 +84,10 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a database session (async)."""
     if AsyncSessionLocal is None:
         init_database()
-    
+
     if AsyncSessionLocal is None:
         raise RuntimeError("Async database not available (PostgreSQL required)")
-    
+
     async with AsyncSessionLocal() as session:
         try:
             yield session

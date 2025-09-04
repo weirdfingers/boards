@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 from .base import StorageManager, StorageProvider
 from .config import StorageConfig, load_storage_config
@@ -40,7 +40,7 @@ except ImportError:
 
 
 def create_storage_provider(
-    provider_type: str, config: Dict[str, Any]
+    provider_type: str, config: dict[str, Any]
 ) -> StorageProvider:
     """Create a storage provider instance from configuration.
 
@@ -73,14 +73,14 @@ def create_storage_provider(
     elif provider_type == "gcs":
         if not _gcs_available:
             raise ImportError(
-                "GCS storage requires google-cloud-storage. Install with: pip install google-cloud-storage"
+                "GCS storage package required. Install with: pip install google-cloud-storage"
             )
         return _create_gcs_provider(config)
     else:
         raise ValueError(f"Unknown storage provider type: {provider_type}")
 
 
-def _create_local_provider(config: Dict[str, Any]) -> LocalStorageProvider:
+def _create_local_provider(config: dict[str, Any]) -> LocalStorageProvider:
     """Create local storage provider."""
     base_path = config.get("base_path", "/tmp/boards/storage")
     public_url_base = config.get("public_url_base")
@@ -90,7 +90,7 @@ def _create_local_provider(config: Dict[str, Any]) -> LocalStorageProvider:
     )
 
 
-def _create_supabase_provider(config: Dict[str, Any]) -> StorageProvider:
+def _create_supabase_provider(config: dict[str, Any]) -> StorageProvider:
     """Create Supabase storage provider."""
     if SupabaseStorageProvider is None:
         raise ImportError("Supabase storage not available")
@@ -107,7 +107,7 @@ def _create_supabase_provider(config: Dict[str, Any]) -> StorageProvider:
     return SupabaseStorageProvider(url=url, key=key, bucket=bucket)
 
 
-def _create_s3_provider(config: Dict[str, Any]) -> StorageProvider:
+def _create_s3_provider(config: dict[str, Any]) -> StorageProvider:
     """Create S3 storage provider."""
     if S3StorageProvider is None:
         raise ImportError("S3 storage not available")
@@ -136,7 +136,7 @@ def _create_s3_provider(config: Dict[str, Any]) -> StorageProvider:
     )
 
 
-def _create_gcs_provider(config: Dict[str, Any]) -> StorageProvider:
+def _create_gcs_provider(config: dict[str, Any]) -> StorageProvider:
     """Create GCS storage provider."""
     if GCSStorageProvider is None:
         raise ImportError("GCS storage not available")

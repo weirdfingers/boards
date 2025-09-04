@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from ...logging import get_logger
-from typing import Any
 from uuid import UUID
 
-from supabase import create_client, Client
 import jwt
-from jwt.exceptions import InvalidTokenError
+from supabase import Client, create_client
 
-from .base import AuthAdapter, Principal, AuthenticationError
+from ...logging import get_logger
+from .base import AuthenticationError, Principal
 
 logger = get_logger(__name__)
 

@@ -5,8 +5,8 @@ Main GraphQL schema definition using Strawberry
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 
-from .queries.root import Query
 from .mutations.root import Mutation
+from .queries.root import Query
 
 # Create the GraphQL schema
 schema = strawberry.Schema(

@@ -6,6 +6,7 @@ CLI entry point for Boards background workers.
 import sys
 
 import click
+
 from boards import __version__
 from boards.logging import configure_logging, get_logger
 

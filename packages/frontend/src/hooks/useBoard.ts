@@ -2,19 +2,19 @@
  * Hook for managing a single board.
  */
 
-import { useCallback, useMemo } from 'react';
-import { useQuery, useMutation } from 'urql';
-import { useAuth } from '../auth/hooks/useAuth';
-import { 
-  GET_BOARD, 
-  UPDATE_BOARD, 
-  DELETE_BOARD, 
+import { useCallback, useMemo } from "react";
+import { useQuery, useMutation } from "urql";
+import { useAuth } from "../auth/hooks/useAuth";
+import {
+  GET_BOARD,
+  UPDATE_BOARD,
+  DELETE_BOARD,
   ADD_BOARD_MEMBER,
   UPDATE_BOARD_MEMBER_ROLE,
   REMOVE_BOARD_MEMBER,
   UpdateBoardInput,
-  BoardRole 
-} from '../graphql/operations';
+  BoardRole,
+} from "../graphql/operations";
 
 interface User {
   id: string;
@@ -85,16 +85,19 @@ interface BoardHook {
   permissions: BoardPermissions;
   loading: boolean;
   error: Error | null;
-  
+
   // Board operations
   updateBoard: (updates: Partial<UpdateBoardInput>) => Promise<Board>;
   deleteBoard: () => Promise<void>;
-  
+
   // Member management
   addMember: (email: string, role: MemberRole) => Promise<BoardMember>;
   removeMember: (memberId: string) => Promise<void>;
-  updateMemberRole: (memberId: string, role: MemberRole) => Promise<BoardMember>;
-  
+  updateMemberRole: (
+    memberId: string,
+    role: MemberRole
+  ) => Promise<BoardMember>;
+
   // Sharing (placeholder - would need backend implementation)
   generateShareLink: (options: ShareLinkOptions) => Promise<ShareLink>;
   revokeShareLink: (linkId: string) => Promise<void>;
@@ -102,7 +105,7 @@ interface BoardHook {
 
 export function useBoard(boardId: string): BoardHook {
   const { user } = useAuth();
-  
+
   // Query for board data
   const [{ data, fetching, error }, reexecuteQuery] = useQuery({
     query: GET_BOARD,
@@ -135,11 +138,13 @@ export function useBoard(boardId: string): BoardHook {
 
     // Check if user is the board owner
     const isOwner = board.ownerId === user.id;
-    
+
     // Find user's role in board members
-    const userMember = members.find((member: BoardMember) => member.userId === user.id);
+    const userMember = members.find(
+      (member: BoardMember) => member.userId === user.id
+    );
     const userRole = userMember?.role;
-    
+
     const isAdmin = userRole === BoardRole.ADMIN;
     const isEditor = userRole === BoardRole.EDITOR || isAdmin;
     const isViewer = userRole === BoardRole.VIEWER || isEditor;
@@ -154,113 +159,131 @@ export function useBoard(boardId: string): BoardHook {
     };
   }, [board, user, members]);
 
-  const updateBoard = useCallback(async (updates: Partial<UpdateBoardInput>): Promise<Board> => {
-    if (!boardId) {
-      throw new Error('Board ID is required');
-    }
+  const updateBoard = useCallback(
+    async (updates: Partial<UpdateBoardInput>): Promise<Board> => {
+      if (!boardId) {
+        throw new Error("Board ID is required");
+      }
 
-    const result = await updateBoardMutation({ 
-      id: boardId, 
-      input: updates 
-    });
-    
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-    
-    if (!result.data?.updateBoard) {
-      throw new Error('Failed to update board');
-    }
+      const result = await updateBoardMutation({
+        id: boardId,
+        input: updates,
+      });
 
-    return result.data.updateBoard;
-  }, [boardId, updateBoardMutation]);
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      if (!result.data?.updateBoard) {
+        throw new Error("Failed to update board");
+      }
+
+      return result.data.updateBoard;
+    },
+    [boardId, updateBoardMutation]
+  );
 
   const deleteBoard = useCallback(async (): Promise<void> => {
     if (!boardId) {
-      throw new Error('Board ID is required');
+      throw new Error("Board ID is required");
     }
 
     const result = await deleteBoardMutation({ id: boardId });
-    
+
     if (result.error) {
       throw new Error(result.error.message);
     }
-    
+
     if (!result.data?.deleteBoard?.success) {
-      throw new Error('Failed to delete board');
+      throw new Error("Failed to delete board");
     }
   }, [boardId, deleteBoardMutation]);
 
-  const addMember = useCallback(async (email: string, role: MemberRole): Promise<BoardMember> => {
-    if (!boardId) {
-      throw new Error('Board ID is required');
-    }
+  const addMember = useCallback(
+    async (email: string, role: MemberRole): Promise<BoardMember> => {
+      if (!boardId) {
+        throw new Error("Board ID is required");
+      }
 
-    const result = await addMemberMutation({ 
-      boardId, 
-      email, 
-      role 
-    });
-    
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-    
-    if (!result.data?.addBoardMember) {
-      throw new Error('Failed to add member');
-    }
+      const result = await addMemberMutation({
+        boardId,
+        email,
+        role,
+      });
 
-    // Refresh board data to get updated members list
-    reexecuteQuery({ requestPolicy: 'network-only' });
-    
-    return result.data.addBoardMember;
-  }, [boardId, addMemberMutation, reexecuteQuery]);
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
 
-  const removeMember = useCallback(async (memberId: string): Promise<void> => {
-    const result = await removeMemberMutation({ id: memberId });
-    
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-    
-    if (!result.data?.removeBoardMember?.success) {
-      throw new Error('Failed to remove member');
-    }
+      if (!result.data?.addBoardMember) {
+        throw new Error("Failed to add member");
+      }
 
-    // Refresh board data to get updated members list
-    reexecuteQuery({ requestPolicy: 'network-only' });
-  }, [removeMemberMutation, reexecuteQuery]);
+      // Refresh board data to get updated members list
+      reexecuteQuery({ requestPolicy: "network-only" });
 
-  const updateMemberRole = useCallback(async (memberId: string, role: MemberRole): Promise<BoardMember> => {
-    const result = await updateMemberRoleMutation({ 
-      id: memberId, 
-      role 
-    });
-    
-    if (result.error) {
-      throw new Error(result.error.message);
-    }
-    
-    if (!result.data?.updateBoardMemberRole) {
-      throw new Error('Failed to update member role');
-    }
+      return result.data.addBoardMember;
+    },
+    [boardId, addMemberMutation, reexecuteQuery]
+  );
 
-    // Refresh board data to get updated members list
-    reexecuteQuery({ requestPolicy: 'network-only' });
-    
-    return result.data.updateBoardMemberRole;
-  }, [updateMemberRoleMutation, reexecuteQuery]);
+  const removeMember = useCallback(
+    async (memberId: string): Promise<void> => {
+      const result = await removeMemberMutation({ id: memberId });
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      if (!result.data?.removeBoardMember?.success) {
+        throw new Error("Failed to remove member");
+      }
+
+      // Refresh board data to get updated members list
+      reexecuteQuery({ requestPolicy: "network-only" });
+    },
+    [removeMemberMutation, reexecuteQuery]
+  );
+
+  const updateMemberRole = useCallback(
+    async (memberId: string, role: MemberRole): Promise<BoardMember> => {
+      const result = await updateMemberRoleMutation({
+        id: memberId,
+        role,
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      if (!result.data?.updateBoardMemberRole) {
+        throw new Error("Failed to update member role");
+      }
+
+      // Refresh board data to get updated members list
+      reexecuteQuery({ requestPolicy: "network-only" });
+
+      return result.data.updateBoardMemberRole;
+    },
+    [updateMemberRoleMutation, reexecuteQuery]
+  );
 
   // Placeholder implementations for sharing features
-  const generateShareLink = useCallback(async (_options: ShareLinkOptions): Promise<ShareLink> => {
-    // TODO: Implement share link generation
-    throw new Error('Share links not implemented yet');
-  }, []);
+  const generateShareLink = useCallback(
+    async (_options: ShareLinkOptions): Promise<ShareLink> => {
+      // TODO: Implement share link generation
+      throw new Error("Share links not implemented yet");
+    },
+    []
+  );
 
-  const revokeShareLink = useCallback(async (_linkId: string): Promise<void> => {
-    // TODO: Implement share link revocation
-    throw new Error('Share link revocation not implemented yet');
-  }, []);
+  const revokeShareLink = useCallback(
+    async (_linkId: string): Promise<void> => {
+      // TODO: Implement share link revocation
+      throw new Error("Share link revocation not implemented yet");
+    },
+    []
+  );
 
   return {
     board,

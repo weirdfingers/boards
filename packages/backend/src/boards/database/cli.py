@@ -7,10 +7,11 @@ import sys
 from pathlib import Path
 
 import click
+
 from alembic import command
 from alembic.config import Config
-from boards.logging import configure_logging, get_logger
 from boards import __version__
+from boards.logging import configure_logging, get_logger
 
 logger = get_logger(__name__)
 

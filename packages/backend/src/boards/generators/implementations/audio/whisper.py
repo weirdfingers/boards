@@ -4,12 +4,11 @@ Whisper audio transcription using OpenAI API.
 Demonstrates audio processing generator that outputs text.
 """
 
-from typing import Type
+
 from pydantic import BaseModel, Field
 
-from ...base import BaseGenerator, GeneratorExecutionContext
 from ...artifacts import AudioArtifact, TextArtifact
-from ...resolution import resolve_artifact
+from ...base import BaseGenerator, GeneratorExecutionContext
 from ...registry import registry
 
 
@@ -38,10 +37,10 @@ class WhisperGenerator(BaseGenerator):
     artifact_type = "text"
     description = "OpenAI Whisper - speech-to-text transcription"
 
-    def get_input_schema(self) -> Type[WhisperInput]:
+    def get_input_schema(self) -> type[WhisperInput]:
         return WhisperInput
 
-    def get_output_schema(self) -> Type[WhisperOutput]:
+    def get_output_schema(self) -> type[WhisperOutput]:
         return WhisperOutput
 
     async def generate(

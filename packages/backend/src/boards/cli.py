@@ -7,6 +7,7 @@ import sys
 
 import click
 import uvicorn
+
 from boards import __version__
 from boards.logging import configure_logging, get_logger
 

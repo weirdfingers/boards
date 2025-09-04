@@ -1,10 +1,11 @@
 """Unit tests for NoAuth authentication adapter."""
 
-import pytest
 from uuid import uuid4
 
-from boards.auth.adapters.none import NoAuthAdapter
+import pytest
+
 from boards.auth.adapters.base import AuthenticationError
+from boards.auth.adapters.none import NoAuthAdapter
 
 
 @pytest.fixture
@@ -23,7 +24,7 @@ class TestNoAuthAdapter:
         """Test that any non-empty token is accepted."""
         token = "any-token-works"
         principal = await none_adapter.verify_token(token)
-        
+
         assert principal["provider"] == "none"
         assert principal["subject"] == "test-dev-user"
         assert principal["email"] == "dev@example.com"
@@ -41,7 +42,7 @@ class TestNoAuthAdapter:
         """Test issuing a fake development token."""
         user_id = uuid4()
         token = await none_adapter.issue_token(user_id=user_id)
-        
+
         assert "dev-token" in token
         assert str(user_id) in token
         assert "no-auth-mode" in token
@@ -50,6 +51,6 @@ class TestNoAuthAdapter:
     async def test_get_user_info(self, none_adapter):
         """Test getting fake user info."""
         user_info = await none_adapter.get_user_info("any-token")
-        
+
         assert user_info["id"] == "test-dev-user"
         assert user_info["mode"] == "no-auth"

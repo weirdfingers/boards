@@ -2,10 +2,11 @@
 Main FastAPI application for Boards backend
 """
 
-from fastapi import FastAPI
 import os
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from ..config import settings
 from ..database import init_database
@@ -71,7 +72,7 @@ def create_app() -> FastAPI:
             logger.warning("Skipping GraphQL setup", error=str(e))
 
     # REST API endpoints (for SSE, webhooks, etc.)
-    from .endpoints import sse, webhooks, storage, jobs
+    from .endpoints import jobs, sse, storage, webhooks
 
     app.include_router(sse.router, prefix="/api/sse", tags=["SSE"])
     app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
