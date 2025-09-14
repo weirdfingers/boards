@@ -2,8 +2,8 @@
  * Supabase authentication provider.
  */
 
-import { BaseAuthProvider, AuthState, User } from '@weirdfingers/boards';
-import type { SupabaseConfig } from './types';
+import { BaseAuthProvider, AuthState, User } from "@weirdfingers/boards";
+import type { SupabaseConfig } from "./types";
 
 export class SupabaseAuthProvider extends BaseAuthProvider {
   protected config: SupabaseConfig;
@@ -23,18 +23,19 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
 
     this.currentState = {
       user: null,
-      status: 'loading',
-      signIn: this.signIn.bind(this),
+      status: "loading",
+      signIn: this.signIn.bind(this) as any,
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
+      refreshToken: this.refreshToken.bind(this),
     };
   }
 
   async initialize(): Promise<void> {
     try {
       // Dynamically import Supabase
-      const { createClient } = await import('@supabase/supabase-js');
-      
+      const { createClient } = await import("@supabase/supabase-js");
+
       this.supabase = createClient(this.config.url, this.config.anonKey, {
         auth: {
           ...this.config.options,
@@ -47,12 +48,13 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
       });
 
       // Get initial session
-      const { data: { session } } = await this.supabase.auth.getSession();
-      this.handleAuthStateChange('INITIAL_SESSION', session);
-
+      const {
+        data: { session },
+      } = await this.supabase.auth.getSession();
+      this.handleAuthStateChange("INITIAL_SESSION", session);
     } catch (error) {
-      console.error('Failed to initialize Supabase:', error);
-      this.updateState({ user: null, status: 'unauthenticated' });
+      console.error("Failed to initialize Supabase:", error);
+      this.updateState({ user: null, status: "unauthenticated" });
       throw error;
     }
   }
@@ -61,22 +63,24 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
     return this.currentState;
   }
 
-  async signIn(opts: {
-    email?: string;
-    password?: string;
-    provider?: 'google' | 'github' | 'discord' | 'twitter' | 'facebook';
-    type?: 'signup' | 'signin' | 'magic_link';
-    options?: {
-      data?: Record<string, any>;
-      redirectTo?: string;
-      shouldCreateUser?: boolean;
-    };
-  } = {}): Promise<void> {
+  async signIn(
+    opts: {
+      email?: string;
+      password?: string;
+      provider?: "google" | "github" | "discord" | "twitter" | "facebook";
+      type?: "signup" | "signin" | "magic_link";
+      options?: {
+        data?: Record<string, any>;
+        redirectTo?: string;
+        shouldCreateUser?: boolean;
+      };
+    } = {}
+  ): Promise<void> {
     if (!this.supabase) {
-      throw new Error('Supabase not initialized');
+      throw new Error("Supabase not initialized");
     }
 
-    this.updateState({ status: 'loading' });
+    this.updateState({ status: "loading" });
 
     try {
       // Social provider login
@@ -85,9 +89,9 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
           provider: opts.provider,
           options: {
             redirectTo: opts.options?.redirectTo || window.location.origin,
-            ...this.config.tenantId && { 
-              queryParams: { tenant: this.config.tenantId } 
-            },
+            ...(this.config.tenantId && {
+              queryParams: { tenant: this.config.tenantId },
+            }),
           },
         });
 
@@ -96,19 +100,19 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
       }
 
       // Magic link
-      if (opts.type === 'magic_link' && opts.email) {
+      if (opts.type === "magic_link" && opts.email) {
         const { error } = await this.supabase.auth.signInWithOtp({
           email: opts.email,
           options: opts.options,
         });
 
         if (error) throw error;
-        this.updateState({ status: 'unauthenticated' }); // Wait for email click
+        this.updateState({ status: "unauthenticated" }); // Wait for email click
         return;
       }
 
       // Email/password signup
-      if (opts.type === 'signup' && opts.email && opts.password) {
+      if (opts.type === "signup" && opts.email && opts.password) {
         const { error } = await this.supabase.auth.signUp({
           email: opts.email,
           password: opts.password,
@@ -130,17 +134,16 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
         return; // State will update via onAuthStateChange
       }
 
-      throw new Error('Invalid sign in options provided');
-
+      throw new Error("Invalid sign in options provided");
     } catch (error) {
-      this.updateState({ user: null, status: 'unauthenticated' });
+      this.updateState({ user: null, status: "unauthenticated" });
       throw error;
     }
   }
 
   async signOut(): Promise<void> {
     if (!this.supabase) {
-      throw new Error('Supabase not initialized');
+      throw new Error("Supabase not initialized");
     }
 
     const { error } = await this.supabase.auth.signOut();
@@ -153,16 +156,32 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
     if (!this.supabase) return null;
 
     try {
-      const { data: { session } } = await this.supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await this.supabase.auth.getSession();
       return session?.access_token || null;
     } catch (error) {
-      console.error('Failed to get token:', error);
+      console.error("Failed to get token:", error);
       return null;
     }
   }
 
   async getUser(): Promise<User | null> {
     return this.currentState.user;
+  }
+
+  async refreshToken(): Promise<string | null> {
+    if (!this.supabase) return null;
+    try {
+      const {
+        data: { session },
+        error,
+      } = await this.supabase.auth.refreshSession();
+      if (error) throw error;
+      return session?.access_token || null;
+    } catch (_err) {
+      return null;
+    }
   }
 
   onAuthStateChange(callback: (state: AuthState) => void): () => void {
@@ -185,27 +204,31 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
       const user: User = {
         id: session.user.id,
         email: session.user.email,
-        displayName: 
+        name:
           session.user.user_metadata?.display_name ||
           session.user.user_metadata?.full_name ||
           session.user.user_metadata?.name ||
-          session.user.email?.split('@')[0],
-        avatarUrl: 
+          session.user.email?.split("@")[0],
+        avatar:
           session.user.user_metadata?.avatar_url ||
           session.user.user_metadata?.picture,
-        provider: 'supabase',
-        subject: session.user.id,
+        metadata: {
+          ...session.user.user_metadata,
+          provider: "supabase",
+          subject: session.user.id,
+        },
+        credits: { balance: 0, reserved: 0 },
       };
 
-      this.updateState({ user, status: 'authenticated' });
+      this.updateState({ user, status: "authenticated" });
     } else {
-      this.updateState({ user: null, status: 'unauthenticated' });
+      this.updateState({ user: null, status: "unauthenticated" });
     }
   }
 
   private updateState(updates: Partial<AuthState>): void {
     this.currentState = { ...this.currentState, ...updates };
-    this.listeners.forEach(listener => listener(this.currentState));
+    this.listeners.forEach((listener) => listener(this.currentState));
   }
 
   /**
@@ -220,7 +243,7 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
    */
   async resetPassword(email: string, redirectTo?: string): Promise<void> {
     if (!this.supabase) {
-      throw new Error('Supabase not initialized');
+      throw new Error("Supabase not initialized");
     }
 
     const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
@@ -235,7 +258,7 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
    */
   async updatePassword(newPassword: string): Promise<void> {
     if (!this.supabase) {
-      throw new Error('Supabase not initialized');
+      throw new Error("Supabase not initialized");
     }
 
     const { error } = await this.supabase.auth.updateUser({
