@@ -40,35 +40,8 @@ jobs:
           VERSION="${TAG#backend@}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Update version in src/boards/__init__.py safely
-        shell: bash
         run: |
-          cd packages/backend
-          python - <<'PY'
-          import re
-          import sys
-          import os
-
-          version = os.environ.get('VERSION', '')
-          if not version:
-              print("Error: VERSION not set", file=sys.stderr)
-              sys.exit(1)
-
-          # Validate semver format
-          if not re.match(r'^\d+\.\d+\.\d+$', version):
-              print(f"Error: Invalid version format: {version}", file=sys.stderr)
-              sys.exit(1)
-
-          p = 'src/boards/__init__.py'
-          try:
-              content = open(p).read()
-              content = re.sub(r"__version__\s*=\s*\"[^\"]*\"", f'__version__ = "{version}"', content)
-              open(p, 'w').write(content)
-          except Exception as e:
-              print(f"Error updating version: {e}", file=sys.stderr)
-              sys.exit(1)
-          PY
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
+          python3 scripts/update_version.py "${{ steps.version.outputs.version }}" --package backend
       - name: Build package
         run: |
           cd packages/backend
