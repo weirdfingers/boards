@@ -63,4 +63,4 @@ This will start:
 - 📖 **[Installation Guide](./installation)** - Detailed setup instructions
 - 🏗️ **[Backend SDK](./backend/getting-started)** - Python backend development
 - ⚛️ **[Frontend Hooks](./frontend/getting-started)** - React integration
-- 🎨 **[Providers](./providers/overview)** - AI service integrations
+- 🎨 **[Auth Providers](./auth/overview)** - Authentication system

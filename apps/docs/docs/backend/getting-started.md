@@ -268,6 +268,6 @@ Visit http://localhost:8000/graphql to use the GraphiQL interface for testing qu
 ## Next Steps
 
 - 📊 **[Database Migrations](./migrations)** - Learn the migration workflow
-- 🎨 **[Providers](../providers/overview)** - Integrate AI services
+- 🎨 **[Auth Providers](../auth/overview)** - Authentication system
 - 📱 **[GraphQL API](./graphql-api)** - Build the API layer
 - 🧪 **[Testing Guide](./testing)** - Write comprehensive tests
