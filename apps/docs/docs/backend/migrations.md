@@ -138,8 +138,7 @@ def downgrade() -> None:
 uv run alembic revision -m "empty revision"
 
 # New revision from model changes
-autogen="--autogenerate"
-uv run alembic revision -m "add columns" $autogen
+uv run alembic revision -m "add columns" --autogenerate
 
 # Upgrade / downgrade
 uv run alembic upgrade head
