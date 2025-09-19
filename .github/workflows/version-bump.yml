@@ -40,29 +40,41 @@ jobs:
           CURRENT=$(python - <<'PY'
             from pathlib import Path
             import re
-            p = Path('src/boards/__init__.py').read_text()
-            m = re.search(r"__version__\s*=\s*\"([^\"]+)\"", p)
-            print(m.group(1))
+            import sys
+            try:
+                p = Path('src/boards/__init__.py').read_text()
+                m = re.search(r"__version__\s*=\s*\"([^\"]+)\"", p)
+                if not m:
+                    print("Error: Could not find version string", file=sys.stderr)
+                    sys.exit(1)
+                version = m.group(1)
+                # Validate semver format
+                if not re.match(r'^\d+\.\d+\.\d+$', version):
+                    print(f"Error: Invalid version format: {version}", file=sys.stderr)
+                    sys.exit(1)
+                print(version)
+            except Exception as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
           PY
           )
-          python - <<PY
-            import os
-            cur = os.environ['CURRENT']
-            parts = cur.split('.')
-            bt = os.environ['BUMP_TYPE']
-            if bt == 'major':
-                parts[0] = str(int(parts[0]) + 1); parts[1] = '0'; parts[2] = '0'
-            elif bt == 'minor':
-                parts[1] = str(int(parts[1]) + 1); parts[2] = '0'
-            else:
-                parts[2] = str(int(parts[2]) + 1)
-            print('.'.join(parts))
-          PY
           NEW_VERSION=$(python - <<'PY'
             import os
-            cur = os.environ['CURRENT']
+            import sys
+            import re
+            cur = os.environ.get('CURRENT', '')
+            if not cur:
+                print("Error: CURRENT version not set", file=sys.stderr)
+                sys.exit(1)
+            # Validate semver format
+            if not re.match(r'^\d+\.\d+\.\d+$', cur):
+                print(f"Error: Invalid version format: {cur}", file=sys.stderr)
+                sys.exit(1)
             parts = cur.split('.')
             bt = os.environ.get('BUMP_TYPE', 'patch')
+            if bt not in ['major', 'minor', 'patch']:
+                print(f"Error: Invalid bump type: {bt}", file=sys.stderr)
+                sys.exit(1)
             if bt == 'major':
                 parts[0] = str(int(parts[0]) + 1); parts[1] = '0'; parts[2] = '0'
             elif bt == 'minor':
@@ -72,16 +84,31 @@ jobs:
             print('.'.join(parts))
           PY
           )
-          python - <<PY
+          python - <<'PY'
             import re
+            import os
+            import sys
+            new_version = os.environ.get('NEW_VERSION', '')
+            if not new_version:
+                print("Error: NEW_VERSION not set", file=sys.stderr)
+                sys.exit(1)
+            # Validate semver format
+            if not re.match(r'^\d+\.\d+\.\d+$', new_version):
+                print(f"Error: Invalid new version format: {new_version}", file=sys.stderr)
+                sys.exit(1)
             p = 'src/boards/__init__.py'
-            content = open(p).read()
-            content = re.sub(r"__version__\s*=\s*\"[^\"]*\"", f"__version__ = \"$NEW_VERSION\"", content)
-            open(p, 'w').write(content)
+            try:
+                content = open(p).read()
+                content = re.sub(r"__version__\s*=\s*\"[^\"]*\"", f'__version__ = "{new_version}"', content)
+                open(p, 'w').write(content)
+            except Exception as e:
+                print(f"Error updating version: {e}", file=sys.stderr)
+                sys.exit(1)
           PY
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
         env:
           BUMP_TYPE: ${{ inputs.bump_type }}
+          CURRENT: ${{ env.CURRENT }}
 
       - name: Bump npm package version (pnpm)
         if: inputs.package == 'frontend'
@@ -99,11 +126,10 @@ jobs:
           git push origin main --tags
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: "${{ inputs.package }}@${{ env.NEW_VERSION }}"
-          release_name: "${{ inputs.package }} v${{ env.NEW_VERSION }}"
+          name: "${{ inputs.package }} v${{ env.NEW_VERSION }}"
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}

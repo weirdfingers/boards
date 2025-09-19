@@ -71,8 +71,13 @@ providers = [
     "replicate>=0.25.0",
     "together>=1.0.0",
 ]
-storage-s3 = ["boto3>=1.34.0", "aioboto3>=12.0.0"]
-storage-gcs = ["google-cloud-storage>=2.10.0"]
+storage-s3 = [
+    "boto3>=1.34.0",
+    "aioboto3>=12.0.0",
+]
+storage-gcs = [
+    "google-cloud-storage>=2.10.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/weirdfingers/boards"
