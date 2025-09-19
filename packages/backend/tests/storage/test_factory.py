@@ -1,16 +1,16 @@
 """Tests for storage factory and configuration."""
 
-import pytest
-from unittest.mock import patch, mock_open
 from pathlib import Path
+from unittest.mock import mock_open, patch
 
+import pytest
 
-from boards.storage.factory import (
-    create_storage_provider,
-    create_storage_manager,
-    create_development_storage,
-)
 from boards.storage.base import StorageConfig
+from boards.storage.factory import (
+    create_development_storage,
+    create_storage_manager,
+    create_storage_provider,
+)
 from boards.storage.implementations.local import LocalStorageProvider
 
 
@@ -74,7 +74,7 @@ class TestCreateStorageProvider:
 
     @patch("boards.storage.factory._gcs_available", False)
     def test_create_gcs_not_available(self):
-        with pytest.raises(ImportError, match="GCS storage requires"):
+        with pytest.raises(ImportError, match="GCS storage package required"):
             create_storage_provider("gcs", {})
 
     @patch("boards.storage.factory._supabase_available", True)

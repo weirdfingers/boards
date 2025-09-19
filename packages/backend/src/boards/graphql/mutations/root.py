@@ -2,12 +2,12 @@
 Root GraphQL mutation definitions
 """
 
-import strawberry
-from typing import Optional, List
 from uuid import UUID
 
+import strawberry
+
 from ..types.board import Board, BoardRole
-from ..types.generation import Generation, ArtifactType
+from ..types.generation import ArtifactType, Generation
 
 
 # Input types for mutations
@@ -16,9 +16,9 @@ class CreateBoardInput:
     """Input for creating a new board."""
 
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     is_public: bool = False
-    settings: Optional[strawberry.scalars.JSON] = None  # type: ignore[reportInvalidTypeForm]
+    settings: strawberry.scalars.JSON | None = None  # type: ignore[reportInvalidTypeForm]
 
 
 @strawberry.input
@@ -26,10 +26,10 @@ class UpdateBoardInput:
     """Input for updating a board."""
 
     id: UUID
-    title: Optional[str] = None
-    description: Optional[str] = None
-    is_public: Optional[bool] = None
-    settings: Optional[strawberry.scalars.JSON] = None  # type: ignore[reportInvalidTypeForm]
+    title: str | None = None
+    description: str | None = None
+    is_public: bool | None = None
+    settings: strawberry.scalars.JSON | None = None  # type: ignore[reportInvalidTypeForm]
 
 
 @strawberry.input
@@ -50,8 +50,8 @@ class CreateGenerationInput:
     provider_name: str
     artifact_type: ArtifactType
     input_params: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
-    parent_generation_id: Optional[UUID] = None
-    input_generation_ids: Optional[List[UUID]] = None
+    parent_generation_id: UUID | None = None
+    input_generation_ids: list[UUID] | None = None
 
 
 @strawberry.type

@@ -1,23 +1,25 @@
 """Isolated tests for auth adapters (no middleware dependencies)."""
 
-import pytest
-import jwt
-from datetime import datetime, timedelta, timezone
-from uuid import uuid4
+import os
 
 # Import adapters directly to avoid middleware imports
 import sys
-import os
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
+
+import jwt
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../src'))
 
+from boards.auth.adapters.base import AuthenticationError
 from boards.auth.adapters.jwt import JWTAuthAdapter
 from boards.auth.adapters.none import NoAuthAdapter
-from boards.auth.adapters.base import AuthenticationError
 
 
 class TestJWTAdapterIsolated:
     """Test JWT authentication adapter in isolation."""
-    
+
     @pytest.fixture
     def secret_key(self):
         return "test-secret-key-for-testing-only"
@@ -34,10 +36,10 @@ class TestJWTAdapterIsolated:
     @pytest.mark.asyncio
     async def test_verify_valid_token(self, jwt_adapter, secret_key):
         """Test verifying a valid JWT token."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "iss": "test-boards",
-            "aud": "test-api", 
+            "aud": "test-api",
             "sub": "test-user-123",
             "email": "test@example.com",
             "name": "Test User",
@@ -49,7 +51,7 @@ class TestJWTAdapterIsolated:
         token = jwt.encode(payload, secret_key, algorithm="HS256")
 
         principal = await jwt_adapter.verify_token(token)
-        
+
         assert principal["provider"] == "jwt"
         assert principal["subject"] == "test-user-123"
         assert principal["email"] == "test@example.com"
@@ -59,11 +61,11 @@ class TestJWTAdapterIsolated:
     @pytest.mark.asyncio
     async def test_verify_expired_token(self, jwt_adapter, secret_key):
         """Test verifying an expired JWT token fails."""
-        past_time = datetime.now(timezone.utc) - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
         payload = {
             "iss": "test-boards",
             "aud": "test-api",
-            "sub": "test-user-123", 
+            "sub": "test-user-123",
             "exp": past_time + timedelta(minutes=30),
         }
         expired_token = jwt.encode(payload, secret_key, algorithm="HS256")
@@ -76,12 +78,12 @@ class TestJWTAdapterIsolated:
         """Test issuing and then verifying a token."""
         user_id = uuid4()
         claims = {"role": "admin", "org": "test-org"}
-        
+
         # Issue a token
         token = await jwt_adapter.issue_token(user_id=user_id, claims=claims)
         assert token is not None
         assert isinstance(token, str)
-        
+
         # Verify the issued token
         principal = await jwt_adapter.verify_token(token)
         assert principal["subject"] == str(user_id)
@@ -94,10 +96,10 @@ class TestJWTAdapterIsolated:
         with pytest.raises(AuthenticationError):
             await jwt_adapter.verify_token("not.a.jwt")
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_missing_subject_claim(self, jwt_adapter, secret_key):
         """Test token without subject fails."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "iss": "test-boards",
             "aud": "test-api",
@@ -107,14 +109,14 @@ class TestJWTAdapterIsolated:
             "exp": now + timedelta(hours=1),
         }
         token = jwt.encode(payload, secret_key, algorithm="HS256")
-        
+
         with pytest.raises(AuthenticationError, match="Missing 'sub' claim"):
             await jwt_adapter.verify_token(token)
 
 
 class TestNoAuthAdapterIsolated:
     """Test NoAuth authentication adapter in isolation."""
-    
+
     @pytest.fixture
     def none_adapter(self):
         return NoAuthAdapter(
@@ -127,7 +129,7 @@ class TestNoAuthAdapterIsolated:
         """Test that any non-empty token is accepted."""
         token = "any-token-works"
         principal = await none_adapter.verify_token(token)
-        
+
         assert principal["provider"] == "none"
         assert principal["subject"] == "test-dev-user"
         assert principal["email"] == "dev@example.com"
@@ -145,7 +147,7 @@ class TestNoAuthAdapterIsolated:
         """Test issuing a fake development token."""
         user_id = uuid4()
         token = await none_adapter.issue_token(user_id=user_id)
-        
+
         assert "dev-token" in token
         assert str(user_id) in token
         assert "no-auth-mode" in token
@@ -154,14 +156,14 @@ class TestNoAuthAdapterIsolated:
     async def test_get_user_info(self, none_adapter):
         """Test getting fake user info."""
         user_info = await none_adapter.get_user_info("any-token")
-        
+
         assert user_info["id"] == "test-dev-user"
         assert user_info["mode"] == "no-auth"
 
     def test_default_configuration(self):
         """Test default adapter configuration."""
         adapter = NoAuthAdapter()
-        
+
         assert adapter.default_user_id == "dev-user"
         assert adapter.default_tenant == "default"
 
@@ -169,8 +171,8 @@ class TestNoAuthAdapterIsolated:
     async def test_consistent_responses(self, none_adapter):
         """Test that same token always returns same principal."""
         token = "consistent-test-token"
-        
+
         principal1 = await none_adapter.verify_token(token)
         principal2 = await none_adapter.verify_token(token)
-        
+
         assert principal1 == principal2

@@ -166,7 +166,7 @@ class GCSStorageProvider(StorageProvider):
                         logger.warning(
                             f"Large file upload ({total_size} bytes) - consider implementing resumable upload for key: {key}"
                         )
-                
+
                 file_content = b"".join(chunks)
 
             # Upload using thread pool to avoid blocking

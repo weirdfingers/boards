@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 from uuid import UUID
 
-from .base import Principal, AuthenticationError
 from ...logging import get_logger
+from .base import AuthenticationError, Principal
 
 logger = get_logger(__name__)
 

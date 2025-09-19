@@ -2,12 +2,25 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@weirdfingers/boards": [
+        "../frontend/src/index.ts"
+      ],
+      "@weirdfingers/boards/*": [
+        "../frontend/src/*"
+      ]
+    },
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../..",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

@@ -1,7 +1,7 @@
 """
 Generator registry system for discovering and managing generators.
 """
-from typing import Dict, List, Optional
+
 from .base import BaseGenerator
 
 
@@ -12,10 +12,10 @@ class GeneratorRegistry:
     Provides methods to register generators, look them up by name,
     and list available generators by various criteria.
     """
-    
+
     def __init__(self):
-        self._generators: Dict[str, BaseGenerator] = {}
-    
+        self._generators: dict[str, BaseGenerator] = {}
+
     def register(self, generator: BaseGenerator) -> None:
         """
         Register a generator instance with the registry.
@@ -28,10 +28,10 @@ class GeneratorRegistry:
         """
         if generator.name in self._generators:
             raise ValueError(f"Generator '{generator.name}' is already registered")
-        
+
         self._generators[generator.name] = generator
-    
-    def get(self, name: str) -> Optional[BaseGenerator]:
+
+    def get(self, name: str) -> BaseGenerator | None:
         """
         Get a generator by name.
         
@@ -42,8 +42,8 @@ class GeneratorRegistry:
             BaseGenerator instance or None if not found
         """
         return self._generators.get(name)
-    
-    def list_all(self) -> List[BaseGenerator]:
+
+    def list_all(self) -> list[BaseGenerator]:
         """
         List all registered generators.
         
@@ -51,8 +51,8 @@ class GeneratorRegistry:
             List of all generator instances
         """
         return list(self._generators.values())
-    
-    def list_by_artifact_type(self, artifact_type: str) -> List[BaseGenerator]:
+
+    def list_by_artifact_type(self, artifact_type: str) -> list[BaseGenerator]:
         """
         List generators that produce a specific artifact type.
         
@@ -66,8 +66,8 @@ class GeneratorRegistry:
             generator for generator in self._generators.values()
             if generator.artifact_type == artifact_type
         ]
-    
-    def list_names(self) -> List[str]:
+
+    def list_names(self) -> list[str]:
         """
         List all registered generator names.
         
@@ -75,7 +75,7 @@ class GeneratorRegistry:
             List of generator names
         """
         return list(self._generators.keys())
-    
+
     def unregister(self, name: str) -> bool:
         """
         Unregister a generator by name.
@@ -90,15 +90,15 @@ class GeneratorRegistry:
             del self._generators[name]
             return True
         return False
-    
+
     def clear(self) -> None:
         """Clear all registered generators."""
         self._generators.clear()
-    
+
     def __len__(self) -> int:
         """Return the number of registered generators."""
         return len(self._generators)
-    
+
     def __contains__(self, name: str) -> bool:
         """Check if a generator with the given name is registered."""
         return name in self._generators

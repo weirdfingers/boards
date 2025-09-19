@@ -2,12 +2,12 @@
 
 from .adapters.base import AuthAdapter, Principal
 from .context import AuthContext
-from .middleware import get_auth_context, get_auth_context_optional
 from .factory import get_auth_adapter
+from .middleware import get_auth_context, get_auth_context_optional
 
 __all__ = [
     "AuthAdapter",
-    "Principal", 
+    "Principal",
     "AuthContext",
     "get_auth_context",
     "get_auth_context_optional",

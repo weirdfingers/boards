@@ -8,13 +8,13 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest --run --passWithNoTests"
   },
   "keywords": [
     "boards",
-    "authentication", 
+    "authentication",
     "clerk",
     "auth",
     "react"
@@ -22,15 +22,17 @@
   "author": "WeirdFingers",
   "license": "MIT",
   "peerDependencies": {
-    "@weirdfingers/boards": "workspace:*",
     "@clerk/clerk-js": "^4.0.0",
+    "@weirdfingers/boards": "workspace:*",
     "react": "^18.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "eslint": "^8.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "eslint": "^8.0.0",
     "vitest": "^1.0.0"
   },
   "files": [

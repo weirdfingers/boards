@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -27,9 +27,9 @@ async def update_progress(
     *,
     status: str,
     progress: float,
-    error_message: Optional[str] = None,
+    error_message: str | None = None,
 ) -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     stmt = (
         update(Generations)
         .where(Generations.id == str(generation_id))
@@ -89,11 +89,11 @@ async def finalize_success(
     session: AsyncSession,
     generation_id: str | UUID,
     *,
-    storage_url: Optional[str] = None,
-    thumbnail_url: Optional[str] = None,
-    output_metadata: Optional[dict[str, Any]] = None,
+    storage_url: str | None = None,
+    thumbnail_url: str | None = None,
+    output_metadata: dict[str, Any] | None = None,
 ) -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     stmt = (
         update(Generations)
         .where(Generations.id == str(generation_id))

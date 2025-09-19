@@ -1,12 +1,13 @@
 """Unit tests for auth adapter factory."""
 
-import pytest
 import os
 from unittest.mock import patch
 
-from boards.auth.factory import get_auth_adapter
-from boards.auth.adapters.none import NoAuthAdapter
+import pytest
+
 from boards.auth.adapters.jwt import JWTAuthAdapter
+from boards.auth.adapters.none import NoAuthAdapter
+from boards.auth.factory import get_auth_adapter
 
 
 class TestAuthFactory:
@@ -20,7 +21,7 @@ class TestAuthFactory:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     def test_explicit_none_adapter(self):
-        """Test creating none adapter explicitly.""" 
+        """Test creating none adapter explicitly."""
         adapter = get_auth_adapter()
         assert isinstance(adapter, NoAuthAdapter)
 

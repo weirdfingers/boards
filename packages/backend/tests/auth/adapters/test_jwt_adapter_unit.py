@@ -1,12 +1,13 @@
 """Unit tests for JWT authentication adapter (without database dependencies)."""
 
-import pytest
-import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from boards.auth.adapters.jwt import JWTAuthAdapter
+import jwt
+import pytest
+
 from boards.auth.adapters.base import AuthenticationError
+from boards.auth.adapters.jwt import JWTAuthAdapter
 
 
 @pytest.fixture
@@ -26,10 +27,10 @@ def jwt_adapter(secret_key):
 
 @pytest.fixture
 def valid_token(secret_key):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "iss": "test-boards",
-        "aud": "test-api", 
+        "aud": "test-api",
         "sub": "test-user-123",
         "email": "test@example.com",
         "name": "Test User",
@@ -48,7 +49,7 @@ class TestJWTAdapter:
     async def test_verify_valid_token(self, jwt_adapter, valid_token):
         """Test verifying a valid JWT token."""
         principal = await jwt_adapter.verify_token(valid_token)
-        
+
         assert principal["provider"] == "jwt"
         assert principal["subject"] == "test-user-123"
         assert principal["email"] == "test@example.com"
@@ -59,11 +60,11 @@ class TestJWTAdapter:
     @pytest.mark.asyncio
     async def test_verify_expired_token(self, jwt_adapter, secret_key):
         """Test verifying an expired JWT token fails."""
-        past_time = datetime.now(timezone.utc) - timedelta(hours=2)
+        past_time = datetime.now(UTC) - timedelta(hours=2)
         payload = {
             "iss": "test-boards",
             "aud": "test-api",
-            "sub": "test-user-123", 
+            "sub": "test-user-123",
             "exp": past_time + timedelta(minutes=30),
         }
         expired_token = jwt.encode(payload, secret_key, algorithm="HS256")
@@ -76,9 +77,9 @@ class TestJWTAdapter:
         """Test issuing a new JWT token."""
         user_id = uuid4()
         claims = {"role": "admin", "org": "test-org"}
-        
+
         token = await jwt_adapter.issue_token(user_id=user_id, claims=claims)
-        
+
         # Verify the issued token
         principal = await jwt_adapter.verify_token(token)
         assert principal["subject"] == str(user_id)

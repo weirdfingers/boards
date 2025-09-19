@@ -1,30 +1,31 @@
 from __future__ import annotations
 
-import strawberry
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import UUID
 
+import strawberry
+
 if TYPE_CHECKING:
+    from ..mutations.root import AddBoardMemberInput, CreateBoardInput, UpdateBoardInput
     from ..types.board import Board, BoardMember, BoardRole
-    from ..types.user import User
     from ..types.generation import Generation
-    from ..mutations.root import CreateBoardInput, UpdateBoardInput, AddBoardMemberInput
+    from ..types.user import User
 
 
 # Query resolvers
-async def resolve_board_by_id(info: strawberry.Info, id: UUID) -> Optional[Board]:
+async def resolve_board_by_id(info: strawberry.Info, id: UUID) -> Board | None:
     raise NotImplementedError
 
 
-async def resolve_my_boards(info: strawberry.Info, limit: int, offset: int) -> List[Board]:
+async def resolve_my_boards(info: strawberry.Info, limit: int, offset: int) -> list[Board]:
     raise NotImplementedError
 
 
-async def resolve_public_boards(info: strawberry.Info, limit: int, offset: int) -> List[Board]:
+async def resolve_public_boards(info: strawberry.Info, limit: int, offset: int) -> list[Board]:
     raise NotImplementedError
 
 
-async def search_boards(info: strawberry.Info, query: str, limit: int, offset: int) -> List[Board]:
+async def search_boards(info: strawberry.Info, query: str, limit: int, offset: int) -> list[Board]:
     raise NotImplementedError
 
 
@@ -33,13 +34,13 @@ async def resolve_board_owner(board: Board, info: strawberry.Info) -> User:
     raise NotImplementedError
 
 
-async def resolve_board_members(board: Board, info: strawberry.Info) -> List[BoardMember]:
+async def resolve_board_members(board: Board, info: strawberry.Info) -> list[BoardMember]:
     raise NotImplementedError
 
 
 async def resolve_board_generations(
     board: Board, info: strawberry.Info, limit: int, offset: int
-) -> List[Generation]:
+) -> list[Generation]:
     raise NotImplementedError
 
 
@@ -52,7 +53,7 @@ async def resolve_board_member_user(member: BoardMember, info: strawberry.Info) 
     raise NotImplementedError
 
 
-async def resolve_board_member_inviter(member: BoardMember, info: strawberry.Info) -> Optional[User]:
+async def resolve_board_member_inviter(member: BoardMember, info: strawberry.Info) -> User | None:
     raise NotImplementedError
 
 

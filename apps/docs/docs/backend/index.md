@@ -5,7 +5,7 @@ The Boards backend is built with Python using modern async patterns and a plugga
 ## Tech Stack
 
 - **GraphQL**: Strawberry (type-hint based, async support)
-- **ORM**: SQLAlchemy 2.0 with async support  
+- **ORM**: SQLAlchemy 2.0 with async support
 - **Server**: FastAPI for REST endpoints + Strawberry GraphQL
 - **Job Queue**: Dramatiq with Redis backend
 - **Storage**: Pluggable system (Supabase, S3, local)
@@ -13,26 +13,33 @@ The Boards backend is built with Python using modern async patterns and a plugga
 ## Core Components
 
 ### [Storage System](./storage)
+
 Pluggable storage architecture supporting multiple backends:
+
 - Local filesystem for development
 - Supabase Storage with auth integration
 - S3 for enterprise deployments
 - Custom providers via plugin system
 
-### Provider System
+### Generator System
+
 Extensible system for AI content generation:
-- **Providers**: Replicate, FAL, OpenAI, etc.
-- **Generators**: Specific models within providers
+
+- **Generators**: Specific models
 - **Plugin Discovery**: Automatic registration system
 
 ### Job System
+
 Async job processing with progress tracking:
+
 - Dramatiq task queue with Redis
 - Real-time progress via Server-Sent Events
 - Retry logic and error handling
 
 ### Authentication
+
 Pluggable auth system supporting:
+
 - Supabase Auth
 - Clerk
 - Custom JWT/OIDC providers
@@ -79,11 +86,13 @@ packages/backend/src/boards/
 ## Development Setup
 
 1. **Install dependencies**:
+
    ```bash
    make install
    ```
 
 2. **Start services**:
+
    ```bash
    make docker-up  # PostgreSQL + Redis
    make dev        # Backend + frontend

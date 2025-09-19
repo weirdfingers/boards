@@ -4,13 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boards-backend"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Backend API server for Boards - AI creative toolkit with GraphQL, auth adapters, and generation workers"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Boards Contributors", email = "dev@boards.io" }]
-keywords = ["ai", "creative", "toolkit", "graphql", "fastapi", "strawberry", "auth", "generation"]
+keywords = [
+    "ai",
+    "creative",
+    "toolkit",
+    "graphql",
+    "fastapi",
+    "strawberry",
+    "auth",
+    "generation",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -88,6 +97,8 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -102,6 +113,9 @@ select = [
 testpaths = ["tests"]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+
+[tool.setuptools.dynamic]
+version = { attr = "boards.__version__" }
 
 [tool.uv]
 dev-dependencies = [

@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
-from fastapi import HTTPException, Header, Depends
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..auth import get_auth_context, get_auth_context_optional, AuthContext
+from fastapi import Depends, HTTPException
+from pydantic import BaseModel
+
+from ..auth import AuthContext, get_auth_context, get_auth_context_optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ class AuthenticatedUser(BaseModel):
     """Represents an authenticated user."""
     user_id: str
     tenant_id: str
-    email: Optional[str] = None
+    email: str | None = None
 
 
 async def get_current_user(
@@ -41,7 +40,7 @@ async def get_current_user(
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     return AuthenticatedUser(
         user_id=str(auth_context.user_id),
         tenant_id=auth_context.tenant_id,
@@ -51,7 +50,7 @@ async def get_current_user(
 
 async def get_current_user_optional(
     auth_context: AuthContext = Depends(get_auth_context_optional)
-) -> Optional[AuthenticatedUser]:
+) -> AuthenticatedUser | None:
     """
     Optional authentication - returns None if not authenticated.
     
@@ -60,7 +59,7 @@ async def get_current_user_optional(
     """
     if not auth_context.is_authenticated or not auth_context.user_id:
         return None
-    
+
     return AuthenticatedUser(
         user_id=str(auth_context.user_id),
         tenant_id=auth_context.tenant_id,

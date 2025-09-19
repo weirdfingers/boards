@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..dbmodels import Users
-from .adapters.base import Principal
 from ..logging import get_logger
+from .adapters.base import Principal
 
 logger = get_logger(__name__)
 
 
 async def ensure_local_user(
-    db: AsyncSession, 
-    tenant_id: str, 
+    db: AsyncSession,
+    tenant_id: str,
     principal: Principal
 ) -> UUID:
     """
@@ -36,7 +35,7 @@ async def ensure_local_user(
     """
     provider = principal["provider"]
     subject = principal["subject"]
-    
+
     # Convert tenant_id to UUID if it's a string
     if isinstance(tenant_id, str):
         try:
@@ -57,36 +56,36 @@ async def ensure_local_user(
             Users.auth_subject == subject,
         )
     )
-    
+
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
-    
+
     if user:
         # Update user info if provided in principal
         updated = False
-        
+
         email = principal.get("email")
         if email and user.email != email:
             user.email = email
             updated = True
-            
+
         display_name = principal.get("display_name")
         if display_name and user.display_name != display_name:
             user.display_name = display_name
             updated = True
-            
+
         avatar_url = principal.get("avatar_url")
         if avatar_url and user.avatar_url != avatar_url:
             user.avatar_url = avatar_url
             updated = True
-        
+
         if updated:
             await db.commit()
             logger.info("Updated user info", user_id=str(user.id))
-        
+
         return user.id
-    
-    # Create new user  
+
+    # Create new user
     user = Users(
         tenant_id=tenant_uuid,
         auth_provider=provider,
@@ -99,21 +98,21 @@ async def ensure_local_user(
             "provider_claims": principal.get("claims", {}),
         }
     )
-    
+
     db.add(user)
     await db.commit()
-    
+
     logger.info(
         "Created new user via JIT provisioning",
         user_id=str(user.id),
         tenant_id=tenant_id,
         provider=provider
     )
-    
+
     return user.id
 
 
-async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[Users]:
+async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Users | None:
     """Get a user by ID."""
     stmt = select(Users).where(Users.id == user_id)
     result = await db.execute(stmt)
@@ -125,7 +124,7 @@ async def get_user_by_auth_info(
     tenant_id: str,
     auth_provider: str,
     auth_subject: str
-) -> Optional[Users]:
+) -> Users | None:
     """Get a user by auth provider information."""
     # Convert tenant_id to UUID if it's a string
     if isinstance(tenant_id, str):
@@ -136,7 +135,7 @@ async def get_user_by_auth_info(
             tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
     else:
         tenant_uuid = tenant_id
-    
+
     stmt = select(Users).where(
         and_(
             Users.tenant_id == tenant_uuid,

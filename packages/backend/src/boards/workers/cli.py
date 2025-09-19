@@ -6,6 +6,8 @@ CLI entry point for Boards background workers.
 import sys
 
 import click
+
+from boards import __version__
 from boards.logging import configure_logging, get_logger
 
 logger = get_logger(__name__)
@@ -35,7 +37,7 @@ logger = get_logger(__name__)
     type=click.Choice(["debug", "info", "warning", "error"]),
     help="Log level (default: info)",
 )
-@click.version_option(version="0.1.0", prog_name="boards-worker")
+@click.version_option(version=__version__, prog_name="boards-worker")
 def main(
     processes: int,
     threads: int,

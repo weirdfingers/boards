@@ -53,10 +53,16 @@ describe('JWTAuthProvider', () => {
       expect(state.user).toEqual({
         id: 'user-123',
         email: 'test@example.com',
-        displayName: 'Test User',
-        avatarUrl: undefined,
-        provider: 'jwt',
-        subject: 'user-123',
+        name: 'Test User',
+        avatar: undefined,
+        metadata: {
+          provider: 'jwt',
+          subject: 'user-123'
+        },
+        credits: {
+          balance: 0,
+          reserved: 0
+        },
       });
     });
 

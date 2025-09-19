@@ -7,13 +7,12 @@ This demonstrates the simple pattern for creating generators:
 3. Register with the global registry
 """
 
-from typing import Type, Optional
-from pydantic import BaseModel, Field
 import os
 
-from ...base import BaseGenerator, GeneratorExecutionContext
+from pydantic import BaseModel, Field
+
 from ...artifacts import ImageArtifact
-from ...resolution import store_image_result
+from ...base import BaseGenerator, GeneratorExecutionContext
 from ...registry import registry
 
 
@@ -44,10 +43,10 @@ class FluxProGenerator(BaseGenerator):
     artifact_type = "image"
     description = "FLUX.1.1 [pro] by Black Forest Labs - high-quality image generation"
 
-    def get_input_schema(self) -> Type[FluxProInput]:
+    def get_input_schema(self) -> type[FluxProInput]:
         return FluxProInput
 
-    def get_output_schema(self) -> Type[FluxProOutput]:
+    def get_output_schema(self) -> type[FluxProOutput]:
         return FluxProOutput
 
     async def generate(

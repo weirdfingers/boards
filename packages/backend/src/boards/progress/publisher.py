@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import logging
-from typing import Any
 
 from ..config import Settings
-from .models import ProgressUpdate
 from ..database.connection import get_async_session
 from ..jobs import repository as jobs_repo
 from ..redis_pool import get_redis_client
+from .models import ProgressUpdate
 
 logger = logging.getLogger(__name__)
 

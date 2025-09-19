@@ -1,12 +1,13 @@
 """Tests for auth adapter factory."""
 
-import pytest
 import os
 from unittest.mock import patch
 
-from boards.auth.factory import get_auth_adapter
-from boards.auth.adapters.none import NoAuthAdapter
+import pytest
+
 from boards.auth.adapters.jwt import JWTAuthAdapter
+from boards.auth.adapters.none import NoAuthAdapter
+from boards.auth.factory import get_auth_adapter
 
 
 class TestAuthFactory:
@@ -20,7 +21,7 @@ class TestAuthFactory:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     def test_explicit_none_adapter(self):
-        """Test creating none adapter explicitly.""" 
+        """Test creating none adapter explicitly."""
         adapter = get_auth_adapter()
         assert isinstance(adapter, NoAuthAdapter)
 
@@ -80,7 +81,7 @@ class TestAuthFactory:
             get_auth_adapter()
 
     @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "clerk", 
+        "BOARDS_AUTH_PROVIDER": "clerk",
         "CLERK_SECRET_KEY": "test-clerk-key"
     })
     def test_clerk_adapter(self):
@@ -148,13 +149,12 @@ class TestAuthFactory:
 
     def test_cached_adapter(self):
         """Test that adapter is cached on subsequent calls."""
-        from boards.auth.factory import get_auth_adapter_cached
-        
         # Clear cache first
         import boards.auth.factory
+        from boards.auth.factory import get_auth_adapter_cached
         boards.auth.factory._adapter = None
-        
+
         adapter1 = get_auth_adapter_cached()
         adapter2 = get_auth_adapter_cached()
-        
+
         assert adapter1 is adapter2  # Should be the same instance

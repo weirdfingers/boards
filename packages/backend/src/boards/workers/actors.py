@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 import traceback
+
 import dramatiq
 from dramatiq import actor
 from dramatiq.brokers.redis import RedisBroker
 
 from ..config import Settings
-from ..generators.registry import registry as generator_registry
-from ..progress.publisher import ProgressPublisher
-from ..progress.models import ProgressUpdate
 from ..database.connection import get_async_session
+from ..generators.registry import registry as generator_registry
 from ..jobs import repository as jobs_repo
 from ..logging import get_logger
+from ..progress.models import ProgressUpdate
+from ..progress.publisher import ProgressPublisher
 from .context import GeneratorExecutionContext
 
 logger = get_logger(__name__)

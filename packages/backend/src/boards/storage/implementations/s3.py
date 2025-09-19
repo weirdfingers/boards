@@ -124,7 +124,7 @@ class S3StorageProvider(StorageProvider):
                         logger.warning(
                             f"Large file upload ({total_size} bytes) - consider implementing multipart upload for key: {key}"
                         )
-                
+
                 upload_params["Body"] = b"".join(chunks)
 
             # Upload using aioboto3

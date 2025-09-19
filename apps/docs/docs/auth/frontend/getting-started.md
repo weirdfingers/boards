@@ -75,6 +75,8 @@ import { AuthProvider, createGraphQLClient } from "@weirdfingers/boards";
 import { Provider } from "urql";
 
 function App() {
+  // TODO(cleanup): if this is a functional component, then simply instantiating
+  // a variable for the client isnt what we want to do. State, probably?
   // Create GraphQL client with auth integration
   const graphqlClient = createGraphQLClient({
     url: "http://localhost:8000/graphql",
