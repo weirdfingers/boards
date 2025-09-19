@@ -121,64 +121,60 @@ class TestFluxProGenerator:
         fake_output_url = "https://replicate.delivery/pbxt/fake-image-url.png"
 
         with patch.dict(os.environ, {"REPLICATE_API_TOKEN": "fake-token"}):
-            with patch(
-                "boards.generators.implementations.image.flux_pro.store_image_result"
-            ) as mock_store:
-                # Create a mock replicate module via sys.modules
-                import sys
+            # Create a mock replicate module via sys.modules
+            import sys
 
-                mock_replicate = AsyncMock()
-                mock_replicate.async_run = AsyncMock(return_value=[fake_output_url])
-                sys.modules["replicate"] = mock_replicate
+            mock_replicate = AsyncMock()
+            mock_replicate.async_run = AsyncMock(return_value=[fake_output_url])
+            sys.modules["replicate"] = mock_replicate
 
-                # Mock storage result
-                mock_artifact = ImageArtifact(
-                    generation_id="test_gen",
-                    storage_url=fake_output_url,
-                    width=1024,
-                    height=1024,
-                    format="png",
-                )
-                mock_store.return_value = mock_artifact
+            # Mock storage result
+            mock_artifact = ImageArtifact(
+                generation_id="test_gen",
+                storage_url=fake_output_url,
+                width=1024,
+                height=1024,
+                format="png",
+            )
 
-                # Execute generation
-                class DummyCtx(GeneratorExecutionContext):
-                    generation_id = "test_gen"
-                    provider_correlation_id = "corr"
+            # Execute generation
+            class DummyCtx(GeneratorExecutionContext):
+                generation_id = "test_gen"
+                provider_correlation_id = "corr"
 
-                    async def resolve_artifact(self, artifact):
-                        return ""
+                async def resolve_artifact(self, artifact):
+                    return ""
 
-                    async def store_image_result(self, **kwargs):
-                        return mock_artifact
+                async def store_image_result(self, **kwargs):
+                    return mock_artifact
 
-                    async def store_video_result(self, *args, **kwargs):
-                        raise NotImplementedError
+                async def store_video_result(self, *args, **kwargs):
+                    raise NotImplementedError
 
-                    async def store_audio_result(self, *args, **kwargs):
-                        raise NotImplementedError
+                async def store_audio_result(self, *args, **kwargs):
+                    raise NotImplementedError
 
-                    async def publish_progress(self, update):
-                        return None
+                async def publish_progress(self, update):
+                    return None
 
-                    async def set_external_job_id(self, external_id: str) -> None:
-                        return None
+                async def set_external_job_id(self, external_id: str) -> None:
+                    return None
 
-                result = await self.generator.generate(input_data, DummyCtx())
+            result = await self.generator.generate(input_data, DummyCtx())
 
-                # Verify result
-                assert isinstance(result, FluxProOutput)
-                assert result.image == mock_artifact
+            # Verify result
+            assert isinstance(result, FluxProOutput)
+            assert result.image == mock_artifact
 
-                # Verify API calls
-                mock_replicate.async_run.assert_called_once_with(
-                    "black-forest-labs/flux-1.1-pro",
-                    input={
-                        "prompt": "A serene mountain lake",
-                        "aspect_ratio": "16:9",
-                        "safety_tolerance": 2,
-                    },
-                )
+            # Verify API calls
+            mock_replicate.async_run.assert_called_once_with(
+                "black-forest-labs/flux-1.1-pro",
+                input={
+                    "prompt": "A serene mountain lake",
+                    "aspect_ratio": "16:9",
+                    "safety_tolerance": 2,
+                },
+            )
 
     @pytest.mark.asyncio
     async def test_generate_single_url_response(self):
@@ -187,49 +183,46 @@ class TestFluxProGenerator:
         fake_output_url = "https://replicate.delivery/pbxt/single-url.png"
 
         with patch.dict(os.environ, {"REPLICATE_API_TOKEN": "fake-token"}):
-            with patch(
-                "boards.generators.implementations.image.flux_pro.store_image_result"
-            ) as mock_store:
-                import sys
+            import sys
 
-                mock_replicate = AsyncMock()
-                mock_replicate.async_run = AsyncMock(return_value=fake_output_url)
-                sys.modules["replicate"] = mock_replicate
+            mock_replicate = AsyncMock()
+            mock_replicate.async_run = AsyncMock(return_value=fake_output_url)
+            sys.modules["replicate"] = mock_replicate
 
-                mock_artifact = ImageArtifact(
-                    generation_id="test_gen",
-                    storage_url=fake_output_url,
-                    width=1024,
-                    height=1024,
-                    format="png",
-                )
-                mock_store.return_value = mock_artifact
+            mock_artifact = ImageArtifact(
+                generation_id="test_gen",
+                storage_url=fake_output_url,
+                width=1024,
+                height=1024,
+                format="png",
+            )
 
-                class DummyCtx(GeneratorExecutionContext):
-                    generation_id = "test_gen"
-                    provider_correlation_id = "corr"
+            class DummyCtx(GeneratorExecutionContext):
+                generation_id = "test_gen"
+                provider_correlation_id = "corr"
 
-                    async def resolve_artifact(self, artifact):
-                        return ""
+                async def resolve_artifact(self, artifact):
+                    return ""
 
-                    async def store_image_result(self, **kwargs):
-                        return mock_artifact
+                async def store_image_result(self, **kwargs):
+                    return mock_artifact
 
-                    async def store_video_result(self, *args, **kwargs):
-                        raise NotImplementedError
+                async def store_video_result(self, *args, **kwargs):
+                    raise NotImplementedError
 
-                    async def store_audio_result(self, *args, **kwargs):
-                        raise NotImplementedError
+                async def store_audio_result(self, *args, **kwargs):
+                    raise NotImplementedError
 
-                    async def publish_progress(self, update):
-                        return None
+                async def publish_progress(self, update):
+                    return None
 
-                    async def set_external_job_id(self, external_id: str) -> None:
-                        return None
+                async def set_external_job_id(self, external_id: str) -> None:
+                    return None
 
-                result = await self.generator.generate(input_data, DummyCtx())
+            result = await self.generator.generate(input_data, DummyCtx())
 
-                assert isinstance(result, FluxProOutput)
+            assert isinstance(result, FluxProOutput)
+            assert result.image == mock_artifact
 
     @pytest.mark.asyncio
     async def test_estimate_cost(self):
