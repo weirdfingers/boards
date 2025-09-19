@@ -81,6 +81,8 @@ lint: ## Run linters
 
 typecheck: ## Run type checking
 	@echo "Running type checking..."
+	@# Build first to ensure type declarations are available
+	pnpm turbo build --filter=@weirdfingers/boards
 	@# Node type checking
 	pnpm turbo typecheck
 	@# Python type checking
