@@ -26,9 +26,11 @@ def alembic_migrate(
     postgresql_proc: PostgreSQLExecutor, postgresql: Connection[Any]
 ) -> Generator[None, None, None]:
     """Run Alembic upgrade to head against the pytest-postgresql instance."""
+    # Get connection info from psycopg connection
+    info = postgresql.info
     dsn = (
-        f"postgresql://{postgresql.user}:{postgresql.password}"  # type: ignore[reportUnknownMemberType]
-        f"@{postgresql.host}:{postgresql.port}/{postgresql.dbname}"  # type: ignore[reportUnknownMemberType]
+        f"postgresql://{info.user}:{getattr(info, 'password', '')}"
+        f"@{info.host}:{info.port}/{info.dbname}"
     )
 
     os.environ["BOARDS_DATABASE_URL"] = dsn
@@ -43,11 +45,13 @@ def test_database(
     postgresql: Connection[Any],
 ) -> Generator[tuple[str, str], None, None]:
     """Return the DSN for the running pytest-postgresql database."""
+    # Get connection info from psycopg connection
+    info = postgresql.info
     dsn = (
-        f"postgresql://{postgresql.user}:{postgresql.password}"  # type: ignore[reportUnknownMemberType]
-        f"@{postgresql.host}:{postgresql.port}/{postgresql.dbname}"  # type: ignore[reportUnknownMemberType]
+        f"postgresql://{info.user}:{getattr(info, 'password', '')}"
+        f"@{info.host}:{info.port}/{info.dbname}"
     )
-    yield dsn, postgresql.dbname  # type: ignore[reportUnknownMemberType]
+    yield dsn, info.dbname
 
 
 @pytest.fixture(scope="function")

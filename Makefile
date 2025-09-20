@@ -132,6 +132,7 @@ docs-serve: ## Serve built documentation
 	@echo "Serving documentation..."
 	cd apps/docs && pnpm serve
 
-backend: ## Start the backend development server
+backend-dev: ## Start the backend development server
 	@echo "Starting backend server..."
 	cd packages/backend && uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8000
+

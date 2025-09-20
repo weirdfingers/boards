@@ -2,9 +2,12 @@
 Main GraphQL schema definition using Strawberry
 """
 
+from typing import Any
+
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 from graphql import validate_schema as gql_validate_schema
+from fastapi import Request
 
 from ..logging import get_logger
 from .mutations.root import Mutation
@@ -61,10 +64,17 @@ def validate_schema() -> None:
         raise
 
 # Create the GraphQL router for FastAPI integration
-def create_graphql_router() -> GraphQLRouter:
+def create_graphql_router() -> GraphQLRouter[dict[str, Any], None]:
     """Create a GraphQL router for FastAPI."""
+    async def get_context(request: Request) -> dict[str, Any]:
+        """Get the context for GraphQL resolvers."""
+        return {
+            "request": request,
+        }
+
     return GraphQLRouter(
         schema,
         path="/graphql",
         graphiql=True,  # Enable GraphiQL IDE in development
+        context_getter=get_context,
     )
