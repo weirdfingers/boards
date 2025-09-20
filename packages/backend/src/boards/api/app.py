@@ -64,12 +64,20 @@ def create_app() -> FastAPI:
     # GraphQL endpoint (allow disabling for tests)
     if not os.getenv("BOARDS_DISABLE_GRAPHQL"):
         try:
-            from ..graphql.schema import create_graphql_router
+            from ..graphql.schema import create_graphql_router, validate_schema
 
+            # Validate schema at startup to catch circular reference errors early
+            logger.info("Validating GraphQL schema...")
+            validate_schema()
+
+            # Create and mount the GraphQL router
             graphql_router = create_graphql_router()
             app.include_router(graphql_router, prefix="")
+            logger.info("GraphQL endpoint initialized successfully", endpoint="/graphql")
         except Exception as e:  # pragma: no cover
-            logger.warning("Skipping GraphQL setup", error=str(e))
+            logger.error("Failed to initialize GraphQL endpoint", error=str(e))
+            # Re-raise to fail fast - server should not start with broken GraphQL
+            raise
 
     # REST API endpoints (for SSE, webhooks, etc.)
     from .endpoints import jobs, sse, storage, webhooks

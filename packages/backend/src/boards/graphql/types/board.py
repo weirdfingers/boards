@@ -4,7 +4,7 @@ Board GraphQL type definitions
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Annotated
 from uuid import UUID
 
 import strawberry
@@ -35,14 +35,14 @@ class BoardMember:
     joined_at: datetime
 
     @strawberry.field
-    async def user(self, info: strawberry.Info) -> "User":
+    async def user(self, info: strawberry.Info) -> Annotated["User", strawberry.lazy(".user")]:
         """Get the user for this board member."""
         from ..resolvers.board import resolve_board_member_user
 
         return await resolve_board_member_user(self, info)
 
     @strawberry.field
-    async def inviter(self, info: strawberry.Info) -> Optional["User"]:
+    async def inviter(self, info: strawberry.Info) -> Optional[Annotated["User", strawberry.lazy(".user")]]:
         """Get the user who invited this member."""
         if not self.invited_by:
             return None
@@ -67,7 +67,7 @@ class Board:
     updated_at: datetime
 
     @strawberry.field
-    async def owner(self, info: strawberry.Info) -> "User":
+    async def owner(self, info: strawberry.Info) -> Annotated["User", strawberry.lazy(".user")]:
         """Get the owner of this board."""
         from ..resolvers.board import resolve_board_owner
 
@@ -86,7 +86,7 @@ class Board:
         info: strawberry.Info,
         limit: int | None = 50,
         offset: int | None = 0,
-    ) -> list["Generation"]:
+    ) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:
         """Get generations in this board."""
         from ..resolvers.board import resolve_board_generations
 
