@@ -21,15 +21,15 @@ async def ensure_local_user(
 ) -> UUID:
     """
     Ensure a local user exists for the given principal (JIT provisioning).
-    
+
     This function creates a local user record if one doesn't exist for the
     given (tenant_id, auth_provider, auth_subject) combination.
-    
+
     Args:
         db: Database session
         tenant_id: Tenant identifier
         principal: Authenticated principal from auth provider
-        
+
     Returns:
         UUID of the local user
     """

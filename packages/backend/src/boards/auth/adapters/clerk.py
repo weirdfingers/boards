@@ -19,7 +19,7 @@ class ClerkAuthAdapter:
     def __init__(self, secret_key: str, jwks_url: str | None = None):
         """
         Initialize Clerk adapter.
-        
+
         Args:
             secret_key: Clerk secret key for API calls
             jwks_url: Optional JWKS URL for JWT verification (auto-discovered if not provided)
@@ -102,14 +102,14 @@ class ClerkAuthAdapter:
 
             return principal
 
-        except ImportError:
-            raise AuthenticationError("PyJWT is required for Clerk authentication")
+        except ImportError as e:
+            raise AuthenticationError("PyJWT is required for Clerk authentication") from e
         except InvalidTokenError as e:
             logger.warning(f"Clerk JWT token validation failed: {e}")
-            raise AuthenticationError(f"Invalid token: {e}")
+            raise AuthenticationError(f"Invalid token: {e}") from e
         except Exception as e:
             logger.error(f"Unexpected error verifying Clerk token: {e}")
-            raise AuthenticationError("Token verification failed")
+            raise AuthenticationError("Token verification failed") from e
 
     async def issue_token(
         self,
@@ -118,7 +118,7 @@ class ClerkAuthAdapter:
     ) -> str:
         """
         Issue a new token via Clerk (not commonly used).
-        
+
         Note: Clerk typically handles token issuance on the client side.
         This method is provided for completeness but may not be used in practice.
         """
@@ -169,7 +169,7 @@ class ClerkAuthAdapter:
 
         except Exception as e:
             logger.error(f"Failed to fetch JWKS from Clerk: {e}")
-            raise AuthenticationError("Unable to verify token - JWKS unavailable")
+            raise AuthenticationError("Unable to verify token - JWKS unavailable") from e
 
     async def __aenter__(self):
         return self

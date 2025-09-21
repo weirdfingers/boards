@@ -43,11 +43,11 @@ async def resolve_generation_parent(
     raise NotImplementedError
 
 
-async def resolve_generation_inputs(generation: Generation, info: strawberry.Info) -> list[Generation]:
+async def resolve_generation_inputs(generation: Generation, info: strawberry.Info) -> list[Generation]:  # noqa: E501
     raise NotImplementedError
 
 
-async def resolve_generation_children(generation: Generation, info: strawberry.Info) -> list[Generation]:
+async def resolve_generation_children(generation: Generation, info: strawberry.Info) -> list[Generation]:  # noqa: E501
     raise NotImplementedError
 
 

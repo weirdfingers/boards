@@ -101,10 +101,17 @@ async def get_auth_context(
             # Create a deterministic UUID based on principal's subject and provider
             # This ensures the same user gets the same ID across requests
             import hashlib
-            stable_input = f"{principal.get('provider', 'unknown')}:{principal.get('subject', 'anonymous')}:{tenant_id}"
+            provider = principal.get('provider', 'unknown')
+            subject = principal.get('subject', 'anonymous')
+            stable_input = f"{provider}:{subject}:{tenant_id}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
             # Create a valid UUID from the hash
-            formatted_uuid = f"{user_id_hash[:8]}-{user_id_hash[8:12]}-{user_id_hash[12:16]}-{user_id_hash[16:20]}-{user_id_hash[20:32]}"
+            # Format hash as UUID: 8-4-4-4-12 pattern
+            formatted_uuid = (
+                f"{user_id_hash[:8]}-{user_id_hash[8:12]}-"
+                f"{user_id_hash[12:16]}-{user_id_hash[16:20]}-"
+                f"{user_id_hash[20:32]}"
+            )
             from uuid import UUID
             user_id = UUID(formatted_uuid)
 
@@ -124,9 +131,16 @@ async def get_auth_context(
             )
 
             import hashlib
-            stable_input = f"{principal.get('provider', 'unknown')}:{principal.get('subject', 'anonymous')}:{tenant_id}"
+            provider = principal.get('provider', 'unknown')
+            subject = principal.get('subject', 'anonymous')
+            stable_input = f"{provider}:{subject}:{tenant_id}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
-            formatted_uuid = f"{user_id_hash[:8]}-{user_id_hash[8:12]}-{user_id_hash[12:16]}-{user_id_hash[16:20]}-{user_id_hash[20:32]}"
+            # Format hash as UUID: 8-4-4-4-12 pattern
+            formatted_uuid = (
+                f"{user_id_hash[:8]}-{user_id_hash[8:12]}-"
+                f"{user_id_hash[12:16]}-{user_id_hash[16:20]}-"
+                f"{user_id_hash[20:32]}"
+            )
             from uuid import UUID
             user_id = UUID(formatted_uuid)
 
@@ -143,14 +157,14 @@ async def get_auth_context(
             status_code=401,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
     except Exception as e:
         logger.error("Unexpected authentication error", error=str(e))
         raise HTTPException(
             status_code=401,
             detail="Authentication failed",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 async def get_auth_context_optional(

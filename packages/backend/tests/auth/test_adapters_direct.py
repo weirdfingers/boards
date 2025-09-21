@@ -67,7 +67,7 @@ class TestJWTAdapter:
             return principal
 
         except jwt.InvalidTokenError as e:
-            raise AuthenticationError(f"Invalid token: {e}")
+            raise AuthenticationError(f"Invalid token: {e}") from e
 
     async def issue_token(self, user_id=None, claims=None):
         now = datetime.now(UTC)

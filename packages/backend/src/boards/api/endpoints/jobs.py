@@ -40,7 +40,7 @@ async def submit_generation(
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> SubmitGenerationResponse:
     """Submit a new generation job.
-    
+
     Requires authentication. The authenticated user's ID and tenant will be used
     for the generation, overriding any values provided in the request body.
     """
@@ -77,4 +77,4 @@ async def submit_generation(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to submit generation: {str(e)}"
-        )
+        ) from e

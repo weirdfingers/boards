@@ -4,7 +4,7 @@ Generation GraphQL type definitions
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Annotated
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 import strawberry
@@ -100,7 +100,7 @@ class Generation:
         return await resolve_generation_user(self, info)
 
     @strawberry.field
-    async def parent(self, info: strawberry.Info) -> Optional[Annotated["Generation", strawberry.lazy(".generation")]]:
+    async def parent(self, info: strawberry.Info) -> Annotated["Generation", strawberry.lazy(".generation")] | None:  # noqa: E501
         """Get the parent generation if any."""
         if not self.parent_generation_id:
             return None
@@ -109,7 +109,7 @@ class Generation:
         return await resolve_generation_parent(self, info)
 
     @strawberry.field
-    async def inputs(self, info: strawberry.Info) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:
+    async def inputs(self, info: strawberry.Info) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
         """Get input generations used for this generation."""
         if not self.input_generation_ids:
             return []
@@ -118,7 +118,7 @@ class Generation:
         return await resolve_generation_inputs(self, info)
 
     @strawberry.field
-    async def children(self, info: strawberry.Info) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:
+    async def children(self, info: strawberry.Info) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
         """Get child generations derived from this one."""
         from ..resolvers.generation import resolve_generation_children
 

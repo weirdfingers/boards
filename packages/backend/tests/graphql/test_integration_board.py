@@ -3,7 +3,7 @@ Integration tests for board GraphQL resolvers with real database
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -85,8 +85,8 @@ async def test_board_query_integration(alembic_migrate, test_database):
                 name="Test Tenant",
                 slug="test-tenant",
                 settings={},
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(tenant)
 
@@ -99,8 +99,8 @@ async def test_board_query_integration(alembic_migrate, test_database):
                 email="test@example.com",
                 display_name="Test User",
                 metadata_={},
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(user)
 
@@ -113,8 +113,8 @@ async def test_board_query_integration(alembic_migrate, test_database):
                 email="other@example.com",
                 display_name="Other User",
                 metadata_={},
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(other_user)
 
@@ -128,8 +128,8 @@ async def test_board_query_integration(alembic_migrate, test_database):
                 is_public=True,
                 settings={},
                 metadata_={},
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(public_board)
 
@@ -143,8 +143,8 @@ async def test_board_query_integration(alembic_migrate, test_database):
                 is_public=False,
                 settings={},
                 metadata_={},
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(private_board)
 
@@ -158,8 +158,8 @@ async def test_board_query_integration(alembic_migrate, test_database):
                 is_public=False,
                 settings={},
                 metadata_={},
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(owned_private_board)
 

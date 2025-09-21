@@ -22,13 +22,13 @@ class AuthAdapter(Protocol):
     async def verify_token(self, token: str) -> Principal:
         """
         Verify a token and return the principal identity.
-        
+
         Args:
             token: The authentication token to verify
-            
+
         Returns:
             Principal containing identity information
-            
+
         Raises:
             AuthenticationError: If token is invalid or expired
         """
@@ -37,11 +37,11 @@ class AuthAdapter(Protocol):
     async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """
         Issue a new token (optional - not all providers support this).
-        
+
         Args:
             user_id: Optional user ID to include in token
             claims: Optional additional claims to include
-            
+
         Returns:
             Signed token string
         """
@@ -50,10 +50,10 @@ class AuthAdapter(Protocol):
     async def get_user_info(self, token: str) -> dict:
         """
         Get provider-specific user information (optional enrichment).
-        
+
         Args:
             token: Valid authentication token
-            
+
         Returns:
             Dictionary of provider-specific user data
         """

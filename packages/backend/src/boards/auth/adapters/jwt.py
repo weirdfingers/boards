@@ -23,7 +23,7 @@ class JWTAuthAdapter:
         algorithm: str = "HS256",
         issuer: str = "boards",
         audience: str = "boards-api",
-        token_expiry_hours: int = 24
+        token_expiry_hours: int = 24,
     ):
         self.secret_key = secret_key
         self.algorithm = algorithm
@@ -44,7 +44,7 @@ class JWTAuthAdapter:
                     "verify_exp": True,
                     "verify_nbf": True,
                     "verify_iat": True,
-                }
+                },
             )
 
             # Extract required claims
@@ -76,15 +76,13 @@ class JWTAuthAdapter:
             raise
         except InvalidTokenError as e:
             logger.warning("JWT token validation failed", error=str(e))
-            raise AuthenticationError("Invalid token")
+            raise AuthenticationError("Invalid token") from e
         except Exception as e:
             logger.error(f"Unexpected error verifying JWT token: {e}")
-            raise AuthenticationError("Token verification failed")
+            raise AuthenticationError("Token verification failed") from e
 
     async def issue_token(
-        self,
-        user_id: UUID | None = None,
-        claims: dict | None = None
+        self, user_id: UUID | None = None, claims: dict | None = None
     ) -> str:
         """Issue a new JWT token."""
         now = datetime.now(UTC)
@@ -118,7 +116,7 @@ class JWTAuthAdapter:
                     "verify_exp": True,
                     "verify_nbf": True,
                     "verify_iat": True,
-                }
+                },
             )
             return payload
         except Exception as e:

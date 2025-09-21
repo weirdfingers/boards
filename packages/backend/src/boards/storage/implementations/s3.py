@@ -122,7 +122,8 @@ class S3StorageProvider(StorageProvider):
                     # For files larger than 100MB, we could implement multipart upload
                     if total_size > 100 * 1024 * 1024:
                         logger.warning(
-                            f"Large file upload ({total_size} bytes) - consider implementing multipart upload for key: {key}"
+                            f"Large file upload ({total_size} bytes) - "
+                            f"consider implementing multipart upload for key: {key}"
                         )
 
                 upload_params["Body"] = b"".join(chunks)

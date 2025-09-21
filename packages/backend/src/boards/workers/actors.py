@@ -76,7 +76,7 @@ async def _process_generation_async(generation_id: str) -> None:
         except Exception as e:
             error_msg = "Invalid input parameters"
             logger.error(error_msg, generation_id=generation_id, error=str(e))
-            raise ValueError(f"Invalid input parameters: {e}")
+            raise ValueError(f"Invalid input parameters: {e}") from e
 
         # Build context and run generator
         context = GeneratorExecutionContext(gen.id, publisher)
@@ -99,7 +99,7 @@ async def _process_generation_async(generation_id: str) -> None:
                 generator_name=gen.generator_name,
                 generation_id=generation_id,
             )
-            output = await generator.generate(typed_inputs, context)
+            await generator.generate(typed_inputs, context)
             logger.info(
                 "Generator completed successfully",
                 generator_name=gen.generator_name,

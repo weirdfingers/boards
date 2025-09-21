@@ -104,7 +104,7 @@ class TestGCSStorageProvider:
             mock_bucket.blob.return_value = mock_blob
 
             with patch.object(gcs_provider_with_cdn, "_run_sync"):
-                result = await gcs_provider_with_cdn.upload(test_key, test_content, test_content_type)
+                result = await gcs_provider_with_cdn.upload(test_key, test_content, test_content_type)  # noqa: E501
 
                 # Should return CDN URL during upload (note: download URLs use signed URLs)
                 assert result == f"https://cdn.example.com/{test_key}"
@@ -159,7 +159,7 @@ class TestGCSStorageProvider:
 
                 # Verify content was collected and uploaded
                 mock_run_sync.assert_called_once_with(
-                    mock_blob.upload_from_string, b"chunk1chunk2chunk3", content_type=test_content_type
+                    mock_blob.upload_from_string, b"chunk1chunk2chunk3", content_type=test_content_type  # noqa: E501
                 )
 
     @pytest.mark.asyncio
@@ -348,7 +348,7 @@ class TestGCSStorageProvider:
              patch("google.oauth2.service_account") as mock_service_account:
 
             mock_credentials = MagicMock()
-            mock_service_account.Credentials.from_service_account_info.return_value = mock_credentials
+            mock_service_account.Credentials.from_service_account_info.return_value = mock_credentials  # noqa: E501
             mock_client = MagicMock()
             mock_storage.Client.return_value = mock_client
 

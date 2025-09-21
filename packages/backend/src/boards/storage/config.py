@@ -22,11 +22,11 @@ def load_storage_config(
     env_prefix: str = "BOARDS_STORAGE_"
 ) -> StorageConfig:
     """Load storage configuration from file and environment variables.
-    
+
     Args:
         config_path: Path to YAML configuration file
         env_prefix: Prefix for environment variable overrides
-        
+
     Returns:
         StorageConfig instance
     """
@@ -56,7 +56,7 @@ def load_storage_config(
                 if file_config.get('storage'):
                     config_data.update(file_config['storage'])
         except Exception as e:
-            raise ValueError(f"Failed to load storage config from {config_path}: {e}")
+            raise ValueError(f"Failed to load storage config from {config_path}: {e}") from e
 
     # Override with environment variables
     config_data = _apply_env_overrides(config_data, env_prefix)

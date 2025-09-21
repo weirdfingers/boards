@@ -2,7 +2,7 @@
 
 This module provides a pluggable storage architecture that supports:
 - Local filesystem storage for development
-- Supabase storage with auth integration  
+- Supabase storage with auth integration
 - S3 storage for enterprise deployments
 - Custom storage providers via plugin system
 

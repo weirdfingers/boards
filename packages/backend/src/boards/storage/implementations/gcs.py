@@ -164,7 +164,8 @@ class GCSStorageProvider(StorageProvider):
                     # For files larger than 100MB, we could implement resumable upload
                     if total_size > 100 * 1024 * 1024:
                         logger.warning(
-                            f"Large file upload ({total_size} bytes) - consider implementing resumable upload for key: {key}"
+                            f"Large file upload ({total_size} bytes) - "
+                            f"consider implementing resumable upload for key: {key}"
                         )
 
                 file_content = b"".join(chunks)

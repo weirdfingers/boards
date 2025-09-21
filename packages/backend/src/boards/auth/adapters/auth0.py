@@ -26,7 +26,7 @@ class Auth0OIDCAdapter:
     ):
         """
         Initialize Auth0 adapter.
-        
+
         Args:
             domain: Auth0 domain (e.g., "myapp.us.auth0.com")
             audience: Auth0 API identifier/audience
@@ -117,14 +117,14 @@ class Auth0OIDCAdapter:
 
             return principal
 
-        except ImportError:
-            raise AuthenticationError("PyJWT is required for Auth0 authentication")
+        except ImportError as e:
+            raise AuthenticationError("PyJWT is required for Auth0 authentication") from e
         except InvalidTokenError as e:
             logger.warning(f"Auth0 JWT token validation failed: {e}")
-            raise AuthenticationError(f"Invalid token: {e}")
+            raise AuthenticationError(f"Invalid token: {e}") from e
         except Exception as e:
             logger.error(f"Unexpected error verifying Auth0 token: {e}")
-            raise AuthenticationError("Token verification failed")
+            raise AuthenticationError("Token verification failed") from e
 
     async def issue_token(
         self,
@@ -133,7 +133,7 @@ class Auth0OIDCAdapter:
     ) -> str:
         """
         Issue a new token via Auth0 Management API (requires client credentials).
-        
+
         This is rarely used as Auth0 typically handles token issuance via client libraries.
         """
         if not self.client_id or not self.client_secret:
@@ -143,7 +143,7 @@ class Auth0OIDCAdapter:
 
         try:
             # Get management API access token first
-            mgmt_token = await self._get_management_token()
+            await self._get_management_token()
 
             # This would require implementing Auth0's Management API token creation
             # which is complex and rarely used. Most apps use client-side auth.
@@ -154,7 +154,7 @@ class Auth0OIDCAdapter:
 
         except Exception as e:
             logger.error(f"Failed to issue Auth0 token: {e}")
-            raise AuthenticationError("Token issuance failed")
+            raise AuthenticationError("Token issuance failed") from e
 
     async def get_user_info(self, token: str) -> dict:
         """Get additional user information from Auth0 userinfo endpoint."""
@@ -194,7 +194,7 @@ class Auth0OIDCAdapter:
 
         except Exception as e:
             logger.error(f"Failed to fetch JWKS from Auth0: {e}")
-            raise AuthenticationError("Unable to verify token - JWKS unavailable")
+            raise AuthenticationError("Unable to verify token - JWKS unavailable") from e
 
     async def _get_management_token(self) -> str:
         """Get Auth0 Management API access token."""
@@ -217,7 +217,7 @@ class Auth0OIDCAdapter:
 
         except Exception as e:
             logger.error(f"Failed to get Auth0 management token: {e}")
-            raise AuthenticationError("Unable to get management token")
+            raise AuthenticationError("Unable to get management token") from e
 
     async def __aenter__(self):
         return self

@@ -34,7 +34,9 @@ def get_auth_adapter() -> AuthAdapter:
     elif provider == "jwt":
         secret_key = config.get("secret_key") or os.getenv("BOARDS_JWT_SECRET")
         if not secret_key:
-            raise ValueError("JWT secret key is required. Set BOARDS_JWT_SECRET or provide in config.")
+            raise ValueError(
+                "JWT secret key is required. Set BOARDS_JWT_SECRET or provide in config."
+            )
 
         return JWTAuthAdapter(
             secret_key=secret_key,

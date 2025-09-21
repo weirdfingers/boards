@@ -95,7 +95,7 @@ _redis_pool_manager = RedisPoolManager()
 
 def get_redis_client() -> redis.Redis:
     """Get a Redis client with connection pooling.
-    
+
     Returns:
         Redis client instance with connection pooling enabled.
     """
@@ -104,7 +104,7 @@ def get_redis_client() -> redis.Redis:
 
 async def close_redis_pool():
     """Close the Redis connection pool.
-    
+
     Call this during application shutdown to cleanly close connections.
     """
     await _redis_pool_manager.close()
@@ -112,7 +112,7 @@ async def close_redis_pool():
 
 async def check_redis_health() -> bool:
     """Check if Redis is healthy and accessible.
-    
+
     Returns:
         True if Redis is healthy, False otherwise.
     """

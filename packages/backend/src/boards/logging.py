@@ -40,7 +40,7 @@ class RequestContextFilter:
 
 def configure_logging(debug: bool = False) -> None:
     """Configure structlog with appropriate processors and formatters.
-    
+
     Args:
         debug: If True, use human-readable console output. If False, use JSON.
     """
@@ -101,10 +101,10 @@ def configure_logging(debug: bool = False) -> None:
 
 def get_logger(name: str) -> structlog.BoundLogger:
     """Get a structlog logger instance.
-    
+
     Args:
         name: Logger name (typically __name__)
-        
+
     Returns:
         Configured structlog logger
     """
@@ -113,10 +113,10 @@ def get_logger(name: str) -> structlog.BoundLogger:
 
 def generate_request_id() -> str:
     """Generate a compact, secure request ID with timestamp and randomness.
-    
+
     Uses microsecond precision timestamp with added randomness for security.
     Format: 11-character base64 string (e.g., 'Ab3X9mF2xYz')
-    
+
     Provides high uniqueness probability while preventing predictable enumeration.
     """
     # Get microseconds since epoch (8 bytes when encoded as int64)
@@ -137,7 +137,7 @@ def generate_request_id() -> str:
 
 def set_request_context(request_id: str | None = None, user_id: str | None = None) -> None:
     """Set request context variables.
-    
+
     Args:
         request_id: Request ID to set (generates one if None)
         user_id: User ID to set
@@ -168,12 +168,12 @@ def get_user_id() -> str | None:
 
 def extract_user_id_from_request(request: Request) -> str | None:
     """Extract user ID from FastAPI request.
-    
+
     This should be customized based on your authentication implementation.
-    
+
     Args:
         request: FastAPI request object
-        
+
     Returns:
         User ID if authenticated, None otherwise
     """

@@ -6,7 +6,7 @@ Alembic autogenerate diffs, and exposes `target_metadata` for Alembic.
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import (
@@ -241,7 +241,9 @@ class BoardMembers(Base):
     __tablename__ = "board_members"
     __table_args__ = (
         CheckConstraint(
-            "role::text = ANY (ARRAY['viewer'::character varying, 'editor'::character varying, 'admin'::character varying]::text[])",
+            "role::text = ANY (ARRAY["
+            "'viewer'::character varying, 'editor'::character varying, "
+            "'admin'::character varying]::text[])",
             name="board_members_role_check",
         ),
         ForeignKeyConstraint(
@@ -287,7 +289,11 @@ class Generations(Base):
     __tablename__ = "generations"
     __table_args__ = (
         CheckConstraint(
-            "artifact_type::text = ANY (ARRAY['image'::character varying, 'video'::character varying, 'audio'::character varying, 'text'::character varying, 'lora'::character varying, 'model'::character varying]::text[])",
+            "artifact_type::text = ANY (ARRAY["
+            "'image'::character varying, 'video'::character varying, "
+            "'audio'::character varying, 'text'::character varying, "
+            "'lora'::character varying, 'model'::character varying"
+            "]::text[])",
             name="generations_artifact_type_check",
         ),
         ForeignKeyConstraint(
@@ -371,7 +377,10 @@ class CreditTransactions(Base):
     __tablename__ = "credit_transactions"
     __table_args__ = (
         CheckConstraint(
-            "transaction_type::text = ANY (ARRAY['reserve'::character varying, 'finalize'::character varying, 'refund'::character varying, 'purchase'::character varying, 'grant'::character varying]::text[])",
+            "transaction_type::text = ANY (ARRAY["
+            "'reserve'::character varying, 'finalize'::character varying, "
+            "'refund'::character varying, 'purchase'::character varying, "
+            "'grant'::character varying]::text[])",
             name="credit_transactions_transaction_type_check",
         ),
         ForeignKeyConstraint(
