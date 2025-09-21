@@ -8,7 +8,7 @@ from .base import BaseGenerator
 class GeneratorRegistry:
     """
     Central registry for generator discovery and management.
-    
+
     Provides methods to register generators, look them up by name,
     and list available generators by various criteria.
     """
@@ -19,10 +19,10 @@ class GeneratorRegistry:
     def register(self, generator: BaseGenerator) -> None:
         """
         Register a generator instance with the registry.
-        
+
         Args:
             generator: Generator instance to register
-            
+
         Raises:
             ValueError: If a generator with the same name is already registered
         """
@@ -34,10 +34,10 @@ class GeneratorRegistry:
     def get(self, name: str) -> BaseGenerator | None:
         """
         Get a generator by name.
-        
+
         Args:
             name: Name of the generator to retrieve
-            
+
         Returns:
             BaseGenerator instance or None if not found
         """
@@ -46,7 +46,7 @@ class GeneratorRegistry:
     def list_all(self) -> list[BaseGenerator]:
         """
         List all registered generators.
-        
+
         Returns:
             List of all generator instances
         """
@@ -55,10 +55,10 @@ class GeneratorRegistry:
     def list_by_artifact_type(self, artifact_type: str) -> list[BaseGenerator]:
         """
         List generators that produce a specific artifact type.
-        
+
         Args:
             artifact_type: Type of artifact (image, video, audio, text, lora)
-            
+
         Returns:
             List of generators that produce the specified artifact type
         """
@@ -70,7 +70,7 @@ class GeneratorRegistry:
     def list_names(self) -> list[str]:
         """
         List all registered generator names.
-        
+
         Returns:
             List of generator names
         """
@@ -79,10 +79,10 @@ class GeneratorRegistry:
     def unregister(self, name: str) -> bool:
         """
         Unregister a generator by name.
-        
+
         Args:
             name: Name of the generator to unregister
-            
+
         Returns:
             True if the generator was found and removed, False otherwise
         """

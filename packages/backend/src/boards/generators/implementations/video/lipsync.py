@@ -47,8 +47,8 @@ class LipsyncGenerator(BaseGenerator):
         # Import SDK directly
         try:
             import replicate  # type: ignore
-        except ImportError:
-            raise ValueError("Required dependencies not available")
+        except ImportError as e:
+            raise ValueError("Required dependencies not available") from e
 
         # Resolve artifacts via context
         audio_file = await context.resolve_artifact(inputs.audio_source)

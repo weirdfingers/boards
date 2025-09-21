@@ -3,7 +3,7 @@ Tests for board GraphQL resolvers
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -11,8 +11,7 @@ import strawberry
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from boards.auth.context import AuthContext
-from boards.auth.adapters.base import Principal
-from boards.dbmodels import Boards, BoardMembers, Users
+from boards.dbmodels import BoardMembers, Boards, Users
 from boards.graphql.resolvers.board import resolve_board_by_id
 
 
@@ -63,8 +62,8 @@ def sample_board():
     board.is_public = False
     board.settings = {"theme": "dark"}
     board.metadata_ = {"version": "1.0"}
-    board.created_at = datetime.now(timezone.utc)
-    board.updated_at = datetime.now(timezone.utc)
+    board.created_at = datetime.now(UTC)
+    board.updated_at = datetime.now(UTC)
     board.board_members = []
 
     return board

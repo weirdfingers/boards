@@ -31,8 +31,8 @@ class LocalStorageProvider(StorageProvider):
         # Check that resolved path is within base directory
         try:
             file_path.relative_to(self.base_path)
-        except ValueError:
-            raise SecurityException(f"Path traversal detected: {key}")
+        except ValueError as e:
+            raise SecurityException(f"Path traversal detected: {key}") from e
 
         return file_path
 
@@ -48,7 +48,7 @@ class LocalStorageProvider(StorageProvider):
             file_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Handle both bytes-like and async iterable content
-            if isinstance(content, (bytes, bytearray, memoryview)):
+            if isinstance(content, bytes | bytearray | memoryview):
                 # aiofiles accepts bytes-like objects directly
                 async with aiofiles.open(file_path, "wb") as f:
                     await f.write(content)

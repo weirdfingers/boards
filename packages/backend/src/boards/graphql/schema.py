@@ -5,18 +5,15 @@ Main GraphQL schema definition using Strawberry
 from typing import Any
 
 import strawberry
-from strawberry.fastapi import GraphQLRouter
-from graphql import validate_schema as gql_validate_schema
 from fastapi import Request
+from graphql import validate_schema as gql_validate_schema
+from strawberry.fastapi import GraphQLRouter
 
 from ..logging import get_logger
 from .mutations.root import Mutation
 from .queries.root import Query
 
 # Import types to ensure they're registered with Strawberry
-from .types.board import Board, BoardMember, BoardRole
-from .types.generation import Generation, GenerationStatus, ArtifactType
-from .types.user import User
 
 logger = get_logger(__name__)
 

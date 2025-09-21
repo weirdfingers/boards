@@ -20,10 +20,10 @@ logger = get_logger(__name__)
 
 def sanitize_query_params(params: dict[str, Any]) -> dict[str, Any]:
     """Remove sensitive query parameters from logging.
-    
+
     Args:
         params: Dictionary of query parameters
-        
+
     Returns:
         Dictionary with sensitive parameters redacted
     """

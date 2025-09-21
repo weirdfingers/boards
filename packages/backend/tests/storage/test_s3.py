@@ -72,7 +72,7 @@ class TestS3StorageProvider:
             mock_client = AsyncMock()
             mock_session.return_value.client.return_value.__aenter__.return_value = mock_client
 
-            result = await s3_provider_with_cloudfront.upload(test_key, test_content, test_content_type)
+            result = await s3_provider_with_cloudfront.upload(test_key, test_content, test_content_type)  # noqa: E501
 
             # Should return CloudFront URL
             assert result == f"https://d123456.cloudfront.net/{test_key}"

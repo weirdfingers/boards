@@ -60,8 +60,8 @@ class FluxProGenerator(BaseGenerator):
         # Import SDK directly - no wrapper layer
         try:
             import replicate  # type: ignore
-        except ImportError:
-            raise ValueError("Required dependencies not available")
+        except ImportError as e:
+            raise ValueError("Required dependencies not available") from e
 
         # Use Replicate SDK directly
         prediction = await replicate.async_run(

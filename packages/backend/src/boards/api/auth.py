@@ -24,13 +24,13 @@ async def get_current_user(
 ) -> AuthenticatedUser:
     """
     Get the current authenticated user from the auth context.
-    
+
     Args:
         auth_context: Authentication context from middleware
-    
+
     Returns:
         AuthenticatedUser object with user information
-    
+
     Raises:
         HTTPException: If user is not authenticated
     """
@@ -53,7 +53,7 @@ async def get_current_user_optional(
 ) -> AuthenticatedUser | None:
     """
     Optional authentication - returns None if not authenticated.
-    
+
     Use this for endpoints that can work both authenticated and unauthenticated,
     but may provide different functionality based on auth status.
     """

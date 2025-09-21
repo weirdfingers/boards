@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from ...auth.middleware import get_auth_context_optional
 from ...database.connection import get_async_session
-from ...dbmodels import Boards, BoardMembers
+from ...dbmodels import BoardMembers, Boards
 from ...logging import get_logger
 
 if TYPE_CHECKING:

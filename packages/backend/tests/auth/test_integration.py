@@ -259,7 +259,7 @@ class TestAuthIntegration:
 
         # This should fail when trying to get the adapter
         with pytest.raises(ValueError, match="Unsupported auth provider"):
-            response = client.get("/protected")
+            client.get("/protected")
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")

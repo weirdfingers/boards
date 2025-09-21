@@ -4,7 +4,7 @@ Board GraphQL type definitions
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Annotated
+from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 import strawberry
@@ -42,7 +42,7 @@ class BoardMember:
         return await resolve_board_member_user(self, info)
 
     @strawberry.field
-    async def inviter(self, info: strawberry.Info) -> Optional[Annotated["User", strawberry.lazy(".user")]]:
+    async def inviter(self, info: strawberry.Info) -> Annotated["User", strawberry.lazy(".user")] | None:  # noqa: E501
         """Get the user who invited this member."""
         if not self.invited_by:
             return None

@@ -71,7 +71,7 @@ class SupabaseAuthAdapter:
 
         except Exception as e:
             logger.warning("Supabase token validation failed", error=str(e))
-            raise AuthenticationError(f"Invalid token: {e}")
+            raise AuthenticationError(f"Invalid token: {e}") from e
 
     async def issue_token(
         self, user_id: UUID | None = None, claims: dict | None = None

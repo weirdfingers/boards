@@ -60,8 +60,8 @@ class DallE3Generator(BaseGenerator):
         # Import SDK directly
         try:
             from openai import AsyncOpenAI  # type: ignore
-        except ImportError:
-            raise ValueError("Required dependencies not available")
+        except ImportError as e:
+            raise ValueError("Required dependencies not available") from e
 
         client = AsyncOpenAI()
 

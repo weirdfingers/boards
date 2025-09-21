@@ -302,7 +302,7 @@ class StorageManager:
 
         if board_id:
             # Board-scoped artifact
-            return f"{tenant}/{artifact_type}/{board_id}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"
+            return f"{tenant}/{artifact_type}/{board_id}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"  # noqa: E501
         else:
             # Global artifact (like LoRA models)
             return f"{tenant}/{artifact_type}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"

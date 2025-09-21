@@ -49,8 +49,8 @@ class WhisperGenerator(BaseGenerator):
         """Transcribe audio using OpenAI Whisper."""
         try:
             from openai import AsyncOpenAI  # type: ignore
-        except ImportError:
-            raise ValueError("Required dependencies not available")
+        except ImportError as e:
+            raise ValueError("Required dependencies not available") from e
 
         client = AsyncOpenAI()
 

@@ -34,7 +34,7 @@ async def generation_progress_stream(
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """Server-sent events for job progress, backed by Redis pub/sub.
-    
+
     Requires authentication. Users can only monitor progress for their own generations
     or generations within their tenant (depending on access control policy).
     """
@@ -66,7 +66,7 @@ async def generation_progress_stream(
         raise HTTPException(
             status_code=404,
             detail="Generation not found"
-        )
+        ) from e
 
     channel = f"job:{generation_id}:progress"
 
