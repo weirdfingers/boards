@@ -6,6 +6,7 @@ from uuid import UUID
 
 import strawberry
 
+from ..access_control import BoardQueryRole, SortOrder
 from ..types.board import Board
 from ..types.generation import ArtifactType, Generation, GenerationStatus
 from ..types.user import User
@@ -38,21 +39,41 @@ class Query:
 
     @strawberry.field
     async def my_boards(
-        self, info: strawberry.Info, limit: int | None = 50, offset: int | None = 0
+        self,
+        info: strawberry.Info,
+        limit: int | None = 50,
+        offset: int | None = 0,
+        role: BoardQueryRole | None = None,
+        sort: SortOrder | None = None
     ) -> list[Board]:
         """Get boards owned by or shared with the current user."""
         from ..resolvers.board import resolve_my_boards
 
-        return await resolve_my_boards(info, limit or 50, offset or 0)
+        return await resolve_my_boards(
+            info,
+            limit or 50,
+            offset or 0,
+            role or BoardQueryRole.ANY,
+            sort or SortOrder.UPDATED_DESC
+        )
 
     @strawberry.field
     async def public_boards(
-        self, info: strawberry.Info, limit: int | None = 50, offset: int | None = 0
+        self,
+        info: strawberry.Info,
+        limit: int | None = 50,
+        offset: int | None = 0,
+        sort: SortOrder | None = None
     ) -> list[Board]:
         """Get public boards."""
         from ..resolvers.board import resolve_public_boards
 
-        return await resolve_public_boards(info, limit or 50, offset or 0)
+        return await resolve_public_boards(
+            info,
+            limit or 50,
+            offset or 0,
+            sort or SortOrder.UPDATED_DESC
+        )
 
     @strawberry.field
     async def generation(self, info: strawberry.Info, id: UUID) -> Generation | None:

@@ -15,9 +15,7 @@ logger = get_logger(__name__)
 
 
 async def ensure_local_user(
-    db: AsyncSession,
-    tenant_id: str,
-    principal: Principal
+    db: AsyncSession, tenant_id: str, principal: Principal
 ) -> UUID:
     """
     Ensure a local user exists for the given principal (JIT provisioning).
@@ -44,6 +42,7 @@ async def ensure_local_user(
             # If tenant_id is not a valid UUID string, we might need to look it up
             # For now, generate a UUID from the string (this might not be ideal)
             import hashlib
+
             tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
     else:
         tenant_uuid = tenant_id
@@ -81,6 +80,7 @@ async def ensure_local_user(
 
         if updated:
             await db.commit()
+            await db.refresh(user)
             logger.info("Updated user info", user_id=str(user.id))
 
         return user.id
@@ -96,17 +96,18 @@ async def ensure_local_user(
         metadata_={
             "created_via": "jit_provisioning",
             "provider_claims": principal.get("claims", {}),
-        }
+        },
     )
 
     db.add(user)
     await db.commit()
+    await db.refresh(user)
 
     logger.info(
         "Created new user via JIT provisioning",
         user_id=str(user.id),
         tenant_id=tenant_id,
-        provider=provider
+        provider=provider,
     )
 
     return user.id
@@ -120,10 +121,7 @@ async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Users | None:
 
 
 async def get_user_by_auth_info(
-    db: AsyncSession,
-    tenant_id: str,
-    auth_provider: str,
-    auth_subject: str
+    db: AsyncSession, tenant_id: str | UUID, auth_provider: str, auth_subject: str
 ) -> Users | None:
     """Get a user by auth provider information."""
     # Convert tenant_id to UUID if it's a string
@@ -132,6 +130,7 @@ async def get_user_by_auth_info(
             tenant_uuid = UUID(tenant_id)
         except ValueError:
             import hashlib
+
             tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
     else:
         tenant_uuid = tenant_id
