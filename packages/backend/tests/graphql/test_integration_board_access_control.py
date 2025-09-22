@@ -63,7 +63,9 @@ async def cleanup_test_data(session):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.requires_db
-async def test_board_access_control_integration(alembic_migrate, test_database):
+async def test_board_access_control_integration(
+    alembic_migrate, test_database, reset_shared_db_connections
+):
     """Integration test for board access control (board details, members, owner)."""
     dsn, _ = test_database
 
@@ -75,10 +77,7 @@ async def test_board_access_control_integration(alembic_migrate, test_database):
         '{"default_user_id": "access-user-1", "default_tenant": "access-tenant"}'
     )
 
-    # Clear the cached auth adapter
-    import boards.auth.factory
-
-    boards.auth.factory._adapter = None
+    # Note: Auth adapters are no longer cached for thread safety
 
     app = create_app()
 
@@ -306,7 +305,8 @@ async def test_board_access_control_integration(alembic_migrate, test_database):
         assert members[0]["role"] == "VIEWER"
         assert members[0]["user"]["displayName"] == "User 1"
 
-        # Test private board access without auth (should return null)
+        # Test private board access without explicit auth header
+        # (NoAuthAdapter will still provide default authentication as access-user-1)
         response = await client.post(
             "/graphql",
             json={
@@ -319,7 +319,10 @@ async def test_board_access_control_integration(alembic_migrate, test_database):
         assert response.status_code == 200
         data = response.json()
         assert "errors" not in data
-        assert data["data"]["board"] is None
+        # Should still return board data since NoAuthAdapter provides default auth as user1 (member)
+        board = data["data"]["board"]
+        assert board is not None
+        assert board["id"] == str(private_board_id)
 
         # Test accessing non-existent board
         response = await client.post(

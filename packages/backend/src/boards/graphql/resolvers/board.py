@@ -305,7 +305,8 @@ async def resolve_board_members(board: Board, info: strawberry.Info) -> list[Boa
         # Ensure members are preloaded
         ensure_preloaded(db_board, "board_members", "Board members relationship was not preloaded")
 
-        from ..types.board import BoardMember as BoardMemberType, BoardRole
+        from ..types.board import BoardMember as BoardMemberType
+        from ..types.board import BoardRole
 
         members = []
         for member in db_board.board_members:
@@ -361,7 +362,8 @@ async def resolve_board_generations(
         generations_result = await session.execute(generations_stmt)
         generations = generations_result.scalars().all()
 
-        from ..types.generation import Generation as GenerationType, ArtifactType, GenerationStatus
+        from ..types.generation import ArtifactType, GenerationStatus
+        from ..types.generation import Generation as GenerationType
 
         return [
             GenerationType(

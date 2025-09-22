@@ -8,12 +8,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from boards.auth.context import AuthContext
-from boards.dbmodels import Boards, BoardMembers
+from boards.dbmodels import BoardMembers, Boards
 from boards.graphql.access_control import (
     can_access_board,
     can_access_board_details,
-    is_board_owner_or_member,
     ensure_preloaded,
+    is_board_owner_or_member,
 )
 
 

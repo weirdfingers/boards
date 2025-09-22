@@ -56,9 +56,7 @@ class TestAuthIntegration:
         # Setup mocks
         mock_ensure_user.return_value = "test-user-uuid"
 
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # Test unauthenticated request (no-auth should auto-authenticate)
         response = client.get("/protected")
@@ -78,9 +76,7 @@ class TestAuthIntegration:
         # Setup mocks
         mock_ensure_user.return_value = "test-user-uuid"
 
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # Test with Bearer token
         response = client.get(
@@ -103,9 +99,7 @@ class TestAuthIntegration:
         # Setup mocks
         mock_ensure_user.return_value = "jwt-user-uuid"
 
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # Create valid JWT token
         adapter = get_auth_adapter_cached()
@@ -139,9 +133,7 @@ class TestAuthIntegration:
     })
     def test_jwt_invalid_token(self, client):
         """Test JWT auth with invalid token."""
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # Test with invalid JWT
         response = client.get(
@@ -159,9 +151,7 @@ class TestAuthIntegration:
         # Setup mocks
         mock_ensure_user.return_value = "test-user-uuid"
 
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # Test with custom tenant
         response = client.get(
@@ -179,9 +169,7 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_missing_authorization_header(self, client):
         """Test request without authorization header."""
-        # Clear adapter cache to ensure we use JWT provider
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # For public endpoint, should work
         response = client.get("/public")
@@ -194,9 +182,7 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_invalid_authorization_format(self, client):
         """Test invalid authorization header format."""
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         response = client.get(
             "/protected",
@@ -209,9 +195,7 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_empty_token(self, client):
         """Test empty Bearer token."""
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         response = client.get(
             "/protected",
@@ -230,9 +214,7 @@ class TestAuthIntegration:
         mock_user_id = uuid4()
         mock_ensure_user.return_value = mock_user_id
 
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         response = client.get("/protected")
 
@@ -253,9 +235,7 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "unsupported"})
     def test_unsupported_provider_error(self, client):
         """Test that unsupported provider raises proper error."""
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # This should fail when trying to get the adapter
         with pytest.raises(ValueError, match="Unsupported auth provider"):
@@ -265,9 +245,7 @@ class TestAuthIntegration:
     @patch("boards.auth.middleware.ensure_local_user")
     def test_database_error_handling(self, mock_ensure_user, client):
         """Test handling of database errors."""
-        # Clear adapter cache
-        import boards.auth.factory
-        boards.auth.factory._adapter = None
+        # Note: Auth adapters are no longer cached for thread safety
 
         # Setup mocks to raise error (though this test is less relevant now
         # since DB errors are caught by ImportError fallback)

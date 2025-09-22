@@ -62,7 +62,9 @@ async def cleanup_test_data(session):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.requires_db
-async def test_board_generations_integration(alembic_migrate, test_database):
+async def test_board_generations_integration(
+    alembic_migrate, test_database, reset_shared_db_connections
+):
     """Integration test for board generations GraphQL resolvers."""
     dsn, _ = test_database
 
@@ -74,10 +76,7 @@ async def test_board_generations_integration(alembic_migrate, test_database):
         '{"default_user_id": "gen-user-1", "default_tenant": "gen-tenant"}'
     )
 
-    # Clear the cached auth adapter
-    import boards.auth.factory
-
-    boards.auth.factory._adapter = None
+    # Note: Auth adapters are no longer cached for thread safety
 
     app = create_app()
 

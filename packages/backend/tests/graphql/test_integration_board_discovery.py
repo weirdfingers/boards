@@ -74,10 +74,7 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
         '{"default_user_id": "discovery-user-1", "default_tenant": "discovery-tenant"}'
     )
 
-    # Clear the cached auth adapter
-    import boards.auth.factory
-
-    boards.auth.factory._adapter = None
+    # Note: Auth adapters are no longer cached for thread safety
 
     app = create_app()
 

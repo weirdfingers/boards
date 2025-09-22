@@ -46,7 +46,9 @@ async def cleanup_test_data(session):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.requires_db
-async def test_board_query_integration(alembic_migrate, test_database):
+async def test_board_query_integration(
+    alembic_migrate, test_database, reset_shared_db_connections
+):
     """Integration test for board query with real database."""
     dsn, _ = test_database
 
@@ -58,10 +60,6 @@ async def test_board_query_integration(alembic_migrate, test_database):
     os.environ["BOARDS_AUTH_CONFIG"] = (
         '{"default_user_id": "test-user-id", "default_tenant": "test-tenant"}'
     )
-
-    # Clear the cached auth adapter to ensure our test config is used
-    import boards.auth.factory
-    boards.auth.factory._adapter = None
 
     app = create_app()
 

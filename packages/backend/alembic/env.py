@@ -31,8 +31,18 @@ if config.config_file_name is not None:
 
 
 def get_sync_url() -> str:
-    url = settings.database_url
-    return url
+    # Use the same logic as get_database_url() from the application
+    # Check environment variables first, then fall back to settings
+    import os
+
+    db_url = os.getenv("BOARDS_DATABASE_URL")
+    if not db_url:
+        # For tests that set env vars after settings are loaded
+        if "BOARDS_DATABASE_URL" in os.environ:
+            db_url = os.environ["BOARDS_DATABASE_URL"]
+        else:
+            db_url = settings.database_url
+    return db_url
 
 
 def get_async_url() -> str:

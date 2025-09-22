@@ -60,28 +60,29 @@ async def ensure_local_user(
     user = result.scalar_one_or_none()
 
     if user:
-        # Update user info if provided in principal
+        # Update user info if provided in principal, but preserve existing non-empty values
         updated = False
 
         email = principal.get("email")
-        if email and user.email != email:
+        if email and not user.email:  # Only update if current email is empty/None
             user.email = email
             updated = True
 
         display_name = principal.get("display_name")
-        if display_name and user.display_name != display_name:
+        # Only update if current display_name is empty/None
+        if display_name and not user.display_name:
             user.display_name = display_name
             updated = True
 
         avatar_url = principal.get("avatar_url")
-        if avatar_url and user.avatar_url != avatar_url:
+        if avatar_url and not user.avatar_url:  # Only update if current avatar_url is empty/None
             user.avatar_url = avatar_url
             updated = True
 
         if updated:
             await db.commit()
             await db.refresh(user)
-            logger.info("Updated user info", user_id=str(user.id))
+            logger.info("Updated user info (preserving existing values)", user_id=str(user.id))
 
         return user.id
 
