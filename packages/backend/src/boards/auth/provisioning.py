@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -12,6 +13,10 @@ from ..logging import get_logger
 from .adapters.base import Principal
 
 logger = get_logger(__name__)
+
+# Namespace UUID for deterministic tenant ID generation
+# This ensures consistent UUIDs across different parts of the application
+TENANT_NAMESPACE = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # Using DNS namespace UUID
 
 
 async def ensure_local_user(
@@ -39,11 +44,12 @@ async def ensure_local_user(
         try:
             tenant_uuid = UUID(tenant_id)
         except ValueError:
-            # If tenant_id is not a valid UUID string, we might need to look it up
-            # For now, generate a UUID from the string (this might not be ideal)
-            import hashlib
-
-            tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
+            # Generate a deterministic UUID from the tenant_id string
+            # using UUID5 with a namespace for consistency
+            tenant_uuid = uuid.uuid5(TENANT_NAMESPACE, tenant_id)
+            logger.debug("Generated UUID for non-UUID tenant_id",
+                        original_tenant_id=tenant_id,
+                        generated_uuid=str(tenant_uuid))
     else:
         tenant_uuid = tenant_id
 
@@ -130,9 +136,9 @@ async def get_user_by_auth_info(
         try:
             tenant_uuid = UUID(tenant_id)
         except ValueError:
-            import hashlib
-
-            tenant_uuid = UUID(hashlib.md5(tenant_id.encode()).hexdigest()[:32])
+            # Generate a deterministic UUID from the tenant_id string
+            # using UUID5 with a namespace for consistency
+            tenant_uuid = uuid.uuid5(TENANT_NAMESPACE, tenant_id)
     else:
         tenant_uuid = tenant_id
 

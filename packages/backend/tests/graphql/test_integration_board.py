@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
+from boards.auth.provisioning import TENANT_NAMESPACE
 from boards.dbmodels import Boards, Tenants, Users
 
 
@@ -75,9 +76,7 @@ async def test_board_query_integration(
             await cleanup_test_data(session)
 
             # Create tenant with deterministic UUID based on slug
-            import hashlib
-
-            tenant_id = uuid.UUID(hashlib.md5(b"test-tenant").hexdigest()[:32])
+            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "test-tenant")
             tenant = Tenants(
                 id=tenant_id,
                 name="Test Tenant",

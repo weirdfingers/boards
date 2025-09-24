@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
+from boards.auth.provisioning import TENANT_NAMESPACE
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
@@ -74,8 +75,6 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
         '{"default_user_id": "discovery-user-1", "default_tenant": "discovery-tenant"}'
     )
 
-    # Note: Auth adapters are no longer cached for thread safety
-
     app = create_app()
 
     from httpx import ASGITransport
@@ -88,9 +87,7 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
             await cleanup_test_data(session)
 
             # Create tenant
-            import hashlib
-
-            tenant_id = uuid.UUID(hashlib.md5(b"discovery-tenant").hexdigest()[:32])
+            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "discovery-tenant")
             tenant = Tenants(
                 id=tenant_id,
                 name="Discovery Tenant",

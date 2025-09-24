@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
+from boards.auth.provisioning import TENANT_NAMESPACE
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
@@ -77,8 +78,6 @@ async def test_board_access_control_integration(
         '{"default_user_id": "access-user-1", "default_tenant": "access-tenant"}'
     )
 
-    # Note: Auth adapters are no longer cached for thread safety
-
     app = create_app()
 
     from httpx import ASGITransport
@@ -91,9 +90,7 @@ async def test_board_access_control_integration(
             await cleanup_test_data(session)
 
             # Create tenant
-            import hashlib
-
-            tenant_id = uuid.UUID(hashlib.md5(b"access-tenant").hexdigest()[:32])
+            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "access-tenant")
             tenant = Tenants(
                 id=tenant_id,
                 name="Access Tenant",
