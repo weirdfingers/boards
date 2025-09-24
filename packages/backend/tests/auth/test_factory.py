@@ -147,14 +147,14 @@ class TestAuthFactory:
         assert isinstance(adapter, JWTAuthAdapter)
         # Should still work with env var fallback
 
-    def test_cached_adapter(self):
-        """Test that adapter is cached on subsequent calls."""
-        # Clear cache first
-        import boards.auth.factory
+    def test_fresh_adapter_instances(self):
+        """Test that fresh adapter instances are created for thread safety."""
         from boards.auth.factory import get_auth_adapter_cached
-        boards.auth.factory._adapter = None
 
         adapter1 = get_auth_adapter_cached()
         adapter2 = get_auth_adapter_cached()
 
-        assert adapter1 is adapter2  # Should be the same instance
+        # Should be different instances for thread safety
+        assert adapter1 is not adapter2
+        # But should be the same type
+        assert type(adapter1) is type(adapter2)

@@ -55,6 +55,23 @@ def test_database(
 
 
 @pytest.fixture(scope="function")
+def reset_shared_db_connections(test_database: tuple[str, str]) -> Generator[None, None, None]:
+    """Reset and configure shared database connections for the test database."""
+    from boards.database.connection import init_database, reset_database
+
+    dsn, _ = test_database
+
+    # Reset and reinitialize with test database
+    reset_database()
+    init_database(dsn, force_reinit=True)
+
+    yield
+
+    # Clean up after test
+    reset_database()
+
+
+@pytest.fixture(scope="function")
 def db_connection(
     postgresql: Connection[Any],
 ) -> Generator[Connection[Any], None, None]:

@@ -88,7 +88,7 @@ class TestResolveBoardById:
         board_id = sample_board.id
         sample_board.is_public = True
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=None,
                 tenant_id="default",
@@ -119,7 +119,7 @@ class TestResolveBoardById:
         board_id = sample_board.id
         owner_id = sample_board.owner_id
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=owner_id,
                 tenant_id="default",
@@ -153,7 +153,7 @@ class TestResolveBoardById:
         member.role = "viewer"
         sample_board.board_members = [member]
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=member_user_id,
                 tenant_id="default",
@@ -180,7 +180,7 @@ class TestResolveBoardById:
         board_id = sample_board.id
         unauthorized_user_id = uuid.uuid4()  # Different from owner
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=unauthorized_user_id,
                 tenant_id="default",
@@ -205,7 +205,7 @@ class TestResolveBoardById:
         """Test that private boards cannot be accessed without authentication."""
         board_id = sample_board.id
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=None,
                 tenant_id="default",
@@ -230,7 +230,7 @@ class TestResolveBoardById:
         """Test that None is returned when board doesn't exist."""
         board_id = uuid.uuid4()
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=uuid.uuid4(),
                 tenant_id="default",
@@ -273,7 +273,7 @@ class TestResolveBoardById:
         sample_board.settings = {"theme": "dark", "layout": "grid"}
         sample_board.metadata_ = {"tags": ["important", "project"]}
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_optional') as mock_get_auth:
+        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=owner_id,
                 tenant_id="default",

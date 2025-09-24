@@ -109,13 +109,8 @@ def get_auth_adapter() -> AuthAdapter:
         raise ValueError(f"Unsupported auth provider: {provider}")
 
 
-# Global adapter instance (lazy loaded)
-_adapter: AuthAdapter | None = None
-
-
 def get_auth_adapter_cached() -> AuthAdapter:
-    """Get the cached auth adapter instance."""
-    global _adapter
-    if _adapter is None:
-        _adapter = get_auth_adapter()
-    return _adapter
+    """Get the auth adapter instance (no global caching for thread safety)."""
+    # Create fresh adapter each time to avoid global state issues
+    # The cost of adapter creation is minimal and this ensures thread/test safety
+    return get_auth_adapter()

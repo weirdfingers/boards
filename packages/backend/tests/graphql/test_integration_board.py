@@ -10,6 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
+from boards.auth.provisioning import TENANT_NAMESPACE
 from boards.dbmodels import Boards, Tenants, Users
 
 
@@ -46,7 +47,9 @@ async def cleanup_test_data(session):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.requires_db
-async def test_board_query_integration(alembic_migrate, test_database):
+async def test_board_query_integration(
+    alembic_migrate, test_database, reset_shared_db_connections
+):
     """Integration test for board query with real database."""
     dsn, _ = test_database
 
@@ -58,10 +61,6 @@ async def test_board_query_integration(alembic_migrate, test_database):
     os.environ["BOARDS_AUTH_CONFIG"] = (
         '{"default_user_id": "test-user-id", "default_tenant": "test-tenant"}'
     )
-
-    # Clear the cached auth adapter to ensure our test config is used
-    import boards.auth.factory
-    boards.auth.factory._adapter = None
 
     app = create_app()
 
@@ -77,9 +76,7 @@ async def test_board_query_integration(alembic_migrate, test_database):
             await cleanup_test_data(session)
 
             # Create tenant with deterministic UUID based on slug
-            import hashlib
-
-            tenant_id = uuid.UUID(hashlib.md5(b"test-tenant").hexdigest()[:32])
+            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "test-tenant")
             tenant = Tenants(
                 id=tenant_id,
                 name="Test Tenant",
