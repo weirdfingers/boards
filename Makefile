@@ -134,5 +134,5 @@ docs-serve: ## Serve built documentation
 
 backend-dev: ## Start the backend development server
 	@echo "Starting backend server..."
-	cd packages/backend && uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8000
+	cd packages/backend && uv run uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8000
 

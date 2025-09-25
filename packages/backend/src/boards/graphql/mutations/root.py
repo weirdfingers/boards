@@ -59,7 +59,7 @@ class Mutation:
     """Root GraphQL mutation type."""
 
     # Board mutations
-    @strawberry.mutation
+    @strawberry.mutation(name="createBoard")
     async def create_board(
         self, info: strawberry.Info, input: CreateBoardInput
     ) -> Board:
@@ -68,7 +68,7 @@ class Mutation:
 
         return await create_board(info, input)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="updateBoard")
     async def update_board(
         self, info: strawberry.Info, input: UpdateBoardInput
     ) -> Board:
@@ -77,14 +77,14 @@ class Mutation:
 
         return await update_board(info, input)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="deleteBoard")
     async def delete_board(self, info: strawberry.Info, id: UUID) -> bool:
         """Delete a board."""
         from ..resolvers.board import delete_board
 
         return await delete_board(info, id)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="addBoardMember")
     async def add_board_member(
         self, info: strawberry.Info, input: AddBoardMemberInput
     ) -> Board:
@@ -93,7 +93,7 @@ class Mutation:
 
         return await add_board_member(info, input)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="removeBoardMember")
     async def remove_board_member(
         self, info: strawberry.Info, board_id: UUID, user_id: UUID
     ) -> Board:
@@ -102,7 +102,7 @@ class Mutation:
 
         return await remove_board_member(info, board_id, user_id)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="updateBoardMemberRole")
     async def update_board_member_role(
         self, info: strawberry.Info, board_id: UUID, user_id: UUID, role: BoardRole
     ) -> Board:
@@ -112,7 +112,7 @@ class Mutation:
         return await update_board_member_role(info, board_id, user_id, role)
 
     # Generation mutations
-    @strawberry.mutation
+    @strawberry.mutation(name="createGeneration")
     async def create_generation(
         self, info: strawberry.Info, input: CreateGenerationInput
     ) -> Generation:
@@ -121,14 +121,14 @@ class Mutation:
 
         return await create_generation(info, input)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="cancelGeneration")
     async def cancel_generation(self, info: strawberry.Info, id: UUID) -> Generation:
         """Cancel a pending or processing generation."""
         from ..resolvers.generation import cancel_generation
 
         return await cancel_generation(info, id)
 
-    @strawberry.mutation
+    @strawberry.mutation(name="deleteGeneration")
     async def delete_generation(self, info: strawberry.Info, id: UUID) -> bool:
         """Delete a generation."""
         from ..resolvers.generation import delete_generation

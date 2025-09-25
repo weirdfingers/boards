@@ -2,7 +2,7 @@
  * GraphQL queries and mutations for the Boards API.
  */
 
-import { gql } from 'urql';
+import { gql } from "urql";
 
 // Fragments for reusable query parts
 export const USER_FRAGMENT = gql`
@@ -63,8 +63,9 @@ export const GET_CURRENT_USER = gql`
 // Board queries
 export const GET_BOARDS = gql`
   ${BOARD_FRAGMENT}
-  query GetBoards($limit: Int, $offset: Int, $search: String) {
-    boards(limit: $limit, offset: $offset, search: $search) {
+  ${USER_FRAGMENT}
+  query GetBoards($limit: Int, $offset: Int) {
+    myBoards(limit: $limit, offset: $offset) {
       ...BoardFragment
       owner {
         ...UserFragment
@@ -138,6 +139,7 @@ export const GET_GENERATION = gql`
 // Board mutations
 export const CREATE_BOARD = gql`
   ${BOARD_FRAGMENT}
+  ${USER_FRAGMENT}
   mutation CreateBoard($input: CreateBoardInput!) {
     createBoard(input: $input) {
       ...BoardFragment
@@ -254,15 +256,15 @@ export interface CreateGenerationInput {
 
 // Enums (should match backend)
 export enum BoardRole {
-  VIEWER = 'VIEWER',
-  EDITOR = 'EDITOR', 
-  ADMIN = 'ADMIN'
+  VIEWER = "VIEWER",
+  EDITOR = "EDITOR",
+  ADMIN = "ADMIN",
 }
 
 export enum GenerationStatus {
-  PENDING = 'PENDING',
-  RUNNING = 'RUNNING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED'
+  PENDING = "PENDING",
+  RUNNING = "RUNNING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
 }
