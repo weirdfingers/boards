@@ -3,7 +3,7 @@ Middleware for request context and logging
 """
 
 import json
-import re  # Added for operation name extraction
+import re
 from collections.abc import Callable
 from typing import Any
 
