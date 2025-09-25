@@ -37,7 +37,7 @@ jobs:
       - name: Install Python dependencies (uv sync)
         run: |
           cd packages/backend
-          uv sync
+          uv sync --all-extras
 
       - name: Install Node dependencies (pnpm)
         run: pnpm install

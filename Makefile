@@ -1,7 +1,7 @@
 .PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs docs-dev docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
 
 BACKEND_DIR := packages/backend
-FRONTEND_FILTER := --filter=packages/frontend...
+FRONTEND_FILTER := --filter=@weirdfingers/boards...
 
 help: ## Show this help message
 	@echo "Available commands:"
