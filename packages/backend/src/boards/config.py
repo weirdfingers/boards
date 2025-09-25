@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     auth_config: dict = {}
     jwt_secret: str | None = None
     jwt_algorithm: str = "HS256"
+    jwt_tenant_claim: str | None = None  # Custom JWT claim for tenant extraction
 
     # API Settings
     api_host: str = "0.0.0.0"
@@ -46,6 +47,14 @@ class Settings(BaseSettings):
     # Tenant Settings (for multi-tenant mode)
     multi_tenant_mode: bool = False
     default_tenant_slug: str = "default"
+
+    # Tenant Registration Settings
+    tenant_registration_requires_approval: bool = False
+    tenant_registration_allowed_domains: list[str] | None = None
+    max_tenants_per_user: int | None = None
+
+    # Frontend Integration
+    frontend_base_url: str | None = None
 
     # Job Queue Settings
     job_queue_name: str = "boards-jobs"

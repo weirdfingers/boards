@@ -11,6 +11,7 @@ from .adapters.base import AuthenticationError
 from .context import AuthContext
 from .factory import get_auth_adapter_cached
 from .provisioning import ensure_local_user
+from .tenant_extraction import extract_tenant_from_claims
 
 logger = get_logger(__name__)
 
@@ -38,7 +39,6 @@ async def get_auth_context(
     Returns:
         AuthContext with user, tenant, and token info
     """
-    tenant_slug = x_tenant or "default"
     adapter = get_auth_adapter_cached()
 
     # Check if we're in no-auth mode
@@ -52,6 +52,8 @@ async def get_auth_context(
             # In no-auth mode, create a default token
             authorization = "Bearer dev-token"
         else:
+            # Use header tenant or default for unauthenticated requests
+            tenant_slug = x_tenant or "default"
             return AuthContext(
                 user_id=None,
                 tenant_id=tenant_slug,
@@ -81,6 +83,17 @@ async def get_auth_context(
     try:
         # Verify token with auth adapter
         principal = await adapter.verify_token(token)
+
+        # Extract tenant from JWT/OIDC claims with fallback to header
+        tenant_slug = extract_tenant_from_claims(principal, fallback_tenant=x_tenant)
+
+        logger.info(
+            "Tenant resolved for authenticated request",
+            tenant_slug=tenant_slug,
+            header_tenant=x_tenant,
+            provider=principal.get("provider"),
+            subject=principal.get("subject"),
+        )
 
         # Get database session for JIT user provisioning
         try:
