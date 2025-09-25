@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
-from boards.auth.provisioning import TENANT_NAMESPACE
+from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
@@ -86,16 +86,7 @@ async def test_board_crud_integration(
             await cleanup_test_data(session)
 
             # Create tenant and users
-            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "board-tenant")
-            tenant = Tenants(
-                id=tenant_id,
-                name="Board Tenant",
-                slug="board-tenant",
-                settings={},
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-            session.add(tenant)
+            tenant_id = await ensure_tenant(session, slug="board-tenant")
 
             # Create users
             user1_id = generate_auth_adapter_user_id(
@@ -377,16 +368,7 @@ async def test_board_search_integration(
             await cleanup_test_data(session)
 
             # Create tenant and user
-            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "board-tenant")
-            tenant = Tenants(
-                id=tenant_id,
-                name="Board Tenant",
-                slug="board-tenant",
-                settings={},
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-            session.add(tenant)
+            tenant_id = await ensure_tenant(session, slug="board-tenant")
 
             user_id = generate_auth_adapter_user_id(
                 "none", "board-user-1", "board-tenant"
@@ -529,16 +511,7 @@ async def test_board_permission_integration(
             await cleanup_test_data(session)
 
             # Create tenant and users
-            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "board-tenant")
-            tenant = Tenants(
-                id=tenant_id,
-                name="Board Tenant",
-                slug="board-tenant",
-                settings={},
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-            session.add(tenant)
+            tenant_id = await ensure_tenant(session, slug="board-tenant")
 
             # Owner user
             owner_id = generate_auth_adapter_user_id(

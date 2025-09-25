@@ -192,26 +192,35 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    def test_jit_provisioning_called(self, mock_ensure_user, client):
+    @patch("boards.database.seed_data.ensure_tenant")
+    def test_jit_provisioning_called(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test that JIT provisioning is called correctly."""
         # Setup mocks - JIT provisioning is now called since database module is available
         from uuid import uuid4
 
+        mock_tenant_id = uuid4()
         mock_user_id = uuid4()
+
+        mock_ensure_tenant.return_value = mock_tenant_id
         mock_ensure_user.return_value = mock_user_id
 
         response = client.get("/protected")
 
         assert response.status_code == 200
 
-        # JIT provisioning should now be called since database module is available
+        # Both tenant and user provisioning should be called
+        mock_ensure_tenant.assert_called_once()
         mock_ensure_user.assert_called_once()
 
-        # Verify the call arguments
-        call_args = mock_ensure_user.call_args
-        _, tenant_id, principal = call_args[0]
+        # Verify ensure_tenant was called with the slug
+        tenant_call_args = mock_ensure_tenant.call_args
+        assert tenant_call_args[1]["slug"] == "default"  # keyword argument
 
-        assert tenant_id == "default"
+        # Verify ensure_local_user was called with the tenant UUID
+        user_call_args = mock_ensure_user.call_args
+        _, tenant_id, principal = user_call_args[0]
+
+        assert tenant_id == mock_tenant_id  # Now it's a UUID, not a string
         assert principal["provider"] == "none"
         assert principal["subject"] == "dev-user"
         assert principal["email"] == "dev@example.com"
@@ -226,11 +235,13 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    def test_database_error_handling(self, mock_ensure_user, client):
+    @patch("boards.database.seed_data.ensure_tenant")
+    def test_database_error_handling(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test handling of database errors."""
 
         # Setup mocks to raise error (though this test is less relevant now
         # since DB errors are caught by ImportError fallback)
+        mock_ensure_tenant.side_effect = Exception("Database connection failed")
         mock_ensure_user.side_effect = Exception("Database connection failed")
 
         response = client.get(

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import uuid
 from uuid import UUID
 
 import strawberry
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import selectinload
 
-from ...auth.provisioning import TENANT_NAMESPACE
 from ...database.connection import get_async_session
+from ...database.seed_data import ensure_tenant
 from ...dbmodels import BoardMembers, Boards, Generations, Users
 from ...logging import get_logger
 from ..access_control import (
@@ -602,8 +601,8 @@ async def create_board(info: strawberry.Info, input: CreateBoardInput) -> Board:
         raise RuntimeError("Authentication required to create a board")
 
     async with get_async_session() as session:
-        # Convert tenant string to UUID
-        tenant_uuid = uuid.uuid5(TENANT_NAMESPACE, auth_context.tenant_id)
+        # Get the tenant UUID from the database
+        tenant_uuid = await ensure_tenant(session, slug=auth_context.tenant_id)
 
         # Create the new board
         new_board = Boards(

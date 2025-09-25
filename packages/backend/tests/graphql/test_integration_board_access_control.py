@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
-from boards.auth.provisioning import TENANT_NAMESPACE
+from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
@@ -90,16 +90,7 @@ async def test_board_access_control_integration(
             await cleanup_test_data(session)
 
             # Create tenant
-            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "access-tenant")
-            tenant = Tenants(
-                id=tenant_id,
-                name="Access Tenant",
-                slug="access-tenant",
-                settings={},
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-            session.add(tenant)
+            tenant_id = await ensure_tenant(session, slug="access-tenant")
 
             # Create users with deterministic IDs matching NoAuthAdapter fallback
             user1_id = generate_auth_adapter_user_id(

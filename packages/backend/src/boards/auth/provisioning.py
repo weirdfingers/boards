@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -14,13 +13,9 @@ from .adapters.base import Principal
 
 logger = get_logger(__name__)
 
-# Namespace UUID for deterministic tenant ID generation
-# This ensures consistent UUIDs across different parts of the application
-TENANT_NAMESPACE = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # Using DNS namespace UUID
-
 
 async def ensure_local_user(
-    db: AsyncSession, tenant_id: str, principal: Principal
+    db: AsyncSession, tenant_id: UUID, principal: Principal
 ) -> UUID:
     """
     Ensure a local user exists for the given principal (JIT provisioning).
@@ -30,7 +25,7 @@ async def ensure_local_user(
 
     Args:
         db: Database session
-        tenant_id: Tenant identifier
+        tenant_id: Tenant UUID
         principal: Authenticated principal from auth provider
 
     Returns:
@@ -39,24 +34,14 @@ async def ensure_local_user(
     provider = principal["provider"]
     subject = principal["subject"]
 
-    # Convert tenant_id to UUID if it's a string
-    if isinstance(tenant_id, str):
-        try:
-            tenant_uuid = UUID(tenant_id)
-        except ValueError:
-            # Generate a deterministic UUID from the tenant_id string
-            # using UUID5 with a namespace for consistency
-            tenant_uuid = uuid.uuid5(TENANT_NAMESPACE, tenant_id)
-            logger.debug("Generated UUID for non-UUID tenant_id",
-                        original_tenant_id=tenant_id,
-                        generated_uuid=str(tenant_uuid))
-    else:
-        tenant_uuid = tenant_id
+    # Ensure tenant_id is a UUID
+    if not isinstance(tenant_id, UUID):
+        raise ValueError(f"tenant_id must be a UUID, got {type(tenant_id)}")
 
     # Try to find existing user
     stmt = select(Users).where(
         and_(
-            Users.tenant_id == tenant_uuid,
+            Users.tenant_id == tenant_id,
             Users.auth_provider == provider,
             Users.auth_subject == subject,
         )
@@ -94,7 +79,7 @@ async def ensure_local_user(
 
     # Create new user
     user = Users(
-        tenant_id=tenant_uuid,
+        tenant_id=tenant_id,
         auth_provider=provider,
         auth_subject=subject,
         email=principal.get("email"),
@@ -128,23 +113,16 @@ async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Users | None:
 
 
 async def get_user_by_auth_info(
-    db: AsyncSession, tenant_id: str | UUID, auth_provider: str, auth_subject: str
+    db: AsyncSession, tenant_id: UUID, auth_provider: str, auth_subject: str
 ) -> Users | None:
     """Get a user by auth provider information."""
-    # Convert tenant_id to UUID if it's a string
-    if isinstance(tenant_id, str):
-        try:
-            tenant_uuid = UUID(tenant_id)
-        except ValueError:
-            # Generate a deterministic UUID from the tenant_id string
-            # using UUID5 with a namespace for consistency
-            tenant_uuid = uuid.uuid5(TENANT_NAMESPACE, tenant_id)
-    else:
-        tenant_uuid = tenant_id
+    # Ensure tenant_id is a UUID
+    if not isinstance(tenant_id, UUID):
+        raise ValueError(f"tenant_id must be a UUID, got {type(tenant_id)}")
 
     stmt = select(Users).where(
         and_(
-            Users.tenant_id == tenant_uuid,
+            Users.tenant_id == tenant_id,
             Users.auth_provider == auth_provider,
             Users.auth_subject == auth_subject,
         )

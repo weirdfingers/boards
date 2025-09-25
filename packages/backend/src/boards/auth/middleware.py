@@ -38,7 +38,7 @@ async def get_auth_context(
     Returns:
         AuthContext with user, tenant, and token info
     """
-    tenant_id = x_tenant or "default"
+    tenant_slug = x_tenant or "default"
     adapter = get_auth_adapter_cached()
 
     # Check if we're in no-auth mode
@@ -54,7 +54,7 @@ async def get_auth_context(
         else:
             return AuthContext(
                 user_id=None,
-                tenant_id=tenant_id,
+                tenant_id=tenant_slug,
                 principal=None,
                 token=None,
             )
@@ -85,9 +85,13 @@ async def get_auth_context(
         # Get database session for JIT user provisioning
         try:
             from ..database.connection import get_async_session
+            from ..database.seed_data import ensure_tenant
 
             async with get_async_session() as db:
-                user_id = await ensure_local_user(db, tenant_id, principal)
+                # Ensure tenant exists and get its UUID
+                tenant_uuid = await ensure_tenant(db, slug=tenant_slug)
+                # Now provision the user with the tenant UUID
+                user_id = await ensure_local_user(db, tenant_uuid, principal)
         except ImportError as e:
             # Database module not available, use deterministic fallback
             logger.warning(
@@ -103,7 +107,7 @@ async def get_auth_context(
             import hashlib
             provider = principal.get('provider', 'unknown')
             subject = principal.get('subject', 'anonymous')
-            stable_input = f"{provider}:{subject}:{tenant_id}"
+            stable_input = f"{provider}:{subject}:{tenant_slug}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
             # Create a valid UUID from the hash
             # Format hash as UUID: 8-4-4-4-12 pattern
@@ -118,7 +122,7 @@ async def get_auth_context(
             logger.info(
                 "Generated deterministic fallback user ID",
                 user_id=str(user_id),
-                tenant_id=tenant_id,
+                tenant_slug=tenant_slug,
                 provider=principal.get("provider")
             )
         except Exception as db_error:
@@ -133,7 +137,7 @@ async def get_auth_context(
             import hashlib
             provider = principal.get('provider', 'unknown')
             subject = principal.get('subject', 'anonymous')
-            stable_input = f"{provider}:{subject}:{tenant_id}"
+            stable_input = f"{provider}:{subject}:{tenant_slug}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
             # Format hash as UUID: 8-4-4-4-12 pattern
             formatted_uuid = (
@@ -146,7 +150,7 @@ async def get_auth_context(
 
         return AuthContext(
             user_id=user_id,
-            tenant_id=tenant_id,
+            tenant_id=tenant_slug,
             principal=principal,
             token=token,
         )
@@ -180,10 +184,10 @@ async def get_auth_context_optional(
         return await get_auth_context(authorization, x_tenant)
     except HTTPException:
         # Return unauthenticated context
-        tenant_id = x_tenant or "default"
+        tenant_slug = x_tenant or "default"
         return AuthContext(
             user_id=None,
-            tenant_id=tenant_id,
+            tenant_id=tenant_slug,
             principal=None,
             token=None,
         )

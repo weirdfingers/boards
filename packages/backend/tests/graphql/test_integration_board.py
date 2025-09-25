@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
-from boards.auth.provisioning import TENANT_NAMESPACE
+from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import Boards, Tenants, Users
 
 
@@ -76,16 +76,7 @@ async def test_board_query_integration(
             await cleanup_test_data(session)
 
             # Create tenant with deterministic UUID based on slug
-            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "test-tenant")
-            tenant = Tenants(
-                id=tenant_id,
-                name="Test Tenant",
-                slug="test-tenant",
-                settings={},
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-            session.add(tenant)
+            tenant_id = await ensure_tenant(session, slug="test-tenant")
 
             # Create user (this will be the default authenticated user)
             user = Users(

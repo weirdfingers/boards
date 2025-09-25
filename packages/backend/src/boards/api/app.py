@@ -26,6 +26,39 @@ async def lifespan(app: FastAPI):
     init_database()
     logger.info("Database initialized")
 
+    # Run comprehensive startup validation
+    try:
+        from ..validation import ValidationError, get_startup_recommendations, validate_startup_configuration
+
+        validation_results = await validate_startup_configuration()
+
+        if not validation_results["overall_valid"]:
+            # Log detailed error information
+            logger.error(
+                "Application configuration validation failed - some features may not work properly",
+                tenant_errors=validation_results["tenant"].get("errors", []),
+                auth_errors=validation_results["auth"].get("errors", []),
+            )
+
+            # In production, we might want to fail hard here
+            if settings.environment.lower() in ("production", "prod"):
+                raise ValidationError("Critical configuration validation failed in production")
+
+        # Log recommendations
+        recommendations = get_startup_recommendations(validation_results)
+        if recommendations:
+            logger.info("Configuration recommendations", recommendations=recommendations)
+
+    except ValidationError:
+        # Re-raise validation errors to fail startup
+        raise
+    except Exception as e:
+        logger.error(
+            "Unexpected error during startup validation",
+            error=str(e),
+            note="Application will continue but may have configuration issues",
+        )
+
     yield
 
     # Shutdown
@@ -80,12 +113,13 @@ def create_app() -> FastAPI:
             raise
 
     # REST API endpoints (for SSE, webhooks, etc.)
-    from .endpoints import jobs, sse, storage, webhooks
+    from .endpoints import jobs, sse, setup, storage, webhooks
 
     app.include_router(sse.router, prefix="/api/sse", tags=["SSE"])
     app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
     app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
     app.include_router(storage.router, prefix="/api/storage", tags=["Storage"])
+    app.include_router(setup.router, prefix="/api/setup", tags=["Setup"])
 
     return app
 
