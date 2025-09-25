@@ -2,17 +2,18 @@
 Tests for tenant isolation validation and enforcement.
 """
 
-import pytest
-from uuid import uuid4
 from unittest.mock import patch
+from uuid import uuid4
 
+import pytest
+
+from src.boards.database.seed_data import ensure_tenant
+from src.boards.dbmodels import Boards, Users
 from src.boards.tenant_isolation import (
-    TenantIsolationValidator,
     TenantIsolationError,
+    TenantIsolationValidator,
     ensure_tenant_isolation,
 )
-from src.boards.database.seed_data import ensure_tenant
-from src.boards.dbmodels import Users, Boards
 
 
 class TestTenantIsolationValidator:

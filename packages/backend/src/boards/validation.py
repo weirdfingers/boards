@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 
 class ValidationError(Exception):
     """Raised when application validation fails."""
+
     pass
 
 
@@ -42,7 +43,7 @@ async def validate_tenant_configuration() -> dict[str, Any]:
                 # Multi-tenant mode - just validate database connection
                 results["tenant_info"] = {
                     "mode": "multi_tenant",
-                    "message": "Multi-tenant mode enabled - tenants managed dynamically"
+                    "message": "Multi-tenant mode enabled - tenants managed dynamically",
                 }
                 logger.info("Tenant validation: Multi-tenant mode configured")
 
@@ -54,7 +55,7 @@ async def validate_tenant_configuration() -> dict[str, Any]:
                         "mode": "single_tenant",
                         "tenant_id": str(tenant_id),
                         "slug": settings.default_tenant_slug,
-                        "message": f"Default tenant exists: {tenant_id}"
+                        "message": f"Default tenant exists: {tenant_id}",
                     }
                     logger.info(
                         "Tenant validation: Default tenant verified",
@@ -90,7 +91,7 @@ async def validate_auth_configuration() -> dict[str, Any]:
         "auth_info": {
             "provider": settings.auth_provider,
             "multi_tenant_mode": settings.multi_tenant_mode,
-        }
+        },
     }
 
     # Validate auth provider configuration
@@ -140,7 +141,7 @@ async def validate_startup_configuration() -> dict[str, Any]:
             "multi_tenant_mode": settings.multi_tenant_mode,
             "environment": settings.environment,
             "debug": settings.debug,
-        }
+        },
     }
 
     # Log summary
@@ -179,14 +180,19 @@ def get_startup_recommendations(validation_results: dict[str, Any]) -> list[str]
 
     # Auth recommendations
     auth_info = validation_results["auth"]["auth_info"]
-    if auth_info["provider"] == "none" and settings.environment.lower() not in ("development", "dev"):
+    if auth_info["provider"] == "none" and settings.environment.lower() not in (
+        "development",
+        "dev",
+    ):
         recommendations.append(
             "Consider configuring a proper authentication provider for non-development environments"
         )
 
     # Error recommendations
     if not validation_results["overall_valid"]:
-        recommendations.append("Fix configuration errors before deploying to production")
+        recommendations.append(
+            "Fix configuration errors before deploying to production"
+        )
 
     # Success recommendations
     if validation_results["overall_valid"] and not recommendations:

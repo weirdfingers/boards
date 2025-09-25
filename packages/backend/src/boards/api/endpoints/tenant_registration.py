@@ -8,11 +8,12 @@ in multi-tenant mode, with optional approval workflows.
 from __future__ import annotations
 
 from typing import Any
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
-from ...auth.middleware import get_auth_context
 from ...auth.context import AuthContext
+from ...auth.middleware import get_auth_context
 from ...config import settings
 from ...database.connection import get_async_session
 from ...database.seed_data import ensure_tenant, seed_tenant_with_data

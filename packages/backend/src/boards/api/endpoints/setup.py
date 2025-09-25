@@ -456,7 +456,7 @@ async def delete_tenant(
             return {
                 "message": f"Tenant '{tenant_name}' ({tenant_slug}) deleted successfully",
                 "tenant_id": str(tenant_id),
-                "warning": "All related data (users, boards, generations, etc.) has been permanently deleted",
+                "warning": "All related data (users, boards, generations, etc.) has been permanently deleted",  # noqa: E501
             }
 
     except HTTPException:
