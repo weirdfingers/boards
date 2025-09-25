@@ -3,6 +3,7 @@ Middleware for request context and logging
 """
 
 import json
+import re  # Added for operation name extraction
 from collections.abc import Callable
 from typing import Any
 
@@ -62,9 +63,6 @@ async def extract_graphql_operation_name(request: Request) -> str | None:
 
     Only attempts to parse for POST requests to /graphql.
     Returns None if not a GraphQL request or parsing fails.
-
-    Note: This function reads the request body, which may affect
-    other middleware that also needs to read the body.
     """
     if not (request.method == "POST" and request.url.path == "/graphql"):
         return None
@@ -75,20 +73,37 @@ async def extract_graphql_operation_name(request: Request) -> str | None:
         if not body:
             return None
 
-        # Parse the JSON request body structure
+        # Parse the JSON request wrapper
         request_data = json.loads(body)
 
-        # Extract operationName field from the JSON
-        # GraphQL request structure: {"query": "...", "operationName": "OpName", "variables": {}}
+        # 1. First try to get explicit operationName
         operation_name = request_data.get("operationName")
         if operation_name and isinstance(operation_name, str):
             return operation_name
 
-    except (json.JSONDecodeError, AttributeError, KeyError, TypeError):
-        # If we can't parse, return None - this is not critical
-        pass
+        # 2. Check if we have a query field
+        query = request_data.get("query", "")
+        if not query:
+            return None
 
-    return None
+        # 3. For introspection queries, return special identifier
+        if "__schema" in query or "IntrospectionQuery" in query:
+            return "__introspection"
+
+        # 4. For other queries, extract first operation name
+        match = re.search(r"query\s+(\w+)", query)
+        if match:
+            return match.group(1)
+
+        # 5. For mutations
+        match = re.search(r"mutation\s+(\w+)", query)
+        if match:
+            return f"mutation:{match.group(1)}"
+
+        return "unnamed_operation"
+
+    except (json.JSONDecodeError, TypeError):
+        return None
 
 
 class LoggingContextMiddleware(BaseHTTPMiddleware):
