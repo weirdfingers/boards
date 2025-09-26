@@ -45,12 +45,7 @@ test: test-backend test-frontend ## Run all tests
 
 lint: lint-backend lint-frontend ## Run linters
 
-typecheck: ## Run type checking
-	@echo "Running type checking..."
-	@# Build first to ensure type declarations are available
-	pnpm turbo build --filter=@weirdfingers/boards
-	@# Call individual typechecks
-	typecheck-backend typecheck-frontend
+typecheck: typecheck-backend typecheck-frontend ## Run type checking
 
 clean: clean-backend clean-frontend ## Clean all build artifacts and dependencies
 
@@ -89,7 +84,7 @@ test-frontend: ## Run frontend (Node) tests only
 
 lint-backend: ## Lint backend (Python) only
 	@echo "Linting backend..."
-	cd $(BACKEND_DIR) && uv run ruff check . && uv run pyright .
+	cd $(BACKEND_DIR) && uv run ruff check . && uv run pyright
 
 lint-frontend: ## Lint frontend (Node) only
 	@echo "Linting frontend..."
@@ -97,7 +92,7 @@ lint-frontend: ## Lint frontend (Node) only
 
 typecheck-backend: ## Typecheck backend (Python) only
 	@echo "Type checking backend..."
-	cd $(BACKEND_DIR) && uv run pyright .
+	cd $(BACKEND_DIR) && uv run pyright
 
 typecheck-frontend: ## Typecheck frontend (Node) only
 	@echo "Type checking frontend..."
