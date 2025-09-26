@@ -3,9 +3,12 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
+import pytest
+
 from boards.workers.actors import _process_generation_async
 
 
+@pytest.mark.requires_redis
 def test_worker_smoke(monkeypatch):
     # Mock replicate module to avoid network
     import sys

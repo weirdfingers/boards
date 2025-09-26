@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import pytest_asyncio
 from psycopg import Connection  # type: ignore[import]
 
 # Import types only for type checking, not at runtime
@@ -79,6 +80,21 @@ def db_connection(
     conn = postgresql.cursor().connection
     yield conn
     conn.close()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def db_session(
+    alembic_migrate: None, reset_shared_db_connections: None, test_database: tuple[str, str]
+) -> Any:
+    """Provide an async SQLAlchemy session for testing."""
+    # Use fixtures to ensure proper setup order
+    _ = alembic_migrate, reset_shared_db_connections
+
+    from boards.database.connection import get_test_db_session
+
+    dsn, _ = test_database
+    async with get_test_db_session(dsn) as session:
+        yield session
 
 
 @pytest.fixture(autouse=True)

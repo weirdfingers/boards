@@ -3,6 +3,7 @@ DALL-E 3 generator using OpenAI API.
 
 Demonstrates integration with OpenAI's SDK for image generation.
 """
+
 import os
 
 from pydantic import BaseModel, Field
@@ -15,26 +16,24 @@ from ...resolution import store_image_result
 
 class DallE3Input(BaseModel):
     """Input schema for DALL-E 3 image generation."""
+
     prompt: str = Field(description="Text prompt for image generation")
     size: str = Field(
         default="1024x1024",
         description="Image size",
-        pattern="^(1024x1024|1024x1792|1792x1024)$"
+        pattern="^(1024x1024|1024x1792|1792x1024)$",
     )
     quality: str = Field(
-        default="standard",
-        description="Image quality",
-        pattern="^(standard|hd)$"
+        default="standard", description="Image quality", pattern="^(standard|hd)$"
     )
     style: str = Field(
-        default="vivid",
-        description="Image style",
-        pattern="^(vivid|natural)$"
+        default="vivid", description="Image style", pattern="^(vivid|natural)$"
     )
 
 
 class DallE3Output(BaseModel):
     """Output schema for DALL-E 3 generation."""
+
     image: ImageArtifact
 
 
@@ -59,7 +58,7 @@ class DallE3Generator(BaseGenerator):
 
         # Import SDK directly
         try:
-            from openai import AsyncOpenAI  # type: ignore
+            from openai import AsyncOpenAI
         except ImportError as e:
             raise ValueError("Required dependencies not available") from e
 
@@ -69,17 +68,19 @@ class DallE3Generator(BaseGenerator):
         response = await client.images.generate(
             model="dall-e-3",
             prompt=inputs.prompt,
-            size=inputs.size,
-            quality=inputs.quality,
-            style=inputs.style,
-            n=1
+            size=inputs.size,  # pyright: ignore[reportArgumentType]
+            quality=inputs.quality,  # pyright: ignore[reportArgumentType]
+            style=inputs.style,  # pyright: ignore[reportArgumentType]
+            n=1,
         )
 
         # Get the generated image URL
+        if not response.data or not response.data[0].url:
+            raise ValueError("No image generated")
         image_url = response.data[0].url
 
         # Parse dimensions from size
-        width, height = map(int, inputs.size.split('x'))
+        width, height = map(int, inputs.size.split("x"))
 
         # Create artifact with the OpenAI URL
         image_artifact = await store_image_result(
@@ -87,7 +88,7 @@ class DallE3Generator(BaseGenerator):
             format="png",  # DALL-E 3 outputs PNG
             generation_id="temp_gen_id",  # TODO: Get from context
             width=width,
-            height=height
+            height=height,
         )
 
         return DallE3Output(image=image_artifact)

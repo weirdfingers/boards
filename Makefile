@@ -1,10 +1,13 @@
-.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs docs-dev docs-build docs-serve
+.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs docs-dev docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
+
+BACKEND_DIR := packages/backend
+FRONTEND_FILTER := --filter=@weirdfingers/boards...
 
 help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-install: setup-python setup-node ## Install all dependencies (Python and Node)
+install: install-backend install-frontend ## Install all dependencies (Python and Node)
 
 setup-python: ## Install Python dependencies for all packages
 	@echo "Setting up Python packages..."
@@ -34,80 +37,88 @@ setup-node: ## Install Node dependencies for all packages
 
 dev: ## Start development servers
 	@echo "Starting development servers..."
+	$(MAKE) -j2 dev-backend dev-frontend
+
+build: build-backend build-frontend ## Build all packages
+
+test: test-backend test-frontend ## Run all tests
+
+lint: lint-backend lint-frontend ## Run linters
+
+typecheck: typecheck-backend typecheck-frontend ## Run type checking
+
+clean: clean-backend clean-frontend ## Clean all build artifacts and dependencies
+
+install-backend: setup-python ## Install backend (Python) dependencies only
+
+install-frontend: setup-node ## Install frontend (Node) dependencies only
+
+dev-backend: ## Start backend development server only
+	@echo "Starting backend server..."
+	cd $(BACKEND_DIR) && uv run uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8000
+
+dev-frontend: ## Start frontend development servers only
+	@echo "Starting frontend development servers..."
 	@if command -v turbo > /dev/null 2>&1; then \
-		pnpm turbo dev; \
+		pnpm turbo dev $(FRONTEND_FILTER); \
 	else \
-		echo "Turbo not found, running package dev scripts individually..."; \
-		pnpm --parallel dev; \
+		echo "Turbo not found, running frontend package dev scripts individually..."; \
+		pnpm --parallel $(FRONTEND_FILTER) dev; \
 	fi
 
-build: ## Build all packages
-	@echo "Building all packages..."
-	@# Build Python packages
-	@for dir in packages/*/; do \
-		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
-			echo "Building Python package in $$dir..."; \
-			cd "$$dir" && uv build; \
-		fi; \
-	done
-	@# Build Node packages
-	pnpm turbo build
+build-backend: ## Build backend (Python) only
+	@echo "Building backend package..."
+	cd $(BACKEND_DIR) && uv build
 
-test: ## Run all tests
-	@echo "Running tests..."
-	@# Test Python packages
-	@for dir in packages/*/; do \
-		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
-			if [ -d "$$dir/tests" ]; then \
-				echo "Testing Python package in $$dir..."; \
-				cd "$$dir" && uv run pytest tests/; \
-			fi; \
-		fi; \
-	done
-	@# Test Node packages
-	pnpm turbo test
+build-frontend: ## Build frontend (Node) only
+	@echo "Building frontend packages..."
+	pnpm turbo build $(FRONTEND_FILTER)
 
-lint: ## Run linters
-	@echo "Running linters..."
-	@# Lint Python packages
-	@for dir in packages/*/; do \
-		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
-			echo "Linting Python package in $$dir..."; \
-			cd "$$dir" && uv run ruff check . && uv run pyright .; \
-		fi; \
-	done
-	@# Lint Node packages
-	pnpm turbo lint
+test-backend: ## Run backend (Python) tests only
+	@echo "Running backend tests..."
+	@if [ "$$CI" = "true" ]; then \
+		echo "Running in CI - excluding Redis-dependent tests"; \
+		cd $(BACKEND_DIR) && uv run pytest tests/ -m "not requires_redis"; \
+	else \
+		cd $(BACKEND_DIR) && uv run pytest tests/; \
+	fi
 
-typecheck: ## Run type checking
-	@echo "Running type checking..."
-	@# Build first to ensure type declarations are available
-	pnpm turbo build --filter=@weirdfingers/boards
-	@# Node type checking
-	pnpm turbo typecheck
-	@# Python type checking
-	@for dir in packages/*/; do \
-		if [ -f "$$dir/pyproject.toml" ] || [ -f "$$dir/setup.py" ]; then \
-			echo "Type checking Python package in $$dir..."; \
-			cd "$$dir" && uv run pyright .; \
-		fi; \
-	done
+test-frontend: ## Run frontend (Node) tests only
+	@echo "Running frontend tests..."
+	pnpm turbo test $(FRONTEND_FILTER)
 
-clean: ## Clean all build artifacts and dependencies
-	@echo "Cleaning workspace..."
-	@# Clean Python packages
-	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "dist" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "build" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
-	@# Clean Node packages
-	@find . -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".turbo" -exec rm -rf {} + 2>/dev/null || true
-	@rm -rf pnpm-lock.yaml package-lock.json yarn.lock
+lint-backend: ## Lint backend (Python) only
+	@echo "Linting backend..."
+	cd $(BACKEND_DIR) && uv run ruff check . && uv run pyright
+
+lint-frontend: ## Lint frontend (Node) only
+	@echo "Linting frontend..."
+	pnpm turbo lint $(FRONTEND_FILTER)
+
+typecheck-backend: ## Typecheck backend (Python) only
+	@echo "Type checking backend..."
+	cd $(BACKEND_DIR) && uv run pyright
+
+typecheck-frontend: ## Typecheck frontend (Node) only
+	@echo "Type checking frontend..."
+	pnpm turbo typecheck $(FRONTEND_FILTER)
+
+clean-backend: ## Clean backend (Python) artifacts only
+	@echo "Cleaning backend..."
+	@find $(BACKEND_DIR) -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find $(BACKEND_DIR) -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@find $(BACKEND_DIR) -type d -name "dist" -exec rm -rf {} + 2>/dev/null || true
+	@find $(BACKEND_DIR) -type d -name "build" -exec rm -rf {} + 2>/dev/null || true
+	@find $(BACKEND_DIR) -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find $(BACKEND_DIR) -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find $(BACKEND_DIR) -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+
+clean-frontend: ## Clean frontend (Node) artifacts only
+	@echo "Cleaning frontend..."
+	@find . -path "./$(BACKEND_DIR)" -prune -o -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
+	@find . -path "./$(BACKEND_DIR)" -prune -o -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
+	@find . -path "./$(BACKEND_DIR)" -prune -o -type d -name ".turbo" -exec rm -rf {} + 2>/dev/null || true
+	@rm -f pnpm-lock.yaml package-lock.json yarn.lock
 
 docker-up: ## Start Docker services (databases, etc.)
 	docker-compose up -d
@@ -131,8 +142,4 @@ docs-build: ## Build documentation for production
 docs-serve: ## Serve built documentation
 	@echo "Serving documentation..."
 	cd apps/docs && pnpm serve
-
-backend-dev: ## Start the backend development server
-	@echo "Starting backend server..."
-	cd packages/backend && uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8000
 

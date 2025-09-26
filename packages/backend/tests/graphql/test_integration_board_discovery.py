@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import delete, select
 
 from boards.api.app import create_app
-from boards.auth.provisioning import TENANT_NAMESPACE
+from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
@@ -87,16 +87,7 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
             await cleanup_test_data(session)
 
             # Create tenant
-            tenant_id = uuid.uuid5(TENANT_NAMESPACE, "discovery-tenant")
-            tenant = Tenants(
-                id=tenant_id,
-                name="Discovery Tenant",
-                slug="discovery-tenant",
-                settings={},
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-            session.add(tenant)
+            tenant_id = await ensure_tenant(session, slug="discovery-tenant")
 
             # Create user 1 (default authenticated user) - use same algorithm as NoAuthAdapter
             # fallback
