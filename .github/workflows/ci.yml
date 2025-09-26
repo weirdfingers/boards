@@ -49,6 +49,8 @@ jobs:
         run: make typecheck
       - name: Test
         run: make test
+        env:
+          CI: "true"
 
       # Docs build
       - name: Build Docs

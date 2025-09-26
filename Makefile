@@ -76,7 +76,12 @@ build-frontend: ## Build frontend (Node) only
 
 test-backend: ## Run backend (Python) tests only
 	@echo "Running backend tests..."
-	cd $(BACKEND_DIR) && uv run pytest tests/
+	@if [ "$$CI" = "true" ]; then \
+		echo "Running in CI - excluding Redis-dependent tests"; \
+		cd $(BACKEND_DIR) && uv run pytest tests/ -m "not requires_redis"; \
+	else \
+		cd $(BACKEND_DIR) && uv run pytest tests/; \
+	fi
 
 test-frontend: ## Run frontend (Node) tests only
 	@echo "Running frontend tests..."
