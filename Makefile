@@ -1,4 +1,4 @@
-.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs docs-dev docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
+.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs dev-docs docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
 
 BACKEND_DIR := packages/backend
 FRONTEND_FILTER := --filter=@weirdfingers/boards...
@@ -129,17 +129,21 @@ docker-down: ## Stop Docker services
 docker-logs: ## Show Docker logs
 	docker-compose logs -f
 
-docs: docs-dev ## Start documentation development server (alias)
+docs: dev-docs ## Start documentation development server (alias)
 
-docs-dev: ## Start documentation development server  
+dev-docs: ## Start documentation development server  
 	@echo "Starting documentation development server..."
 	cd apps/docs && pnpm start
 
-docs-build: ## Build documentation for production
+build-docs: ## Build documentation for production
 	@echo "Building documentation..."
 	cd apps/docs && pnpm build
 
-docs-serve: ## Serve built documentation
+serve-docs: ## Serve built documentation
 	@echo "Serving documentation..."
 	cd apps/docs && pnpm serve
+
+dev-example-nextjs: ## Start example Next.js development server
+	@echo "Starting example Next.js development server..."
+	cd apps/example-nextjs && pnpm dev
 

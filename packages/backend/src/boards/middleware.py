@@ -59,52 +59,54 @@ def sanitize_query_params(params: dict[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
+# 1) Extend extractor to support GET /graphql as well
 async def extract_graphql_operation_name(request: Request) -> str | None:
-    """Extract GraphQL operation name from request body.
-
-    Only attempts to parse for POST requests to /graphql.
-    Returns None if not a GraphQL request or parsing fails.
-    """
-    if not (request.method == "POST" and request.url.path == "/graphql"):
+    if request.url.path != "/graphql":
         return None
 
-    try:
-        # Get the request body (this consumes it)
-        body = await request.body()
-        if not body:
+    # Handle GET /graphql (operationName in query params, or parse from query)
+    if request.method == "GET":
+        params = dict(request.query_params)
+        op = params.get("operationName")
+        if isinstance(op, str) and op:
+            return op
+
+        q = params.get("query", "")
+        if not isinstance(q, str) or not q:
             return None
-
-        # Parse the JSON request wrapper
-        request_data = json.loads(body)
-
-        # 1. First try to get explicit operationName
-        operation_name = request_data.get("operationName")
-        if operation_name and isinstance(operation_name, str):
-            return operation_name
-
-        # 2. Check if we have a query field
-        query = request_data.get("query", "")
-        if not query:
-            return None
-
-        # 3. For introspection queries, return special identifier
-        if "__schema" in query or "IntrospectionQuery" in query:
+        if "__schema" in q or "IntrospectionQuery" in q:
             return "__introspection"
 
-        # 4. For other queries, extract first operation name
-        match = re.search(r"query\s+(\w+)", query)
+        match = re.search(r"\bquery\s+(\w+)", q) or re.search(r"\bmutation\s+(\w+)", q)
         if match:
-            return match.group(1)
-
-        # 5. For mutations
-        match = re.search(r"mutation\s+(\w+)", query)
-        if match:
-            return f"mutation:{match.group(1)}"
-
+            kind = "mutation:" if q.lstrip().startswith("mutation") else ""
+            return f"{kind}{match.group(1)}"
         return "unnamed_operation"
 
-    except (json.JSONDecodeError, TypeError):
-        return None
+    # Existing POST /graphql logic
+    if request.method == "POST":
+        try:
+            body = await request.body()
+            if not body:
+                return None
+            data = json.loads(body)
+            op = data.get("operationName")
+            if isinstance(op, str) and op:
+                return op
+            q = data.get("query", "")
+            if not isinstance(q, str) or not q:
+                return None
+            if "__schema" in q or "IntrospectionQuery" in q:
+                return "__introspection"
+            m = re.search(r"\bquery\s+(\w+)", q) or re.search(r"\bmutation\s+(\w+)", q)
+            if m:
+                kind = "mutation:" if q.lstrip().startswith("mutation") else ""
+                return f"{kind}{m.group(1)}"
+            return "unnamed_operation"
+        except (json.JSONDecodeError, TypeError):
+            return None
+
+    return None
 
 
 class LoggingContextMiddleware(BaseHTTPMiddleware):
@@ -124,6 +126,14 @@ class LoggingContextMiddleware(BaseHTTPMiddleware):
             sanitized_params = None
             if request.query_params:
                 sanitized_params = sanitize_query_params(dict(request.query_params))
+                # If hitting /graphql, never log raw GraphQL payload in query string
+                # Comment this out to see the raw GraphQL payload in the query string
+                if request.url.path == "/graphql" and isinstance(
+                    sanitized_params, dict
+                ):
+                    for k in ("query", "variables", "extensions"):
+                        if k in sanitized_params:
+                            sanitized_params[k] = "[REDACTED]"
 
             # Extract GraphQL operation name if applicable
             graphql_operation = await extract_graphql_operation_name(request)
@@ -200,7 +210,9 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
 
         # Validate tenant header in multi-tenant mode
         if settings.multi_tenant_mode:
-            tenant_validation_result = await self._validate_tenant_header(x_tenant, request)
+            tenant_validation_result = await self._validate_tenant_header(
+                x_tenant, request
+            )
             if tenant_validation_result is not None:
                 return tenant_validation_result
 
@@ -223,7 +235,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
             logger.error(
                 "Request processing failed",
                 error=str(e),
-                tenant_slug=getattr(request.state, 'tenant_slug', 'unknown'),
+                tenant_slug=getattr(request.state, "tenant_slug", "unknown"),
                 path=request.url.path,
             )
             raise
@@ -256,7 +268,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
                             "for this endpoint"
                         ),
                         "multi_tenant_mode": True,
-                    }
+                    },
                 )
 
         # Validate tenant slug format if provided
@@ -274,7 +286,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
                         "error": "Invalid X-Tenant header format",
                         "detail": validation_error,
                         "provided_tenant": x_tenant,
-                    }
+                    },
                 )
 
         return None  # Validation passed
@@ -323,10 +335,12 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
         if len(tenant_slug) > 255:
             return "Tenant slug too long (max 255 characters)"
 
-        if not re.match(r'^[a-z0-9-]+$', tenant_slug):
-            return "Tenant slug must contain only lowercase letters, numbers, and hyphens"
+        if not re.match(r"^[a-z0-9-]+$", tenant_slug):
+            return (
+                "Tenant slug must contain only lowercase letters, numbers, and hyphens"
+            )
 
-        if tenant_slug.startswith('-') or tenant_slug.endswith('-'):
+        if tenant_slug.startswith("-") or tenant_slug.endswith("-"):
             return "Tenant slug cannot start or end with hyphen"
 
         return None  # Valid
