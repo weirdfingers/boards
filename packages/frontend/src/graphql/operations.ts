@@ -42,8 +42,7 @@ export const GENERATION_FRAGMENT = gql`
     status
     progress
     inputParams
-    outputData
-    metadata
+    outputMetadata
     createdAt
     updatedAt
     completedAt
@@ -77,6 +76,7 @@ export const GET_BOARDS = gql`
 export const GET_BOARD = gql`
   ${BOARD_FRAGMENT}
   ${USER_FRAGMENT}
+  ${GENERATION_FRAGMENT}
   query GetBoard($id: UUID!) {
     board(id: $id) {
       ...BoardFragment

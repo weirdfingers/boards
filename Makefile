@@ -145,5 +145,5 @@ serve-docs: ## Serve built documentation
 
 dev-example-nextjs: ## Start example Next.js development server
 	@echo "Starting example Next.js development server..."
-	cd apps/example-nextjs && pnpm dev
+	pnpm turbo dev --filter=example-nextjs...
 
