@@ -26,6 +26,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@weirdfingers/boards": [
+        "../../packages/frontend/src/index.ts"
+      ],
+      "@weirdfingers/boards/*": [
+        "../../packages/frontend/src/*"
       ]
     }
   },
