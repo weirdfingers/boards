@@ -41,8 +41,11 @@ export const GENERATION_FRAGMENT = gql`
     artifactType
     status
     progress
+    storageUrl
+    thumbnailUrl
     inputParams
     outputMetadata
+    errorMessage
     createdAt
     updatedAt
     completedAt
@@ -100,6 +103,19 @@ export const GET_BOARD = gql`
       generations(limit: 10) {
         ...GenerationFragment
       }
+    }
+  }
+`;
+
+// Generator queries
+export const GET_GENERATORS = gql`
+  query GetGenerators($artifactType: String) {
+    generators(artifactType: $artifactType) {
+      name
+      description
+      artifactType
+      inputSchema
+      outputSchema
     }
   }
 `;

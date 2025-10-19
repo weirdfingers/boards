@@ -35,6 +35,25 @@ interface BoardMember {
   inviter?: User;
 }
 
+interface Generation {
+  id: string;
+  boardId: string;
+  userId: string;
+  providerName: string;
+  generatorName: string;
+  artifactType: string;
+  status: string;
+  progress: number;
+  storageUrl?: string | null;
+  thumbnailUrl?: string | null;
+  inputParams: Record<string, unknown>;
+  outputMetadata: Record<string, unknown>;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
 interface Board {
   id: string;
   tenantId: string;
@@ -49,11 +68,7 @@ interface Board {
   generationCount: number;
   owner: User;
   members: BoardMember[];
-  generations: Array<{
-    id: string;
-    status: string;
-    createdAt: string;
-  }>;
+  generations: Generation[];
 }
 
 type MemberRole = BoardRole;

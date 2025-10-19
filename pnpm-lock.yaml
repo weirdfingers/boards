@@ -87,6 +87,9 @@ importers:
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
+      graphql:
+        specifier: ^16.11.0
+        version: 16.11.0
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@18.3.1)
@@ -102,6 +105,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
+      urql:
+        specifier: ^5.0.1
+        version: 5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@18.3.1)
     devDependencies:
       '@types/node':
         specifier: ^20.14.10
@@ -16391,6 +16397,12 @@ snapshots:
       webpack: 5.101.3
     optionalDependencies:
       file-loader: 6.2.0(webpack@5.101.3)
+
+  urql@5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@18.3.1):
+    dependencies:
+      '@urql/core': 6.0.1(graphql@16.11.0)
+      react: 18.3.1
+      wonka: 6.3.5
 
   urql@5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@19.1.1):
     dependencies:

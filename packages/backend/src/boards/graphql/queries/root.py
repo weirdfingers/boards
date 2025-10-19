@@ -9,6 +9,7 @@ import strawberry
 from ..access_control import BoardQueryRole, SortOrder
 from ..types.board import Board
 from ..types.generation import ArtifactType, Generation, GenerationStatus
+from ..types.generator import GeneratorInfo
 from ..types.user import User
 
 
@@ -107,3 +108,12 @@ class Query:
         from ..resolvers.board import search_boards
 
         return await search_boards(info, query, limit or 50, offset or 0)
+
+    @strawberry.field
+    async def generators(
+        self, info: strawberry.Info, artifact_type: str | None = None
+    ) -> list[GeneratorInfo]:
+        """Get all available generators, optionally filtered by artifact type."""
+        from ..resolvers.generator import resolve_generators
+
+        return await resolve_generators(info, artifact_type)

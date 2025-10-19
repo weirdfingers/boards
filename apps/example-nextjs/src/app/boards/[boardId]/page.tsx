@@ -1,43 +1,124 @@
 "use client";
 
-import { useBoard } from "@weirdfingers/boards";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 import { useParams } from "next/navigation";
+import { useQuery } from "urql";
+import { useBoard } from "@weirdfingers/boards";
+import { GenerationGrid } from "@/components/boards/GenerationGrid";
+import { GenerationInput } from "@/components/boards/GenerationInput";
+import { GET_GENERATORS } from "@weirdfingers/boards/graphql/operations";
 
 export default function BoardPage() {
   const params = useParams();
   const boardId = params.boardId as string;
   const { board } = useBoard(boardId);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch available generators
+  const [generatorsResult] = useQuery({
+    query: GET_GENERATORS,
+  });
 
   if (!board) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
+  const generators = generatorsResult.data?.generators || [];
+  const generations = board.generations || [];
+
+  // Filter completed generations that can be used as inputs
+  const availableArtifacts = generations.filter(
+    (gen) => gen.status === "COMPLETED" && gen.storageUrl
+  );
+
+  const handleGenerationSubmit = async (params: {
+    generatorName: string;
+    prompt: string;
+    artifacts: Map<string, any>;
+    settings: Record<string, unknown>;
+  }) => {
+    setIsGenerating(true);
+    try {
+      // Build input params
+      const inputParams: Record<string, unknown> = {
+        prompt: params.prompt,
+        ...params.settings,
+      };
+
+      // Add artifact inputs
+      params.artifacts.forEach((artifact, slotName) => {
+        inputParams[slotName] = artifact.id;
+      });
+
+      // TODO: Call the createGeneration mutation
+      console.log("Creating generation:", {
+        boardId,
+        generatorName: params.generatorName,
+        inputParams,
+      });
+
+      // This should be replaced with actual mutation call
+      // const result = await createGenerationMutation({
+      //   input: {
+      //     boardId,
+      //     generatorName: params.generatorName,
+      //     providerName: "default", // or derive from generator
+      //     artifactType: selectedGenerator.artifactType,
+      //     inputParams,
+      //   }
+      // });
+    } catch (error) {
+      console.error("Failed to create generation:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <main className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">{board.title}</h1>
-        <Button
-          onClick={() =>
-            console.log("createGeneration({ prompt: 'A new generation' })")
-          }
-        >
-          Create Generation
-        </Button>
-      </div>
-      <p className="mb-4">{board.description || "No description"}</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {board.generations.map((generation) => (
-          <Card key={generation.id}>
-            <CardHeader>
-              <CardTitle>Generation {generation.id}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{generation.status}</p>
-            </CardContent>
-          </Card>
-        ))}
+    <main className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">{board.title}</h1>
+          {board.description && (
+            <p className="text-gray-600 mt-2">{board.description}</p>
+          )}
+        </div>
+
+        {/* Generation Grid */}
+        <div className="mb-8">
+          <GenerationGrid
+            generations={generations}
+            onGenerationClick={(gen) => {
+              console.log("Clicked generation:", gen);
+              // TODO: Open generation detail modal
+            }}
+          />
+        </div>
+
+        {/* Generation Input */}
+        <div className="sticky bottom-6 z-10">
+          {generatorsResult.fetching ? (
+            <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+              <p className="text-gray-500">Loading generators...</p>
+            </div>
+          ) : generators.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+              <p className="text-gray-500">No generators available</p>
+            </div>
+          ) : (
+            <GenerationInput
+              generators={generators}
+              availableArtifacts={availableArtifacts}
+              onSubmit={handleGenerationSubmit}
+              isGenerating={isGenerating}
+            />
+          )}
+        </div>
       </div>
     </main>
   );
