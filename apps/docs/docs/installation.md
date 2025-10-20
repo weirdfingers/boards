@@ -112,7 +112,7 @@ make dev
 
 # Or start individually:
 # Backend only:
-cd packages/backend && uvicorn boards.api.app:app --reload --port 8000
+cd packages/backend && uvicorn boards.api.app:app --reload --port 8088
 
 # Frontend only:
 cd apps/example-nextjs && pnpm dev
@@ -125,17 +125,17 @@ cd apps/example-nextjs && pnpm dev
 Check the backend is running:
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8088/health
 # Should return: {"status": "healthy"}
 ```
 
 ### GraphQL Playground
 
-Open http://localhost:8000/graphql in your browser to access the GraphQL playground.
+Open http://localhost:8088/graphql in your browser to access the GraphQL playground.
 
 ### Frontend Example
 
-Open http://localhost:3000 in your browser to see the example Next.js application.
+Open http://localhost:3033 in your browser to see the example Next.js application.
 
 ## Troubleshooting
 

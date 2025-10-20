@@ -82,7 +82,7 @@ BOARDS_AUTH_SUPABASE_SERVICE_KEY=your_service_key
 
 ```bash
 # Using uvicorn directly
-uvicorn boards.api.app:app --reload --port 8000
+uvicorn boards.api.app:app --reload --port 8088
 
 # Or using the module
 python -m boards.api.app
@@ -90,9 +90,9 @@ python -m boards.api.app
 
 The API will be available at:
 
-- **REST API**: http://localhost:8000
-- **GraphQL**: http://localhost:8000/graphql
-- **Health Check**: http://localhost:8000/health
+- **REST API**: http://localhost:8088
+- **GraphQL**: http://localhost:8088/graphql
+- **Health Check**: http://localhost:8088/health
 
 ## Database Development
 
@@ -263,7 +263,7 @@ engine = create_engine(database_url, echo=True)  # Logs all SQL queries
 
 ### GraphQL Debugging
 
-Visit http://localhost:8000/graphql to use the GraphiQL interface for testing queries and mutations.
+Visit http://localhost:8088/graphql to use the GraphiQL interface for testing queries and mutations.
 
 ## Next Steps
 

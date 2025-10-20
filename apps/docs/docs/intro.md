@@ -53,10 +53,10 @@ make dev
 ```
 
 This will start:
-- Backend API server at `http://localhost:8000`
-- Frontend example at `http://localhost:3000` 
+- Backend API server at `http://localhost:8088`
+- Frontend example at `http://localhost:3033`
 - Documentation at `http://localhost:4500`
-- GraphQL playground at `http://localhost:8000/graphql`
+- GraphQL playground at `http://localhost:8088/graphql`
 
 ## Next Steps
 

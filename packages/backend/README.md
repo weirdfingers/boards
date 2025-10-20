@@ -81,7 +81,7 @@ boards-worker
 
 ```bash
 # Using uvicorn directly
-uvicorn boards.api.app:app --reload --port 8000
+uvicorn boards.api.app:app --reload --port 8088
 
 # Or using the module
 python -m boards.api.app
@@ -89,7 +89,7 @@ python -m boards.api.app
 
 ### Access the GraphQL playground
 
-Open http://localhost:8000/graphql in your browser.
+Open http://localhost:8088/graphql in your browser.
 
 ### Database migrations
 

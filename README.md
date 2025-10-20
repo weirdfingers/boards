@@ -52,10 +52,10 @@ make dev
 
 This will start:
 
-- 🚀 **Backend API** at http://localhost:8000
-- 💻 **Frontend Example** at http://localhost:3000
+- 🚀 **Backend API** at http://localhost:8088
+- 💻 **Frontend Example** at http://localhost:3033
 - 📚 **Documentation** at http://localhost:4500
-- 🔧 **GraphQL Playground** at http://localhost:8000/graphql
+- 🔧 **GraphQL Playground** at http://localhost:8088/graphql
 
 ## Project Structure
 

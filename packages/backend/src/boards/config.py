@@ -32,9 +32,9 @@ class Settings(BaseSettings):
 
     # API Settings
     api_host: str = "0.0.0.0"
-    api_port: int = 8000
+    api_port: int = 8088
     api_reload: bool = False
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3033"]
 
     # Providers Configuration
     providers_config_path: str = "providers.yaml"

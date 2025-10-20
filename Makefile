@@ -55,7 +55,7 @@ install-frontend: setup-node ## Install frontend (Node) dependencies only
 
 dev-backend: ## Start backend development server only
 	@echo "Starting backend server..."
-	cd $(BACKEND_DIR) && uv run uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8000
+	cd $(BACKEND_DIR) && uv run uvicorn boards.api.app:app --reload --host 0.0.0.0 --port 8088
 
 dev-frontend: ## Start frontend development servers only
 	@echo "Starting frontend development servers..."
