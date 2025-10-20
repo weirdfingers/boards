@@ -2,7 +2,7 @@
  * JWT authentication provider for self-issued tokens.
  */
 
-import { BaseAuthProvider, AuthState, User } from "@weirdfingers/boards";
+import { BaseAuthProvider, AuthState, User, AuthProvider, SignInOptions } from "@weirdfingers/boards";
 import type { JWTConfig, JWTPayload } from "./types";
 
 export class JWTAuthProvider extends BaseAuthProvider {
@@ -21,7 +21,7 @@ export class JWTAuthProvider extends BaseAuthProvider {
     this.currentState = {
       user: null,
       status: "loading",
-      signIn: this.signIn.bind(this) as any,
+      signIn: this.signIn.bind(this),
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
       refreshToken: this.refreshToken.bind(this),
@@ -50,11 +50,9 @@ export class JWTAuthProvider extends BaseAuthProvider {
     return this.currentState;
   }
 
-  async signIn(
-    options?: import("@weirdfingers/boards").SignInOptions
-  ): Promise<void> {
-    const email = (options as any)?.email as string | undefined;
-    const password = (options as any)?.password as string | undefined;
+  async signIn(opts?: Record<string, unknown>): Promise<void> {
+    const email = opts?.email as string | undefined;
+    const password = opts?.password as string | undefined;
     this.updateState({ status: "loading" });
 
     try {

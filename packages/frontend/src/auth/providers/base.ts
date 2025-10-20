@@ -38,6 +38,11 @@ export abstract class BaseAuthProvider {
   abstract getToken(): Promise<string | null>;
 
   /**
+   * Refresh the authentication token.
+   */
+  abstract refreshToken(): Promise<string | null>;
+
+  /**
    * Get the current user information.
    */
   abstract getUser(): Promise<User | null>;

@@ -18,10 +18,10 @@ export class ClerkAuthProvider extends BaseAuthProvider {
     this.currentState = {
       user: null,
       status: "loading",
-      signIn: this.signIn.bind(this) as any,
+      signIn: this.signIn.bind(this),
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
-      refreshToken: async () => null,
+      refreshToken: this.refreshToken.bind(this),
     };
   }
 
@@ -52,8 +52,8 @@ export class ClerkAuthProvider extends BaseAuthProvider {
     return this.currentState;
   }
 
-  async signIn(
-    options: {
+  async signIn(opts?: Record<string, unknown>): Promise<void> {
+    const options = opts as {
       strategy?:
         | "oauth_google"
         | "oauth_github"
@@ -65,8 +65,7 @@ export class ClerkAuthProvider extends BaseAuthProvider {
       code?: string;
       redirectUrl?: string;
       [key: string]: unknown;
-    } = {}
-  ): Promise<void> {
+    } || {};
     if (!this.clerk) {
       throw new Error("Clerk not initialized");
     }
@@ -147,6 +146,11 @@ export class ClerkAuthProvider extends BaseAuthProvider {
       console.error("Failed to get token:", error);
       return null;
     }
+  }
+
+  async refreshToken(): Promise<string | null> {
+    // Clerk handles token refresh automatically
+    return this.getToken();
   }
 
   async getUser(): Promise<User | null> {
