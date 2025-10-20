@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "urql";
-import { useBoard } from "@weirdfingers/boards";
+import { useBoard, useGenerators } from "@weirdfingers/boards";
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
 import { GenerationInput } from "@/components/boards/GenerationInput";
-import { GET_GENERATORS } from "@weirdfingers/boards/graphql/operations";
 
 export default function BoardPage() {
   const params = useParams();
@@ -15,9 +13,7 @@ export default function BoardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Fetch available generators
-  const [generatorsResult] = useQuery({
-    query: GET_GENERATORS,
-  });
+  const { generators, loading: generatorsLoading } = useGenerators();
 
   if (!board) {
     return (
@@ -27,7 +23,6 @@ export default function BoardPage() {
     );
   }
 
-  const generators = generatorsResult.data?.generators || [];
   const generations = board.generations || [];
 
   // Filter completed generations that can be used as inputs
@@ -102,7 +97,7 @@ export default function BoardPage() {
 
         {/* Generation Input */}
         <div className="sticky bottom-6 z-10">
-          {generatorsResult.fetching ? (
+          {generatorsLoading ? (
             <div className="bg-white rounded-lg shadow-lg p-6 text-center">
               <p className="text-gray-500">Loading generators...</p>
             </div>

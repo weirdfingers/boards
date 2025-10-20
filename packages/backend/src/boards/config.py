@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"  # 'development', 'staging', 'production'
     debug: bool = True
+    sql_echo: bool = False
     log_level: str = "INFO"
 
     # Tenant Settings (for multi-tenant mode)
@@ -63,10 +64,22 @@ class Settings(BaseSettings):
     # File Upload Settings
     max_upload_size: int = 100 * 1024 * 1024  # 100MB
     allowed_upload_extensions: list[str] = [
-        ".jpg", ".jpeg", ".png", ".gif", ".webp",  # Images
-        ".mp4", ".mov", ".avi", ".webm",  # Videos
-        ".mp3", ".wav", ".ogg", ".m4a",  # Audio
-        ".txt", ".md", ".json",  # Text
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".webp",  # Images
+        ".mp4",
+        ".mov",
+        ".avi",
+        ".webm",  # Videos
+        ".mp3",
+        ".wav",
+        ".ogg",
+        ".m4a",  # Audio
+        ".txt",
+        ".md",
+        ".json",  # Text
     ]
 
     class Config:
@@ -77,8 +90,10 @@ class Settings(BaseSettings):
         # Allow extra fields for provider-specific configs
         extra = "allow"
 
+
 # Global settings instance
 settings = Settings()
+
 
 # Helper functions
 def get_database_url(tenant_slug: str | None = None) -> str:
@@ -88,6 +103,7 @@ def get_database_url(tenant_slug: str | None = None) -> str:
         # For now, we'll use the same database with tenant isolation via queries
         return settings.database_url
     return settings.database_url
+
 
 def get_storage_path(tenant_slug: str | None = None) -> Path:
     """Get storage path for local storage provider."""

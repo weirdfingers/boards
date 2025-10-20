@@ -1,0 +1,7 @@
+---
+globs: apps/example-*/**
+---
+
+# No Direct GraphQL Calls in Example Applications
+
+Do not make direct GraphQL calls from example applications. GraphQL usage and urql should be transparent to the example applications. Abstract away GraphQL interactions so that examples do not depend on specific client implementations like urql.

@@ -52,6 +52,28 @@ module.exports = {
     {
       files: ['apps/example-nextjs/**/*'],
       extends: ['next/core-web-vitals'],
+      rules: {
+        // Prevent direct GraphQL/urql usage in example apps
+        // GraphQL should be abstracted behind hooks from @weirdfingers/boards
+        'no-restricted-imports': ['error', {
+          paths: [
+            {
+              name: 'urql',
+              message: 'Do not import urql directly in example apps. Use hooks from @weirdfingers/boards instead (e.g., useBoards, useBoard, useGenerators).',
+            },
+            {
+              name: '@weirdfingers/boards/graphql/operations',
+              message: 'Do not import GraphQL operations directly in example apps. Use hooks from @weirdfingers/boards instead.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['**/graphql/*'],
+              message: 'Do not import GraphQL code directly in example apps. Use hooks from @weirdfingers/boards instead.',
+            },
+          ],
+        }],
+      },
     },
   ],
   ignorePatterns: [

@@ -76,6 +76,7 @@ make clean              # Remove all build artifacts and dependencies
 - **Hooks-first frontend design**: The toolkit ships React hooks, not mandatory UI components
 - **Pluggable auth**: Support for multiple auth providers via adapters (Supabase, Clerk, Auth0, custom JWT/OIDC)
 - **Observability**: Structured logs, job metrics, audit trail on credit transactions
+- **GraphQL abstraction**: Example applications MUST NOT directly import from `urql` or GraphQL operations (e.g., `@weirdfingers/boards/graphql/operations`). All GraphQL usage must be abstracted behind hooks from `@weirdfingers/boards` (e.g., `useBoards`, `useBoard`, `useGenerators`). When adding new GraphQL functionality, create a hook in `/packages/frontend/src/hooks/` first, then use that hook in example apps.
 
 ## Database Configuration
 

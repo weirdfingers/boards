@@ -62,7 +62,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
         db_url,
         pool_size=settings.database_pool_size,
         max_overflow=settings.database_max_overflow,
-        echo=settings.debug,
+        echo=settings.sql_echo,
     )
     _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
@@ -73,7 +73,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             async_db_url,
             pool_size=settings.database_pool_size,
             max_overflow=settings.database_max_overflow,
-            echo=settings.debug,
+            echo=settings.sql_echo,
         )
         _async_session_local = async_sessionmaker(
             _async_engine,
@@ -99,6 +99,7 @@ def get_async_engine():
         init_database()
     return _async_engine
 
+
 @contextmanager
 def get_session() -> Generator[Session, None, None]:
     """Get a database session (sync) from shared pool."""
@@ -117,6 +118,7 @@ def get_session() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
+
 
 @asynccontextmanager
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
@@ -137,6 +139,7 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
+
 # Dependency for FastAPI
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency for database sessions."""
@@ -148,7 +151,11 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 @asynccontextmanager
 async def get_test_db_session(database_url: str) -> AsyncGenerator[AsyncSession, None]:
     """Get a database session for testing with explicit database URL."""
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 
     from ..config import settings
 

@@ -73,6 +73,9 @@ lerna-debug.log*
 *~
 .DS_Store
 
+# MCP servers
+.playwright-mcp/
+
 # Vercel
 .vercel
 

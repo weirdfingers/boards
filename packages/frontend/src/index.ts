@@ -15,6 +15,7 @@ export * from './graphql/operations';
 export { useBoards } from './hooks/useBoards';
 export { useBoard } from './hooks/useBoard';
 export { useGeneration } from './hooks/useGeneration';
+export { useGenerators } from './hooks/useGenerators';
 
 // Provider components
 export { BoardsProvider } from './providers/BoardsProvider';
