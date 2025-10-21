@@ -1,28 +1,30 @@
 ---
 id: configuration
 title: Generators Configuration
-description: Configure which generators are available via file/env, with strict mode and plugin support.
+description: Configure which generators are available via YAML config file with strict mode and plugin support.
 ---
 
-This page explains how to control which generators are available at runtime using configuration. It covers file/env sources, strict mode, constructor options, and plugin (entry point) support.
+This page explains how to control which generators are available at runtime using a YAML configuration file. It covers file path configuration, strict mode, constructor options, and plugin (entry point) support.
 
 ## Overview
 
 - Configuration-driven selection of generators (no code changes required)
 - Deterministic ordering for UI
 - Strict-by-default startup validation
-- Works in containers with mounted config or env vars
+- Works in containers with mounted config files
 - Supports external packages via Python entry points
 
 See the full spec in the repo at `design/generators-config.md`.
 
-## Configuration sources (highest precedence first)
+## Configuration source
 
-1. `BOARDS_GENERATORS_CONFIG` → path to YAML/JSON file
-2. Default file `/app/config/generators.yaml` (baked into image)
-3. `BOARDS_GENERATORS` (flat, comma-separated list for simple cases)
+Set the path to your generators config file via the `BOARDS_GENERATORS_CONFIG_PATH` environment variable:
 
-Only the first available source is used (no merging).
+```bash
+export BOARDS_GENERATORS_CONFIG_PATH=/path/to/generators.yaml
+```
+
+If not set, no generators will be loaded by default (explicit configuration required).
 
 ## Schema (YAML)
 
@@ -48,20 +50,13 @@ generators:
     enabled: false
 ```
 
-Flat env examples (no options support):
-
-```bash
-export BOARDS_GENERATORS="boards.generators.implementations.audio.whisper,boards.generators.implementations.image.flux_pro"
-export BOARDS_GENERATORS="class:my_pkg.generators.sd.SDGenerator,entrypoint:myorg.whisper"
-```
-
 ## Docker/Kubernetes
 
-Mount a config file and point the backend to it:
+Mount a config file and point the backend to it via environment variable:
 
 ```bash
 docker run \
-  -e BOARDS_GENERATORS_CONFIG=/etc/boards/generators.yaml \
+  -e BOARDS_GENERATORS_CONFIG_PATH=/etc/boards/generators.yaml \
   -v $(pwd)/generators.yaml:/etc/boards/generators.yaml:ro \
   -e REPLICATE_API_TOKEN=... \
   -e OPENAI_API_KEY=... \

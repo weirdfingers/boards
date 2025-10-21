@@ -1,9 +1,7 @@
 """Configuration-driven generator loader.
 
-Loads and registers generators based on configuration from:
-- File path specified via BOARDS_GENERATORS_CONFIG
-- Default file path /app/config/generators.yaml
-- Flat env var BOARDS_GENERATORS
+Loads and registers generators based on configuration file.
+File path is specified via settings.generators_config_path.
 
 Supports three declaration forms: import, class, entrypoint.
 Strict mode is enabled by default and will fail startup on errors.
@@ -11,15 +9,16 @@ Strict mode is enabled by default and will fail startup on errors.
 
 from __future__ import annotations
 
-import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib import import_module
 from importlib import metadata as importlib_metadata
+from pathlib import Path
 from typing import Any
 
 import yaml
 
+from boards.config import settings
 from boards.logging import get_logger
 
 from .base import BaseGenerator
@@ -28,7 +27,6 @@ from .registry import registry
 logger = get_logger(__name__)
 
 
-DEFAULT_CONFIG_PATH = "/app/config/generators.yaml"
 ENTRYPOINT_GROUP = "boards.generators"
 
 VALID_ARTIFACT_TYPES: set[str] = {"image", "video", "audio", "text", "lora"}
@@ -59,55 +57,20 @@ def _load_file_config(path: str) -> LoaderConfig | None:
     )
 
 
-def _load_flat_env_config() -> LoaderConfig | None:
-    raw = os.getenv("BOARDS_GENERATORS")
-    if not raw:
+def _discover_config() -> LoaderConfig | None:
+    """Discover config from settings.generators_config_path."""
+    if not settings.generators_config_path:
         return None
 
-    entries = [e.strip() for e in raw.split(",") if e.strip()]
-    declarations: list[dict[str, Any]] = []
-    for entry in entries:
-        # Forms: class:pkg.mod:Class, entrypoint:name, import_path
-        if entry.startswith("class:"):
-            declarations.append({"class": entry[len("class:") :]})
-        elif entry.startswith("entrypoint:"):
-            declarations.append({"entrypoint": entry[len("entrypoint:") :]})
-        else:
-            declarations.append({"import": entry})
+    path = Path(settings.generators_config_path)
+    if not path.exists():
+        logger.warning("Generators config path set but not found", path=str(path))
+        return None
 
-    # Flat env cannot carry strict/allow flags; default strict true
-    return LoaderConfig(
-        strict_mode=True, allow_unlisted=False, declarations=declarations
-    )
-
-
-def _discover_config() -> LoaderConfig | None:
-    # 1) Explicit file path via env
-    path = os.getenv("BOARDS_GENERATORS_CONFIG")
-    if path:
-        cfg = _load_file_config(path)
-        if cfg:
-            logger.info("Loaded generators config from env path", path=path)
-            return cfg
-        else:
-            logger.info("Generators config path set but not found", path=path)
-
-    # 2) Default baked-in file path
-    if os.path.exists(DEFAULT_CONFIG_PATH):
-        cfg = _load_file_config(DEFAULT_CONFIG_PATH)
-        if cfg:
-            logger.info(
-                "Loaded generators config from default path", path=DEFAULT_CONFIG_PATH
-            )
-            return cfg
-
-    # 3) Flat env var entries
-    env_cfg = _load_flat_env_config()
-    if env_cfg:
-        logger.info("Loaded generators config from flat env variable")
-        return env_cfg
-
-    return None
+    cfg = _load_file_config(str(path))
+    if cfg:
+        logger.info("Loaded generators config from settings", path=str(path))
+    return cfg
 
 
 def _resolve_class(qualified_name: str) -> type[BaseGenerator]:

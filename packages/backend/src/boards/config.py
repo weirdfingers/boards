@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     api_reload: bool = False
     cors_origins: list[str] = ["http://localhost:3033"]
 
-    # Providers Configuration
-    providers_config_path: str = "providers.yaml"
+    # Generators Configuration
+    generators_config_path: str | None = None
 
     # Environment
     environment: str = "development"  # 'development', 'staging', 'production'

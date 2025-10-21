@@ -1,4 +1,9 @@
 # Example generators configuration for Boards
+#
+# Set the path to this file via environment variable:
+#   export BOARDS_GENERATORS_CONFIG_PATH=/path/to/generators.yaml
+#
+# If not set, no generators will be loaded.
 
 strict_mode: true
 allow_unlisted: false

@@ -19,15 +19,12 @@ This spec defines configuration shape, discovery/loader behavior, error handling
 - **Registry**: The global `registry` where loaded generator instances are registered.
 - **Loader**: Startup component that reads config and registers generators accordingly.
 
-### Configuration sources and precedence
+### Configuration source
 
-From highest to lowest precedence:
+Configuration is specified via `settings.generators_config_path` (env var: `BOARDS_GENERATORS_CONFIG_PATH`).
 
-1. **Env var path override**: `BOARDS_GENERATORS_CONFIG` → absolute path to YAML/JSON file.
-2. **Default file path**: `/app/config/generators.yaml` (baked into the image) or app settings default.
-3. **Flat env fallback**: `BOARDS_GENERATORS` → comma-separated entries that each specify one generator (see forms below). Intended for simple overrides.
-
-If multiple sources are present, the first found is used exclusively (no merging), to keep behavior predictable.
+- If not set, no generators are loaded (explicit configuration required).
+- If set but the file doesn't exist, a warning is logged and no generators are loaded.
 
 ### Configuration schema (YAML/JSON)
 
@@ -74,21 +71,6 @@ Optional per-generator fields:
 - `name` (string, optional): Override the instance name announced to the registry/UI (must be unique if provided).
 - `options` (object, optional): Keyword arguments passed to the generator constructor. Use this to carry default parameters or behavior flags.
 - `input_defaults` (object, optional; future-facing): Recommended default input values for UI or server-side request merging. This is not used by constructors; it is advisory metadata consumed by API/UI layers.
-
-Flat env var form examples
-
-```bash
-# Back-compat import entries
-export BOARDS_GENERATORS="boards.generators.implementations.audio.whisper,boards.generators.implementations.image.flux_pro"
-
-# Class entries (prefix with class:)
-export BOARDS_GENERATORS="class:boards.generators.implementations.image.flux_pro.FluxProGenerator"
-
-# Entry point entries (prefix with entrypoint:)
-export BOARDS_GENERATORS="entrypoint:myorg.whisper,class:my_pkg.generators.sd.SDGenerator"
-```
-
-Note: The flat env list cannot carry `options`; use a file for non-trivial configuration.
 
 ### Loader behavior (startup)
 
@@ -142,19 +124,18 @@ Operational notes:
 
 ### Docker/Kubernetes usage
 
-- Preferred: mount a config file and point the backend to it via env var.
+Mount a config file and point the backend to it via environment variable:
 
 ```bash
 docker run \
-  -e BOARDS_GENERATORS_CONFIG=/etc/boards/generators.yaml \
+  -e BOARDS_GENERATORS_CONFIG_PATH=/etc/boards/generators.yaml \
   -v $(pwd)/generators.yaml:/etc/boards/generators.yaml:ro \
   -e REPLICATE_API_TOKEN=... \
   -e OPENAI_API_KEY=... \
   myorg/boards-backend:latest
 ```
 
-- Alternative: bake a default `/app/config/generators.yaml` into the image and override with env/file per environment.
-- Keep secrets (API keys) in env/secret stores; the generators config should not embed secrets.
+Keep secrets (API keys) in env/secret stores; the generators config should not embed secrets.
 
 ### Example configuration
 
