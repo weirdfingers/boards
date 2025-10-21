@@ -1,0 +1,24 @@
+# Example generators configuration for Boards
+
+strict_mode: true
+allow_unlisted: false
+
+generators:
+  # Import-based (back-compat): triggers module-level registry.register on import
+  - import: "boards.generators.implementations.audio.whisper"
+    enabled: true
+
+  # Class-based (preferred): instantiate with options and register
+  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+    enabled: true
+    name: "flux-pro"
+    options:
+      aspect_ratio: "1:1"
+      safety_tolerance: 2
+    input_defaults:
+      prompt: "A high-quality product shot"
+
+  # Entry point (plugin): requires a package exposing the entry point
+  - entrypoint: "myorg.whisper"
+    enabled: false
+    options: {}

@@ -36,6 +36,7 @@ const sidebars: SidebarsConfig = {
         "generators/overview",
         "generators/getting-started",
         "generators/creating-generators",
+        "generators/configuration",
         "generators/artifact-types",
         "generators/testing",
         "generators/examples",

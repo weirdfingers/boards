@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..config import settings
 from ..database import init_database
+from ..generators.loader import load_generators_from_config
 from ..logging import configure_logging, get_logger
 from ..middleware import LoggingContextMiddleware, TenantRoutingMiddleware
 
@@ -25,6 +26,22 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Boards API...")
     init_database()
     logger.info("Database initialized")
+
+    # Load generators based on configuration
+    try:
+        load_generators_from_config()
+        logger.info(
+            "Generators configured and registered",
+            names=list(
+                __import__(
+                    "boards.generators.registry", fromlist=["registry"]
+                ).registry.list_names()
+            ),
+        )
+    except Exception as e:
+        # Fail fast: strict mode default may raise here
+        logger.error("Failed to configure generators", error=str(e))
+        raise
 
     # Run comprehensive startup validation
     try:

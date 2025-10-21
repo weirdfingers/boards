@@ -2,7 +2,11 @@
 Generator registry system for discovering and managing generators.
 """
 
+from boards.logging import get_logger
+
 from .base import BaseGenerator
+
+logger = get_logger(__name__)
 
 
 class GeneratorRegistry:
@@ -26,6 +30,7 @@ class GeneratorRegistry:
         Raises:
             ValueError: If a generator with the same name is already registered
         """
+        logger.info("Registering generator", name=generator.name)
         if generator.name in self._generators:
             raise ValueError(f"Generator '{generator.name}' is already registered")
 
@@ -63,7 +68,8 @@ class GeneratorRegistry:
             List of generators that produce the specified artifact type
         """
         return [
-            generator for generator in self._generators.values()
+            generator
+            for generator in self._generators.values()
             if generator.artifact_type == artifact_type
         ]
 
