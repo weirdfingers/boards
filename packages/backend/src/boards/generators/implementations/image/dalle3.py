@@ -106,7 +106,3 @@ class DallE3Generator(BaseGenerator):
                 return 0.040  # Standard, non-square
             else:
                 return 0.040  # Standard, square
-
-
-# Register the generator
-registry.register(DallE3Generator())

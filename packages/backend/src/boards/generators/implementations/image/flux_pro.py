@@ -90,7 +90,3 @@ class FluxProGenerator(BaseGenerator):
         """Estimate cost for FLUX.1.1 Pro generation."""
         # FLUX.1.1 Pro typically costs around $0.055 per generation
         return 0.055
-
-
-# Register the generator
-registry.register(FluxProGenerator())

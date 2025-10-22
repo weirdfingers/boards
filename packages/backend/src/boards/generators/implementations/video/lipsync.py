@@ -5,7 +5,6 @@ This demonstrates how generators can use multiple artifact inputs
 with automatic artifact resolution.
 """
 
-
 from pydantic import BaseModel, Field
 
 from ...artifacts import AudioArtifact, VideoArtifact
@@ -80,7 +79,3 @@ class LipsyncGenerator(BaseGenerator):
         """Estimate cost for lipsync generation."""
         # Wav2Lip is typically free on Replicate, but let's add a small cost
         return 0.01
-
-
-# Register the generator
-registry.register(LipsyncGenerator())

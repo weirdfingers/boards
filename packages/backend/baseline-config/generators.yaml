@@ -1,0 +1,25 @@
+# Baseline generators configuration for Boards
+#
+# Set the path to this file via environment variable:
+#   export BOARDS_GENERATORS_CONFIG_PATH=/path/to/generators.yaml
+#
+# If not set, no generators will be loaded.
+
+strict_mode: true
+allow_unlisted: false
+
+generators:
+  # Audio generators
+  - class: "boards.generators.implementations.audio.whisper.WhisperGenerator"
+    enabled: true
+
+  # Image generators
+  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.image.dalle3.DallE3Generator"
+    enabled: true
+
+  # Video generators
+  - class: "boards.generators.implementations.video.lipsync.LipsyncGenerator"
+    enabled: true

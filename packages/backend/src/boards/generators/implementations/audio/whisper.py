@@ -4,7 +4,6 @@ Whisper audio transcription using OpenAI API.
 Demonstrates audio processing generator that outputs text.
 """
 
-
 from pydantic import BaseModel, Field
 
 from ...artifacts import AudioArtifact, TextArtifact
@@ -78,7 +77,3 @@ class WhisperGenerator(BaseGenerator):
         # Whisper pricing is $0.006 per minute
         duration_minutes = (inputs.audio_source.duration or 60) / 60
         return duration_minutes * 0.006
-
-
-# Register the generator
-registry.register(WhisperGenerator())
