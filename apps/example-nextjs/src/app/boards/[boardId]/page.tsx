@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useBoard, useGenerators } from "@weirdfingers/boards";
+import { useBoard, useGenerators, useGeneration } from "@weirdfingers/boards";
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
 import { GenerationInput } from "@/components/boards/GenerationInput";
 
@@ -10,10 +9,12 @@ export default function BoardPage() {
   const params = useParams();
   const boardId = params.boardId as string;
   const { board } = useBoard(boardId);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   // Fetch available generators
   const { generators, loading: generatorsLoading } = useGenerators();
+
+  // Use generation hook for submitting generations
+  const { submit, isGenerating } = useGeneration();
 
   if (!board) {
     return (
@@ -33,43 +34,44 @@ export default function BoardPage() {
   const handleGenerationSubmit = async (params: {
     generatorName: string;
     prompt: string;
-    artifacts: Map<string, any>;
+    artifacts: Map<string, unknown>;
     settings: Record<string, unknown>;
   }) => {
-    setIsGenerating(true);
     try {
-      // Build input params
-      const inputParams: Record<string, unknown> = {
+      // Find the selected generator to validate it exists
+      const selectedGenerator = generators.find(
+        (g) => g.name === params.generatorName
+      );
+
+      if (!selectedGenerator) {
+        throw new Error(`Generator ${params.generatorName} not found`);
+      }
+
+      // Build inputs object with prompt and artifact references
+      const inputs: Record<string, unknown> = {
         prompt: params.prompt,
-        ...params.settings,
       };
 
-      // Add artifact inputs
+      // Add artifact inputs (convert artifact objects to their IDs)
       params.artifacts.forEach((artifact, slotName) => {
-        inputParams[slotName] = artifact.id;
+        if (artifact && typeof artifact === "object" && "id" in artifact) {
+          inputs[slotName] = artifact.id;
+        } else if (artifact) {
+          inputs[slotName] = artifact;
+        }
       });
 
-      // TODO: Call the createGeneration mutation
-      console.log("Creating generation:", {
+      // Submit generation using the hook
+      // Provider is typically encoded in the generator name or use "default"
+      await submit({
         boardId,
-        generatorName: params.generatorName,
-        inputParams,
+        model: params.generatorName,
+        artifactType: selectedGenerator.artifactType,
+        inputs: inputs as { prompt: string; [key: string]: unknown },
+        options: params.settings,
       });
-
-      // This should be replaced with actual mutation call
-      // const result = await createGenerationMutation({
-      //   input: {
-      //     boardId,
-      //     generatorName: params.generatorName,
-      //     providerName: "default", // or derive from generator
-      //     artifactType: selectedGenerator.artifactType,
-      //     inputParams,
-      //   }
-      // });
     } catch (error) {
       console.error("Failed to create generation:", error);
-    } finally {
-      setIsGenerating(false);
     }
   };
 

@@ -4,12 +4,12 @@
 
 import { useMemo } from "react";
 import { useQuery } from "urql";
-import { GET_GENERATORS } from "../graphql/operations";
+import { ArtifactType, GET_GENERATORS } from "../graphql/operations";
 
 interface Generator {
   name: string;
   description: string;
-  artifactType: string;
+  artifactType: ArtifactType;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
 }
@@ -24,7 +24,9 @@ interface GeneratorsHook {
   error: Error | null;
 }
 
-export function useGenerators(options: UseGeneratorsOptions = {}): GeneratorsHook {
+export function useGenerators(
+  options: UseGeneratorsOptions = {}
+): GeneratorsHook {
   const { artifactType } = options;
 
   // Query for generators

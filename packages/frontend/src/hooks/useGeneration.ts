@@ -9,17 +9,18 @@ import {
   CANCEL_GENERATION,
   RETRY_GENERATION,
   CreateGenerationInput,
+  ArtifactType,
 } from "../graphql/operations";
 
-interface GenerationRequest {
-  provider: string;
+export interface GenerationRequest {
   model: string;
+  artifactType: ArtifactType; // Allow string for flexibility with new types
   inputs: GenerationInputs;
   boardId: string;
   options?: GenerationOptions;
 }
 
-interface GenerationInputs {
+export interface GenerationInputs {
   prompt: string;
   negativePrompt?: string;
   image?: string | File;
@@ -33,19 +34,19 @@ interface GenerationInputs {
   [key: string]: unknown;
 }
 
-interface GenerationOptions {
+export interface GenerationOptions {
   priority?: "low" | "normal" | "high";
   timeout?: number;
   webhookUrl?: string;
   [key: string]: unknown;
 }
 
-interface LoRAInput {
+export interface LoRAInput {
   id: string;
   weight: number;
 }
 
-interface GenerationProgress {
+export interface GenerationProgress {
   jobId: string;
   status: "queued" | "processing" | "completed" | "failed" | "cancelled";
   progress: number; // 0-100
@@ -54,7 +55,7 @@ interface GenerationProgress {
   logs?: string[];
 }
 
-interface GenerationResult {
+export interface GenerationResult {
   id: string;
   jobId: string;
   boardId: string;
@@ -73,7 +74,7 @@ interface GenerationResult {
   createdAt: Date;
 }
 
-interface Artifact {
+export interface Artifact {
   id: string;
   type: string;
   url: string;
@@ -81,7 +82,7 @@ interface Artifact {
   metadata: Record<string, unknown>;
 }
 
-interface GenerationHook {
+export interface GenerationHook {
   // Current generation state
   progress: GenerationProgress | null;
   result: GenerationResult | null;
@@ -204,8 +205,8 @@ export function useGeneration(): GenerationHook {
       // Convert the request to the GraphQL input format
       const input: CreateGenerationInput = {
         boardId: request.boardId,
-        providerName: request.provider,
         generatorName: request.model,
+        artifactType: request.artifactType,
         inputParams: {
           ...request.inputs,
           ...request.options,

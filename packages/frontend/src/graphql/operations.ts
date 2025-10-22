@@ -264,8 +264,8 @@ export interface UpdateBoardInput {
 
 export interface CreateGenerationInput {
   boardId: string;
-  providerName: string;
   generatorName: string;
+  artifactType: ArtifactType; // Allow string for flexibility with new types
   inputParams: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
@@ -283,4 +283,13 @@ export enum GenerationStatus {
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
   CANCELLED = "CANCELLED",
+}
+
+export enum ArtifactType {
+  IMAGE = "image",
+  VIDEO = "video",
+  AUDIO = "audio",
+  TEXT = "text",
+  LORA = "lora",
+  MODEL = "model",
 }
