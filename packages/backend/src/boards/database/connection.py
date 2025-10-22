@@ -6,7 +6,7 @@ import os
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -44,6 +44,53 @@ def reset_database():
     _session_local = None
     _async_session_local = None
     _initialized = False
+
+
+async def test_database_connection() -> tuple[bool, str | None]:
+    """
+    Test the database connection and return helpful error messages.
+
+    Returns:
+        tuple: (success: bool, error_message: str | None)
+    """
+    if _async_engine is None:
+        return False, "Database engine not initialized"
+
+    try:
+        async with _async_engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+            return True, None
+    except Exception as e:
+        error_str = str(e)
+        error_type = type(e).__name__
+
+        # Provide helpful error messages based on the error type
+        if "does not exist" in error_str and "role" in error_str:
+            # This is the confusing error - could be database server not running
+            db_url = get_database_url()
+            # Extract database name from URL
+            db_name = db_url.split("/")[-1].split("?")[0]
+            return False, (
+                f"Cannot connect to database: {error_str}\n"
+                f"This usually means:\n"
+                f"  1. The database server is not running\n"
+                f"  2. The database '{db_name}' doesn't exist\n"
+                f"  3. The database user/role doesn't exist\n"
+                f"Please check your database connection and run migrations if needed."
+            )
+        elif "Connection refused" in error_str or "could not connect" in error_str:
+            return False, (
+                f"Cannot connect to database server: {error_str}\n"
+                f"The database server appears to be down or unreachable.\n"
+                f"Please check that PostgreSQL is running and accessible."
+            )
+        elif "password authentication failed" in error_str:
+            return False, (
+                f"Database authentication failed: {error_str}\n"
+                f"Please check your database credentials."
+            )
+        else:
+            return False, f"Database connection error ({error_type}): {error_str}"
 
 
 def init_database(database_url: str | None = None, force_reinit: bool = False):

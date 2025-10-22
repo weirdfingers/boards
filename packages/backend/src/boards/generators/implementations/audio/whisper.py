@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 
 from ...artifacts import AudioArtifact, TextArtifact
 from ...base import BaseGenerator, GeneratorExecutionContext
-from ...registry import registry
 
 
 class WhisperInput(BaseModel):

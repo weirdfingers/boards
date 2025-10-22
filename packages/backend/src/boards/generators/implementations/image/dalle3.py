@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 
 from ...artifacts import ImageArtifact
 from ...base import BaseGenerator
-from ...registry import registry
 from ...resolution import store_image_result
 
 

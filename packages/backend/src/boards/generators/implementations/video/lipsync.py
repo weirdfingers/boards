@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 
 from ...artifacts import AudioArtifact, VideoArtifact
 from ...base import BaseGenerator, GeneratorExecutionContext
-from ...registry import registry
 
 
 class LipsyncInput(BaseModel):

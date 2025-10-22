@@ -57,6 +57,9 @@ async def lifespan(app: FastAPI):
             # Log detailed error information
             logger.error(
                 "Application configuration validation failed - some features may not work properly",
+                database_errors=validation_results.get("database", {}).get(
+                    "errors", []
+                ),
                 tenant_errors=validation_results["tenant"].get("errors", []),
                 auth_errors=validation_results["auth"].get("errors", []),
             )

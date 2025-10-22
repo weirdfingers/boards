@@ -13,7 +13,6 @@ from pydantic import BaseModel, Field
 
 from ...artifacts import ImageArtifact
 from ...base import BaseGenerator, GeneratorExecutionContext
-from ...registry import registry
 
 
 class FluxProInput(BaseModel):

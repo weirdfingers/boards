@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from .config import settings
-from .database.connection import get_async_session
+from .database.connection import get_async_session, test_database_connection
 from .database.seed_data import ensure_default_tenant
 from .logging import get_logger
 
@@ -21,6 +21,38 @@ class ValidationError(Exception):
     """Raised when application validation fails."""
 
     pass
+
+
+async def validate_database_connection() -> dict[str, Any]:
+    """
+    Validate that the database is accessible and responsive.
+
+    This runs before other validation checks to catch connection issues early
+    with clear error messages.
+
+    Returns a dictionary with validation results and connection details.
+    """
+    results = {
+        "valid": True,
+        "warnings": [],
+        "errors": [],
+        "connection_info": None,
+    }
+
+    success, error_message = await test_database_connection()
+
+    if success:
+        results["connection_info"] = {
+            "status": "connected",
+            "message": "Database connection successful",
+        }
+        logger.info("Database connection validation successful")
+    else:
+        results["valid"] = False
+        results["errors"].append(error_message)
+        logger.error("Database connection validation failed", error=error_message)
+
+    return results
 
 
 async def validate_tenant_configuration() -> dict[str, Any]:
@@ -127,13 +159,34 @@ async def validate_startup_configuration() -> dict[str, Any]:
     """
     logger.info("Starting application configuration validation")
 
-    # Run all validation checks
-    tenant_results = await validate_tenant_configuration()
-    auth_results = await validate_auth_configuration()
+    # Test database connection first - this catches common issues early
+    db_results = await validate_database_connection()
+
+    # Only proceed with other validations if database is accessible
+    if db_results["valid"]:
+        tenant_results = await validate_tenant_configuration()
+        auth_results = await validate_auth_configuration()
+    else:
+        # Skip tenant/auth validation if database is not accessible
+        logger.warning(
+            "Skipping tenant and auth validation due to database connection failure"
+        )
+        tenant_results = {
+            "valid": False,
+            "warnings": [],
+            "errors": ["Skipped due to database connection failure"],
+            "tenant_info": None,
+        }
+        auth_results = (
+            await validate_auth_configuration()
+        )  # Auth can validate without DB
 
     # Combine results
     combined_results = {
-        "overall_valid": tenant_results["valid"] and auth_results["valid"],
+        "overall_valid": db_results["valid"]
+        and tenant_results["valid"]
+        and auth_results["valid"],
+        "database": db_results,
         "tenant": tenant_results,
         "auth": auth_results,
         "environment": {
@@ -148,14 +201,22 @@ async def validate_startup_configuration() -> dict[str, Any]:
     if combined_results["overall_valid"]:
         logger.info("Application configuration validation completed successfully")
     else:
-        all_errors = tenant_results.get("errors", []) + auth_results.get("errors", [])
+        all_errors = (
+            db_results.get("errors", [])
+            + tenant_results.get("errors", [])
+            + auth_results.get("errors", [])
+        )
         logger.error(
             "Application configuration validation failed",
             errors=all_errors,
         )
 
     # Log warnings
-    all_warnings = tenant_results.get("warnings", []) + auth_results.get("warnings", [])
+    all_warnings = (
+        db_results.get("warnings", [])
+        + tenant_results.get("warnings", [])
+        + auth_results.get("warnings", [])
+    )
     if all_warnings:
         logger.warning(
             "Configuration warnings detected",
@@ -170,6 +231,13 @@ def get_startup_recommendations(validation_results: dict[str, Any]) -> list[str]
     Generate startup recommendations based on validation results.
     """
     recommendations = []
+
+    # Database recommendations
+    if not validation_results.get("database", {}).get("valid", False):
+        recommendations.append(
+            "Database connection failed - check that PostgreSQL is running and accessible"
+        )
+        return recommendations  # Return early if database is not accessible
 
     # Tenant recommendations
     tenant_info = validation_results["tenant"].get("tenant_info")
