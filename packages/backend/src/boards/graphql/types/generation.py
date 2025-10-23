@@ -57,7 +57,6 @@ class Generation:
 
     # Generation details
     generator_name: str
-    provider_name: str
     artifact_type: ArtifactType
 
     # Storage
@@ -86,21 +85,27 @@ class Generation:
     updated_at: datetime
 
     @strawberry.field
-    async def board(self, info: strawberry.Info) -> Annotated["Board", strawberry.lazy(".board")]:
+    async def board(
+        self, info: strawberry.Info
+    ) -> Annotated["Board", strawberry.lazy(".board")]:
         """Get the board this generation belongs to."""
         from ..resolvers.generation import resolve_generation_board
 
         return await resolve_generation_board(self, info)
 
     @strawberry.field
-    async def user(self, info: strawberry.Info) -> Annotated["User", strawberry.lazy(".user")]:
+    async def user(
+        self, info: strawberry.Info
+    ) -> Annotated["User", strawberry.lazy(".user")]:
         """Get the user who created this generation."""
         from ..resolvers.generation import resolve_generation_user
 
         return await resolve_generation_user(self, info)
 
     @strawberry.field
-    async def parent(self, info: strawberry.Info) -> Annotated["Generation", strawberry.lazy(".generation")] | None:  # noqa: E501
+    async def parent(
+        self, info: strawberry.Info
+    ) -> Annotated["Generation", strawberry.lazy(".generation")] | None:  # noqa: E501
         """Get the parent generation if any."""
         if not self.parent_generation_id:
             return None
@@ -109,7 +114,9 @@ class Generation:
         return await resolve_generation_parent(self, info)
 
     @strawberry.field
-    async def inputs(self, info: strawberry.Info) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
+    async def inputs(
+        self, info: strawberry.Info
+    ) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
         """Get input generations used for this generation."""
         if not self.input_generation_ids:
             return []
@@ -118,7 +125,9 @@ class Generation:
         return await resolve_generation_inputs(self, info)
 
     @strawberry.field
-    async def children(self, info: strawberry.Info) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
+    async def children(
+        self, info: strawberry.Info
+    ) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
         """Get child generations derived from this one."""
         from ..resolvers.generation import resolve_generation_children
 
