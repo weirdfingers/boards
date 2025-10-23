@@ -332,7 +332,6 @@ class Generations(Base):
     board_id = mapped_column(Uuid, nullable=False)
     user_id = mapped_column(Uuid, nullable=False)
     generator_name = mapped_column(String(100), nullable=False)
-    provider_name = mapped_column(String(100), nullable=False)
     artifact_type = mapped_column(String(50), nullable=False)
     input_params = mapped_column(JSONB, nullable=False)
     status = mapped_column(

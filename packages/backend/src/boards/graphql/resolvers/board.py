@@ -64,7 +64,9 @@ async def resolve_board_by_id(info: strawberry.Info, id: UUID) -> Board | None:
                 "Access denied to board",
                 board_id=str(id),
                 user_id=(
-                    str(auth_context.user_id) if auth_context and auth_context.user_id else None
+                    str(auth_context.user_id)
+                    if auth_context and auth_context.user_id
+                    else None
                 ),
             )
             return None
@@ -91,7 +93,7 @@ async def resolve_my_boards(
     limit: int,
     offset: int,
     role: BoardQueryRole = BoardQueryRole.ANY,
-    sort: SortOrder = SortOrder.UPDATED_DESC
+    sort: SortOrder = SortOrder.UPDATED_DESC,
 ) -> list[Board]:
     """
     Resolve boards where the authenticated user is owner or member.
@@ -116,8 +118,7 @@ async def resolve_my_boards(
                 BoardMembers.user_id == auth_context.user_id
             )
             boards_condition = and_(
-                Boards.id.in_(member_board_ids),
-                Boards.owner_id != auth_context.user_id
+                Boards.id.in_(member_board_ids), Boards.owner_id != auth_context.user_id
             )
         else:  # BoardQueryRole.ANY
             # Boards where user is owner OR member
@@ -125,8 +126,7 @@ async def resolve_my_boards(
                 BoardMembers.user_id == auth_context.user_id
             )
             boards_condition = or_(
-                Boards.owner_id == auth_context.user_id,
-                Boards.id.in_(member_board_ids)
+                Boards.owner_id == auth_context.user_id, Boards.id.in_(member_board_ids)
             )
 
         # Add sorting
@@ -178,7 +178,7 @@ async def resolve_public_boards(
     info: strawberry.Info,
     limit: int,
     offset: int,
-    sort: SortOrder = SortOrder.UPDATED_DESC
+    sort: SortOrder = SortOrder.UPDATED_DESC,
 ) -> list[Board]:
     """
     Resolve public boards (no authentication required).
@@ -232,7 +232,9 @@ async def resolve_public_boards(
         ]
 
 
-async def search_boards(info: strawberry.Info, query: str, limit: int, offset: int) -> list[Board]:
+async def search_boards(
+    info: strawberry.Info, query: str, limit: int, offset: int
+) -> list[Board]:
     """
     Search for boards based on a text query.
 
@@ -247,8 +249,7 @@ async def search_boards(info: strawberry.Info, query: str, limit: int, offset: i
 
         # Base condition for text search
         search_condition = or_(
-            Boards.title.ilike(search_pattern),
-            Boards.description.ilike(search_pattern)
+            Boards.title.ilike(search_pattern), Boards.description.ilike(search_pattern)
         )
 
         # Add access control conditions
@@ -260,7 +261,7 @@ async def search_boards(info: strawberry.Info, query: str, limit: int, offset: i
             access_condition = or_(
                 Boards.is_public,
                 Boards.owner_id == auth_context.user_id,
-                Boards.id.in_(member_board_ids)
+                Boards.id.in_(member_board_ids),
             )
         else:
             # Unauthenticated users can only see public boards
@@ -326,7 +327,9 @@ async def resolve_board_owner(board: Board, info: strawberry.Info) -> User:
             raise RuntimeError("Access denied to board owner information")
 
         # Ensure owner is preloaded
-        ensure_preloaded(db_board, "owner", "Board owner relationship was not preloaded")
+        ensure_preloaded(
+            db_board, "owner", "Board owner relationship was not preloaded"
+        )
 
         if not db_board.owner:
             raise RuntimeError("Board owner not found")
@@ -346,7 +349,9 @@ async def resolve_board_owner(board: Board, info: strawberry.Info) -> User:
         )
 
 
-async def resolve_board_members(board: Board, info: strawberry.Info) -> list[BoardMember]:
+async def resolve_board_members(
+    board: Board, info: strawberry.Info
+) -> list[BoardMember]:
     """
     Resolve the members of a board. Requires user to have access to board details.
     """
@@ -369,7 +374,9 @@ async def resolve_board_members(board: Board, info: strawberry.Info) -> list[Boa
             raise RuntimeError("Access denied to board member information")
 
         # Ensure members are preloaded
-        ensure_preloaded(db_board, "board_members", "Board members relationship was not preloaded")
+        ensure_preloaded(
+            db_board, "board_members", "Board members relationship was not preloaded"
+        )
 
         from ..types.board import BoardMember as BoardMemberType
         from ..types.board import BoardRole
@@ -377,16 +384,20 @@ async def resolve_board_members(board: Board, info: strawberry.Info) -> list[Boa
         members = []
         for member in db_board.board_members:
             # Ensure user relationship is preloaded
-            ensure_preloaded(member, "user", "BoardMember user relationship was not preloaded")
+            ensure_preloaded(
+                member, "user", "BoardMember user relationship was not preloaded"
+            )
 
-            members.append(BoardMemberType(
-                id=member.id,
-                board_id=member.board_id,
-                user_id=member.user_id,
-                role=BoardRole(member.role),
-                invited_by=member.invited_by,
-                joined_at=member.joined_at,
-            ))
+            members.append(
+                BoardMemberType(
+                    id=member.id,
+                    board_id=member.board_id,
+                    user_id=member.user_id,
+                    role=BoardRole(member.role),
+                    invited_by=member.invited_by,
+                    joined_at=member.joined_at,
+                )
+            )
 
         return members
 
@@ -438,7 +449,6 @@ async def resolve_board_generations(
                 board_id=gen.board_id,
                 user_id=gen.user_id,
                 generator_name=gen.generator_name,
-                provider_name=gen.provider_name,
                 artifact_type=ArtifactType(gen.artifact_type),
                 storage_url=gen.storage_url,
                 thumbnail_url=gen.thumbnail_url,
@@ -481,14 +491,16 @@ async def resolve_board_generation_count(board: Board, info: strawberry.Info) ->
         db_board = result.scalar_one_or_none()
 
         if not db_board or not can_access_board(db_board, auth_context):
-            logger.info("Access denied to board generation count", board_id=str(board.id))
+            logger.info(
+                "Access denied to board generation count", board_id=str(board.id)
+            )
             return 0
 
         # Count generations for this board
         from sqlalchemy import func
-        count_stmt = (
-            select(func.count(Generations.id))
-            .where(Generations.board_id == board.id)
+
+        count_stmt = select(func.count(Generations.id)).where(
+            Generations.board_id == board.id
         )
 
         count_result = await session.execute(count_stmt)
@@ -540,7 +552,9 @@ async def resolve_board_member_user(member: BoardMember, info: strawberry.Info) 
         )
 
 
-async def resolve_board_member_inviter(member: BoardMember, info: strawberry.Info) -> User | None:
+async def resolve_board_member_inviter(
+    member: BoardMember, info: strawberry.Info
+) -> User | None:
     """
     Resolve the user who invited this board member.
 
@@ -634,7 +648,7 @@ async def create_board(info: strawberry.Info, input: CreateBoardInput) -> Board:
             "Board created",
             board_id=str(board.id),
             user_id=str(auth_context.user_id),
-            title=board.title
+            title=board.title,
         )
 
         from ..types.board import Board as BoardType
@@ -687,7 +701,9 @@ async def update_board(info: strawberry.Info, input: UpdateBoardInput) -> Board:
         )
 
         if not is_owner and not is_admin:
-            raise RuntimeError("Permission denied: only board owner or admin can update")
+            raise RuntimeError(
+                "Permission denied: only board owner or admin can update"
+            )
 
         # Update fields if provided
         if input.title is not None:
@@ -706,12 +722,16 @@ async def update_board(info: strawberry.Info, input: UpdateBoardInput) -> Board:
             "Board updated",
             board_id=str(board.id),
             user_id=str(auth_context.user_id),
-            updated_fields=[k for k, v in {
-                "title": input.title,
-                "description": input.description,
-                "is_public": input.is_public,
-                "settings": input.settings
-            }.items() if v is not None]
+            updated_fields=[
+                k
+                for k, v in {
+                    "title": input.title,
+                    "description": input.description,
+                    "is_public": input.is_public,
+                    "settings": input.settings,
+                }.items()
+                if v is not None
+            ],
         )
 
         from ..types.board import Board as BoardType
@@ -758,9 +778,7 @@ async def delete_board(info: strawberry.Info, id: UUID) -> bool:
         await session.commit()
 
         logger.info(
-            "Board deleted",
-            board_id=str(id),
-            user_id=str(auth_context.user_id)
+            "Board deleted", board_id=str(id), user_id=str(auth_context.user_id)
         )
 
         return True
@@ -800,7 +818,9 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
         )
 
         if not is_owner and not is_admin:
-            raise RuntimeError("Permission denied: only board owner or admin can add members")
+            raise RuntimeError(
+                "Permission denied: only board owner or admin can add members"
+            )
 
         # Check if user to be added exists
         user_stmt = select(Users).where(Users.id == input.user_id)
@@ -816,8 +836,7 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
 
         # Check if user is already a member
         existing_member = any(
-            member.user_id == input.user_id
-            for member in board.board_members
+            member.user_id == input.user_id for member in board.board_members
         )
 
         if existing_member:
@@ -854,7 +873,7 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
             board_id=str(board.id),
             user_id=str(input.user_id),
             role=input.role.value,
-            invited_by=str(auth_context.user_id)
+            invited_by=str(auth_context.user_id),
         )
 
         from ..types.board import Board as BoardType
@@ -873,7 +892,9 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
         )
 
 
-async def remove_board_member(info: strawberry.Info, board_id: UUID, user_id: UUID) -> Board:
+async def remove_board_member(
+    info: strawberry.Info, board_id: UUID, user_id: UUID
+) -> Board:
     """
     Remove a member from a board.
 
@@ -923,7 +944,9 @@ async def remove_board_member(info: strawberry.Info, board_id: UUID, user_id: UU
         is_self = user_id == auth_context.user_id
 
         if not is_owner and not is_admin and not is_self:
-            raise RuntimeError("Permission denied: insufficient permissions to remove member")
+            raise RuntimeError(
+                "Permission denied: insufficient permissions to remove member"
+            )
 
         # Remove the member
         await session.delete(member_to_remove)
@@ -945,7 +968,7 @@ async def remove_board_member(info: strawberry.Info, board_id: UUID, user_id: UU
             "Board member removed",
             board_id=str(board_id),
             removed_user_id=str(user_id),
-            removed_by=str(auth_context.user_id)
+            removed_by=str(auth_context.user_id),
         )
 
         from ..types.board import Board as BoardType
@@ -1044,7 +1067,7 @@ async def update_board_member_role(
             user_id=str(user_id),
             old_role=old_role,
             new_role=role.value,
-            updated_by=str(auth_context.user_id)
+            updated_by=str(auth_context.user_id),
         )
 
         from ..types.board import Board as BoardType
