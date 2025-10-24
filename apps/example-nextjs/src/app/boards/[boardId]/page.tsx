@@ -8,21 +8,72 @@ import { GenerationInput } from "@/components/boards/GenerationInput";
 export default function BoardPage() {
   const params = useParams();
   const boardId = params.boardId as string;
-  const { board } = useBoard(boardId);
+  console.log("[BoardPage] Rendering with boardId:", boardId);
+
+  const boardHookResult = useBoard(boardId);
+  console.log("[BoardPage] useBoard result:", boardHookResult);
+  const { board, loading: boardLoading, error: boardError } = boardHookResult;
 
   // Fetch available generators
-  const { generators, loading: generatorsLoading } = useGenerators();
+  const generatorsHookResult = useGenerators();
+  console.log("[BoardPage] useGenerators result:", generatorsHookResult);
+  const {
+    generators,
+    loading: generatorsLoading,
+    error: generatorsError,
+  } = generatorsHookResult;
 
   // Use generation hook for submitting generations
   const { submit, isGenerating } = useGeneration();
 
-  if (!board) {
+  console.log("[BoardPage] board:", board);
+  console.log("[BoardPage] boardError:", boardError);
+  console.log("[BoardPage] board is null/undefined?", !board);
+
+  // Handle board error
+  if (boardError) {
+    console.error("[BoardPage] Board error:", boardError);
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-lg">
+          <h2 className="text-red-800 text-xl font-semibold mb-2">
+            Error Loading Board
+          </h2>
+          <p className="text-red-600">{boardError.message}</p>
+        </div>
+      </div>
+    );
+  }
+  if (generatorsError) {
+    console.error("[BoardPage] Generators error:", generatorsError);
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-lg">
+          <h2 className="text-red-800 text-xl font-semibold mb-2">
+            Error Loading Generators
+          </h2>
+          <p className="text-red-600">{generatorsError.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle loading state
+  if (boardLoading || !board) {
+    console.log(
+      "[BoardPage] Showing loading spinner - boardLoading:",
+      boardLoading,
+      "board:",
+      board
+    );
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
+
+  console.log("[BoardPage] Board loaded successfully:", board);
 
   const generations = board.generations || [];
 

@@ -84,7 +84,60 @@ Local development uses Docker Compose with:
 
 - PostgreSQL 15 on port 5433 (user: boards, password: boards_dev, database: boards_dev)
 - Redis 7 on port 6380
-- to typecheck the backend and frontend, run `make typecheck` at the root of the project
-- to run tests for the backend and frontend, run `make test` at the root of the project
-- for backend logging, always use @packages/backend/src/boards/logging.py which is based on `structlog`. Avoid f-strings in favor of kwargs
-- when logging, do not use `exc_info=True`
+
+## Code Quality Rules
+
+### Type Checking and Testing
+- To typecheck the backend and frontend, run `make typecheck` at the root of the project
+- To run tests for the backend and frontend, run `make test` at the root of the project
+
+### Logging
+- For backend logging, always use `@packages/backend/src/boards/logging.py` which is based on `structlog`
+- Use keyword arguments for log data, avoid f-strings
+- Never use `exc_info=True` in log statements
+
+### SQLAlchemy Object Creation
+**IMPORTANT**: When creating SQLAlchemy model instances, DO NOT pass properties as kwargs to the constructor. Instead, set properties explicitly after instantiation. This allows the type checker (pyright) to catch incorrect property names.
+
+**Bad** (kwargs bypass type checking):
+```python
+new_board = Boards(
+    tenant_id=tenant_uuid,
+    owner_id=auth_context.user_id,
+    title=input.title,
+    descritpion=input.description,  # Typo won't be caught!
+)
+```
+
+**Good** (explicit assignment catches typos):
+```python
+new_board = Boards()
+new_board.tenant_id = tenant_uuid
+new_board.owner_id = auth_context.user_id
+new_board.title = input.title
+new_board.descritpion = input.description  # Type checker will error!
+```
+
+### GraphQL Schema Changes
+**CRITICAL**: When modifying GraphQL types in the backend, you MUST update the frontend in the same commit:
+
+1. **Backend changes** in `/packages/backend/src/boards/graphql/types/`:
+   - Update the Strawberry GraphQL type definition
+   - If removing/renaming fields, grep the frontend codebase first
+
+2. **Frontend changes** that MUST be synchronized:
+   - Update GraphQL fragments in `/packages/frontend/src/graphql/operations.ts`
+   - Update TypeScript interfaces in `/packages/frontend/src/hooks/`
+   - Search for any component usage in `/apps/example-nextjs/`
+
+3. **Validation**: GraphQL queries that reference non-existent fields will fail at schema validation (before resolver execution), returning errors like "Cannot query field 'fieldName' on type 'TypeName'". This prevents resolvers from being called.
+
+**Example workflow when removing a field**:
+```bash
+# 1. Remove from backend GraphQL type
+# 2. Search frontend for references
+grep -r "fieldName" packages/frontend apps/example-nextjs
+# 3. Update all found references
+# 4. Run typecheck to catch any missed TypeScript references
+make typecheck
+```

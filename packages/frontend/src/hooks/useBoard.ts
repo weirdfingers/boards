@@ -39,7 +39,6 @@ interface Generation {
   id: string;
   boardId: string;
   userId: string;
-  providerName: string;
   generatorName: string;
   artifactType: string;
   status: string;
@@ -126,6 +125,7 @@ export function useBoard(boardId: string): BoardHook {
     query: GET_BOARD,
     variables: { id: boardId },
     pause: !boardId,
+    requestPolicy: "cache-and-network", // Always fetch fresh data while showing cached data
   });
 
   // Mutations

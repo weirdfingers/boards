@@ -36,7 +36,6 @@ export const GENERATION_FRAGMENT = gql`
     id
     boardId
     userId
-    providerName
     generatorName
     artifactType
     status
