@@ -25,10 +25,12 @@ def mock_info():
     info.context = {
         "request": MagicMock(
             headers=MagicMock(
-                get=MagicMock(side_effect=lambda key: {
-                    "authorization": "Bearer test-token",
-                    "x-tenant": "default"
-                }.get(key))
+                get=MagicMock(
+                    side_effect=lambda key: {
+                        "authorization": "Bearer test-token",
+                        "x-tenant": "default",
+                    }.get(key)
+                )
             )
         )
     }
@@ -40,9 +42,9 @@ def auth_context():
     """Create an authenticated context."""
     return AuthContext(
         user_id=uuid.uuid4(),
-        tenant_id=str(uuid.uuid4()),
+        tenant_id=uuid.uuid4(),
         principal={"provider": "none", "subject": "test-user"},
-        token="test-token"
+        token="test-token",
     )
 
 
@@ -59,7 +61,7 @@ def sample_board():
         settings={},
         metadata={},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -72,7 +74,7 @@ def sample_board_member():
         user_id=uuid.uuid4(),
         role=BoardRole.VIEWER,
         invited_by=uuid.uuid4(),
-        joined_at=datetime.now(UTC)
+        joined_at=datetime.now(UTC),
     )
 
 
@@ -80,7 +82,9 @@ class TestBoardGenerationCount:
     """Tests for resolve_board_generation_count field resolver."""
 
     @pytest.mark.asyncio
-    async def test_generation_count_with_access(self, mock_info, auth_context, sample_board):
+    async def test_generation_count_with_access(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test getting generation count for accessible board."""
         sample_board.owner_id = auth_context.user_id
 
@@ -91,10 +95,14 @@ class TestBoardGenerationCount:
         db_board.is_public = False
         db_board.board_members = []
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -108,7 +116,7 @@ class TestBoardGenerationCount:
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_count_result
+                    mock_count_result,
                 ]
 
                 result = await resolve_board_generation_count(sample_board, mock_info)
@@ -116,7 +124,9 @@ class TestBoardGenerationCount:
                 assert result == 42
 
     @pytest.mark.asyncio
-    async def test_generation_count_no_access(self, mock_info, auth_context, sample_board):
+    async def test_generation_count_no_access(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test that generation count returns 0 when access is denied."""
         # Different owner, private board
         sample_board.owner_id = uuid.uuid4()
@@ -127,10 +137,14 @@ class TestBoardGenerationCount:
         db_board.is_public = False
         db_board.board_members = []
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -144,12 +158,18 @@ class TestBoardGenerationCount:
                 assert result == 0
 
     @pytest.mark.asyncio
-    async def test_generation_count_board_not_found(self, mock_info, auth_context, sample_board):
+    async def test_generation_count_board_not_found(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test generation count when board doesn't exist."""
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -163,7 +183,9 @@ class TestBoardGenerationCount:
                 assert result == 0
 
     @pytest.mark.asyncio
-    async def test_generation_count_empty_board(self, mock_info, auth_context, sample_board):
+    async def test_generation_count_empty_board(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test generation count for board with no generations."""
         sample_board.owner_id = auth_context.user_id
 
@@ -173,10 +195,14 @@ class TestBoardGenerationCount:
         db_board.is_public = False
         db_board.board_members = []
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -188,7 +214,7 @@ class TestBoardGenerationCount:
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_count_result
+                    mock_count_result,
                 ]
 
                 result = await resolve_board_generation_count(sample_board, mock_info)
@@ -204,10 +230,14 @@ class TestBoardGenerationCount:
         db_board.is_public = True
         db_board.board_members = []
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = None  # No authentication
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -219,7 +249,7 @@ class TestBoardGenerationCount:
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_count_result
+                    mock_count_result,
                 ]
 
                 result = await resolve_board_generation_count(sample_board, mock_info)
@@ -231,7 +261,9 @@ class TestBoardMemberInviter:
     """Tests for resolve_board_member_inviter field resolver."""
 
     @pytest.mark.asyncio
-    async def test_inviter_resolution(self, mock_info, auth_context, sample_board_member):
+    async def test_inviter_resolution(
+        self, mock_info, auth_context, sample_board_member
+    ):
         """Test resolving the user who invited a board member."""
         inviter_id = sample_board_member.invited_by
 
@@ -254,10 +286,14 @@ class TestBoardMemberInviter:
         inviter.created_at = datetime.now(UTC)
         inviter.updated_at = datetime.now(UTC)
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -269,10 +305,12 @@ class TestBoardMemberInviter:
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_inviter_result
+                    mock_inviter_result,
                 ]
 
-                result = await resolve_board_member_inviter(sample_board_member, mock_info)
+                result = await resolve_board_member_inviter(
+                    sample_board_member, mock_info
+                )
 
                 assert result is not None
                 assert result.id == inviter_id
@@ -288,7 +326,7 @@ class TestBoardMemberInviter:
             user_id=uuid.uuid4(),
             role=BoardRole.VIEWER,
             invited_by=None,  # No inviter
-            joined_at=datetime.now(UTC)
+            joined_at=datetime.now(UTC),
         )
 
         result = await resolve_board_member_inviter(member, mock_info)
@@ -296,7 +334,9 @@ class TestBoardMemberInviter:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_inviter_access_denied(self, mock_info, auth_context, sample_board_member):
+    async def test_inviter_access_denied(
+        self, mock_info, auth_context, sample_board_member
+    ):
         """Test that error is raised when access to board is denied."""
         # Mock board without access
         db_board = MagicMock(spec=Boards)
@@ -305,10 +345,14 @@ class TestBoardMemberInviter:
         db_board.is_public = False
         db_board.board_members = []  # User is not a member
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -321,7 +365,9 @@ class TestBoardMemberInviter:
                     await resolve_board_member_inviter(sample_board_member, mock_info)
 
     @pytest.mark.asyncio
-    async def test_inviter_not_found(self, mock_info, auth_context, sample_board_member):
+    async def test_inviter_not_found(
+        self, mock_info, auth_context, sample_board_member
+    ):
         """Test that None is returned when inviter user doesn't exist."""
         # Mock board with access
         db_board = MagicMock(spec=Boards)
@@ -330,10 +376,14 @@ class TestBoardMemberInviter:
         db_board.is_public = False
         db_board.board_members = []
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -341,24 +391,34 @@ class TestBoardMemberInviter:
                 mock_board_result.scalar_one_or_none.return_value = db_board
 
                 mock_inviter_result = MagicMock()
-                mock_inviter_result.scalar_one_or_none.return_value = None  # Inviter not found
+                mock_inviter_result.scalar_one_or_none.return_value = (
+                    None  # Inviter not found
+                )
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_inviter_result
+                    mock_inviter_result,
                 ]
 
-                result = await resolve_board_member_inviter(sample_board_member, mock_info)
+                result = await resolve_board_member_inviter(
+                    sample_board_member, mock_info
+                )
 
                 assert result is None
 
     @pytest.mark.asyncio
-    async def test_inviter_board_not_found(self, mock_info, auth_context, sample_board_member):
+    async def test_inviter_board_not_found(
+        self, mock_info, auth_context, sample_board_member
+    ):
         """Test error when board doesn't exist."""
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 

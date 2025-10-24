@@ -10,7 +10,7 @@ import pytest
 import strawberry
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from boards.auth.context import AuthContext
+from boards.auth.context import DEFAULT_TENANT_UUID, AuthContext
 from boards.dbmodels import BoardMembers, Boards
 from boards.graphql.resolvers.board import search_boards
 
@@ -22,10 +22,12 @@ def mock_info():
     info.context = {
         "request": MagicMock(
             headers=MagicMock(
-                get=MagicMock(side_effect=lambda key: {
-                    "authorization": "Bearer test-token",
-                    "x-tenant": "default"
-                }.get(key))
+                get=MagicMock(
+                    side_effect=lambda key: {
+                        "authorization": "Bearer test-token",
+                        "x-tenant": "default",
+                    }.get(key)
+                )
             )
         )
     }
@@ -96,21 +98,24 @@ class TestSearchBoards:
         """Test searching public boards without authentication."""
         boards, _ = sample_boards
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
-                user_id=None,
-                tenant_id="default",
-                principal=None,
-                token=None
+                user_id=None, tenant_id=DEFAULT_TENANT_UUID, principal=None, token=None
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
                 # Mock query execution - only returns public board with "Python"
                 mock_result = MagicMock()
-                mock_result.scalars().all.return_value = [boards[0]]  # Only first public board
+                mock_result.scalars().all.return_value = [
+                    boards[0]
+                ]  # Only first public board
                 mock_async_session.execute.return_value = mock_result
 
                 results = await search_boards(mock_info, "Python", limit=10, offset=0)
@@ -124,15 +129,19 @@ class TestSearchBoards:
         """Test that board owner can search their private boards."""
         boards, owner_id = sample_boards
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=owner_id,
-                tenant_id="default",
+                tenant_id=DEFAULT_TENANT_UUID,
                 principal={"provider": "none", "subject": "owner"},
-                token="test-token"
+                token="test-token",
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -159,15 +168,19 @@ class TestSearchBoards:
         member.role = "viewer"
         boards[1].board_members = [member]
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=member_id,
-                tenant_id="default",
+                tenant_id=DEFAULT_TENANT_UUID,
                 principal={"provider": "none", "subject": "member"},
-                token="test-token"
+                token="test-token",
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -185,15 +198,19 @@ class TestSearchBoards:
         """Test that search is case-insensitive."""
         boards, owner_id = sample_boards
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=owner_id,
-                tenant_id="default",
+                tenant_id=DEFAULT_TENANT_UUID,
                 principal={"provider": "none", "subject": "owner"},
-                token="test-token"
+                token="test-token",
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -214,15 +231,16 @@ class TestSearchBoards:
         """Test search with limit and offset pagination."""
         boards, _ = sample_boards
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
-                user_id=None,
-                tenant_id="default",
-                principal=None,
-                token=None
+                user_id=None, tenant_id=DEFAULT_TENANT_UUID, principal=None, token=None
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -235,8 +253,8 @@ class TestSearchBoards:
 
                     # Check that statement has limit and offset
                     stmt_str = str(stmt)
-                    assert "LIMIT" in stmt_str or hasattr(stmt, '_limit')
-                    assert "OFFSET" in stmt_str or hasattr(stmt, '_offset')
+                    assert "LIMIT" in stmt_str or hasattr(stmt, "_limit")
+                    assert "OFFSET" in stmt_str or hasattr(stmt, "_offset")
 
                     mock_result = MagicMock()
                     mock_result.scalars().all.return_value = [boards[0]]
@@ -252,15 +270,19 @@ class TestSearchBoards:
     @pytest.mark.asyncio
     async def test_search_no_results(self, mock_info):
         """Test search that returns no results."""
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=uuid.uuid4(),
-                tenant_id="default",
+                tenant_id=DEFAULT_TENANT_UUID,
                 principal={"provider": "none", "subject": "user"},
-                token="test-token"
+                token="test-token",
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -268,7 +290,9 @@ class TestSearchBoards:
                 mock_result.scalars().all.return_value = []
                 mock_async_session.execute.return_value = mock_result
 
-                results = await search_boards(mock_info, "NonExistentTerm", limit=10, offset=0)
+                results = await search_boards(
+                    mock_info, "NonExistentTerm", limit=10, offset=0
+                )
 
                 assert results == []
 
@@ -277,21 +301,24 @@ class TestSearchBoards:
         """Test search with empty query string."""
         boards, _ = sample_boards
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
-                user_id=None,
-                tenant_id="default",
-                principal=None,
-                token=None
+                user_id=None, tenant_id=DEFAULT_TENANT_UUID, principal=None, token=None
             )
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
                 # Empty query should match all accessible boards
                 mock_result = MagicMock()
-                mock_result.scalars().all.return_value = [b for b in boards if b.is_public]
+                mock_result.scalars().all.return_value = [
+                    b for b in boards if b.is_public
+                ]
                 mock_async_session.execute.return_value = mock_result
 
                 results = await search_boards(mock_info, "", limit=10, offset=0)

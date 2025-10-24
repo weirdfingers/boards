@@ -16,6 +16,8 @@ from boards.graphql.access_control import (
     is_board_owner_or_member,
 )
 
+TEST_TENANT_UUID = uuid.uuid4()
+
 
 @pytest.fixture
 def sample_board():
@@ -33,9 +35,9 @@ def authenticated_context():
     """Create an authenticated user context."""
     return AuthContext(
         user_id=uuid.uuid4(),
-        tenant_id="test-tenant",
+        tenant_id=TEST_TENANT_UUID,
         principal={"provider": "none", "subject": "test-user"},
-        token="test-token"
+        token="test-token",
     )
 
 
@@ -43,10 +45,7 @@ def authenticated_context():
 def unauthenticated_context():
     """Create an unauthenticated context."""
     return AuthContext(
-        user_id=None,
-        tenant_id="test-tenant",
-        principal=None,
-        token=None
+        user_id=None, tenant_id=TEST_TENANT_UUID, principal=None, token=None
     )
 
 
@@ -109,14 +108,16 @@ class TestCanAccessBoardDetails:
         """can_access_board_details should behave the same as can_access_board."""
         # Test public board
         sample_board.is_public = True
-        assert can_access_board_details(sample_board, authenticated_context) == \
-               can_access_board(sample_board, authenticated_context)
+        assert can_access_board_details(
+            sample_board, authenticated_context
+        ) == can_access_board(sample_board, authenticated_context)
 
         # Test private board as owner
         sample_board.is_public = False
         sample_board.owner_id = authenticated_context.user_id
-        assert can_access_board_details(sample_board, authenticated_context) == \
-               can_access_board(sample_board, authenticated_context)
+        assert can_access_board_details(
+            sample_board, authenticated_context
+        ) == can_access_board(sample_board, authenticated_context)
 
 
 class TestIsBoardOwnerOrMember:

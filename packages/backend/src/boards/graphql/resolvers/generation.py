@@ -8,7 +8,6 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from ...database.connection import get_async_session
-from ...database.seed_data import ensure_tenant
 from ...dbmodels import BoardMembers, Boards, Generations, Users
 from ...generators.registry import registry as generator_registry
 from ...jobs import repository as jobs_repo
@@ -90,7 +89,7 @@ async def resolve_generation_by_id(
             input_generation_ids=gen.input_generation_ids or [],
             external_job_id=gen.external_job_id,
             status=GenerationStatus(gen.status),
-            progress=gen.progress or 0.0,
+            progress=float(gen.progress or 0.0),
             error_message=gen.error_message,
             started_at=gen.started_at,
             completed_at=gen.completed_at,
@@ -210,7 +209,7 @@ async def resolve_recent_generations(
                 input_generation_ids=gen.input_generation_ids or [],
                 external_job_id=gen.external_job_id,
                 status=GenerationStatusEnum(gen.status),
-                progress=gen.progress or 0.0,
+                progress=float(gen.progress or 0.0),
                 error_message=gen.error_message,
                 started_at=gen.started_at,
                 completed_at=gen.completed_at,
@@ -349,7 +348,7 @@ async def resolve_generation_parent(
             input_generation_ids=parent.input_generation_ids or [],
             external_job_id=parent.external_job_id,
             status=GenerationStatus(parent.status),
-            progress=parent.progress or 0.0,
+            progress=float(parent.progress or 0.0),
             error_message=parent.error_message,
             started_at=parent.started_at,
             completed_at=parent.completed_at,
@@ -410,7 +409,7 @@ async def resolve_generation_inputs(
                 input_generation_ids=gen.input_generation_ids or [],
                 external_job_id=gen.external_job_id,
                 status=GenerationStatus(gen.status),
-                progress=gen.progress or 0.0,
+                progress=float(gen.progress or 0.0),
                 error_message=gen.error_message,
                 started_at=gen.started_at,
                 completed_at=gen.completed_at,
@@ -470,7 +469,7 @@ async def resolve_generation_children(
                 input_generation_ids=gen.input_generation_ids or [],
                 external_job_id=gen.external_job_id,
                 status=GenerationStatus(gen.status),
-                progress=gen.progress or 0.0,
+                progress=float(gen.progress or 0.0),
                 error_message=gen.error_message,
                 started_at=gen.started_at,
                 completed_at=gen.completed_at,
@@ -491,13 +490,14 @@ async def create_generation(
     Requires editor or owner role on the target board.
     """
     auth_context = await get_auth_context_from_info(info)
-    if not auth_context or not auth_context.is_authenticated:
+    if (
+        not auth_context
+        or not auth_context.is_authenticated
+        or not auth_context.user_id
+    ):
         raise RuntimeError("Authentication required to create a generation")
 
     async with get_async_session() as session:
-        # Get tenant UUID
-        tenant_uuid = await ensure_tenant(session, slug=auth_context.tenant_id)
-
         # Check board access - require editor or owner role
         board_stmt = (
             select(Boards)
@@ -578,11 +578,10 @@ async def create_generation(
         # Create generation record
         gen = await jobs_repo.create_generation(
             session,
-            tenant_id=str(tenant_uuid),
-            board_id=str(input.board_id),
-            user_id=str(auth_context.user_id),
+            tenant_id=auth_context.tenant_id,
+            board_id=input.board_id,
+            user_id=auth_context.user_id,
             generator_name=input.generator_name,
-            provider_name=input.provider_name,
             artifact_type=input.artifact_type.value,
             input_params=input.input_params,
         )
@@ -628,7 +627,7 @@ async def create_generation(
             input_generation_ids=gen.input_generation_ids or [],
             external_job_id=gen.external_job_id,
             status=GenerationStatus(gen.status),
-            progress=gen.progress or 0.0,
+            progress=float(gen.progress or 0.0),
             error_message=gen.error_message,
             started_at=gen.started_at,
             completed_at=gen.completed_at,
@@ -695,7 +694,7 @@ async def cancel_generation(info: strawberry.Info, id: UUID) -> Generation:
             session,
             id,
             status="cancelled",
-            progress=gen.progress or 0.0,
+            progress=float(gen.progress or 0.0),
             error_message="Cancelled by user",
         )
         await session.commit()
@@ -729,7 +728,7 @@ async def cancel_generation(info: strawberry.Info, id: UUID) -> Generation:
             input_generation_ids=gen.input_generation_ids or [],
             external_job_id=gen.external_job_id,
             status=GenerationStatus(gen.status),
-            progress=gen.progress or 0.0,
+            progress=float(gen.progress or 0.0),
             error_message=gen.error_message,
             started_at=gen.started_at,
             completed_at=gen.completed_at,
@@ -825,7 +824,11 @@ async def regenerate(info: strawberry.Info, id: UUID) -> Generation:
     Creates a new generation with the same inputs and sets the original as parent.
     """
     auth_context = await get_auth_context_from_info(info)
-    if not auth_context or not auth_context.is_authenticated:
+    if (
+        not auth_context
+        or not auth_context.is_authenticated
+        or not auth_context.user_id
+    ):
         raise RuntimeError("Authentication required to regenerate")
 
     async with get_async_session() as session:
@@ -872,11 +875,10 @@ async def regenerate(info: strawberry.Info, id: UUID) -> Generation:
         # Create new generation with copied inputs
         new_gen = await jobs_repo.create_generation(
             session,
-            tenant_id=str(original.tenant_id),
-            board_id=str(original.board_id),
-            user_id=str(auth_context.user_id),
+            tenant_id=original.tenant_id,
+            board_id=original.board_id,
+            user_id=auth_context.user_id,
             generator_name=original.generator_name,
-            provider_name=original.provider_name,
             artifact_type=original.artifact_type,
             input_params=original.input_params or {},
         )
@@ -919,7 +921,7 @@ async def regenerate(info: strawberry.Info, id: UUID) -> Generation:
             input_generation_ids=new_gen.input_generation_ids or [],
             external_job_id=new_gen.external_job_id,
             status=GenerationStatus(new_gen.status),
-            progress=new_gen.progress or 0.0,
+            progress=float(new_gen.progress or 0.0),
             error_message=new_gen.error_message,
             started_at=new_gen.started_at,
             completed_at=new_gen.completed_at,

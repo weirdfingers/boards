@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -50,25 +51,22 @@ async def update_progress(
 async def create_generation(
     session: AsyncSession,
     *,
-    tenant_id: str,
-    board_id: str,
-    user_id: str,
+    tenant_id: UUID,
+    board_id: UUID,
+    user_id: UUID,
     generator_name: str,
-    provider_name: str,
     artifact_type: str,
     input_params: dict,
 ) -> Generations:
-    gen = Generations(
-        tenant_id=tenant_id,
-        board_id=board_id,
-        user_id=user_id,
-        generator_name=generator_name,
-        provider_name=provider_name,
-        artifact_type=artifact_type,
-        input_params=input_params,
-        status="pending",
-        progress=0.0,
-    )
+    gen = Generations()
+    gen.tenant_id = tenant_id
+    gen.board_id = board_id
+    gen.user_id = user_id
+    gen.generator_name = generator_name
+    gen.artifact_type = artifact_type
+    gen.input_params = input_params
+    gen.status = "pending"
+    gen.progress = Decimal(0.0)
     session.add(gen)
     await session.flush()
     return gen

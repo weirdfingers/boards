@@ -47,7 +47,6 @@ class CreateGenerationInput:
 
     board_id: UUID
     generator_name: str
-    provider_name: str
     artifact_type: ArtifactType
     input_params: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
     parent_generation_id: UUID | None = None

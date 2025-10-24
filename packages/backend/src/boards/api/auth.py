@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from uuid import UUID
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -14,13 +15,14 @@ logger = logging.getLogger(__name__)
 
 class AuthenticatedUser(BaseModel):
     """Represents an authenticated user."""
-    user_id: str
-    tenant_id: str
+
+    user_id: UUID
+    tenant_id: UUID
     email: str | None = None
 
 
 async def get_current_user(
-    auth_context: AuthContext = Depends(get_auth_context)
+    auth_context: AuthContext = Depends(get_auth_context),
 ) -> AuthenticatedUser:
     """
     Get the current authenticated user from the auth context.
@@ -42,14 +44,14 @@ async def get_current_user(
         )
 
     return AuthenticatedUser(
-        user_id=str(auth_context.user_id),
+        user_id=auth_context.user_id,
         tenant_id=auth_context.tenant_id,
         email=auth_context.principal.get("email") if auth_context.principal else None,
     )
 
 
 async def get_current_user_optional(
-    auth_context: AuthContext = Depends(get_auth_context_optional)
+    auth_context: AuthContext = Depends(get_auth_context_optional),
 ) -> AuthenticatedUser | None:
     """
     Optional authentication - returns None if not authenticated.
@@ -61,7 +63,7 @@ async def get_current_user_optional(
         return None
 
     return AuthenticatedUser(
-        user_id=str(auth_context.user_id),
+        user_id=auth_context.user_id,
         tenant_id=auth_context.tenant_id,
         email=auth_context.principal.get("email") if auth_context.principal else None,
     )

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import Header, HTTPException
 
 from ..logging import get_logger
-
-# from ..db import get_database  # TODO: Implement when db module is ready
 from .adapters.base import AuthenticationError
-from .context import AuthContext
+from .context import DEFAULT_TENANT_UUID, AuthContext
 from .factory import get_auth_adapter_cached
 from .provisioning import ensure_local_user
 from .tenant_extraction import extract_tenant_from_claims
@@ -54,9 +54,10 @@ async def get_auth_context(
         else:
             # Use header tenant or default for unauthenticated requests
             tenant_slug = x_tenant or "default"
+            tenant_uuid = await _resolve_tenant_uuid(tenant_slug)
             return AuthContext(
                 user_id=None,
-                tenant_id=tenant_slug,
+                tenant_id=tenant_uuid,
                 principal=None,
                 token=None,
             )
@@ -95,7 +96,7 @@ async def get_auth_context(
             subject=principal.get("subject"),
         )
 
-        # Get database session for JIT user provisioning
+        # Resolve tenant slug to UUID and perform JIT user provisioning
         try:
             from ..database.connection import get_async_session
             from ..database.seed_data import ensure_tenant
@@ -105,6 +106,13 @@ async def get_auth_context(
                 tenant_uuid = await ensure_tenant(db, slug=tenant_slug)
                 # Now provision the user with the tenant UUID
                 user_id = await ensure_local_user(db, tenant_uuid, principal)
+
+            logger.info(
+                "User provisioned and tenant resolved",
+                user_id=str(user_id),
+                tenant_uuid=str(tenant_uuid),
+                tenant_slug=tenant_slug,
+            )
         except ImportError as e:
             # Database module not available, use deterministic fallback
             logger.warning(
@@ -112,14 +120,15 @@ async def get_auth_context(
                 error=str(e),
                 principal_provider=principal.get("provider"),
                 principal_subject=principal.get("subject"),
-                fallback_mode="deterministic_uuid"
+                fallback_mode="deterministic_uuid",
             )
 
             # Create a deterministic UUID based on principal's subject and provider
             # This ensures the same user gets the same ID across requests
             import hashlib
-            provider = principal.get('provider', 'unknown')
-            subject = principal.get('subject', 'anonymous')
+
+            provider = principal.get("provider", "unknown")
+            subject = principal.get("subject", "anonymous")
             stable_input = f"{provider}:{subject}:{tenant_slug}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
             # Create a valid UUID from the hash
@@ -130,13 +139,18 @@ async def get_auth_context(
                 f"{user_id_hash[20:32]}"
             )
             from uuid import UUID
+
             user_id = UUID(formatted_uuid)
+
+            # Also resolve tenant_uuid in fallback mode
+            tenant_uuid = await _resolve_tenant_uuid(tenant_slug)
 
             logger.info(
                 "Generated deterministic fallback user ID",
                 user_id=str(user_id),
+                tenant_uuid=str(tenant_uuid),
                 tenant_slug=tenant_slug,
-                provider=principal.get("provider")
+                provider=principal.get("provider"),
             )
         except Exception as db_error:
             # Database connection failed, use the same deterministic fallback
@@ -144,12 +158,13 @@ async def get_auth_context(
                 "Database connection failed, using fallback user ID generation",
                 error=str(db_error),
                 principal_provider=principal.get("provider"),
-                principal_subject=principal.get("subject")
+                principal_subject=principal.get("subject"),
             )
 
             import hashlib
-            provider = principal.get('provider', 'unknown')
-            subject = principal.get('subject', 'anonymous')
+
+            provider = principal.get("provider", "unknown")
+            subject = principal.get("subject", "anonymous")
             stable_input = f"{provider}:{subject}:{tenant_slug}"
             user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
             # Format hash as UUID: 8-4-4-4-12 pattern
@@ -159,11 +174,15 @@ async def get_auth_context(
                 f"{user_id_hash[20:32]}"
             )
             from uuid import UUID
+
             user_id = UUID(formatted_uuid)
+
+            # Also resolve tenant_uuid in this fallback path
+            tenant_uuid = await _resolve_tenant_uuid(tenant_slug)
 
         return AuthContext(
             user_id=user_id,
-            tenant_id=tenant_slug,
+            tenant_id=tenant_uuid,
             principal=principal,
             token=token,
         )
@@ -198,9 +217,47 @@ async def get_auth_context_optional(
     except HTTPException:
         # Return unauthenticated context
         tenant_slug = x_tenant or "default"
+        tenant_uuid = await _resolve_tenant_uuid(tenant_slug)
         return AuthContext(
             user_id=None,
-            tenant_id=tenant_slug,
+            tenant_id=tenant_uuid,
             principal=None,
             token=None,
         )
+
+
+async def _resolve_tenant_uuid(tenant_slug: str) -> UUID:
+    """
+    Resolve a tenant slug to its UUID.
+
+    Falls back to DEFAULT_TENANT_UUID if:
+    - Database lookup fails
+    - Tenant doesn't exist
+    - Running in single-tenant mode
+
+    Args:
+        tenant_slug: The tenant slug to resolve (e.g., "default", "acme-corp")
+
+    Returns:
+        UUID of the tenant, or DEFAULT_TENANT_UUID if resolution fails
+    """
+    try:
+        from ..database.connection import get_async_session
+        from ..database.seed_data import ensure_tenant
+
+        async with get_async_session() as db:
+            tenant_uuid = await ensure_tenant(db, slug=tenant_slug)
+            logger.debug(
+                "Resolved tenant slug to UUID",
+                tenant_slug=tenant_slug,
+                tenant_uuid=str(tenant_uuid),
+            )
+            return tenant_uuid
+    except Exception as e:
+        logger.warning(
+            "Failed to resolve tenant UUID, using default",
+            tenant_slug=tenant_slug,
+            error=str(e),
+            default_uuid=str(DEFAULT_TENANT_UUID),
+        )
+        return DEFAULT_TENANT_UUID

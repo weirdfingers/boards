@@ -4,6 +4,7 @@ Integration tests for board generations GraphQL resolvers
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
@@ -151,83 +152,77 @@ async def test_board_generations_integration(
             session.add(private_board)
 
             # Create generations for public board
-            gen1 = Generations(
-                id=uuid.uuid4(),
-                tenant_id=tenant_id,
-                board_id=public_board.id,
-                user_id=user1.id,
-                generator_name="stable-diffusion",
-                provider_name="replicate",
-                artifact_type="image",
-                storage_url="https://storage.example.com/gen1.jpg",
-                thumbnail_url="https://storage.example.com/gen1_thumb.jpg",
-                additional_files=[],
-                input_params={"prompt": "A beautiful sunset", "steps": 50},
-                output_metadata={"resolution": "512x512", "format": "jpeg"},
-                parent_generation_id=None,
-                input_generation_ids=[],
-                external_job_id="job-123",
-                status="completed",
-                progress=1.0,
-                error_message=None,
-                started_at=datetime.now(UTC),
-                completed_at=datetime.now(UTC),
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
+            gen1 = Generations()
+            gen1.id = uuid.uuid4()
+            gen1.tenant_id = tenant_id
+            gen1.board_id = public_board.id
+            gen1.user_id = user1.id
+            gen1.generator_name = "stable-diffusion"
+            gen1.artifact_type = "image"
+            gen1.storage_url = "https://storage.example.com/gen1.jpg"
+            gen1.thumbnail_url = "https://storage.example.com/gen1_thumb.jpg"
+            gen1.additional_files = []
+            gen1.input_params = {"prompt": "A beautiful sunset", "steps": 50}
+            gen1.output_metadata = {"resolution": "512x512", "format": "jpeg"}
+            gen1.parent_generation_id = None
+            gen1.input_generation_ids = []
+            gen1.external_job_id = "job-123"
+            gen1.status = "completed"
+            gen1.progress = Decimal(1.0)
+            gen1.error_message = None
+            gen1.started_at = datetime.now(UTC)
+            gen1.completed_at = datetime.now(UTC)
+            gen1.created_at = datetime.now(UTC)
+            gen1.updated_at = datetime.now(UTC)
             session.add(gen1)
 
-            gen2 = Generations(
-                id=uuid.uuid4(),
-                tenant_id=tenant_id,
-                board_id=public_board.id,
-                user_id=user1.id,
-                generator_name="stable-diffusion",
-                provider_name="replicate",
-                artifact_type="image",
-                storage_url="https://storage.example.com/gen2.jpg",
-                thumbnail_url="https://storage.example.com/gen2_thumb.jpg",
-                additional_files=[],
-                input_params={"prompt": "A mountain landscape", "steps": 30},
-                output_metadata={"resolution": "768x768", "format": "png"},
-                parent_generation_id=None,
-                input_generation_ids=[],
-                external_job_id="job-456",
-                status="completed",
-                progress=1.0,
-                error_message=None,
-                started_at=datetime.now(UTC),
-                completed_at=datetime.now(UTC),
-                created_at=datetime.now(UTC) - timedelta(hours=1),  # Older
-                updated_at=datetime.now(UTC),
-            )
+            gen2 = Generations()
+            gen2.id = uuid.uuid4()
+            gen2.tenant_id = tenant_id
+            gen2.board_id = public_board.id
+            gen2.user_id = user1.id
+            gen2.generator_name = "stable-diffusion"
+            gen2.artifact_type = "image"
+            gen2.storage_url = "https://storage.example.com/gen2.jpg"
+            gen2.thumbnail_url = "https://storage.example.com/gen2_thumb.jpg"
+            gen2.additional_files = []
+            gen2.input_params = {"prompt": "A mountain landscape", "steps": 30}
+            gen2.output_metadata = {"resolution": "768x768", "format": "png"}
+            gen2.parent_generation_id = None
+            gen2.input_generation_ids = []
+            gen2.external_job_id = "job-456"
+            gen2.status = "completed"
+            gen2.progress = Decimal(1.0)
+            gen2.error_message = None
+            gen2.started_at = datetime.now(UTC)
+            gen2.completed_at = datetime.now(UTC)
+            gen2.created_at = datetime.now(UTC) - timedelta(hours=1)  # Older
+            gen2.updated_at = datetime.now(UTC)
             session.add(gen2)
 
             # Create generation for private board
-            private_gen = Generations(
-                id=uuid.uuid4(),
-                tenant_id=tenant_id,
-                board_id=private_board.id,
-                user_id=user2.id,
-                generator_name="gpt-4",
-                provider_name="openai",
-                artifact_type="text",
-                storage_url=None,
-                thumbnail_url=None,
-                additional_files=[],
-                input_params={"prompt": "Write a story", "max_tokens": 1000},
-                output_metadata={"tokens_used": 500},
-                parent_generation_id=None,
-                input_generation_ids=[],
-                external_job_id="job-789",
-                status="processing",
-                progress=0.5,
-                error_message=None,
-                started_at=datetime.now(UTC),
-                completed_at=None,
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
+            private_gen = Generations()
+            private_gen.id = uuid.uuid4()
+            private_gen.tenant_id = tenant_id
+            private_gen.board_id = private_board.id
+            private_gen.user_id = user2.id
+            private_gen.generator_name = "gpt-4"
+            private_gen.artifact_type = "text"
+            private_gen.storage_url = None
+            private_gen.thumbnail_url = None
+            private_gen.additional_files = []
+            private_gen.input_params = {"prompt": "Write a story", "max_tokens": 1000}
+            private_gen.output_metadata = {"tokens_used": 500}
+            private_gen.parent_generation_id = None
+            private_gen.input_generation_ids = []
+            private_gen.external_job_id = "job-789"
+            private_gen.status = "processing"
+            private_gen.progress = Decimal(0.5)
+            private_gen.error_message = None
+            private_gen.started_at = datetime.now(UTC)
+            private_gen.completed_at = None
+            private_gen.created_at = datetime.now(UTC)
+            private_gen.updated_at = datetime.now(UTC)
             session.add(private_gen)
             await session.flush()
 
@@ -248,7 +243,6 @@ async def test_board_generations_integration(
                 generations(limit: $limit, offset: $offset) {
                     id
                     generatorName
-                    providerName
                     artifactType
                     status
                     progress
@@ -284,7 +278,6 @@ async def test_board_generations_integration(
         # Should be ordered by created_at desc (gen1 first, then gen2)
         assert generations[0]["id"] == str(gen1_id)
         assert generations[0]["generatorName"] == "stable-diffusion"
-        assert generations[0]["providerName"] == "replicate"
         assert generations[0]["artifactType"] == "IMAGE"
         assert generations[0]["status"] == "COMPLETED"
         assert generations[0]["progress"] == 1.0

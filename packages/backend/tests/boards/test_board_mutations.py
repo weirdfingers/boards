@@ -34,10 +34,12 @@ def mock_info():
     info.context = {
         "request": MagicMock(
             headers=MagicMock(
-                get=MagicMock(side_effect=lambda key: {
-                    "authorization": "Bearer test-token",
-                    "x-tenant": "default"
-                }.get(key))
+                get=MagicMock(
+                    side_effect=lambda key: {
+                        "authorization": "Bearer test-token",
+                        "x-tenant": "default",
+                    }.get(key)
+                )
             )
         )
     }
@@ -49,9 +51,9 @@ def auth_context():
     """Create an authenticated context."""
     return AuthContext(
         user_id=uuid.uuid4(),
-        tenant_id=str(uuid.uuid4()),
+        tenant_id=uuid.uuid4(),
         principal={"provider": "none", "subject": "test-user"},
-        token="test-token"
+        token="test-token",
     )
 
 
@@ -83,13 +85,17 @@ class TestCreateBoard:
             title="New Board",
             description="Board description",
             is_public=False,
-            settings={"theme": "dark"}
+            settings={"theme": "dark"},
         )
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -132,11 +138,12 @@ class TestCreateBoard:
     async def test_create_board_unauthenticated(self, mock_info):
         """Test that unauthenticated users cannot create boards."""
         input_data = CreateBoardInput(
-            title="New Board",
-            description="Board description"
+            title="New Board", description="Board description"
         )
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = None
 
             with pytest.raises(RuntimeError, match="Authentication required"):
@@ -145,14 +152,16 @@ class TestCreateBoard:
     @pytest.mark.asyncio
     async def test_create_board_minimal_input(self, mock_info, auth_context):
         """Test board creation with minimal input."""
-        input_data = CreateBoardInput(
-            title="Minimal Board"
-        )
+        input_data = CreateBoardInput(title="Minimal Board")
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -192,13 +201,17 @@ class TestUpdateBoard:
             id=sample_board.id,
             title="Updated Title",
             description="Updated description",
-            is_public=True
+            is_public=True,
         )
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -222,15 +235,16 @@ class TestUpdateBoard:
         admin_member.role = "admin"
         sample_board.board_members = [admin_member]
 
-        input_data = UpdateBoardInput(
-            id=sample_board.id,
-            title="Admin Updated"
-        )
+        input_data = UpdateBoardInput(id=sample_board.id, title="Admin Updated")
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -244,20 +258,23 @@ class TestUpdateBoard:
                 mock_async_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_board_permission_denied(self, mock_info, auth_context, sample_board):
+    async def test_update_board_permission_denied(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test that non-owner/non-admin cannot update board."""
         # User is not owner and not a member
         sample_board.owner_id = uuid.uuid4()
 
-        input_data = UpdateBoardInput(
-            id=sample_board.id,
-            title="Should Fail"
-        )
+        input_data = UpdateBoardInput(id=sample_board.id, title="Should Fail")
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -271,15 +288,16 @@ class TestUpdateBoard:
     @pytest.mark.asyncio
     async def test_update_board_not_found(self, mock_info, auth_context):
         """Test updating non-existent board."""
-        input_data = UpdateBoardInput(
-            id=uuid.uuid4(),
-            title="Should Fail"
-        )
+        input_data = UpdateBoardInput(id=uuid.uuid4(), title="Should Fail")
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -299,10 +317,14 @@ class TestDeleteBoard:
         """Test successful board deletion by owner."""
         sample_board.owner_id = auth_context.user_id
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -317,14 +339,20 @@ class TestDeleteBoard:
                 mock_async_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_board_permission_denied(self, mock_info, auth_context, sample_board):
+    async def test_delete_board_permission_denied(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test that non-owner cannot delete board."""
         sample_board.owner_id = uuid.uuid4()  # Different owner
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -338,10 +366,14 @@ class TestDeleteBoard:
     @pytest.mark.asyncio
     async def test_delete_board_not_found(self, mock_info, auth_context):
         """Test deleting non-existent board."""
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -367,15 +399,17 @@ class TestAddBoardMember:
         new_user.id = new_user_id
 
         input_data = AddBoardMemberInput(
-            board_id=sample_board.id,
-            user_id=new_user_id,
-            role=BoardRole.EDITOR
+            board_id=sample_board.id, user_id=new_user_id, role=BoardRole.EDITOR
         )
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -399,7 +433,7 @@ class TestAddBoardMember:
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
                     mock_user_result,
-                    mock_refreshed_result
+                    mock_refreshed_result,
                 ]
 
                 result = await add_board_member(mock_info, input_data)
@@ -409,20 +443,24 @@ class TestAddBoardMember:
                 mock_async_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_add_member_user_not_found(self, mock_info, auth_context, sample_board):
+    async def test_add_member_user_not_found(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test adding non-existent user as member."""
         sample_board.owner_id = auth_context.user_id
 
         input_data = AddBoardMemberInput(
-            board_id=sample_board.id,
-            user_id=uuid.uuid4(),
-            role=BoardRole.VIEWER
+            board_id=sample_board.id, user_id=uuid.uuid4(), role=BoardRole.VIEWER
         )
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -430,31 +468,39 @@ class TestAddBoardMember:
                 mock_board_result.scalar_one_or_none.return_value = sample_board
 
                 mock_user_result = MagicMock()
-                mock_user_result.scalar_one_or_none.return_value = None  # User not found
+                mock_user_result.scalar_one_or_none.return_value = (
+                    None  # User not found
+                )
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_user_result
+                    mock_user_result,
                 ]
 
                 with pytest.raises(RuntimeError, match="User not found"):
                     await add_board_member(mock_info, input_data)
 
     @pytest.mark.asyncio
-    async def test_add_member_already_owner(self, mock_info, auth_context, sample_board):
+    async def test_add_member_already_owner(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test that owner cannot be added as member."""
         sample_board.owner_id = auth_context.user_id
 
         input_data = AddBoardMemberInput(
             board_id=sample_board.id,
             user_id=auth_context.user_id,  # Trying to add owner as member
-            role=BoardRole.VIEWER
+            role=BoardRole.VIEWER,
         )
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -466,7 +512,7 @@ class TestAddBoardMember:
 
                 mock_async_session.execute.side_effect = [
                     mock_board_result,
-                    mock_user_result
+                    mock_user_result,
                 ]
 
                 with pytest.raises(RuntimeError, match="already the board owner"):
@@ -487,10 +533,14 @@ class TestRemoveBoardMember:
         member.role = "viewer"
         sample_board.board_members = [member]
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -501,9 +551,7 @@ class TestRemoveBoardMember:
                 mock_async_session.execute.side_effect = [mock_result, mock_result]
 
                 result = await remove_board_member(
-                    mock_info,
-                    sample_board.id,
-                    member_to_remove_id
+                    mock_info, sample_board.id, member_to_remove_id
                 )
 
                 assert result is not None
@@ -520,10 +568,14 @@ class TestRemoveBoardMember:
         member.role = "viewer"
         sample_board.board_members = [member]
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -534,9 +586,7 @@ class TestRemoveBoardMember:
                 mock_async_session.execute.side_effect = [mock_result, mock_result]
 
                 result = await remove_board_member(
-                    mock_info,
-                    sample_board.id,
-                    auth_context.user_id  # Removing self
+                    mock_info, sample_board.id, auth_context.user_id  # Removing self
                 )
 
                 assert result is not None
@@ -547,10 +597,14 @@ class TestRemoveBoardMember:
         """Test that board owner cannot be removed."""
         sample_board.owner_id = auth_context.user_id
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -562,7 +616,7 @@ class TestRemoveBoardMember:
                     await remove_board_member(
                         mock_info,
                         sample_board.id,
-                        auth_context.user_id  # Trying to remove owner
+                        auth_context.user_id,  # Trying to remove owner
                     )
 
 
@@ -570,7 +624,9 @@ class TestUpdateBoardMemberRole:
     """Tests for update_board_member_role mutation."""
 
     @pytest.mark.asyncio
-    async def test_update_member_role_as_owner(self, mock_info, auth_context, sample_board):
+    async def test_update_member_role_as_owner(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test updating member role as board owner."""
         sample_board.owner_id = auth_context.user_id
         member_id = uuid.uuid4()
@@ -580,10 +636,14 @@ class TestUpdateBoardMemberRole:
         member.role = "viewer"
         sample_board.board_members = [member]
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -594,10 +654,7 @@ class TestUpdateBoardMemberRole:
                 mock_async_session.execute.side_effect = [mock_result, mock_result]
 
                 result = await update_board_member_role(
-                    mock_info,
-                    sample_board.id,
-                    member_id,
-                    BoardRole.ADMIN
+                    mock_info, sample_board.id, member_id, BoardRole.ADMIN
                 )
 
                 assert result is not None
@@ -605,14 +662,20 @@ class TestUpdateBoardMemberRole:
                 mock_async_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cannot_change_owner_role(self, mock_info, auth_context, sample_board):
+    async def test_cannot_change_owner_role(
+        self, mock_info, auth_context, sample_board
+    ):
         """Test that owner's role cannot be changed."""
         sample_board.owner_id = auth_context.user_id
 
-        with patch('boards.graphql.resolvers.board.get_auth_context_from_info') as mock_get_auth:
+        with patch(
+            "boards.graphql.resolvers.board.get_auth_context_from_info"
+        ) as mock_get_auth:
             mock_get_auth.return_value = auth_context
 
-            with patch('boards.graphql.resolvers.board.get_async_session') as mock_session:
+            with patch(
+                "boards.graphql.resolvers.board.get_async_session"
+            ) as mock_session:
                 mock_async_session = AsyncMock()
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -620,10 +683,12 @@ class TestUpdateBoardMemberRole:
                 mock_result.scalar_one_or_none.return_value = sample_board
                 mock_async_session.execute.return_value = mock_result
 
-                with pytest.raises(RuntimeError, match="Cannot change the board owner's role"):
+                with pytest.raises(
+                    RuntimeError, match="Cannot change the board owner's role"
+                ):
                     await update_board_member_role(
                         mock_info,
                         sample_board.id,
                         auth_context.user_id,  # Trying to change owner's role
-                        BoardRole.VIEWER
+                        BoardRole.VIEWER,
                     )

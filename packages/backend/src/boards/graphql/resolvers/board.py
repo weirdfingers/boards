@@ -8,7 +8,6 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import selectinload
 
 from ...database.connection import get_async_session
-from ...database.seed_data import ensure_tenant
 from ...dbmodels import BoardMembers, Boards, Generations, Users
 from ...logging import get_logger
 from ..access_control import (
@@ -459,7 +458,7 @@ async def resolve_board_generations(
                 input_generation_ids=gen.input_generation_ids or [],
                 external_job_id=gen.external_job_id,
                 status=GenerationStatus(gen.status),
-                progress=gen.progress or 0.0,
+                progress=float(gen.progress or 0.0),
                 error_message=gen.error_message,
                 started_at=gen.started_at,
                 completed_at=gen.completed_at,
@@ -616,7 +615,7 @@ async def create_board(info: strawberry.Info, input: CreateBoardInput) -> Board:
 
     async with get_async_session() as session:
         # Get the tenant UUID from the database
-        tenant_uuid = await ensure_tenant(session, slug=auth_context.tenant_id)
+        tenant_uuid = auth_context.tenant_id
 
         # Create the new board
         new_board = Boards(

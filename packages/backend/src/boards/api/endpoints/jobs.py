@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -20,17 +21,16 @@ router = APIRouter()
 
 
 class SubmitGenerationRequest(BaseModel):
-    tenant_id: str
-    board_id: str
-    user_id: str
+    tenant_id: UUID
+    board_id: UUID
+    user_id: UUID
     generator_name: str
-    provider_name: str
     artifact_type: str
     input_params: dict
 
 
 class SubmitGenerationResponse(BaseModel):
-    generation_id: str
+    generation_id: UUID
 
 
 @router.post("/generations", response_model=SubmitGenerationResponse)
@@ -56,7 +56,6 @@ async def submit_generation(
             board_id=body.board_id,
             user_id=current_user.user_id,  # Use authenticated user
             generator_name=body.generator_name,
-            provider_name=body.provider_name,
             artifact_type=body.artifact_type,
             input_params=body.input_params,
         )
@@ -69,12 +68,11 @@ async def submit_generation(
         process_generation.send(str(gen.id))
         logger.info(f"Enqueued generation job {gen.id}")
 
-        return SubmitGenerationResponse(generation_id=str(gen.id))
+        return SubmitGenerationResponse(generation_id=gen.id)
 
     except Exception as e:
         logger.error(f"Failed to submit generation: {e}")
         await db.rollback()
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to submit generation: {str(e)}"
+            status_code=500, detail=f"Failed to submit generation: {str(e)}"
         ) from e
