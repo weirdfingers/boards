@@ -3,6 +3,7 @@ Database connection management
 """
 
 import os
+import threading
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 
@@ -21,6 +22,7 @@ _async_engine = None
 _session_local = None
 _async_session_local = None
 _initialized = False
+_init_lock = threading.Lock()  # Protect initialization from race conditions
 
 
 def get_database_url() -> str:
@@ -94,43 +96,53 @@ async def test_database_connection() -> tuple[bool, str | None]:
 
 
 def init_database(database_url: str | None = None, force_reinit: bool = False):
-    """Initialize shared database connection pools."""
+    """Initialize shared database connection pools.
+
+    Thread-safe initialization using a lock to prevent race conditions
+    when multiple threads attempt to initialize simultaneously.
+    """
     global _engine, _async_engine, _session_local, _async_session_local, _initialized
 
+    # Fast path: already initialized, no lock needed
     if _initialized and not force_reinit and database_url is None:
-        # Already initialized and no URL override
         return
 
-    # Get the database URL
-    db_url = database_url or get_database_url()
+    # Slow path: acquire lock for initialization
+    with _init_lock:
+        # Double-check after acquiring lock (another thread may have initialized)
+        if _initialized and not force_reinit and database_url is None:
+            return
 
-    # Create sync engine
-    _engine = create_engine(
-        db_url,
-        pool_size=settings.database_pool_size,
-        max_overflow=settings.database_max_overflow,
-        echo=settings.sql_echo,
-    )
-    _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+        # Get the database URL
+        db_url = database_url or get_database_url()
 
-    # Create async engine (if PostgreSQL)
-    if db_url.startswith("postgresql://"):
-        async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
-        _async_engine = create_async_engine(
-            async_db_url,
+        # Create sync engine
+        _engine = create_engine(
+            db_url,
             pool_size=settings.database_pool_size,
             max_overflow=settings.database_max_overflow,
             echo=settings.sql_echo,
         )
-        _async_session_local = async_sessionmaker(
-            _async_engine,
-            class_=AsyncSession,
-            autocommit=False,
-            autoflush=False,
-        )
+        _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
-    _initialized = True
-    logger.info("Database initialized", database_url=db_url)
+        # Create async engine (if PostgreSQL)
+        if db_url.startswith("postgresql://"):
+            async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+            _async_engine = create_async_engine(
+                async_db_url,
+                pool_size=settings.database_pool_size,
+                max_overflow=settings.database_max_overflow,
+                echo=settings.sql_echo,
+            )
+            _async_session_local = async_sessionmaker(
+                _async_engine,
+                class_=AsyncSession,
+                autocommit=False,
+                autoflush=False,
+            )
+
+        _initialized = True
+        logger.info("Database initialized", database_url=db_url)
 
 
 def get_engine():

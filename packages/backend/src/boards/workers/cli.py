@@ -28,8 +28,8 @@ logger = get_logger(__name__)
 )
 @click.option(
     "--queues",
-    default="default",
-    help="Comma-separated list of queues to process (default: default)",
+    default="boards-jobs",
+    help="Comma-separated list of queues to process (default: boards-jobs)",
 )
 @click.option(
     "--log-level",
