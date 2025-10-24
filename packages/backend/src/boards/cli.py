@@ -3,6 +3,7 @@
 Main CLI entry point for Boards backend server.
 """
 
+import os
 import sys
 
 import click
@@ -72,21 +73,42 @@ def serve(
         log_level=log_level,
     )
 
-    # Import app after logging is configured
-    from boards.api.app import app
+    # Set environment variables for app configuration when using reload/workers
+    # This ensures the app imports with the correct settings
+    if log_level == "debug":
+        os.environ["BOARDS_DEBUG"] = "true"
+        os.environ["BOARDS_LOG_LEVEL"] = "debug"
+    else:
+        os.environ.setdefault("BOARDS_DEBUG", "false")
+        os.environ.setdefault("BOARDS_LOG_LEVEL", log_level)
 
     try:
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            reload=reload,
-            workers=(
-                workers if not reload else 1
-            ),  # reload doesn't work with multiple workers
-            log_level=log_level,
-            access_log=True,
-        )
+        # When using reload or multiple workers, pass app as import string
+        if reload or workers > 1:
+            uvicorn.run(
+                "boards.api.app:app",
+                host=host,
+                port=port,
+                reload=reload,
+                workers=(
+                    workers if not reload else 1
+                ),  # reload doesn't work with multiple workers
+                log_level=log_level,
+                access_log=True,
+            )
+        else:
+            # Import app directly when not using reload/workers
+            from boards.api.app import app
+
+            uvicorn.run(
+                app,
+                host=host,
+                port=port,
+                reload=reload,
+                workers=workers,
+                log_level=log_level,
+                access_log=True,
+            )
     except KeyboardInterrupt:
         logger.info("Server shutdown requested by user")
     except Exception as e:
@@ -263,9 +285,9 @@ def audit_tenant_isolation(tenant_slug: str | None, output_format: str) -> None:
 
     def _display_audit_results_table(results):
         """Display audit results in table format."""
-        click.echo("\n" + "="*80)
+        click.echo("\n" + "=" * 80)
         click.echo("TENANT ISOLATION AUDIT RESULTS")
-        click.echo("="*80)
+        click.echo("=" * 80)
 
         for result in results:
             violations = result["isolation_violations"]
@@ -279,13 +301,17 @@ def audit_tenant_isolation(tenant_slug: str | None, output_format: str) -> None:
             click.echo(f"   Users: {stats.get('users_count', 0)}")
             click.echo(f"   Boards: {stats.get('boards_count', 0)}")
             click.echo(f"   Generations: {stats.get('generations_count', 0)}")
-            click.echo(f"   Board Memberships: {stats.get('board_memberships_count', 0)}")
+            click.echo(
+                f"   Board Memberships: {stats.get('board_memberships_count', 0)}"
+            )
 
             # Violations
             if violations:
                 click.echo(f"\n⚠️  Isolation Violations ({len(violations)}):")
                 for i, violation in enumerate(violations, 1):
-                    click.echo(f"   {i}. {violation['type']}: {violation['description']}")
+                    click.echo(
+                        f"   {i}. {violation['type']}: {violation['description']}"
+                    )
             else:
                 click.echo("\n✅ No isolation violations found")
 
@@ -295,9 +321,9 @@ def audit_tenant_isolation(tenant_slug: str | None, output_format: str) -> None:
                 click.echo(f"   • {rec}")
 
             if result != results[-1]:  # Not the last result
-                click.echo("\n" + "-"*60)
+                click.echo("\n" + "-" * 60)
 
-        click.echo("\n" + "="*80)
+        click.echo("\n" + "=" * 80)
 
     asyncio.run(do_audit())
 
@@ -323,6 +349,11 @@ def seed() -> None:
                 sys.exit(1)
 
     asyncio.run(do_seed())
+
+
+def main():
+    """Entry point for the CLI."""
+    cli()
 
 
 if __name__ == "__main__":

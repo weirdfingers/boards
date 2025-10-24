@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from boards.workers.actors import _process_generation_async
+from boards.workers.actors import process_generation
 
 
 @pytest.mark.requires_redis
@@ -59,5 +59,9 @@ def test_worker_smoke(monkeypatch):
     import os
 
     os.environ["REPLICATE_API_TOKEN"] = "test-token"
-    # Execute
-    asyncio.run(_process_generation_async("00000000-0000-0000-0000-00000000a1a1"))
+
+    # Execute the underlying async function directly (bypass dramatiq actor wrapper)
+
+    # Access the original function before AsyncIO middleware wrapping
+    original_fn = process_generation.fn.__wrapped__
+    asyncio.run(original_fn("00000000-0000-0000-0000-00000000a1a1"))

@@ -307,6 +307,7 @@ dev = [
     { name = "pytest-postgresql" },
     { name = "ruff" },
     { name = "twine" },
+    { name = "watchfiles" },
 ]
 
 [package.metadata]
@@ -360,6 +361,7 @@ dev = [
     { name = "pytest-postgresql", specifier = ">=6.0.0" },
     { name = "ruff", specifier = ">=0.1.0" },
     { name = "twine", specifier = ">=6.1.0" },
+    { name = "watchfiles", specifier = ">=1.1.0" },
 ]
 
 [[package]]

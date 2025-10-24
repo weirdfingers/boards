@@ -54,9 +54,7 @@ class FluxProGenerator(BaseGenerator):
         """Generate image using Replicate FLUX.1.1 Pro model."""
         # Check for API key
         if not os.getenv("REPLICATE_API_TOKEN"):
-            raise ValueError(
-                "API configuration invalid. Missing REPLICATE_API_TOKEN environment variable."
-            )
+            raise ValueError("API configuration invalid. Missing REPLICATE_API_TOKEN")
 
         # Import SDK directly - no wrapper layer
         try:
