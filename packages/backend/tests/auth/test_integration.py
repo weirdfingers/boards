@@ -23,7 +23,7 @@ async def protected_endpoint(auth: AuthContext = Depends(get_auth_context)):
 
     return {
         "user_id": str(auth.user_id),
-        "tenant_id": auth.tenant_id,
+        "tenant_id": str(auth.tenant_id),  # Convert UUID to string for JSON
         "provider": auth.provider,
         "authenticated": auth.is_authenticated,
     }
@@ -49,10 +49,15 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    def test_none_auth_integration(self, mock_ensure_user, client):
+    @patch("boards.database.seed_data.ensure_tenant")
+    def test_none_auth_integration(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test end-to-end authentication with none adapter."""
         # Setup mocks
-        mock_ensure_user.return_value = "test-user-uuid"
+        from uuid import uuid4
+
+        mock_tenant_id = uuid4()
+        mock_ensure_tenant.return_value = mock_tenant_id
+        mock_ensure_user.return_value = uuid4()
 
         # Test unauthenticated request (no-auth should auto-authenticate)
         response = client.get("/protected")
@@ -61,9 +66,10 @@ class TestAuthIntegration:
         data = response.json()
         assert data["authenticated"] is True
         assert data["provider"] == "none"
-        # User ID will be a randomly generated UUID since database isn't available in tests
+        # User ID will be a UUID string
         assert data["user_id"] is not None
-        assert data["tenant_id"] == "default"
+        # Tenant ID should match what we mocked
+        assert data["tenant_id"] == str(mock_tenant_id)
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
@@ -137,20 +143,33 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    def test_tenant_header(self, mock_ensure_user, client):
+    @patch("boards.database.seed_data.ensure_tenant")
+    def test_tenant_header(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test tenant header is processed correctly."""
         # Setup mocks
-        mock_ensure_user.return_value = "test-user-uuid"
+        from uuid import uuid4
 
-        # Test with custom tenant
+        custom_tenant_id = uuid4()
+        mock_ensure_tenant.return_value = custom_tenant_id
+        mock_ensure_user.return_value = uuid4()
+
+        # Test with custom tenant slug (X-Tenant accepts slugs, not UUIDs)
         response = client.get(
             "/protected",
-            headers={"Authorization": "Bearer test-token", "X-Tenant": "custom-tenant"},
+            headers={
+                "Authorization": "Bearer test-token",
+                "X-Tenant": "custom-tenant",  # Slug, not UUID
+            },
         )
 
         assert response.status_code == 200
         data = response.json()
-        assert data["tenant_id"] == "custom-tenant"
+        # Should receive the UUID that corresponds to the "custom-tenant" slug
+        assert data["tenant_id"] == str(custom_tenant_id)
+
+        # Verify ensure_tenant was called with the custom slug
+        mock_ensure_tenant.assert_called_once()
+        assert mock_ensure_tenant.call_args[1]["slug"] == "custom-tenant"
 
     @patch.dict(
         os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"}
@@ -193,7 +212,9 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
     @patch("boards.database.seed_data.ensure_tenant")
-    def test_jit_provisioning_called(self, mock_ensure_tenant, mock_ensure_user, client):
+    def test_jit_provisioning_called(
+        self, mock_ensure_tenant, mock_ensure_user, client
+    ):
         """Test that JIT provisioning is called correctly."""
         # Setup mocks - JIT provisioning is now called since database module is available
         from uuid import uuid4
@@ -236,7 +257,9 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
     @patch("boards.database.seed_data.ensure_tenant")
-    def test_database_error_handling(self, mock_ensure_tenant, mock_ensure_user, client):
+    def test_database_error_handling(
+        self, mock_ensure_tenant, mock_ensure_user, client
+    ):
         """Test handling of database errors."""
 
         # Setup mocks to raise error (though this test is less relevant now
