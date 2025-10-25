@@ -168,24 +168,18 @@ async def validate_startup_configuration() -> dict[str, Any]:
         auth_results = await validate_auth_configuration()
     else:
         # Skip tenant/auth validation if database is not accessible
-        logger.warning(
-            "Skipping tenant and auth validation due to database connection failure"
-        )
+        logger.warning("Skipping tenant and auth validation due to database connection failure")
         tenant_results = {
             "valid": False,
             "warnings": [],
             "errors": ["Skipped due to database connection failure"],
             "tenant_info": None,
         }
-        auth_results = (
-            await validate_auth_configuration()
-        )  # Auth can validate without DB
+        auth_results = await validate_auth_configuration()  # Auth can validate without DB
 
     # Combine results
     combined_results = {
-        "overall_valid": db_results["valid"]
-        and tenant_results["valid"]
-        and auth_results["valid"],
+        "overall_valid": db_results["valid"] and tenant_results["valid"] and auth_results["valid"],
         "database": db_results,
         "tenant": tenant_results,
         "auth": auth_results,
@@ -242,9 +236,7 @@ def get_startup_recommendations(validation_results: dict[str, Any]) -> list[str]
     # Tenant recommendations
     tenant_info = validation_results["tenant"].get("tenant_info")
     if tenant_info and tenant_info["mode"] == "single_tenant":
-        recommendations.append(
-            f"Single-tenant mode active with tenant: {tenant_info['tenant_id']}"
-        )
+        recommendations.append(f"Single-tenant mode active with tenant: {tenant_info['tenant_id']}")
 
     # Auth recommendations
     auth_info = validation_results["auth"]["auth_info"]
@@ -258,9 +250,7 @@ def get_startup_recommendations(validation_results: dict[str, Any]) -> list[str]
 
     # Error recommendations
     if not validation_results["overall_valid"]:
-        recommendations.append(
-            "Fix configuration errors before deploying to production"
-        )
+        recommendations.append("Fix configuration errors before deploying to production")
 
     # Success recommendations
     if validation_results["overall_valid"] and not recommendations:

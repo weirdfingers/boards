@@ -45,7 +45,7 @@ class Query:
         limit: int | None = 50,
         offset: int | None = 0,
         role: BoardQueryRole | None = None,
-        sort: SortOrder | None = None
+        sort: SortOrder | None = None,
     ) -> list[Board]:
         """Get boards owned by or shared with the current user."""
         from ..resolvers.board import resolve_my_boards
@@ -55,7 +55,7 @@ class Query:
             limit or 50,
             offset or 0,
             role or BoardQueryRole.ANY,
-            sort or SortOrder.UPDATED_DESC
+            sort or SortOrder.UPDATED_DESC,
         )
 
     @strawberry.field
@@ -64,16 +64,13 @@ class Query:
         info: strawberry.Info,
         limit: int | None = 50,
         offset: int | None = 0,
-        sort: SortOrder | None = None
+        sort: SortOrder | None = None,
     ) -> list[Board]:
         """Get public boards."""
         from ..resolvers.board import resolve_public_boards
 
         return await resolve_public_boards(
-            info,
-            limit or 50,
-            offset or 0,
-            sort or SortOrder.UPDATED_DESC
+            info, limit or 50, offset or 0, sort or SortOrder.UPDATED_DESC
         )
 
     @strawberry.field

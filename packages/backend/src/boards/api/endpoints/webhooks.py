@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
+
 @router.get("/status")
 async def webhook_status():
     """Webhook status endpoint."""

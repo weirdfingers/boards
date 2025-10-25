@@ -33,11 +33,11 @@ export class NoAuthProvider extends BaseAuthProvider {
 
   constructor(config: NoAuthConfig = {}) {
     super(config);
-    
+
     // Production safety check
     const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : '';
     const isDevelopment = nodeEnv === 'development' || nodeEnv === '' || nodeEnv === 'test';
-    
+
     if (!isDevelopment) {
       const error = new Error(
         'NoAuthProvider cannot be used in production environments. ' +
@@ -112,7 +112,7 @@ export class NoAuthProvider extends BaseAuthProvider {
     // No-op in no-auth mode - can't sign out
     if (console.info) {
       console.info('[AUTH] SignOut called in no-auth mode - no action taken', {
-        provider: 'none', 
+        provider: 'none',
         action: 'signOut',
         status: 'ignored'
       });
@@ -136,7 +136,7 @@ export class NoAuthProvider extends BaseAuthProvider {
   onAuthStateChange(callback: (state: AuthState) => void): () => void {
     // Call immediately with current state
     callback(this.currentState);
-    
+
     this.listeners.push(callback);
     return () => {
       const index = this.listeners.indexOf(callback);

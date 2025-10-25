@@ -6,9 +6,9 @@ export { JWTAuthProvider } from './JWTAuthProvider';
 export type { JWTConfig } from './types';
 
 // Re-export core types for convenience
-export type { 
-  AuthState, 
-  User, 
+export type {
+  AuthState,
+  User,
   AuthProviderConfig,
-  AuthContextValue 
+  AuthContextValue
 } from '@weirdfingers/boards';

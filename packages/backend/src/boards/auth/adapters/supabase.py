@@ -51,9 +51,9 @@ class SupabaseAuthAdapter:
 
             # Extract display name from user metadata
             if user.user_metadata:
-                if display_name := user.user_metadata.get(
-                    "display_name"
-                ) or user.user_metadata.get("full_name"):
+                if display_name := user.user_metadata.get("display_name") or user.user_metadata.get(
+                    "full_name"
+                ):
                     principal["display_name"] = display_name
                 if avatar_url := user.user_metadata.get("avatar_url"):
                     principal["avatar_url"] = avatar_url
@@ -73,9 +73,7 @@ class SupabaseAuthAdapter:
             logger.warning("Supabase token validation failed", error=str(e))
             raise AuthenticationError(f"Invalid token: {e}") from e
 
-    async def issue_token(
-        self, user_id: UUID | None = None, claims: dict | None = None
-    ) -> str:
+    async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """
         Issue a new token via Supabase (not commonly used).
 
@@ -84,9 +82,7 @@ class SupabaseAuthAdapter:
         """
         # Supabase doesn't provide a direct server-side token issuance API
         # This would typically be done on the client side
-        raise NotImplementedError(
-            "Token issuance should be handled by Supabase client libraries"
-        )
+        raise NotImplementedError("Token issuance should be handled by Supabase client libraries")
 
     async def get_user_info(self, token: str) -> dict:
         """Get additional user information from Supabase."""

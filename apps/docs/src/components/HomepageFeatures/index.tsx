@@ -15,7 +15,7 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Generate and combine text, images, video, and audio using advanced AI models. 
+        Generate and combine text, images, video, and audio using advanced AI models.
         Boards enables seamless multi-modal content creation for your projects.
       </>
     ),
@@ -25,7 +25,7 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Work together in real-time with your team. Share, edit, and organize ideas 
+        Work together in real-time with your team. Share, edit, and organize ideas
         collaboratively within a unified workspace with drag-and-drop organization.
       </>
     ),
@@ -35,7 +35,7 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Connect with multiple AI providers and data sources. Boards integrates with 
+        Connect with multiple AI providers and data sources. Boards integrates with
         Replicate, OpenAI, Fal.ai, and more to streamline your workflow.
       </>
     ),

@@ -1,0 +1,89 @@
+# Pre-commit hooks for Boards monorepo
+# See https://pre-commit.com for more information
+
+default_language_version:
+  python: python3.12
+  node: "20.0.0"
+
+repos:
+  # Python code formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Run the linter
+      - id: ruff
+        name: ruff (lint Python)
+        args: [--fix]
+        files: ^packages/backend/
+      # Run the formatter
+      - id: ruff-format
+        name: ruff (format Python)
+        files: ^packages/backend/
+
+  # Python type checking with pyright
+  - repo: local
+    hooks:
+      - id: pyright-backend
+        name: pyright (typecheck backend)
+        entry: bash -c 'cd packages/backend && uv run pyright'
+        language: system
+        files: ^packages/backend/.*\.py$
+        pass_filenames: false
+
+  # Node.js linting and type checking
+  - repo: local
+    hooks:
+      - id: lint-frontend
+        name: lint (frontend packages)
+        entry: make lint-frontend
+        language: system
+        files: ^packages/(frontend|auth-.*)/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+
+      - id: typecheck-frontend
+        name: typecheck (frontend packages)
+        entry: make typecheck-frontend
+        language: system
+        files: ^packages/(frontend|auth-.*)/.*\.(ts|tsx)$
+        pass_filenames: false
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(.*\.md|.*\.txt)$
+      - id: end-of-file-fixer
+        exclude: ^(.*\.svg|.*\.png|.*\.jpg|.*\.jpeg)$
+      - id: check-yaml
+        args: [--unsafe] # Allow custom YAML tags
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Optional: Python tests (commented out by default as they can be slow)
+  # Uncomment to run tests on every commit
+  - repo: local
+    hooks:
+      - id: pytest-backend
+        name: pytest (backend tests)
+        entry: bash -c 'cd packages/backend && uv run pytest tests/ -x --ff'
+        language: system
+        files: ^packages/backend/.*\.py$
+        pass_filenames: false
+        stages: [push] # Only run on push, not on every commit
+
+# Configuration for specific hooks
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

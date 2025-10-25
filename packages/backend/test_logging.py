@@ -32,6 +32,7 @@ def test_basic_logging():
     logger.warning("Warning message", component="test")
     logger.error("Error message", error_code="TEST001", details={"reason": "testing"})
 
+
 def test_request_context():
     """Test request context logging."""
     print("\n=== Testing Request Context ===")
@@ -49,6 +50,7 @@ def test_request_context():
     clear_request_context()
     logger.info("Message after clearing context")
 
+
 def test_production_logging():
     """Test production JSON logging."""
     print("\n=== Testing Production Logging (JSON) ===")
@@ -59,18 +61,23 @@ def test_production_logging():
 
     set_request_context(user_id="user-789")
 
-    logger.info("Production log message",
-                component="api",
-                operation="user_login",
-                duration_ms=150,
-                success=True)
+    logger.info(
+        "Production log message",
+        component="api",
+        operation="user_login",
+        duration_ms=150,
+        success=True,
+    )
 
-    logger.error("Production error message",
-                 component="database",
-                 operation="query",
-                 error="connection timeout",
-                 query="SELECT * FROM users",
-                 duration_ms=5000)
+    logger.error(
+        "Production error message",
+        component="database",
+        operation="query",
+        error="connection timeout",
+        query="SELECT * FROM users",
+        duration_ms=5000,
+    )
+
 
 def test_request_id_generation():
     """Test the new compact request ID generation."""
@@ -84,6 +91,7 @@ def test_request_id_generation():
         time.sleep(0.001)  # Small delay to show different timestamps
 
     print(f"Compare to UUID length: {len('550e8400-e29b-41d4-a716-446655440000')} chars")
+
 
 if __name__ == "__main__":
     test_basic_logging()

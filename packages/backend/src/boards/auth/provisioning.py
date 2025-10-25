@@ -14,9 +14,7 @@ from .adapters.base import Principal
 logger = get_logger(__name__)
 
 
-async def ensure_local_user(
-    db: AsyncSession, tenant_id: UUID, principal: Principal
-) -> UUID:
+async def ensure_local_user(db: AsyncSession, tenant_id: UUID, principal: Principal) -> UUID:
     """
     Ensure a local user exists for the given principal (JIT provisioning).
 

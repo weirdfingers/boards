@@ -25,9 +25,7 @@ logger = get_logger(__name__)
 
 
 # Query resolvers
-async def resolve_generation_by_id(
-    info: strawberry.Info, id: UUID
-) -> Generation | None:
+async def resolve_generation_by_id(info: strawberry.Info, id: UUID) -> Generation | None:
     """
     Resolve a generation by its ID.
 
@@ -62,9 +60,7 @@ async def resolve_generation_by_id(
                 generation_id=str(id),
                 board_id=str(gen.board_id),
                 user_id=(
-                    str(auth_context.user_id)
-                    if auth_context and auth_context.user_id
-                    else None
+                    str(auth_context.user_id) if auth_context and auth_context.user_id else None
                 ),
             )
             return None
@@ -139,9 +135,7 @@ async def resolve_recent_generations(
                 )
                 return []
 
-            generations_query = generations_query.where(
-                Generations.board_id == board_id
-            )
+            generations_query = generations_query.where(Generations.board_id == board_id)
         else:
             # Get all boards user has access to
             member_board_ids = select(BoardMembers.board_id).where(
@@ -152,9 +146,7 @@ async def resolve_recent_generations(
                 Boards.id.in_(member_board_ids),
                 Boards.is_public,
             )
-            accessible_boards_stmt = select(Boards.id).where(
-                accessible_boards_condition
-            )
+            accessible_boards_stmt = select(Boards.id).where(accessible_boards_condition)
             accessible_boards_result = await session.execute(accessible_boards_stmt)
             accessible_board_ids = [row[0] for row in accessible_boards_result.all()]
 
@@ -167,9 +159,7 @@ async def resolve_recent_generations(
 
         # Apply status filter
         if status is not None:
-            generations_query = generations_query.where(
-                Generations.status == status.value
-            )
+            generations_query = generations_query.where(Generations.status == status.value)
 
         # Apply artifact_type filter
         if artifact_type is not None:
@@ -179,9 +169,7 @@ async def resolve_recent_generations(
 
         # Order by created_at DESC and apply pagination
         generations_query = (
-            generations_query.order_by(Generations.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+            generations_query.order_by(Generations.created_at.desc()).limit(limit).offset(offset)
         )
 
         result = await session.execute(generations_query)
@@ -221,9 +209,7 @@ async def resolve_recent_generations(
 
 
 # Field resolvers
-async def resolve_generation_board(
-    generation: Generation, info: strawberry.Info
-) -> Board:
+async def resolve_generation_board(generation: Generation, info: strawberry.Info) -> Board:
     """Resolve the board this generation belongs to."""
     auth_context = await get_auth_context_from_info(info)
 
@@ -261,9 +247,7 @@ async def resolve_generation_board(
         )
 
 
-async def resolve_generation_user(
-    generation: Generation, info: strawberry.Info
-) -> User:
+async def resolve_generation_user(generation: Generation, info: strawberry.Info) -> User:
     """Resolve the user who created this generation."""
     async with get_async_session() as session:
         stmt = select(Users).where(Users.id == generation.user_id)
@@ -299,9 +283,7 @@ async def resolve_generation_parent(
 
     async with get_async_session() as session:
         # Query parent generation
-        stmt = select(Generations).where(
-            Generations.id == generation.parent_generation_id
-        )
+        stmt = select(Generations).where(Generations.id == generation.parent_generation_id)
         result = await session.execute(stmt)
         parent = result.scalar_one_or_none()
 
@@ -368,9 +350,7 @@ async def resolve_generation_inputs(
 
     async with get_async_session() as session:
         # Query input generations
-        stmt = select(Generations).where(
-            Generations.id.in_(generation.input_generation_ids)
-        )
+        stmt = select(Generations).where(Generations.id.in_(generation.input_generation_ids))
         result = await session.execute(stmt)
         inputs = result.scalars().all()
 
@@ -428,9 +408,7 @@ async def resolve_generation_children(
 
     async with get_async_session() as session:
         # Query child generations
-        stmt = select(Generations).where(
-            Generations.parent_generation_id == generation.id
-        )
+        stmt = select(Generations).where(Generations.parent_generation_id == generation.id)
         result = await session.execute(stmt)
         children = result.scalars().all()
 
@@ -481,20 +459,14 @@ async def resolve_generation_children(
 
 
 # Mutation resolvers
-async def create_generation(
-    info: strawberry.Info, input: CreateGenerationInput
-) -> Generation:
+async def create_generation(info: strawberry.Info, input: CreateGenerationInput) -> Generation:
     """
     Create a new generation and enqueue it for processing.
 
     Requires editor or owner role on the target board.
     """
     auth_context = await get_auth_context_from_info(info)
-    if (
-        not auth_context
-        or not auth_context.is_authenticated
-        or not auth_context.user_id
-    ):
+    if not auth_context or not auth_context.is_authenticated or not auth_context.user_id:
         raise RuntimeError("Authentication required to create a generation")
 
     async with get_async_session() as session:
@@ -513,8 +485,7 @@ async def create_generation(
         # Check if user is owner or editor
         is_owner = board.owner_id == auth_context.user_id
         is_editor = any(
-            member.user_id == auth_context.user_id
-            and member.role in {"editor", "admin"}
+            member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
             for member in board.board_members
         )
 
@@ -530,9 +501,7 @@ async def create_generation(
 
         # Verify access to parent generation if provided
         if input.parent_generation_id:
-            parent_stmt = select(Generations).where(
-                Generations.id == input.parent_generation_id
-            )
+            parent_stmt = select(Generations).where(Generations.id == input.parent_generation_id)
             parent_result = await session.execute(parent_stmt)
             parent_gen = parent_result.scalar_one_or_none()
 
@@ -571,9 +540,7 @@ async def create_generation(
                 input_board = input_board_result.scalar_one_or_none()
 
                 if not input_board or not can_access_board(input_board, auth_context):
-                    raise RuntimeError(
-                        f"Access denied to input generation {input_gen_id}"
-                    )
+                    raise RuntimeError(f"Access denied to input generation {input_gen_id}")
 
         # Create generation record
         gen = await jobs_repo.create_generation(
@@ -670,8 +637,7 @@ async def cancel_generation(info: strawberry.Info, id: UUID) -> Generation:
         # Check authorization
         is_owner = board.owner_id == auth_context.user_id
         is_editor = any(
-            member.user_id == auth_context.user_id
-            and member.role in {"editor", "admin"}
+            member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
             for member in board.board_members
         )
         is_creator = gen.user_id == auth_context.user_id
@@ -771,8 +737,7 @@ async def delete_generation(info: strawberry.Info, id: UUID) -> bool:
         # Check authorization
         is_owner = board.owner_id == auth_context.user_id
         is_editor = any(
-            member.user_id == auth_context.user_id
-            and member.role in {"editor", "admin"}
+            member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
             for member in board.board_members
         )
         is_creator = gen.user_id == auth_context.user_id
@@ -794,9 +759,7 @@ async def delete_generation(info: strawberry.Info, id: UUID) -> bool:
                 generation_id=str(id),
                 has_storage_url=bool(gen.storage_url),
                 has_thumbnail=bool(gen.thumbnail_url),
-                additional_files_count=(
-                    len(gen.additional_files) if gen.additional_files else 0
-                ),
+                additional_files_count=(len(gen.additional_files) if gen.additional_files else 0),
             )
             logger.warning(
                 "Storage artifact deletion not yet implemented - requires storage_key and "
@@ -824,11 +787,7 @@ async def regenerate(info: strawberry.Info, id: UUID) -> Generation:
     Creates a new generation with the same inputs and sets the original as parent.
     """
     auth_context = await get_auth_context_from_info(info)
-    if (
-        not auth_context
-        or not auth_context.is_authenticated
-        or not auth_context.user_id
-    ):
+    if not auth_context or not auth_context.is_authenticated or not auth_context.user_id:
         raise RuntimeError("Authentication required to regenerate")
 
     async with get_async_session() as session:
@@ -855,22 +814,17 @@ async def regenerate(info: strawberry.Info, id: UUID) -> Generation:
         # Check if user is owner or editor
         is_owner = board.owner_id == auth_context.user_id
         is_editor = any(
-            member.user_id == auth_context.user_id
-            and member.role in {"editor", "admin"}
+            member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
             for member in board.board_members
         )
 
         if not is_owner and not is_editor:
-            raise RuntimeError(
-                "Permission denied: only board owner or editor can regenerate"
-            )
+            raise RuntimeError("Permission denied: only board owner or editor can regenerate")
 
         # Validate generator still exists
         generator = generator_registry.get(original.generator_name)
         if generator is None:
-            raise RuntimeError(
-                f"Generator '{original.generator_name}' is no longer available"
-            )
+            raise RuntimeError(f"Generator '{original.generator_name}' is no longer available")
 
         # Create new generation with copied inputs
         new_gen = await jobs_repo.create_generation(

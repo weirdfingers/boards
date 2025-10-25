@@ -44,9 +44,7 @@ def authenticated_context():
 @pytest.fixture
 def unauthenticated_context():
     """Create an unauthenticated context."""
-    return AuthContext(
-        user_id=None, tenant_id=TEST_TENANT_UUID, principal=None, token=None
-    )
+    return AuthContext(user_id=None, tenant_id=TEST_TENANT_UUID, principal=None, token=None)
 
 
 class TestCanAccessBoard:
@@ -108,16 +106,16 @@ class TestCanAccessBoardDetails:
         """can_access_board_details should behave the same as can_access_board."""
         # Test public board
         sample_board.is_public = True
-        assert can_access_board_details(
+        assert can_access_board_details(sample_board, authenticated_context) == can_access_board(
             sample_board, authenticated_context
-        ) == can_access_board(sample_board, authenticated_context)
+        )
 
         # Test private board as owner
         sample_board.is_public = False
         sample_board.owner_id = authenticated_context.user_id
-        assert can_access_board_details(
+        assert can_access_board_details(sample_board, authenticated_context) == can_access_board(
             sample_board, authenticated_context
-        ) == can_access_board(sample_board, authenticated_context)
+        )
 
 
 class TestIsBoardOwnerOrMember:

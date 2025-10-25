@@ -11,8 +11,9 @@ import pytest
 # Copy the adapter code directly to avoid import issues
 class Principal(TypedDict):
     """Identity extracted from an incoming token."""
-    provider: Literal['supabase', 'clerk', 'auth0', 'oidc', 'jwt', 'none']
-    subject: str             # provider user id (sub)
+
+    provider: Literal["supabase", "clerk", "auth0", "oidc", "jwt", "none"]
+    subject: str  # provider user id (sub)
     email: NotRequired[str]
     display_name: NotRequired[str]
     avatar_url: NotRequired[str]
@@ -21,6 +22,7 @@ class Principal(TypedDict):
 
 class AuthenticationError(Exception):
     """Raised when authentication fails."""
+
     pass
 
 
@@ -44,7 +46,7 @@ class TestJWTAdapter:
                     "verify_exp": True,
                     "verify_nbf": True,
                     "verify_iat": True,
-                }
+                },
             )
 
             subject = payload.get("sub")
@@ -105,7 +107,7 @@ class TestNoAuthAdapter:
             claims={
                 "mode": "development",
                 "token": token[:20] + "..." if len(token) > 20 else token,
-            }
+            },
         )
 
     async def issue_token(self, user_id=None, claims=None):

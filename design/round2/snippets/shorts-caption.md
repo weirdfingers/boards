@@ -4,4 +4,3 @@ Shipped <FEATURE> for Boards → <OUTCOME>. Free & open‑source.
 Docs <DOCS_URL> · Repo <REPO_URL>
 
 Hashtags: #opensource #ai #genai #shorts
-

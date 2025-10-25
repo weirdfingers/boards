@@ -281,7 +281,7 @@ describe('JWTAuthProvider', () => {
     it('should handle unsubscribe correctly', async () => {
       const mockCallback = vi.fn();
       const unsubscribe = provider.onAuthStateChange(mockCallback);
-      
+
       unsubscribe();
       mockCallback.mockClear();
 
@@ -316,6 +316,6 @@ function createMockJWT(payload: any): string {
   const encodedHeader = btoa(JSON.stringify(header));
   const encodedPayload = btoa(JSON.stringify(payload));
   const signature = 'mock-signature';
-  
+
   return `${encodedHeader}.${encodedPayload}.${signature}`;
 }

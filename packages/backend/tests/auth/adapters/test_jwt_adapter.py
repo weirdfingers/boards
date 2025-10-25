@@ -18,10 +18,7 @@ def secret_key():
 @pytest.fixture
 def jwt_adapter(secret_key):
     return JWTAuthAdapter(
-        secret_key=secret_key,
-        algorithm="HS256",
-        issuer="test-boards",
-        audience="test-api"
+        secret_key=secret_key, algorithm="HS256", issuer="test-boards", audience="test-api"
     )
 
 
@@ -114,10 +111,7 @@ class TestJWTAdapter:
     @pytest.mark.asyncio
     async def test_verify_wrong_issuer(self, secret_key):
         """Test verifying a token with wrong issuer fails."""
-        adapter = JWTAuthAdapter(
-            secret_key=secret_key,
-            issuer="expected-issuer"
-        )
+        adapter = JWTAuthAdapter(secret_key=secret_key, issuer="expected-issuer")
 
         now = datetime.now(UTC)
         payload = {
@@ -183,7 +177,7 @@ class TestJWTAdapter:
             secret_key="test-key",
             algorithm="HS512",
             issuer="custom-issuer",
-            audience="custom-audience"
+            audience="custom-audience",
         )
 
         assert adapter.secret_key == "test-key"

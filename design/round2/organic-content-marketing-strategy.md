@@ -273,4 +273,3 @@ Targets (initial): 1 demo/week, 5–10 posts/week (same demo cross‑posted), +1
 - LinkedIn (optional): <LINKEDIN_PAGE_URL>
 - Dev.to (optional): <DEVTO_PROFILE_URL>
 - Hashnode (optional): <HASHNODE_BLOG_URL>
-

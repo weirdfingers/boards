@@ -56,9 +56,7 @@ class Tenants(Base):
     id: Mapped[UUID] = mapped_column(Uuid, server_default=text("uuid_generate_v4()"))
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), nullable=False)
-    settings: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, server_default=text("'{}'::jsonb")
-    )
+    settings: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(True), server_default=text("CURRENT_TIMESTAMP")
     )
@@ -69,12 +67,8 @@ class Tenants(Base):
     provider_configs: Mapped[list["ProviderConfigs"]] = relationship(
         "ProviderConfigs", uselist=True, back_populates="tenant"
     )
-    users: Mapped[list["Users"]] = relationship(
-        "Users", uselist=True, back_populates="tenant"
-    )
-    boards: Mapped[list["Boards"]] = relationship(
-        "Boards", uselist=True, back_populates="tenant"
-    )
+    users: Mapped[list["Users"]] = relationship("Users", uselist=True, back_populates="tenant")
+    boards: Mapped[list["Boards"]] = relationship("Boards", uselist=True, back_populates="tenant")
     lora_models: Mapped[list["LoraModels"]] = relationship(
         "LoraModels", uselist=True, back_populates="tenant"
     )
@@ -115,9 +109,7 @@ class ProviderConfigs(Base):
         DateTime(True), server_default=text("CURRENT_TIMESTAMP")
     )
 
-    tenant: Mapped["Tenants"] = relationship(
-        "Tenants", back_populates="provider_configs"
-    )
+    tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="provider_configs")
 
 
 class Users(Base):
@@ -158,9 +150,7 @@ class Users(Base):
     )
 
     tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="users")
-    boards: Mapped[list["Boards"]] = relationship(
-        "Boards", uselist=True, back_populates="owner"
-    )
+    boards: Mapped[list["Boards"]] = relationship("Boards", uselist=True, back_populates="owner")
     lora_models: Mapped[list["LoraModels"]] = relationship(
         "LoraModels", uselist=True, back_populates="user"
     )
@@ -207,9 +197,7 @@ class Boards(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     is_public: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
-    settings: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, server_default=text("'{}'::jsonb")
-    )
+    settings: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
     metadata_: Mapped[dict[str, Any]] = mapped_column(
         "metadata", JSONB, server_default=text("'{}'::jsonb")
     )
@@ -286,9 +274,7 @@ class BoardMembers(Base):
             ondelete="CASCADE",
             name="board_members_board_id_fkey",
         ),
-        ForeignKeyConstraint(
-            ["invited_by"], ["users.id"], name="board_members_invited_by_fkey"
-        ),
+        ForeignKeyConstraint(["invited_by"], ["users.id"], name="board_members_invited_by_fkey"),
         ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
@@ -296,9 +282,7 @@ class BoardMembers(Base):
             name="board_members_user_id_fkey",
         ),
         PrimaryKeyConstraint("id", name="board_members_pkey"),
-        UniqueConstraint(
-            "board_id", "user_id", name="board_members_board_id_user_id_key"
-        ),
+        UniqueConstraint("board_id", "user_id", name="board_members_board_id_user_id_key"),
         Index("idx_board_members_board", "board_id"),
         Index("idx_board_members_user", "user_id"),
     )
@@ -375,9 +359,7 @@ class Generations(Base):
     )
     storage_url: Mapped[str | None] = mapped_column(Text)
     thumbnail_url: Mapped[str | None] = mapped_column(Text)
-    additional_files: Mapped[list[Any]] = mapped_column(
-        JSONB, server_default=text("'[]'::jsonb")
-    )
+    additional_files: Mapped[list[Any]] = mapped_column(JSONB, server_default=text("'[]'::jsonb"))
     output_metadata: Mapped[dict[str, Any]] = mapped_column(
         JSONB, server_default=text("'{}'::jsonb")
     )
@@ -465,9 +447,7 @@ class CreditTransactions(Base):
     generation: Mapped["Generations | None"] = relationship(
         "Generations", back_populates="credit_transactions"
     )
-    tenant: Mapped["Tenants"] = relationship(
-        "Tenants", back_populates="credit_transactions"
-    )
+    tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="credit_transactions")
     user: Mapped["Users"] = relationship("Users", back_populates="credit_transactions")
 
 

@@ -85,18 +85,14 @@ class Generation:
     updated_at: datetime
 
     @strawberry.field
-    async def board(
-        self, info: strawberry.Info
-    ) -> Annotated["Board", strawberry.lazy(".board")]:
+    async def board(self, info: strawberry.Info) -> Annotated["Board", strawberry.lazy(".board")]:
         """Get the board this generation belongs to."""
         from ..resolvers.generation import resolve_generation_board
 
         return await resolve_generation_board(self, info)
 
     @strawberry.field
-    async def user(
-        self, info: strawberry.Info
-    ) -> Annotated["User", strawberry.lazy(".user")]:
+    async def user(self, info: strawberry.Info) -> Annotated["User", strawberry.lazy(".user")]:
         """Get the user who created this generation."""
         from ..resolvers.generation import resolve_generation_user
 

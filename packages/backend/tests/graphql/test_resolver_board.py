@@ -38,9 +38,7 @@ def mock_info():
 def mock_info_no_auth():
     """Create a mock GraphQL info object without authentication."""
     info = MagicMock(spec=strawberry.Info)
-    info.context = {
-        "request": MagicMock(headers=MagicMock(get=MagicMock(return_value=None)))
-    }
+    info.context = {"request": MagicMock(headers=MagicMock(get=MagicMock(return_value=None)))}
     return info
 
 
@@ -81,23 +79,17 @@ class TestResolveBoardById:
     """Tests for resolve_board_by_id function."""
 
     @pytest.mark.asyncio
-    async def test_public_board_access_without_auth(
-        self, mock_info_no_auth, sample_board
-    ):
+    async def test_public_board_access_without_auth(self, mock_info_no_auth, sample_board):
         """Test that public boards can be accessed without authentication."""
         board_id = sample_board.id
         sample_board.is_public = True
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=None, tenant_id=DEFAULT_TENANT_UUID, principal=None, token=None
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 # Mock the async context manager
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
@@ -120,9 +112,7 @@ class TestResolveBoardById:
         board_id = sample_board.id
         owner_id = sample_board.owner_id
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=owner_id,
                 tenant_id=DEFAULT_TENANT_UUID,
@@ -130,9 +120,7 @@ class TestResolveBoardById:
                 token="test-token",
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -158,9 +146,7 @@ class TestResolveBoardById:
         member.role = "viewer"
         sample_board.board_members = [member]
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=member_user_id,
                 tenant_id=DEFAULT_TENANT_UUID,
@@ -168,9 +154,7 @@ class TestResolveBoardById:
                 token="test-token",
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -189,9 +173,7 @@ class TestResolveBoardById:
         board_id = sample_board.id
         unauthorized_user_id = uuid.uuid4()  # Different from owner
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=unauthorized_user_id,
                 tenant_id=DEFAULT_TENANT_UUID,
@@ -199,9 +181,7 @@ class TestResolveBoardById:
                 token="test-token",
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -218,16 +198,12 @@ class TestResolveBoardById:
         """Test that private boards cannot be accessed without authentication."""
         board_id = sample_board.id
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=None, tenant_id=DEFAULT_TENANT_UUID, principal=None, token=None
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -244,9 +220,7 @@ class TestResolveBoardById:
         """Test that None is returned when board doesn't exist."""
         board_id = uuid.uuid4()
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=uuid.uuid4(),
                 tenant_id=DEFAULT_TENANT_UUID,
@@ -254,9 +228,7 @@ class TestResolveBoardById:
                 token="test-token",
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 
@@ -291,9 +263,7 @@ class TestResolveBoardById:
         sample_board.settings = {"theme": "dark", "layout": "grid"}
         sample_board.metadata_ = {"tags": ["important", "project"]}
 
-        with patch(
-            "boards.graphql.resolvers.board.get_auth_context_from_info"
-        ) as mock_get_auth:
+        with patch("boards.graphql.resolvers.board.get_auth_context_from_info") as mock_get_auth:
             mock_get_auth.return_value = AuthContext(
                 user_id=owner_id,
                 tenant_id=DEFAULT_TENANT_UUID,
@@ -301,9 +271,7 @@ class TestResolveBoardById:
                 token="test-token",
             )
 
-            with patch(
-                "boards.graphql.resolvers.board.get_async_session"
-            ) as mock_session:
+            with patch("boards.graphql.resolvers.board.get_async_session") as mock_session:
                 mock_async_session = AsyncMock(spec=AsyncSession)
                 mock_session.return_value.__aenter__.return_value = mock_async_session
 

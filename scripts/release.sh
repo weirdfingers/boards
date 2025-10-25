@@ -20,5 +20,3 @@ done
 
 gh workflow run version-bump.yml -f package=$PACKAGE -f bump_type=$BUMP
 echo "Release workflow triggered for $PACKAGE ($BUMP bump)"
-
-

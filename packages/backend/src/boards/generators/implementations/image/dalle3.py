@@ -22,12 +22,8 @@ class DallE3Input(BaseModel):
         description="Image size",
         pattern="^(1024x1024|1024x1792|1792x1024)$",
     )
-    quality: str = Field(
-        default="standard", description="Image quality", pattern="^(standard|hd)$"
-    )
-    style: str = Field(
-        default="vivid", description="Image style", pattern="^(vivid|natural)$"
-    )
+    quality: str = Field(default="standard", description="Image quality", pattern="^(standard|hd)$")
+    style: str = Field(default="vivid", description="Image style", pattern="^(vivid|natural)$")
 
 
 class DallE3Output(BaseModel):

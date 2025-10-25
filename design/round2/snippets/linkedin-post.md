@@ -6,4 +6,3 @@ Demo: <SHORT_URL>
 
 Docs: <DOCS_URL> · Repo: <REPO_URL> · Discord: <DISCORD_URL>
 Tags: #opensource #ai #developerTools
-

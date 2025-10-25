@@ -1,6 +1,7 @@
 """
 Tests for artifact resolution utilities.
 """
+
 import os
 import tempfile
 from unittest.mock import AsyncMock, patch
@@ -30,15 +31,13 @@ class TestResolveArtifact:
     async def test_resolve_local_file(self):
         """Test resolving artifact that points to existing local file."""
         # Create a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
             temp_file.write(b"fake audio content")
             temp_path = temp_file.name
 
         try:
             artifact = AudioArtifact(  # type: ignore
-                generation_id="test",
-                storage_url=temp_path,
-                format="mp3"
+                generation_id="test", storage_url=temp_path, format="mp3"
             )
 
             result = await resolve_artifact(artifact)
@@ -52,13 +51,11 @@ class TestResolveArtifact:
     async def test_resolve_remote_file(self):
         """Test resolving artifact that needs to be downloaded."""
         artifact = AudioArtifact(  # type: ignore
-            generation_id="test",
-            storage_url="https://example.com/audio.mp3",
-            format="mp3"
+            generation_id="test", storage_url="https://example.com/audio.mp3", format="mp3"
         )
 
         # Mock the download function
-        with patch('boards.generators.resolution.download_artifact_to_temp') as mock_download:
+        with patch("boards.generators.resolution.download_artifact_to_temp") as mock_download:
             mock_download.return_value = "/tmp/downloaded_audio.mp3"
 
             result = await resolve_artifact(artifact)
@@ -69,10 +66,7 @@ class TestResolveArtifact:
     @pytest.mark.asyncio
     async def test_resolve_text_artifact_fails(self):
         """Test that resolving TextArtifact raises an error."""
-        artifact = TextArtifact(
-            generation_id="test",
-            content="Some text content"
-        )
+        artifact = TextArtifact(generation_id="test", content="Some text content")
 
         with pytest.raises(ValueError, match="TextArtifact cannot be resolved to a file path"):
             await resolve_artifact(artifact)  # type: ignore
@@ -89,13 +83,13 @@ class TestDownloadArtifactToTemp:
             storage_url="https://example.com/image.png",
             width=512,
             height=512,
-            format="png"
+            format="png",
         )
 
         fake_content = b"fake image content"
 
         # Mock httpx client
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
@@ -107,9 +101,9 @@ class TestDownloadArtifactToTemp:
 
             # Check that file was created and contains expected content
             assert os.path.exists(result_path)
-            assert result_path.endswith('.png')
+            assert result_path.endswith(".png")
 
-            with open(result_path, 'rb') as f:
+            with open(result_path, "rb") as f:
                 content = f.read()
                 assert content == fake_content
 
@@ -128,19 +122,17 @@ class TestDownloadArtifactToTemp:
             storage_url="https://example.com/nonexistent.png",
             width=512,
             height=512,
-            format="png"
+            format="png",
         )
 
         # Mock httpx client to raise an error on get
-        with patch('httpx.AsyncClient') as mock_client_class:
+        with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             # Make the get call itself raise the error
             mock_client.get.side_effect = httpx.HTTPStatusError(
-                "404 Not Found",
-                request=AsyncMock(),
-                response=AsyncMock()
+                "404 Not Found", request=AsyncMock(), response=AsyncMock()
             )
 
             with pytest.raises(httpx.HTTPStatusError):
@@ -154,12 +146,10 @@ class TestFileExtensionDetection:
     async def test_extension_with_dot(self):
         """Test extension detection when format includes dot."""
         artifact = AudioArtifact(  # type: ignore
-            generation_id="test",
-            storage_url="https://example.com/audio",
-            format=".mp3"
+            generation_id="test", storage_url="https://example.com/audio", format=".mp3"
         )
 
-        with patch('boards.generators.resolution.download_artifact_to_temp') as mock_download:
+        with patch("boards.generators.resolution.download_artifact_to_temp") as mock_download:
             mock_download.return_value = "/tmp/test.mp3"
 
             await resolve_artifact(artifact)
@@ -175,10 +165,10 @@ class TestFileExtensionDetection:
             storage_url="https://example.com/video",
             width=640,
             height=480,
-            format="mp4"
+            format="mp4",
         )
 
-        with patch('boards.generators.resolution.download_artifact_to_temp') as mock_download:
+        with patch("boards.generators.resolution.download_artifact_to_temp") as mock_download:
             mock_download.return_value = "/tmp/test.mp4"
 
             await resolve_artifact(artifact)
@@ -197,7 +187,7 @@ class TestStoreResults:
             format="png",
             generation_id="gen_123",
             width=1024,
-            height=1024
+            height=1024,
         )
 
         assert isinstance(result, ImageArtifact)
@@ -217,7 +207,7 @@ class TestStoreResults:
             width=1920,
             height=1080,
             duration=60.0,
-            fps=30.0
+            fps=30.0,
         )
 
         assert isinstance(result, VideoArtifact)
@@ -238,7 +228,7 @@ class TestStoreResults:
             generation_id="gen_789",
             duration=120.0,
             sample_rate=44100,
-            channels=2
+            channels=2,
         )
 
         assert isinstance(result, AudioArtifact)
@@ -257,7 +247,7 @@ class TestStoreResults:
             format="mp4",
             generation_id="gen_456",
             width=640,
-            height=480
+            height=480,
             # duration and fps not provided
         )
 

@@ -10,10 +10,7 @@ from boards.auth.adapters.none import NoAuthAdapter
 
 @pytest.fixture
 def none_adapter():
-    return NoAuthAdapter(
-        default_user_id="test-dev-user",
-        default_tenant="test-tenant"
-    )
+    return NoAuthAdapter(default_user_id="test-dev-user", default_tenant="test-tenant")
 
 
 class TestNoAuthAdapter:

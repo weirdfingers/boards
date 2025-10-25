@@ -24,15 +24,11 @@ async def cleanup_test_data(session):
         test_user_ids_stmt = select(Users.id).where(
             Users.auth_subject.in_(["test-user-id", "other-user-id"])
         )
-        await session.execute(
-            delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt))
-        )
+        await session.execute(delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt)))
 
         # Delete test users
         await session.execute(
-            delete(Users).where(
-                Users.auth_subject.in_(["test-user-id", "other-user-id"])
-            )
+            delete(Users).where(Users.auth_subject.in_(["test-user-id", "other-user-id"]))
         )
 
         # Delete test tenants
@@ -47,9 +43,7 @@ async def cleanup_test_data(session):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.requires_db
-async def test_board_query_integration(
-    alembic_migrate, test_database, reset_shared_db_connections
-):
+async def test_board_query_integration(alembic_migrate, test_database, reset_shared_db_connections):
     """Integration test for board query with real database."""
     dsn, _ = test_database
 
@@ -183,9 +177,7 @@ async def test_board_query_integration(
         if response.status_code == 422:
             print(f"Validation error: {response.text}")
             # Let's try a simpler query first
-            simple_response = await client.post(
-                "/graphql", json={"query": "{ __typename }"}
-            )
+            simple_response = await client.post("/graphql", json={"query": "{ __typename }"})
             print(f"Simple query status: {simple_response.status_code}")
             print(f"Simple query response: {simple_response.text}")
 

@@ -8,8 +8,9 @@ from uuid import UUID
 
 class Principal(TypedDict):
     """Identity extracted from an incoming token."""
-    provider: Literal['supabase', 'clerk', 'auth0', 'oidc', 'jwt', 'none']
-    subject: str             # provider user id (sub)
+
+    provider: Literal["supabase", "clerk", "auth0", "oidc", "jwt", "none"]
+    subject: str  # provider user id (sub)
     email: NotRequired[str]
     display_name: NotRequired[str]
     avatar_url: NotRequired[str]
@@ -62,9 +63,11 @@ class AuthAdapter(Protocol):
 
 class AuthenticationError(Exception):
     """Raised when authentication fails."""
+
     pass
 
 
 class AuthorizationError(Exception):
     """Raised when authorization fails."""
+
     pass

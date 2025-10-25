@@ -104,9 +104,7 @@ class TestCreateStorageManager:
     def test_create_with_direct_config(self):
         config = StorageConfig(
             default_provider="local",
-            providers={
-                "local": {"type": "local", "config": {"base_path": "/tmp/test"}}
-            },
+            providers={"local": {"type": "local", "config": {"base_path": "/tmp/test"}}},
             routing_rules=[{"provider": "local"}],
         )
 

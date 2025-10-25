@@ -43,14 +43,12 @@ __all__ = [
     "BaseGenerator",
     "GeneratorRegistry",
     "registry",
-
     # Artifact types
     "AudioArtifact",
     "VideoArtifact",
     "ImageArtifact",
     "TextArtifact",
     "LoRArtifact",
-
     # Utilities
     "resolve_artifact",
     "store_image_result",

@@ -13,9 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..dbmodels import Generations
 
 
-async def get_generation(
-    session: AsyncSession, generation_id: str | UUID
-) -> Generations:
+async def get_generation(session: AsyncSession, generation_id: str | UUID) -> Generations:
     stmt = select(Generations).where(Generations.id == str(generation_id))
     res = await session.execute(stmt)
     row = res.scalar_one()
@@ -40,9 +38,7 @@ async def update_progress(
             error_message=error_message,
             updated_at=now,
             started_at=now if status == "processing" else Generations.started_at,
-            completed_at=(
-                now if status in {"completed", "failed", "cancelled"} else None
-            ),
+            completed_at=(now if status in {"completed", "failed", "cancelled"} else None),
         )
     )
     await session.execute(stmt)

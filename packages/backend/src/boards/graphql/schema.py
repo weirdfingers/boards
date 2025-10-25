@@ -25,6 +25,7 @@ schema = strawberry.Schema(
     # TODO: Disable in production for security by using extensions
 )
 
+
 def validate_schema() -> None:
     """Validate the GraphQL schema at startup.
 
@@ -47,6 +48,7 @@ def validate_schema() -> None:
 
         # Check that introspection query works (catches most resolution issues)
         from graphql import get_introspection_query, graphql_sync
+
         introspection_query = get_introspection_query()
         result = graphql_sync(graphql_schema, introspection_query)
 
@@ -60,9 +62,11 @@ def validate_schema() -> None:
         logger.error("GraphQL schema validation failed", error=str(e))
         raise
 
+
 # Create the GraphQL router for FastAPI integration
 def create_graphql_router() -> GraphQLRouter[dict[str, Any], None]:
     """Create a GraphQL router for FastAPI."""
+
     async def get_context(request: Request) -> dict[str, Any]:
         """Get the context for GraphQL resolvers."""
         return {

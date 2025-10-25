@@ -87,9 +87,7 @@ class TestTenantIsolationValidator:
         """Test user tenant isolation validation with valid user."""
         validator = TenantIsolationValidator(db_session)
 
-        result = await validator.validate_user_tenant_isolation(
-            user_in_tenant_a.id, tenant_a
-        )
+        result = await validator.validate_user_tenant_isolation(user_in_tenant_a.id, tenant_a)
 
         assert result is True
 
@@ -100,9 +98,7 @@ class TestTenantIsolationValidator:
         """Test user tenant isolation validation with invalid user."""
         validator = TenantIsolationValidator(db_session)
 
-        result = await validator.validate_user_tenant_isolation(
-            user_in_tenant_a.id, tenant_b
-        )
+        result = await validator.validate_user_tenant_isolation(user_in_tenant_a.id, tenant_b)
 
         assert result is False
 
@@ -113,9 +109,7 @@ class TestTenantIsolationValidator:
         """Test board tenant isolation validation with valid board."""
         validator = TenantIsolationValidator(db_session)
 
-        result = await validator.validate_board_tenant_isolation(
-            board_in_tenant_a.id, tenant_a
-        )
+        result = await validator.validate_board_tenant_isolation(board_in_tenant_a.id, tenant_a)
 
         assert result is True
 
@@ -126,9 +120,7 @@ class TestTenantIsolationValidator:
         """Test board tenant isolation validation with invalid board."""
         validator = TenantIsolationValidator(db_session)
 
-        result = await validator.validate_board_tenant_isolation(
-            board_in_tenant_a.id, tenant_b
-        )
+        result = await validator.validate_board_tenant_isolation(board_in_tenant_a.id, tenant_b)
 
         assert result is False
 
@@ -205,9 +197,7 @@ class TestEnsureTenantIsolation:
     """Test the ensure_tenant_isolation function."""
 
     @pytest.mark.asyncio
-    async def test_ensure_tenant_isolation_valid_user(
-        self, db_session, user_id, tenant_id
-    ):
+    async def test_ensure_tenant_isolation_valid_user(self, db_session, user_id, tenant_id):
         """Test ensure_tenant_isolation with valid user."""
         with patch("boards.config.settings.multi_tenant_mode", True):
             # Should not raise exception
@@ -220,14 +210,10 @@ class TestEnsureTenantIsolation:
 
         with patch("boards.config.settings.multi_tenant_mode", True):
             with pytest.raises(TenantIsolationError, match="does not belong to tenant"):
-                await ensure_tenant_isolation(
-                    db_session, user_id, wrong_tenant_id, "user"
-                )
+                await ensure_tenant_isolation(db_session, user_id, wrong_tenant_id, "user")
 
     @pytest.mark.asyncio
-    async def test_ensure_tenant_isolation_single_tenant_mode(
-        self, db_session, user_id
-    ):
+    async def test_ensure_tenant_isolation_single_tenant_mode(self, db_session, user_id):
         """Test ensure_tenant_isolation in single-tenant mode (should skip validation)."""
         wrong_tenant_id = uuid4()
 

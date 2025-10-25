@@ -205,6 +205,52 @@ PROVIDERS = {
 }
 ```
 
+## Code Quality
+
+### Pre-commit Hooks
+
+Set up pre-commit hooks to automatically check code quality before commits:
+
+```bash
+# Install pre-commit hooks (one-time setup)
+uv run pre-commit install
+
+# Run all hooks manually
+uv run pre-commit run --all-files
+
+# Run a specific hook
+uv run pre-commit run ruff --all-files
+```
+
+The pre-commit hooks will automatically:
+
+- Lint and format Python code with `ruff`
+- Type check with `pyright`
+- Check for common issues (trailing whitespace, large files, merge conflicts)
+
+### Linting
+
+```bash
+# Run ruff linter
+uv run ruff check .
+
+# Auto-fix issues
+uv run ruff check . --fix
+
+# Format code
+uv run ruff format .
+```
+
+### Type Checking
+
+```bash
+# Run pyright
+uv run pyright
+
+# Or use the Makefile
+make typecheck-backend
+```
+
 ## Testing
 
 ### Running Tests

@@ -205,9 +205,7 @@ class StorageManager:
                 self._validate_file_size(len(content))
 
             # Generate and validate storage key
-            key = self._generate_storage_key(
-                artifact_id, artifact_type, tenant_id, board_id
-            )
+            key = self._generate_storage_key(artifact_id, artifact_type, tenant_id, board_id)
             validated_key = self._validate_storage_key(key)
 
             # Select provider based on routing rules
@@ -232,9 +230,7 @@ class StorageManager:
                 provider, validated_key, content, content_type, metadata
             )
 
-            logger.info(
-                f"Successfully stored artifact {artifact_id} at {validated_key}"
-            )
+            logger.info(f"Successfully stored artifact {artifact_id} at {validated_key}")
 
             return ArtifactReference(
                 artifact_id=artifact_id,
@@ -307,9 +303,7 @@ class StorageManager:
             # Global artifact (like LoRA models)
             return f"{tenant}/{artifact_type}/{artifact_id}_{timestamp}_{unique_suffix}/{variant}"
 
-    def _select_provider(
-        self, artifact_type: str, content: bytes | AsyncIterator[bytes]
-    ) -> str:
+    def _select_provider(self, artifact_type: str, content: bytes | AsyncIterator[bytes]) -> str:
         """Select storage provider based on routing rules."""
         content_size = len(content) if isinstance(content, bytes) else 0
 

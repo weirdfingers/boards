@@ -42,9 +42,7 @@ async def get_auth_context(
     adapter = get_auth_adapter_cached()
 
     # Check if we're in no-auth mode
-    is_no_auth_mode = hasattr(
-        adapter, "default_user_id"
-    )  # NoAuthAdapter has this attribute
+    is_no_auth_mode = hasattr(adapter, "default_user_id")  # NoAuthAdapter has this attribute
 
     # Handle unauthenticated requests
     if not authorization:

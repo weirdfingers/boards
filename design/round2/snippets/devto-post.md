@@ -23,4 +23,3 @@ Example
 Demo: <DEMO_URL> · Docs: <DOCS_URL> · Repo: <REPO_URL> · Discord: <DISCORD_URL>
 
 Feedback welcome—what should we integrate next?
-

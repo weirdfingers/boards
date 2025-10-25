@@ -90,9 +90,7 @@ def serve(
                 host=host,
                 port=port,
                 reload=reload,
-                workers=(
-                    workers if not reload else 1
-                ),  # reload doesn't work with multiple workers
+                workers=(workers if not reload else 1),  # reload doesn't work with multiple workers
                 log_level=log_level,
                 access_log=True,
             )
@@ -301,17 +299,13 @@ def audit_tenant_isolation(tenant_slug: str | None, output_format: str) -> None:
             click.echo(f"   Users: {stats.get('users_count', 0)}")
             click.echo(f"   Boards: {stats.get('boards_count', 0)}")
             click.echo(f"   Generations: {stats.get('generations_count', 0)}")
-            click.echo(
-                f"   Board Memberships: {stats.get('board_memberships_count', 0)}"
-            )
+            click.echo(f"   Board Memberships: {stats.get('board_memberships_count', 0)}")
 
             # Violations
             if violations:
                 click.echo(f"\n⚠️  Isolation Violations ({len(violations)}):")
                 for i, violation in enumerate(violations, 1):
-                    click.echo(
-                        f"   {i}. {violation['type']}: {violation['description']}"
-                    )
+                    click.echo(f"   {i}. {violation['type']}: {violation['description']}")
             else:
                 click.echo("\n✅ No isolation violations found")
 

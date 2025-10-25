@@ -83,9 +83,7 @@ def _resolve_class(qualified_name: str) -> type[BaseGenerator]:
     module = import_module(module_name)
     cls = getattr(module, class_name)
     if not isinstance(cls, type) or not issubclass(cls, BaseGenerator):
-        raise TypeError(
-            f"Resolved object is not a BaseGenerator subclass: {qualified_name}"
-        )
+        raise TypeError(f"Resolved object is not a BaseGenerator subclass: {qualified_name}")
     return cls
 
 

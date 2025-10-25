@@ -36,7 +36,7 @@ export function AuthProvider({ provider, children }: AuthProviderProps) {
     const initializeAuth = async () => {
       try {
         await provider.initialize();
-        
+
         if (!mounted) return;
 
         // Set up state change listener

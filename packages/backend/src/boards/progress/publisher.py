@@ -30,8 +30,6 @@ class ProgressPublisher:
                 session,
                 generation_id=job_id,
                 status=update.status,
-                progress=(
-                    update.progress * 100 if update.progress <= 1.0 else update.progress
-                ),
+                progress=(update.progress * 100 if update.progress <= 1.0 else update.progress),
                 error_message=update.message if update.status == "failed" else None,
             )

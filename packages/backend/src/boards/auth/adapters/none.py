@@ -19,9 +19,7 @@ class NoAuthAdapter:
     WARNING: Only use this in development environments!
     """
 
-    def __init__(
-        self, default_user_id: str = "dev-user", default_tenant: str = "default"
-    ):
+    def __init__(self, default_user_id: str = "dev-user", default_tenant: str = "default"):
         self.default_user_id = default_user_id
         self.default_tenant = default_tenant
 
@@ -41,8 +39,7 @@ class NoAuthAdapter:
         # Check for production-like domains
         api_url = os.getenv("BOARDS_API_URL", "")
         if api_url and not any(
-            domain in api_url
-            for domain in ["localhost", "127.0.0.1", "dev.", "staging."]
+            domain in api_url for domain in ["localhost", "127.0.0.1", "dev.", "staging."]
         ):
             logger.warning(
                 "NoAuthAdapter detected with production-like URL. "
@@ -81,9 +78,7 @@ class NoAuthAdapter:
         principal["avatar_url"] = ""
         return principal
 
-    async def issue_token(
-        self, user_id: UUID | None = None, claims: dict | None = None
-    ) -> str:
+    async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """Issue a fake development token."""
         token_parts = [
             "dev-token",

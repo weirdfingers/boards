@@ -15,9 +15,7 @@ from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import Boards, Generations, Tenants, Users
 
 
-def generate_auth_adapter_user_id(
-    provider: str, subject: str, tenant_id: str
-) -> uuid.UUID:
+def generate_auth_adapter_user_id(provider: str, subject: str, tenant_id: str) -> uuid.UUID:
     """Generate user ID using the same algorithm as the NoAuthAdapter."""
     import hashlib
 
@@ -39,16 +37,10 @@ async def cleanup_test_data(session):
         )
 
         # Delete generations first (they reference boards)
-        board_ids_stmt = select(Boards.id).where(
-            Boards.owner_id.in_(test_user_ids_stmt)
-        )
-        await session.execute(
-            delete(Generations).where(Generations.board_id.in_(board_ids_stmt))
-        )
+        board_ids_stmt = select(Boards.id).where(Boards.owner_id.in_(test_user_ids_stmt))
+        await session.execute(delete(Generations).where(Generations.board_id.in_(board_ids_stmt)))
 
-        await session.execute(
-            delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt))
-        )
+        await session.execute(delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt)))
 
         await session.execute(
             delete(Users).where(Users.auth_subject.in_(["gen-user-1", "gen-user-2"]))

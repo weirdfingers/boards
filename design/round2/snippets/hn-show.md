@@ -17,4 +17,3 @@ Try it
 - Demo video: <DEMO_URL>
 
 We’d love feedback on DX, authoring primitives, and integration wishlist.
-

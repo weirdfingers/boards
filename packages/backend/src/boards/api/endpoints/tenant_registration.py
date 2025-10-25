@@ -28,59 +28,46 @@ class TenantRegistrationRequest(BaseModel):
     """Request model for self-service tenant registration."""
 
     organization_name: str = Field(
-        ...,
-        min_length=1,
-        max_length=255,
-        description="Organization name for the new tenant"
+        ..., min_length=1, max_length=255, description="Organization name for the new tenant"
     )
     organization_slug: str | None = Field(
         None,
         min_length=1,
         max_length=255,
-        pattern=r'^[a-z0-9-]+$',
-        description="Desired tenant slug (auto-generated if not provided)"
+        pattern=r"^[a-z0-9-]+$",
+        description="Desired tenant slug (auto-generated if not provided)",
     )
-    admin_email: str = Field(
-        ...,
-        description="Email of the organization administrator"
-    )
-    admin_name: str | None = Field(
-        None,
-        description="Full name of the organization administrator"
-    )
+    admin_email: str = Field(..., description="Email of the organization administrator")
+    admin_name: str | None = Field(None, description="Full name of the organization administrator")
     use_case: str | None = Field(
-        None,
-        max_length=500,
-        description="Brief description of intended use case"
+        None, max_length=500, description="Brief description of intended use case"
     )
     organization_size: str | None = Field(
-        None,
-        description="Size of organization (small, medium, large, enterprise)"
+        None, description="Size of organization (small, medium, large, enterprise)"
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional registration metadata"
+        default_factory=dict, description="Additional registration metadata"
     )
     include_sample_data: bool = Field(
-        default=True,
-        description="Whether to include sample boards and data"
+        default=True, description="Whether to include sample boards and data"
     )
 
-    @field_validator('admin_email')
+    @field_validator("admin_email")
     @classmethod
     def validate_email(cls, v: str) -> str:
         """Basic email validation."""
         import re
-        if not re.match(r'^[^@]+@[^@]+\.[^@]+$', v):
-            raise ValueError('Invalid email format')
+
+        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", v):
+            raise ValueError("Invalid email format")
         return v.lower()
 
-    @field_validator('organization_size')
+    @field_validator("organization_size")
     @classmethod
     def validate_organization_size(cls, v: str | None) -> str | None:
         """Validate organization size values."""
         if v is not None:
-            valid_sizes = {'small', 'medium', 'large', 'enterprise'}
+            valid_sizes = {"small", "medium", "large", "enterprise"}
             if v.lower() not in valid_sizes:
                 raise ValueError(f'Organization size must be one of: {", ".join(valid_sizes)}')
         return v.lower() if v else None
@@ -114,9 +101,9 @@ async def get_registration_status() -> TenantRegistrationStatus:
     """
     return TenantRegistrationStatus(
         enabled=settings.multi_tenant_mode,
-        requires_approval=getattr(settings, 'tenant_registration_requires_approval', False),
-        max_tenants_per_user=getattr(settings, 'max_tenants_per_user', None),
-        allowed_domains=getattr(settings, 'tenant_registration_allowed_domains', None),
+        requires_approval=getattr(settings, "tenant_registration_requires_approval", False),
+        max_tenants_per_user=getattr(settings, "max_tenants_per_user", None),
+        allowed_domains=getattr(settings, "tenant_registration_allowed_domains", None),
     )
 
 
@@ -142,28 +129,26 @@ async def register_tenant(
     # Validate prerequisites
     if not settings.multi_tenant_mode:
         raise HTTPException(
-            status_code=400,
-            detail="Tenant registration is only available in multi-tenant mode"
+            status_code=400, detail="Tenant registration is only available in multi-tenant mode"
         )
 
     if not auth_context.user_id:
         raise HTTPException(
-            status_code=401,
-            detail="Authentication required for tenant registration"
+            status_code=401, detail="Authentication required for tenant registration"
         )
 
     # Validate email domain if restrictions are configured
-    allowed_domains = getattr(settings, 'tenant_registration_allowed_domains', None)
+    allowed_domains = getattr(settings, "tenant_registration_allowed_domains", None)
     if allowed_domains:
-        admin_domain = request.admin_email.split('@')[1].lower()
+        admin_domain = request.admin_email.split("@")[1].lower()
         if admin_domain not in allowed_domains:
             raise HTTPException(
                 status_code=400,
-                detail=f"Email domain '{admin_domain}' is not allowed for registration"
+                detail=f"Email domain '{admin_domain}' is not allowed for registration",
             )
 
     # Check if user has reached tenant limit
-    max_tenants = getattr(settings, 'max_tenants_per_user', None)
+    max_tenants = getattr(settings, "max_tenants_per_user", None)
     if max_tenants:
         # TODO: Implement tenant count check per user
         logger.warning(
@@ -215,11 +200,11 @@ async def register_tenant(
                         "organization_size": request.organization_size,
                         "registered_by": str(auth_context.user_id),
                         "registration_metadata": request.metadata,
-                    }
+                    },
                 )
 
             # Determine status based on approval requirements
-            requires_approval = getattr(settings, 'tenant_registration_requires_approval', False)
+            requires_approval = getattr(settings, "tenant_registration_requires_approval", False)
             status = "pending_approval" if requires_approval else "active"
 
             # Generate dashboard URL if available
@@ -245,7 +230,7 @@ async def register_tenant(
                     "graphql_endpoint": "/graphql",
                     "api_base_url": "/api",
                     "authentication_required": True,
-                }
+                },
             )
 
     except Exception as e:
@@ -255,10 +240,7 @@ async def register_tenant(
             organization_name=request.organization_name,
             tenant_slug=tenant_slug,
         )
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to register tenant: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to register tenant: {str(e)}") from e
 
 
 def _generate_slug_from_name(organization_name: str) -> str:
@@ -270,13 +252,13 @@ def _generate_slug_from_name(organization_name: str) -> str:
     slug = organization_name.lower().strip()
 
     # Replace spaces and special characters with hyphens
-    slug = re.sub(r'[^a-z0-9]+', '-', slug)
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
 
     # Remove multiple consecutive hyphens
-    slug = re.sub(r'-+', '-', slug)
+    slug = re.sub(r"-+", "-", slug)
 
     # Remove leading/trailing hyphens
-    slug = slug.strip('-')
+    slug = slug.strip("-")
 
     # Ensure it's not empty
     if not slug or len(slug) < 3:
@@ -292,7 +274,7 @@ def _generate_slug_from_name(organization_name: str) -> str:
 def _generate_dashboard_url(tenant_slug: str) -> str | None:
     """Generate dashboard URL for the tenant."""
     # This would typically point to your frontend application
-    frontend_base_url = getattr(settings, 'frontend_base_url', None)
+    frontend_base_url = getattr(settings, "frontend_base_url", None)
     if frontend_base_url:
         return f"{frontend_base_url}/?tenant={tenant_slug}"
     return None

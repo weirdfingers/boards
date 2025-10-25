@@ -81,9 +81,7 @@ class JWTAuthAdapter:
             logger.error(f"Unexpected error verifying JWT token: {e}")
             raise AuthenticationError("Token verification failed") from e
 
-    async def issue_token(
-        self, user_id: UUID | None = None, claims: dict | None = None
-    ) -> str:
+    async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """Issue a new JWT token."""
         now = datetime.now(UTC)
 

@@ -42,7 +42,9 @@ class BoardMember:
         return await resolve_board_member_user(self, info)
 
     @strawberry.field
-    async def inviter(self, info: strawberry.Info) -> Annotated["User", strawberry.lazy(".user")] | None:  # noqa: E501
+    async def inviter(
+        self, info: strawberry.Info
+    ) -> Annotated["User", strawberry.lazy(".user")] | None:  # noqa: E501
         """Get the user who invited this member."""
         if not self.invited_by:
             return None

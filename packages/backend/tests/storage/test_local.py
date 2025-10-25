@@ -35,15 +35,11 @@ class TestLocalStorageProvider:
         assert temp_dir.exists()
 
     def test_init_with_public_url(self, temp_dir: Path) -> None:
-        provider = LocalStorageProvider(
-            temp_dir, public_url_base="http://example.com/files"
-        )
+        provider = LocalStorageProvider(temp_dir, public_url_base="http://example.com/files")
 
         assert provider.public_url_base == "http://example.com/files"
 
-    def test_get_safe_file_path_valid(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ) -> None:
+    def test_get_safe_file_path_valid(self, provider: LocalStorageProvider, temp_dir: Path) -> None:
         path = provider._get_safe_file_path("folder/file.txt")
         expected = temp_dir / "folder" / "file.txt"
         # Compare resolved paths to handle symlinks (e.g. /var vs /private/var on macOS)
@@ -91,9 +87,7 @@ class TestLocalStorageProvider:
         assert url == "http://localhost:8000/storage/test/file.txt"
 
     @pytest.mark.asyncio
-    async def test_upload_with_metadata(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_upload_with_metadata(self, provider: LocalStorageProvider, temp_dir: Path):
         content = b"test content"
         key = "test/file.txt"
         metadata = {"user": "test_user", "timestamp": "2024-01-01"}
@@ -110,9 +104,7 @@ class TestLocalStorageProvider:
         assert stored_metadata == metadata
 
     @pytest.mark.asyncio
-    async def test_upload_async_iterator(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_upload_async_iterator(self, provider: LocalStorageProvider, temp_dir: Path):
         # Create async iterator of chunks
         async def content_chunks():
             yield b"chunk1"
@@ -132,9 +124,7 @@ class TestLocalStorageProvider:
         assert url == "http://localhost:8000/storage/test/streamed.txt"
 
     @pytest.mark.asyncio
-    async def test_upload_creates_directories(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_upload_creates_directories(self, provider: LocalStorageProvider, temp_dir: Path):
         key = "deep/nested/path/file.txt"
         content = b"test"
 
@@ -146,9 +136,7 @@ class TestLocalStorageProvider:
         assert file_path.parent.exists()
 
     @pytest.mark.asyncio
-    async def test_download_success(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_download_success(self, provider: LocalStorageProvider, temp_dir: Path):
         # Create test file
         key = "test/file.txt"
         content = b"test file content"
@@ -163,9 +151,7 @@ class TestLocalStorageProvider:
         assert downloaded == content
 
     @pytest.mark.asyncio
-    async def test_download_not_found(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_download_not_found(self, provider: LocalStorageProvider, temp_dir: Path):
         with pytest.raises(StorageException, match="File not found"):
             await provider.download("nonexistent/file.txt")
 
@@ -201,9 +187,7 @@ class TestLocalStorageProvider:
         assert not file_path.exists()
 
     @pytest.mark.asyncio
-    async def test_delete_with_metadata(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_delete_with_metadata(self, provider: LocalStorageProvider, temp_dir: Path):
         # Create test file and metadata
         key = "test/file.txt"
         file_path = temp_dir / key
@@ -247,9 +231,7 @@ class TestLocalStorageProvider:
         assert await provider.exists("../../../etc/passwd") is False
 
     @pytest.mark.asyncio
-    async def test_get_metadata_success(
-        self, provider: LocalStorageProvider, temp_dir: Path
-    ):
+    async def test_get_metadata_success(self, provider: LocalStorageProvider, temp_dir: Path):
         # Create test file with metadata
         key = "test/file.txt"
         file_path = temp_dir / key

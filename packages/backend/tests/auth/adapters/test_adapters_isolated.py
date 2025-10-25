@@ -10,7 +10,7 @@ from uuid import uuid4
 import jwt
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../src"))
 
 from boards.auth.adapters.base import AuthenticationError
 from boards.auth.adapters.jwt import JWTAuthAdapter
@@ -27,10 +27,7 @@ class TestJWTAdapterIsolated:
     @pytest.fixture
     def jwt_adapter(self, secret_key):
         return JWTAuthAdapter(
-            secret_key=secret_key,
-            algorithm="HS256",
-            issuer="test-boards",
-            audience="test-api"
+            secret_key=secret_key, algorithm="HS256", issuer="test-boards", audience="test-api"
         )
 
     @pytest.mark.asyncio
@@ -119,10 +116,7 @@ class TestNoAuthAdapterIsolated:
 
     @pytest.fixture
     def none_adapter(self):
-        return NoAuthAdapter(
-            default_user_id="test-dev-user",
-            default_tenant="test-tenant"
-        )
+        return NoAuthAdapter(default_user_id="test-dev-user", default_tenant="test-tenant")
 
     @pytest.mark.asyncio
     async def test_verify_any_token(self, none_adapter):

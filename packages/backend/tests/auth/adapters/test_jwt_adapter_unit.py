@@ -18,10 +18,7 @@ def secret_key():
 @pytest.fixture
 def jwt_adapter(secret_key):
     return JWTAuthAdapter(
-        secret_key=secret_key,
-        algorithm="HS256",
-        issuer="test-boards",
-        audience="test-api"
+        secret_key=secret_key, algorithm="HS256", issuer="test-boards", audience="test-api"
     )
 
 

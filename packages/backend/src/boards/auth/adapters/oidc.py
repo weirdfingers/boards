@@ -129,9 +129,7 @@ class OIDCAdapter:
             return principal
 
         except ImportError as e:
-            raise AuthenticationError(
-                "PyJWT is required for OIDC authentication"
-            ) from e
+            raise AuthenticationError("PyJWT is required for OIDC authentication") from e
         except InvalidTokenError as e:
             logger.warning(f"OIDC JWT token validation failed: {e}")
             raise AuthenticationError(f"Invalid token: {e}") from e
@@ -139,17 +137,13 @@ class OIDCAdapter:
             logger.error(f"Unexpected error verifying OIDC token: {e}")
             raise AuthenticationError("Token verification failed") from e
 
-    async def issue_token(
-        self, user_id: UUID | None = None, claims: dict | None = None
-    ) -> str:
+    async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """
         Issue a new token via OIDC provider (rarely supported).
 
         Most OIDC providers handle token issuance via client libraries.
         """
-        raise NotImplementedError(
-            "Token issuance should be handled by OIDC client libraries"
-        )
+        raise NotImplementedError("Token issuance should be handled by OIDC client libraries")
 
     async def get_user_info(self, token: str) -> dict:
         """Get additional user information from OIDC userinfo endpoint."""
@@ -219,7 +213,6 @@ class OIDCAdapter:
                 and "expires_at" in self._jwks_cache
                 and current_time < self._jwks_cache["expires_at"]
             ):
-
                 logger.debug(
                     "Returning cached JWKS",
                     cache_expires_in=int(self._jwks_cache["expires_at"] - current_time),
@@ -232,10 +225,7 @@ class OIDCAdapter:
                     "JWKS cache expired, fetching fresh data",
                     cache_age=int(
                         current_time
-                        - (
-                            self._jwks_cache.get("expires_at", current_time)
-                            - self.jwks_cache_ttl
-                        )
+                        - (self._jwks_cache.get("expires_at", current_time) - self.jwks_cache_ttl)
                     ),
                 )
 
@@ -255,9 +245,7 @@ class OIDCAdapter:
             if "max-age=" in cache_control:
                 try:
                     # Extract max-age value from cache-control header
-                    max_age_str = (
-                        cache_control.split("max-age=")[1].split(",")[0].split(";")[0]
-                    )
+                    max_age_str = cache_control.split("max-age=")[1].split(",")[0].split(";")[0]
                     header_ttl = int(max_age_str)
                     # Use the smaller of header TTL and configured TTL for security
                     cache_ttl = min(header_ttl, self.jwks_cache_ttl)
@@ -287,9 +275,7 @@ class OIDCAdapter:
 
         except Exception as e:
             logger.error("Failed to fetch JWKS from OIDC provider", error=str(e))
-            raise AuthenticationError(
-                "Unable to verify token - JWKS unavailable"
-            ) from e
+            raise AuthenticationError("Unable to verify token - JWKS unavailable") from e
 
     async def __aenter__(self):
         return self

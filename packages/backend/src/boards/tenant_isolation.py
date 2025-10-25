@@ -41,9 +41,7 @@ class TenantIsolationValidator:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def validate_user_tenant_isolation(
-        self, user_id: UUID, tenant_id: UUID
-    ) -> bool:
+    async def validate_user_tenant_isolation(self, user_id: UUID, tenant_id: UUID) -> bool:
         """
         Validate that a user belongs to the specified tenant.
 
@@ -58,9 +56,7 @@ class TenantIsolationValidator:
             TenantIsolationError: If validation fails
         """
         try:
-            stmt = select(Users).where(
-                (Users.id == user_id) & (Users.tenant_id == tenant_id)
-            )
+            stmt = select(Users).where((Users.id == user_id) & (Users.tenant_id == tenant_id))
             result = await self.db.execute(stmt)
             user = result.scalar_one_or_none()
 
@@ -83,9 +79,7 @@ class TenantIsolationValidator:
             )
             raise TenantIsolationError(f"User tenant validation failed: {e}") from e
 
-    async def validate_board_tenant_isolation(
-        self, board_id: UUID, tenant_id: UUID
-    ) -> bool:
+    async def validate_board_tenant_isolation(self, board_id: UUID, tenant_id: UUID) -> bool:
         """
         Validate that a board belongs to the specified tenant.
 
@@ -97,9 +91,7 @@ class TenantIsolationValidator:
             True if board belongs to tenant, False otherwise
         """
         try:
-            stmt = select(Boards).where(
-                (Boards.id == board_id) & (Boards.tenant_id == tenant_id)
-            )
+            stmt = select(Boards).where((Boards.id == board_id) & (Boards.tenant_id == tenant_id))
             result = await self.db.execute(stmt)
             board = result.scalar_one_or_none()
 
@@ -152,9 +144,7 @@ class TenantIsolationValidator:
                 tenant_id=str(tenant_id),
                 error=str(e),
             )
-            raise TenantIsolationError(
-                f"Generation tenant validation failed: {e}"
-            ) from e
+            raise TenantIsolationError(f"Generation tenant validation failed: {e}") from e
 
     async def audit_tenant_isolation(self, tenant_id: UUID) -> dict[str, Any]:
         """
@@ -187,16 +177,12 @@ class TenantIsolationValidator:
                 audit_results["isolation_violations"].extend(orphaned_records)
 
             # 2. Check cross-tenant board memberships
-            cross_tenant_memberships = await self._check_cross_tenant_memberships(
-                tenant_id
-            )
+            cross_tenant_memberships = await self._check_cross_tenant_memberships(tenant_id)
             if cross_tenant_memberships:
                 audit_results["isolation_violations"].extend(cross_tenant_memberships)
 
             # 3. Gather tenant statistics
-            audit_results["statistics"] = await self._gather_tenant_statistics(
-                tenant_id
-            )
+            audit_results["statistics"] = await self._gather_tenant_statistics(tenant_id)
 
             # 4. Generate recommendations
             audit_results["recommendations"] = self._generate_isolation_recommendations(
@@ -278,9 +264,7 @@ class TenantIsolationValidator:
 
         return violations
 
-    async def _check_cross_tenant_memberships(
-        self, tenant_id: UUID
-    ) -> list[dict[str, Any]]:
+    async def _check_cross_tenant_memberships(self, tenant_id: UUID) -> list[dict[str, Any]]:
         """Check for cross-tenant board memberships."""
         violations = []
 
@@ -354,16 +338,12 @@ class TenantIsolationValidator:
 
         return stats
 
-    def _generate_isolation_recommendations(
-        self, violations: list[dict[str, Any]]
-    ) -> list[str]:
+    def _generate_isolation_recommendations(self, violations: list[dict[str, Any]]) -> list[str]:
         """Generate recommendations based on isolation violations."""
         recommendations = []
 
         if not violations:
-            recommendations.append(
-                "Tenant isolation is properly maintained - no violations found"
-            )
+            recommendations.append("Tenant isolation is properly maintained - no violations found")
             return recommendations
 
         violation_types = {v["type"] for v in violations}
@@ -383,9 +363,7 @@ class TenantIsolationValidator:
                 "Remove cross-tenant board memberships or migrate users to appropriate tenants"
             )
 
-        recommendations.append(
-            "Run isolation audit regularly to detect future violations"
-        )
+        recommendations.append("Run isolation audit regularly to detect future violations")
         recommendations.append(
             "Consider adding database constraints to prevent isolation violations"
         )
@@ -422,13 +400,9 @@ async def ensure_tenant_isolation(
     try:
         # Validate user belongs to tenant
         if user_id:
-            user_valid = await validator.validate_user_tenant_isolation(
-                user_id, tenant_id
-            )
+            user_valid = await validator.validate_user_tenant_isolation(user_id, tenant_id)
             if not user_valid:
-                raise TenantIsolationError(
-                    f"User {user_id} does not belong to tenant {tenant_id}"
-                )
+                raise TenantIsolationError(f"User {user_id} does not belong to tenant {tenant_id}")
 
         # Validate resource belongs to tenant (if resource_id provided)
         if resource_id:

@@ -20,6 +20,7 @@ logger = get_logger(__name__)
 @strawberry.enum
 class BoardQueryRole(Enum):
     """Role filter for board queries"""
+
     ANY = "any"
     OWNER = "owner"
     MEMBER = "member"
@@ -28,6 +29,7 @@ class BoardQueryRole(Enum):
 @strawberry.enum
 class SortOrder(Enum):
     """Sort order for queries"""
+
     CREATED_ASC = "created_asc"
     CREATED_DESC = "created_desc"
     UPDATED_ASC = "updated_asc"
@@ -80,10 +82,7 @@ def can_access_board(board: "Boards", auth_context: "AuthContext | None") -> boo
         return True
 
     # Check if user is a member
-    return any(
-        member.user_id == auth_context.user_id
-        for member in board.board_members
-    )
+    return any(member.user_id == auth_context.user_id for member in board.board_members)
 
 
 def can_access_board_details(board: "Boards", auth_context: "AuthContext | None") -> bool:
@@ -109,10 +108,7 @@ def is_board_owner_or_member(board: "Boards", auth_context: "AuthContext | None"
         return True
 
     # Check if user is a member
-    return any(
-        member.user_id == auth_context.user_id
-        for member in board.board_members
-    )
+    return any(member.user_id == auth_context.user_id for member in board.board_members)
 
 
 def ensure_preloaded(obj, attr_name: str, error_msg: str | None = None) -> None:
@@ -133,8 +129,7 @@ def ensure_preloaded(obj, attr_name: str, error_msg: str | None = None) -> None:
     except Exception as e:
         if "was not loaded" in str(e) or "lazy loading" in str(e):
             msg = error_msg or (
-                f"Relationship '{attr_name}' was not preloaded. "
-                "Use selectinload() in the query."
+                f"Relationship '{attr_name}' was not preloaded. " "Use selectinload() in the query."
             )
             raise RuntimeError(msg) from e
         # Re-raise other exceptions

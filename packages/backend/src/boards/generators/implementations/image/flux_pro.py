@@ -25,9 +25,7 @@ class FluxProInput(BaseModel):
         description="Image aspect ratio",
         pattern="^(1:1|16:9|21:9|2:3|3:2|4:5|5:4|9:16|9:21)$",
     )
-    safety_tolerance: int = Field(
-        default=2, ge=1, le=5, description="Safety tolerance level (1-5)"
-    )
+    safety_tolerance: int = Field(default=2, ge=1, le=5, description="Safety tolerance level (1-5)")
 
 
 class FluxProOutput(BaseModel):

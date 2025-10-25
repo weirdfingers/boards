@@ -79,9 +79,7 @@ class TestAuthIntegration:
         mock_ensure_user.return_value = "test-user-uuid"
 
         # Test with Bearer token
-        response = client.get(
-            "/protected", headers={"Authorization": "Bearer any-token-works"}
-        )
+        response = client.get("/protected", headers={"Authorization": "Bearer any-token-works"})
 
         assert response.status_code == 200
         data = response.json()
@@ -115,9 +113,7 @@ class TestAuthIntegration:
         )
 
         # Test with valid JWT
-        response = client.get(
-            "/protected", headers={"Authorization": f"Bearer {token}"}
-        )
+        response = client.get("/protected", headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == 200
         data = response.json()
@@ -134,9 +130,7 @@ class TestAuthIntegration:
         """Test JWT auth with invalid token."""
 
         # Test with invalid JWT
-        response = client.get(
-            "/protected", headers={"Authorization": "Bearer invalid-jwt-token"}
-        )
+        response = client.get("/protected", headers={"Authorization": "Bearer invalid-jwt-token"})
 
         assert response.status_code == 401
         assert "Invalid token" in response.json()["detail"]
@@ -171,9 +165,7 @@ class TestAuthIntegration:
         mock_ensure_tenant.assert_called_once()
         assert mock_ensure_tenant.call_args[1]["slug"] == "custom-tenant"
 
-    @patch.dict(
-        os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"}
-    )
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_missing_authorization_header(self, client):
         """Test request without authorization header."""
 
@@ -185,22 +177,16 @@ class TestAuthIntegration:
         assert data["authenticated"] is False
         assert data["provider"] is None
 
-    @patch.dict(
-        os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"}
-    )
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_invalid_authorization_format(self, client):
         """Test invalid authorization header format."""
 
-        response = client.get(
-            "/protected", headers={"Authorization": "InvalidFormat token"}
-        )
+        response = client.get("/protected", headers={"Authorization": "InvalidFormat token"})
 
         assert response.status_code == 401
         assert "Invalid authorization format" in response.json()["detail"]
 
-    @patch.dict(
-        os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"}
-    )
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_empty_token(self, client):
         """Test empty Bearer token."""
 
@@ -212,9 +198,7 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
     @patch("boards.database.seed_data.ensure_tenant")
-    def test_jit_provisioning_called(
-        self, mock_ensure_tenant, mock_ensure_user, client
-    ):
+    def test_jit_provisioning_called(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test that JIT provisioning is called correctly."""
         # Setup mocks - JIT provisioning is now called since database module is available
         from uuid import uuid4
@@ -257,9 +241,7 @@ class TestAuthIntegration:
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
     @patch("boards.database.seed_data.ensure_tenant")
-    def test_database_error_handling(
-        self, mock_ensure_tenant, mock_ensure_user, client
-    ):
+    def test_database_error_handling(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test handling of database errors."""
 
         # Setup mocks to raise error (though this test is less relevant now
@@ -267,9 +249,7 @@ class TestAuthIntegration:
         mock_ensure_tenant.side_effect = Exception("Database connection failed")
         mock_ensure_user.side_effect = Exception("Database connection failed")
 
-        response = client.get(
-            "/protected", headers={"Authorization": "Bearer test-token"}
-        )
+        response = client.get("/protected", headers={"Authorization": "Bearer test-token"})
 
         # Should succeed since we use fallback UUID when DB is not available
         assert response.status_code == 200

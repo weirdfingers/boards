@@ -25,10 +25,13 @@ class TestAuthFactory:
         adapter = get_auth_adapter()
         assert isinstance(adapter, NoAuthAdapter)
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "none",
-        "BOARDS_AUTH_CONFIG": '{"default_user_id": "custom-user", "default_tenant": "custom"}'
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "BOARDS_AUTH_PROVIDER": "none",
+            "BOARDS_AUTH_CONFIG": '{"default_user_id": "custom-user", "default_tenant": "custom"}',
+        },
+    )
     def test_none_adapter_with_config(self):
         """Test none adapter with JSON config."""
         adapter = get_auth_adapter()
@@ -36,20 +39,20 @@ class TestAuthFactory:
         assert adapter.default_user_id == "custom-user"
         assert adapter.default_tenant == "custom"
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "jwt",
-        "BOARDS_JWT_SECRET": "test-secret"
-    })
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_jwt_adapter_with_env_vars(self):
         """Test creating JWT adapter with environment variables."""
         adapter = get_auth_adapter()
         assert isinstance(adapter, JWTAuthAdapter)
         assert adapter.secret_key == "test-secret"
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "jwt",
-        "BOARDS_AUTH_CONFIG": '{"secret_key": "config-secret", "algorithm": "HS512"}'
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "BOARDS_AUTH_PROVIDER": "jwt",
+            "BOARDS_AUTH_CONFIG": '{"secret_key": "config-secret", "algorithm": "HS512"}',
+        },
+    )
     def test_jwt_adapter_with_config(self):
         """Test creating JWT adapter with JSON config."""
         adapter = get_auth_adapter()
@@ -63,14 +66,18 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="JWT secret key is required"):
             get_auth_adapter()
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "supabase",
-        "SUPABASE_URL": "https://test.supabase.co",
-        "SUPABASE_SERVICE_ROLE_KEY": "test-key"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "BOARDS_AUTH_PROVIDER": "supabase",
+            "SUPABASE_URL": "https://test.supabase.co",
+            "SUPABASE_SERVICE_ROLE_KEY": "test-key",
+        },
+    )
     def test_supabase_adapter(self):
         """Test creating Supabase adapter."""
         from boards.auth.adapters.supabase import SupabaseAuthAdapter
+
         adapter = get_auth_adapter()
         assert isinstance(adapter, SupabaseAuthAdapter)
 
@@ -80,13 +87,11 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="Supabase URL and service role key are required"):
             get_auth_adapter()
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "clerk",
-        "CLERK_SECRET_KEY": "test-clerk-key"
-    })
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "clerk", "CLERK_SECRET_KEY": "test-clerk-key"})
     def test_clerk_adapter(self):
         """Test creating Clerk adapter."""
         from boards.auth.adapters.clerk import ClerkAuthAdapter
+
         adapter = get_auth_adapter()
         assert isinstance(adapter, ClerkAuthAdapter)
 
@@ -96,14 +101,18 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="Clerk secret key is required"):
             get_auth_adapter()
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "auth0",
-        "AUTH0_DOMAIN": "test.auth0.com",
-        "AUTH0_AUDIENCE": "test-api"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "BOARDS_AUTH_PROVIDER": "auth0",
+            "AUTH0_DOMAIN": "test.auth0.com",
+            "AUTH0_AUDIENCE": "test-api",
+        },
+    )
     def test_auth0_adapter(self):
         """Test creating Auth0 adapter."""
         from boards.auth.adapters.auth0 import Auth0OIDCAdapter
+
         adapter = get_auth_adapter()
         assert isinstance(adapter, Auth0OIDCAdapter)
 
@@ -113,14 +122,18 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="Auth0 domain and audience are required"):
             get_auth_adapter()
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "oidc",
-        "OIDC_ISSUER": "https://accounts.google.com",
-        "OIDC_CLIENT_ID": "test-client-id"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "BOARDS_AUTH_PROVIDER": "oidc",
+            "OIDC_ISSUER": "https://accounts.google.com",
+            "OIDC_CLIENT_ID": "test-client-id",
+        },
+    )
     def test_oidc_adapter(self):
         """Test creating OIDC adapter."""
         from boards.auth.adapters.oidc import OIDCAdapter
+
         adapter = get_auth_adapter()
         assert isinstance(adapter, OIDCAdapter)
 
@@ -136,11 +149,14 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="Unsupported auth provider: unsupported"):
             get_auth_adapter()
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "jwt",
-        "BOARDS_AUTH_CONFIG": "invalid-json",
-        "BOARDS_JWT_SECRET": "test-secret"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "BOARDS_AUTH_PROVIDER": "jwt",
+            "BOARDS_AUTH_CONFIG": "invalid-json",
+            "BOARDS_JWT_SECRET": "test-secret",
+        },
+    )
     def test_invalid_json_config_fallback(self):
         """Test that invalid JSON config falls back to empty dict."""
         adapter = get_auth_adapter()

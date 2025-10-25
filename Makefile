@@ -135,7 +135,7 @@ docker-logs: ## Show Docker logs
 
 docs: dev-docs ## Start documentation development server (alias)
 
-dev-docs: ## Start documentation development server  
+dev-docs: ## Start documentation development server
 	@echo "Starting documentation development server..."
 	cd apps/docs && pnpm start
 
@@ -150,4 +150,3 @@ serve-docs: ## Serve built documentation
 dev-example-nextjs: ## Start example Next.js development server
 	@echo "Starting example Next.js development server..."
 	pnpm turbo dev --filter=example-nextjs...
-

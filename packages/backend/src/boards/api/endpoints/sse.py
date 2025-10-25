@@ -53,8 +53,7 @@ async def generation_progress_stream(
                     f"{generation_id} belonging to user {generation.user_id}"
                 )
                 raise HTTPException(
-                    status_code=403,
-                    detail="You don't have permission to access this generation"
+                    status_code=403, detail="You don't have permission to access this generation"
                 )
 
         logger.info(f"User {current_user.user_id} connected to progress stream for {generation_id}")
@@ -63,10 +62,7 @@ async def generation_progress_stream(
         raise
     except Exception as e:
         logger.error(f"Failed to verify access to generation {generation_id}: {e}")
-        raise HTTPException(
-            status_code=404,
-            detail="Generation not found"
-        ) from e
+        raise HTTPException(status_code=404, detail="Generation not found") from e
 
     channel = f"job:{generation_id}:progress"
 
@@ -78,9 +74,7 @@ async def generation_progress_stream(
                 if await request.is_disconnected():
                     logger.info(f"Client disconnected from progress stream {generation_id}")
                     break
-                msg = await pubsub.get_message(
-                    ignore_subscribe_messages=True, timeout=1.0
-                )
+                msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
                 if msg and msg.get("type") == "message":
                     yield f"data: {msg['data']}\n\n"
                 else:

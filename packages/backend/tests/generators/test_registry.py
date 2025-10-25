@@ -12,11 +12,13 @@ from boards.generators.registry import GeneratorRegistry
 
 class MockInput(BaseModel):
     """Mock input for testing."""
+
     prompt: str
 
 
 class MockOutput(BaseModel):
     """Mock output for testing."""
+
     result: ImageArtifact
 
 
@@ -40,7 +42,7 @@ class MockImageGenerator(BaseGenerator):
             storage_url="http://example.com/test.png",
             width=512,
             height=512,
-            format="png"
+            format="png",
         )
         return MockOutput(result=artifact)
 
@@ -195,11 +197,13 @@ class TestGlobalRegistry:
     def setup_method(self):
         """Clear global registry before each test."""
         from boards.generators.registry import registry
+
         registry.clear()
 
     def teardown_method(self):
         """Clear global registry after each test."""
         from boards.generators.registry import registry
+
         registry.clear()
 
     def test_global_registry_import(self):

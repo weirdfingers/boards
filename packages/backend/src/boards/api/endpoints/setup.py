@@ -29,9 +29,7 @@ router = APIRouter()
 class TenantSetupRequest(BaseModel):
     """Request model for tenant setup."""
 
-    name: str = Field(
-        ..., min_length=1, max_length=255, description="Display name for the tenant"
-    )
+    name: str = Field(..., min_length=1, max_length=255, description="Display name for the tenant")
     slug: str = Field(
         ...,
         min_length=1,
@@ -63,9 +61,7 @@ class TenantUpdateRequest(BaseModel):
         pattern=r"^[a-z0-9-]+$",
         description="URL-safe slug for the tenant (lowercase, numbers, hyphens only)",
     )
-    settings: dict[str, Any] | None = Field(
-        None, description="Tenant-specific settings"
-    )
+    settings: dict[str, Any] | None = Field(None, description="Tenant-specific settings")
 
 
 class TenantResponse(BaseModel):
@@ -172,14 +168,12 @@ async def setup_tenant(request: TenantSetupRequest) -> TenantSetupResponse:
 
     except Exception as e:
         logger.error("Tenant setup failed", error=str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Failed to setup tenant: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to setup tenant: {str(e)}") from e
 
 
 @router.get("/tenant/{tenant_id}", response_model=TenantResponse)
 async def get_tenant(
-    tenant_id: UUID = Path(..., description="UUID of the tenant to retrieve")
+    tenant_id: UUID = Path(..., description="UUID of the tenant to retrieve"),
 ) -> TenantResponse:
     """
     Get a specific tenant by ID.
@@ -197,9 +191,7 @@ async def get_tenant(
             tenant = result.scalar_one_or_none()
 
             if not tenant:
-                raise HTTPException(
-                    status_code=404, detail=f"Tenant with ID {tenant_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Tenant with ID {tenant_id} not found")
 
             logger.info(
                 "Tenant retrieved successfully",
@@ -220,12 +212,8 @@ async def get_tenant(
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        logger.error(
-            "Failed to retrieve tenant", tenant_id=str(tenant_id), error=str(e)
-        )
-        raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve tenant: {str(e)}"
-        ) from e
+        logger.error("Failed to retrieve tenant", tenant_id=str(tenant_id), error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve tenant: {str(e)}") from e
 
 
 @router.get("/tenants", response_model=TenantListResponse)
@@ -253,12 +241,8 @@ async def list_tenants() -> TenantListResponse:
                     name=tenant.name,
                     slug=tenant.slug,
                     settings=tenant.settings or {},
-                    created_at=(
-                        tenant.created_at.isoformat() if tenant.created_at else ""
-                    ),
-                    updated_at=(
-                        tenant.updated_at.isoformat() if tenant.updated_at else ""
-                    ),
+                    created_at=(tenant.created_at.isoformat() if tenant.created_at else ""),
+                    updated_at=(tenant.updated_at.isoformat() if tenant.updated_at else ""),
                 )
                 for tenant in tenants
             ]
@@ -275,9 +259,7 @@ async def list_tenants() -> TenantListResponse:
 
     except Exception as e:
         logger.error("Failed to list tenants", error=str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Failed to list tenants: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to list tenants: {str(e)}") from e
 
 
 @router.put("/tenant/{tenant_id}", response_model=TenantResponse)
@@ -310,9 +292,7 @@ async def update_tenant(
             existing_tenant = result.scalar_one_or_none()
 
             if not existing_tenant:
-                raise HTTPException(
-                    status_code=404, detail=f"Tenant with ID {tenant_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Tenant with ID {tenant_id} not found")
 
             # Check for slug conflicts if slug is being updated
             if request.slug and request.slug != existing_tenant.slug:
@@ -342,9 +322,7 @@ async def update_tenant(
 
             if update_data:
                 # Perform the update
-                stmt = (
-                    update(Tenants).where(Tenants.id == tenant_id).values(**update_data)
-                )
+                stmt = update(Tenants).where(Tenants.id == tenant_id).values(**update_data)
                 await db.execute(stmt)
                 await db.commit()
 
@@ -366,14 +344,10 @@ async def update_tenant(
                 slug=updated_tenant.slug,
                 settings=updated_tenant.settings or {},
                 created_at=(
-                    updated_tenant.created_at.isoformat()
-                    if updated_tenant.created_at
-                    else ""
+                    updated_tenant.created_at.isoformat() if updated_tenant.created_at else ""
                 ),
                 updated_at=(
-                    updated_tenant.updated_at.isoformat()
-                    if updated_tenant.updated_at
-                    else ""
+                    updated_tenant.updated_at.isoformat() if updated_tenant.updated_at else ""
                 ),
             )
 
@@ -382,14 +356,12 @@ async def update_tenant(
         raise
     except Exception as e:
         logger.error("Failed to update tenant", tenant_id=str(tenant_id), error=str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Failed to update tenant: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to update tenant: {str(e)}") from e
 
 
 @router.delete("/tenant/{tenant_id}")
 async def delete_tenant(
-    tenant_id: UUID = Path(..., description="UUID of the tenant to delete")
+    tenant_id: UUID = Path(..., description="UUID of the tenant to delete"),
 ) -> dict[str, Any]:
     """
     Delete a specific tenant.
@@ -416,9 +388,7 @@ async def delete_tenant(
             existing_tenant = result.scalar_one_or_none()
 
             if not existing_tenant:
-                raise HTTPException(
-                    status_code=404, detail=f"Tenant with ID {tenant_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Tenant with ID {tenant_id} not found")
 
             # Prevent deletion of default tenant in single-tenant mode
             if (
@@ -441,9 +411,7 @@ async def delete_tenant(
 
             if result.rowcount == 0:
                 # This shouldn't happen since we checked existence above
-                raise HTTPException(
-                    status_code=404, detail=f"Tenant with ID {tenant_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Tenant with ID {tenant_id} not found")
 
             logger.warning(
                 "Tenant deleted successfully - all related data has been removed",
@@ -464,9 +432,7 @@ async def delete_tenant(
         raise
     except Exception as e:
         logger.error("Failed to delete tenant", tenant_id=str(tenant_id), error=str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete tenant: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to delete tenant: {str(e)}") from e
 
 
 @router.get("/status")
@@ -483,9 +449,7 @@ async def setup_status() -> dict[str, Any]:
         async with get_async_session() as db:
             # Check if default tenant exists
             try:
-                default_tenant_id = await ensure_tenant(
-                    db, slug=settings.default_tenant_slug
-                )
+                default_tenant_id = await ensure_tenant(db, slug=settings.default_tenant_slug)
                 has_default_tenant = True
                 default_tenant_uuid = str(default_tenant_id)
             except Exception:
@@ -508,9 +472,7 @@ async def setup_status() -> dict[str, Any]:
 
     except Exception as e:
         logger.error("Failed to get setup status", error=str(e))
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get setup status: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to get setup status: {str(e)}") from e
 
 
 def _get_setup_recommendations(

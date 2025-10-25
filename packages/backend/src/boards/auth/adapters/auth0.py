@@ -22,7 +22,7 @@ class Auth0OIDCAdapter:
         domain: str,
         audience: str,
         client_id: str | None = None,
-        client_secret: str | None = None
+        client_secret: str | None = None,
     ):
         """
         Initialize Auth0 adapter.
@@ -82,7 +82,7 @@ class Auth0OIDCAdapter:
                     "verify_iat": True,
                     "verify_aud": True,
                     "verify_iss": True,
-                }
+                },
             )
 
             # Extract required claims
@@ -126,20 +126,14 @@ class Auth0OIDCAdapter:
             logger.error(f"Unexpected error verifying Auth0 token: {e}")
             raise AuthenticationError("Token verification failed") from e
 
-    async def issue_token(
-        self,
-        user_id: UUID | None = None,
-        claims: dict | None = None
-    ) -> str:
+    async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """
         Issue a new token via Auth0 Management API (requires client credentials).
 
         This is rarely used as Auth0 typically handles token issuance via client libraries.
         """
         if not self.client_id or not self.client_secret:
-            raise NotImplementedError(
-                "Token issuance requires client_id and client_secret"
-            )
+            raise NotImplementedError("Token issuance requires client_id and client_secret")
 
         try:
             # Get management API access token first
@@ -164,7 +158,7 @@ class Auth0OIDCAdapter:
                 headers={
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json",
-                }
+                },
             )
 
             if response.status_code == 200:
@@ -205,9 +199,9 @@ class Auth0OIDCAdapter:
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
                     "audience": f"https://{self.domain}/api/v2/",
-                    "grant_type": "client_credentials"
+                    "grant_type": "client_credentials",
                 },
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
 
             response.raise_for_status()

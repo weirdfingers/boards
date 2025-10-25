@@ -14,9 +14,7 @@ from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
-def generate_auth_adapter_user_id(
-    provider: str, subject: str, tenant_id: str
-) -> uuid.UUID:
+def generate_auth_adapter_user_id(provider: str, subject: str, tenant_id: str) -> uuid.UUID:
     """Generate user ID using the same algorithm as the NoAuthAdapter."""
     import hashlib
 
@@ -37,23 +35,17 @@ async def cleanup_test_data(session):
         test_user_ids_stmt = select(Users.id).where(
             Users.auth_subject.in_(["discovery-user-1", "discovery-user-2"])
         )
-        await session.execute(
-            delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt))
-        )
+        await session.execute(delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt)))
 
         await session.execute(
             delete(BoardMembers).where(BoardMembers.user_id.in_(test_user_ids_stmt))
         )
 
         await session.execute(
-            delete(Users).where(
-                Users.auth_subject.in_(["discovery-user-1", "discovery-user-2"])
-            )
+            delete(Users).where(Users.auth_subject.in_(["discovery-user-1", "discovery-user-2"]))
         )
 
-        await session.execute(
-            delete(Tenants).where(Tenants.slug.like("discovery-tenant%"))
-        )
+        await session.execute(delete(Tenants).where(Tenants.slug.like("discovery-tenant%")))
 
         await session.commit()
     except Exception:
@@ -92,9 +84,7 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
             # Create user 1 (default authenticated user) - use same algorithm as NoAuthAdapter
             # fallback
             # NoAuthAdapter fallback uses string tenant from header, not UUID
-            user1_id = generate_auth_adapter_user_id(
-                "none", "discovery-user-1", "discovery-tenant"
-            )
+            user1_id = generate_auth_adapter_user_id("none", "discovery-user-1", "discovery-tenant")
             user1 = Users(
                 id=user1_id,
                 tenant_id=tenant_id,
@@ -109,9 +99,7 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
             session.add(user1)
 
             # Create user 2 - use same algorithm as NoAuthAdapter fallback
-            user2_id = generate_auth_adapter_user_id(
-                "none", "discovery-user-2", "discovery-tenant"
-            )
+            user2_id = generate_auth_adapter_user_id("none", "discovery-user-2", "discovery-tenant")
             user2 = Users(
                 id=user2_id,
                 tenant_id=tenant_id,
@@ -313,9 +301,7 @@ async def test_board_discovery_integration(alembic_migrate, test_database):
                 "query": public_boards_query,
                 "variables": {"limit": 10, "offset": 0},
             },
-            headers={
-                "X-Tenant": "discovery-tenant"
-            },  # No auth needed for public boards
+            headers={"X-Tenant": "discovery-tenant"},  # No auth needed for public boards
         )
 
         assert response.status_code == 200

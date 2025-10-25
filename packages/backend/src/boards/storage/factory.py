@@ -39,9 +39,7 @@ except ImportError:
     logger.warning("GCS storage not available - install google-cloud-storage to enable")
 
 
-def create_storage_provider(
-    provider_type: str, config: dict[str, Any]
-) -> StorageProvider:
+def create_storage_provider(provider_type: str, config: dict[str, Any]) -> StorageProvider:
     """Create a storage provider instance from configuration.
 
     Args:
@@ -85,9 +83,7 @@ def _create_local_provider(config: dict[str, Any]) -> LocalStorageProvider:
     base_path = config.get("base_path", "/tmp/boards/storage")
     public_url_base = config.get("public_url_base")
 
-    return LocalStorageProvider(
-        base_path=Path(base_path), public_url_base=public_url_base
-    )
+    return LocalStorageProvider(base_path=Path(base_path), public_url_base=public_url_base)
 
 
 def _create_supabase_provider(config: dict[str, Any]) -> StorageProvider:
@@ -191,9 +187,7 @@ def create_storage_manager(
             )
             manager.register_provider(provider_name, provider_instance)
 
-            logger.info(
-                f"Registered storage provider: {provider_name} ({provider_type})"
-            )
+            logger.info(f"Registered storage provider: {provider_name} ({provider_type})")
 
         except Exception as e:
             logger.error(f"Failed to register provider {provider_name}: {e}")

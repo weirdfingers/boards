@@ -164,6 +164,7 @@ We welcome contributions! Please see our [Contributing Guide](http://localhost:4
 - **Python**: PEP 8 via `ruff`, type hints required
 - **TypeScript**: ESLint + Prettier, strict mode
 - **Commits**: Follow [Conventional Commits](https://conventionalcommits.org/)
+- **Pre-commit Hooks**: Automatic linting and type checking (see [Installation Guide](http://localhost:4500/docs/installation))
 
 ## Community
 

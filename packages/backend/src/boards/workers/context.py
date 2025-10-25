@@ -87,6 +87,4 @@ class GeneratorExecutionContext:
             generation_id=self.generation_id,
         )
         async with get_async_session() as session:
-            await jobs_repo.set_external_job_id(
-                session, self.generation_id, external_id
-            )
+            await jobs_repo.set_external_job_id(session, self.generation_id, external_id)

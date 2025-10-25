@@ -35,9 +35,7 @@ class BaseGenerator(ABC):
         pass
 
     @abstractmethod
-    async def generate(
-        self, inputs: BaseModel, context: "GeneratorExecutionContext"
-    ) -> BaseModel:
+    async def generate(self, inputs: BaseModel, context: "GeneratorExecutionContext") -> BaseModel:
         """
         Execute the generation process using the provided inputs.
 

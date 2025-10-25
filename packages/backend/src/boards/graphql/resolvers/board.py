@@ -63,9 +63,7 @@ async def resolve_board_by_id(info: strawberry.Info, id: UUID) -> Board | None:
                 "Access denied to board",
                 board_id=str(id),
                 user_id=(
-                    str(auth_context.user_id)
-                    if auth_context and auth_context.user_id
-                    else None
+                    str(auth_context.user_id) if auth_context and auth_context.user_id else None
                 ),
             )
             return None
@@ -231,9 +229,7 @@ async def resolve_public_boards(
         ]
 
 
-async def search_boards(
-    info: strawberry.Info, query: str, limit: int, offset: int
-) -> list[Board]:
+async def search_boards(info: strawberry.Info, query: str, limit: int, offset: int) -> list[Board]:
     """
     Search for boards based on a text query.
 
@@ -326,9 +322,7 @@ async def resolve_board_owner(board: Board, info: strawberry.Info) -> User:
             raise RuntimeError("Access denied to board owner information")
 
         # Ensure owner is preloaded
-        ensure_preloaded(
-            db_board, "owner", "Board owner relationship was not preloaded"
-        )
+        ensure_preloaded(db_board, "owner", "Board owner relationship was not preloaded")
 
         if not db_board.owner:
             raise RuntimeError("Board owner not found")
@@ -348,9 +342,7 @@ async def resolve_board_owner(board: Board, info: strawberry.Info) -> User:
         )
 
 
-async def resolve_board_members(
-    board: Board, info: strawberry.Info
-) -> list[BoardMember]:
+async def resolve_board_members(board: Board, info: strawberry.Info) -> list[BoardMember]:
     """
     Resolve the members of a board. Requires user to have access to board details.
     """
@@ -373,9 +365,7 @@ async def resolve_board_members(
             raise RuntimeError("Access denied to board member information")
 
         # Ensure members are preloaded
-        ensure_preloaded(
-            db_board, "board_members", "Board members relationship was not preloaded"
-        )
+        ensure_preloaded(db_board, "board_members", "Board members relationship was not preloaded")
 
         from ..types.board import BoardMember as BoardMemberType
         from ..types.board import BoardRole
@@ -383,9 +373,7 @@ async def resolve_board_members(
         members = []
         for member in db_board.board_members:
             # Ensure user relationship is preloaded
-            ensure_preloaded(
-                member, "user", "BoardMember user relationship was not preloaded"
-            )
+            ensure_preloaded(member, "user", "BoardMember user relationship was not preloaded")
 
             members.append(
                 BoardMemberType(
@@ -490,17 +478,13 @@ async def resolve_board_generation_count(board: Board, info: strawberry.Info) ->
         db_board = result.scalar_one_or_none()
 
         if not db_board or not can_access_board(db_board, auth_context):
-            logger.info(
-                "Access denied to board generation count", board_id=str(board.id)
-            )
+            logger.info("Access denied to board generation count", board_id=str(board.id))
             return 0
 
         # Count generations for this board
         from sqlalchemy import func
 
-        count_stmt = select(func.count(Generations.id)).where(
-            Generations.board_id == board.id
-        )
+        count_stmt = select(func.count(Generations.id)).where(Generations.board_id == board.id)
 
         count_result = await session.execute(count_stmt)
         return count_result.scalar() or 0
@@ -551,9 +535,7 @@ async def resolve_board_member_user(member: BoardMember, info: strawberry.Info) 
         )
 
 
-async def resolve_board_member_inviter(
-    member: BoardMember, info: strawberry.Info
-) -> User | None:
+async def resolve_board_member_inviter(member: BoardMember, info: strawberry.Info) -> User | None:
     """
     Resolve the user who invited this board member.
 
@@ -700,9 +682,7 @@ async def update_board(info: strawberry.Info, input: UpdateBoardInput) -> Board:
         )
 
         if not is_owner and not is_admin:
-            raise RuntimeError(
-                "Permission denied: only board owner or admin can update"
-            )
+            raise RuntimeError("Permission denied: only board owner or admin can update")
 
         # Update fields if provided
         if input.title is not None:
@@ -776,9 +756,7 @@ async def delete_board(info: strawberry.Info, id: UUID) -> bool:
         await session.delete(board)
         await session.commit()
 
-        logger.info(
-            "Board deleted", board_id=str(id), user_id=str(auth_context.user_id)
-        )
+        logger.info("Board deleted", board_id=str(id), user_id=str(auth_context.user_id))
 
         return True
 
@@ -817,9 +795,7 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
         )
 
         if not is_owner and not is_admin:
-            raise RuntimeError(
-                "Permission denied: only board owner or admin can add members"
-            )
+            raise RuntimeError("Permission denied: only board owner or admin can add members")
 
         # Check if user to be added exists
         user_stmt = select(Users).where(Users.id == input.user_id)
@@ -834,9 +810,7 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
             raise RuntimeError("User is already the board owner")
 
         # Check if user is already a member
-        existing_member = any(
-            member.user_id == input.user_id for member in board.board_members
-        )
+        existing_member = any(member.user_id == input.user_id for member in board.board_members)
 
         if existing_member:
             raise RuntimeError("User is already a board member")
@@ -891,9 +865,7 @@ async def add_board_member(info: strawberry.Info, input: AddBoardMemberInput) ->
         )
 
 
-async def remove_board_member(
-    info: strawberry.Info, board_id: UUID, user_id: UUID
-) -> Board:
+async def remove_board_member(info: strawberry.Info, board_id: UUID, user_id: UUID) -> Board:
     """
     Remove a member from a board.
 
@@ -943,9 +915,7 @@ async def remove_board_member(
         is_self = user_id == auth_context.user_id
 
         if not is_owner and not is_admin and not is_self:
-            raise RuntimeError(
-                "Permission denied: insufficient permissions to remove member"
-            )
+            raise RuntimeError("Permission denied: insufficient permissions to remove member")
 
         # Remove the member
         await session.delete(member_to_remove)

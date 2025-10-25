@@ -14,9 +14,7 @@ from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
-def generate_auth_adapter_user_id(
-    provider: str, subject: str, tenant_id: str
-) -> uuid.UUID:
+def generate_auth_adapter_user_id(provider: str, subject: str, tenant_id: str) -> uuid.UUID:
     """Generate user ID using the same algorithm as the NoAuthAdapter."""
     import hashlib
 
@@ -36,9 +34,7 @@ async def cleanup_test_data(session):
         test_user_ids_stmt = select(Users.id).where(
             Users.auth_subject.in_(["board-user-1", "board-user-2", "board-user-3"])
         )
-        await session.execute(
-            delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt))
-        )
+        await session.execute(delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt)))
 
         await session.execute(
             delete(BoardMembers).where(BoardMembers.user_id.in_(test_user_ids_stmt))
@@ -60,9 +56,7 @@ async def cleanup_test_data(session):
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.requires_db
-async def test_board_crud_integration(
-    alembic_migrate, test_database, reset_shared_db_connections
-):
+async def test_board_crud_integration(alembic_migrate, test_database, reset_shared_db_connections):
     """Integration test for complete board CRUD operations."""
     dsn, _ = test_database
 
@@ -89,12 +83,8 @@ async def test_board_crud_integration(
             tenant_id = await ensure_tenant(session, slug="board-tenant")
 
             # Create users
-            user1_id = generate_auth_adapter_user_id(
-                "none", "board-user-1", "board-tenant"
-            )
-            user2_id = generate_auth_adapter_user_id(
-                "none", "board-user-2", "board-tenant"
-            )
+            user1_id = generate_auth_adapter_user_id("none", "board-user-1", "board-tenant")
+            user2_id = generate_auth_adapter_user_id("none", "board-user-2", "board-tenant")
 
             user1 = Users(
                 id=user1_id,
@@ -370,9 +360,7 @@ async def test_board_search_integration(
             # Create tenant and user
             tenant_id = await ensure_tenant(session, slug="board-tenant")
 
-            user_id = generate_auth_adapter_user_id(
-                "none", "board-user-1", "board-tenant"
-            )
+            user_id = generate_auth_adapter_user_id("none", "board-user-1", "board-tenant")
             user = Users(
                 id=user_id,
                 tenant_id=tenant_id,
@@ -514,9 +502,7 @@ async def test_board_permission_integration(
             tenant_id = await ensure_tenant(session, slug="board-tenant")
 
             # Owner user
-            owner_id = generate_auth_adapter_user_id(
-                "none", "board-user-1", "board-tenant"
-            )
+            owner_id = generate_auth_adapter_user_id("none", "board-user-1", "board-tenant")
             owner = Users(
                 id=owner_id,
                 tenant_id=tenant_id,
@@ -530,9 +516,7 @@ async def test_board_permission_integration(
             session.add(owner)
 
             # Regular user
-            user_id = generate_auth_adapter_user_id(
-                "none", "board-user-2", "board-tenant"
-            )
+            user_id = generate_auth_adapter_user_id("none", "board-user-2", "board-tenant")
             user = Users(
                 id=user_id,
                 tenant_id=tenant_id,

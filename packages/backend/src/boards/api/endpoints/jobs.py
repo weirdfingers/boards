@@ -73,6 +73,4 @@ async def submit_generation(
     except Exception as e:
         logger.error(f"Failed to submit generation: {e}")
         await db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Failed to submit generation: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Failed to submit generation: {str(e)}") from e

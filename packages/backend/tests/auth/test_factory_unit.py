@@ -25,10 +25,7 @@ class TestAuthFactory:
         adapter = get_auth_adapter()
         assert isinstance(adapter, NoAuthAdapter)
 
-    @patch.dict(os.environ, {
-        "BOARDS_AUTH_PROVIDER": "jwt",
-        "BOARDS_JWT_SECRET": "test-secret"
-    })
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "jwt", "BOARDS_JWT_SECRET": "test-secret"})
     def test_jwt_adapter_with_env_vars(self):
         """Test creating JWT adapter with environment variables."""
         adapter = get_auth_adapter()

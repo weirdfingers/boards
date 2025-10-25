@@ -65,7 +65,7 @@ class ClerkAuthAdapter:
                     "verify_exp": True,
                     "verify_nbf": True,
                     "verify_iat": True,
-                }
+                },
             )
 
             # Extract required claims
@@ -111,20 +111,14 @@ class ClerkAuthAdapter:
             logger.error(f"Unexpected error verifying Clerk token: {e}")
             raise AuthenticationError("Token verification failed") from e
 
-    async def issue_token(
-        self,
-        user_id: UUID | None = None,
-        claims: dict | None = None
-    ) -> str:
+    async def issue_token(self, user_id: UUID | None = None, claims: dict | None = None) -> str:
         """
         Issue a new token via Clerk (not commonly used).
 
         Note: Clerk typically handles token issuance on the client side.
         This method is provided for completeness but may not be used in practice.
         """
-        raise NotImplementedError(
-            "Token issuance should be handled by Clerk client libraries"
-        )
+        raise NotImplementedError("Token issuance should be handled by Clerk client libraries")
 
     async def get_user_info(self, token: str) -> dict:
         """Get additional user information from Clerk API."""
@@ -139,7 +133,7 @@ class ClerkAuthAdapter:
                 headers={
                     "Authorization": f"Bearer {self.secret_key}",
                     "Content-Type": "application/json",
-                }
+                },
             )
 
             if response.status_code == 200:

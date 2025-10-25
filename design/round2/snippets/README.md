@@ -23,4 +23,3 @@ Notes:
 - Keep one CTA per post (star repo, try quickstart, join Discord)
 - Respect subreddit/community rules; lead with value
 - On Shorts/Reels/TikTok: hook in 2s, captions on, vertical 9:16
-

@@ -85,9 +85,7 @@ class GCSStorageProvider(StorageProvider):
                         credentials_info,
                         scopes=["https://www.googleapis.com/auth/cloud-platform"],
                     )
-                    self._client = storage.Client(
-                        credentials=credentials, project=self.project_id
-                    )
+                    self._client = storage.Client(credentials=credentials, project=self.project_id)
                 elif self.credentials_path:
                     # Use service account file
                     credentials_path = Path(self.credentials_path)
@@ -171,9 +169,7 @@ class GCSStorageProvider(StorageProvider):
                 file_content = b"".join(chunks)
 
             # Upload using thread pool to avoid blocking
-            await self._run_sync(
-                blob.upload_from_string, file_content, content_type=content_type
-            )
+            await self._run_sync(blob.upload_from_string, file_content, content_type=content_type)
 
             # Return the CDN URL if configured, otherwise public GCS URL
             if self.cdn_domain:
@@ -275,9 +271,7 @@ class GCSStorageProvider(StorageProvider):
             if isinstance(e, StorageException):
                 raise
             logger.error(f"Failed to create presigned download URL for {key}: {e}")
-            raise StorageException(
-                f"GCS presigned download URL creation failed: {e}"
-            ) from e
+            raise StorageException(f"GCS presigned download URL creation failed: {e}") from e
 
     async def delete(self, key: str) -> bool:
         """Delete file by storage key."""

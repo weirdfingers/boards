@@ -13,13 +13,13 @@ from .base import StorageConfig
 @dataclass
 class ProviderConfig:
     """Configuration for a specific storage provider."""
+
     type: str
     config: dict[str, Any]
 
 
 def load_storage_config(
-    config_path: Path | None = None,
-    env_prefix: str = "BOARDS_STORAGE_"
+    config_path: Path | None = None, env_prefix: str = "BOARDS_STORAGE_"
 ) -> StorageConfig:
     """Load storage configuration from file and environment variables.
 
@@ -38,8 +38,8 @@ def load_storage_config(
                 "type": "local",
                 "config": {
                     "base_path": "/tmp/boards/storage",
-                    "public_url_base": "http://localhost:8000/storage"
-                }
+                    "public_url_base": "http://localhost:8000/storage",
+                },
             }
         },
         "routing_rules": [
@@ -53,8 +53,8 @@ def load_storage_config(
         try:
             with open(config_path) as f:
                 file_config = yaml.safe_load(f)
-                if file_config.get('storage'):
-                    config_data.update(file_config['storage'])
+                if file_config.get("storage"):
+                    config_data.update(file_config["storage"])
         except Exception as e:
             raise ValueError(f"Failed to load storage config from {config_path}: {e}") from e
 
@@ -102,8 +102,8 @@ def _apply_provider_env_overrides(config_data: dict[str, Any], env_prefix: str):
             "config": {
                 "url": supabase_url,
                 "key": supabase_key,
-                "bucket": supabase_bucket or "boards-artifacts"
-            }
+                "bucket": supabase_bucket or "boards-artifacts",
+            },
         }
 
     # S3 configuration
@@ -119,8 +119,8 @@ def _apply_provider_env_overrides(config_data: dict[str, Any], env_prefix: str):
                 "bucket": s3_bucket,
                 "region": s3_region or "us-west-2",
                 "access_key_id": aws_access_key,
-                "secret_access_key": aws_secret_key
-            }
+                "secret_access_key": aws_secret_key,
+            },
         }
 
     # Local storage overrides
@@ -134,10 +134,7 @@ def _apply_provider_env_overrides(config_data: dict[str, Any], env_prefix: str):
         if local_public_url:
             local_config["public_url_base"] = local_public_url
 
-        config_data["providers"]["local"] = {
-            "type": "local",
-            "config": local_config
-        }
+        config_data["providers"]["local"] = {"type": "local", "config": local_config}
 
 
 def create_example_config() -> str:
@@ -151,16 +148,16 @@ def create_example_config() -> str:
                     "type": "local",
                     "config": {
                         "base_path": "/var/boards/storage",
-                        "public_url_base": "http://localhost:8000/storage"
-                    }
+                        "public_url_base": "http://localhost:8000/storage",
+                    },
                 },
                 "supabase": {
                     "type": "supabase",
                     "config": {
                         "url": "${SUPABASE_URL}",
                         "key": "${SUPABASE_ANON_KEY}",
-                        "bucket": "boards-artifacts"
-                    }
+                        "bucket": "boards-artifacts",
+                    },
                 },
                 "s3": {
                     "type": "s3",
@@ -168,34 +165,21 @@ def create_example_config() -> str:
                         "bucket": "boards-prod-artifacts",
                         "region": "us-west-2",
                         "access_key_id": "${AWS_ACCESS_KEY_ID}",
-                        "secret_access_key": "${AWS_SECRET_ACCESS_KEY}"
-                    }
-                }
+                        "secret_access_key": "${AWS_SECRET_ACCESS_KEY}",
+                    },
+                },
             },
             "routing_rules": [
-                {
-                    "condition": {
-                        "artifact_type": "video",
-                        "size_gt": "100MB"
-                    },
-                    "provider": "s3"
-                },
-                {
-                    "condition": {
-                        "artifact_type": "model"
-                    },
-                    "provider": "supabase"
-                },
-                {
-                    "provider": "supabase"
-                }
+                {"condition": {"artifact_type": "video", "size_gt": "100MB"}, "provider": "s3"},
+                {"condition": {"artifact_type": "model"}, "provider": "supabase"},
+                {"provider": "supabase"},
             ],
             "max_file_size": 1073741824,  # 1GB
             "cleanup": {
                 "temp_file_ttl_hours": 24,
                 "cleanup_interval_hours": 1,
-                "max_cleanup_batch_size": 1000
-            }
+                "max_cleanup_batch_size": 1000,
+            },
         }
     }
 

@@ -59,18 +59,14 @@ class Mutation:
 
     # Board mutations
     @strawberry.mutation(name="createBoard")
-    async def create_board(
-        self, info: strawberry.Info, input: CreateBoardInput
-    ) -> Board:
+    async def create_board(self, info: strawberry.Info, input: CreateBoardInput) -> Board:
         """Create a new board."""
         from ..resolvers.board import create_board
 
         return await create_board(info, input)
 
     @strawberry.mutation(name="updateBoard")
-    async def update_board(
-        self, info: strawberry.Info, input: UpdateBoardInput
-    ) -> Board:
+    async def update_board(self, info: strawberry.Info, input: UpdateBoardInput) -> Board:
         """Update an existing board."""
         from ..resolvers.board import update_board
 
@@ -84,9 +80,7 @@ class Mutation:
         return await delete_board(info, id)
 
     @strawberry.mutation(name="addBoardMember")
-    async def add_board_member(
-        self, info: strawberry.Info, input: AddBoardMemberInput
-    ) -> Board:
+    async def add_board_member(self, info: strawberry.Info, input: AddBoardMemberInput) -> Board:
         """Add a member to a board."""
         from ..resolvers.board import add_board_member
 

@@ -80,14 +80,10 @@ def configure_logging(debug: bool = False) -> None:
 
     if debug:
         # Development: human-readable console output
-        processors.append(
-            structlog.dev.ConsoleRenderer(colors=True)
-        )
+        processors.append(structlog.dev.ConsoleRenderer(colors=True))
     else:
         # Production: JSON output
-        processors.append(
-            structlog.processors.JSONRenderer()
-        )
+        processors.append(structlog.processors.JSONRenderer())
 
     # Configure structlog
     structlog.configure(
@@ -126,11 +122,11 @@ def generate_request_id() -> str:
     random_bytes = secrets.token_bytes(2)
 
     # Convert timestamp to bytes (8 bytes for int64) and combine with random bytes
-    timestamp_bytes = timestamp_us.to_bytes(8, byteorder='big')
+    timestamp_bytes = timestamp_us.to_bytes(8, byteorder="big")
     combined_bytes = timestamp_bytes + random_bytes
 
     # Encode as base64 and strip padding
-    b64 = base64.urlsafe_b64encode(combined_bytes).decode('ascii').rstrip('=')
+    b64 = base64.urlsafe_b64encode(combined_bytes).decode("ascii").rstrip("=")
 
     return b64
 

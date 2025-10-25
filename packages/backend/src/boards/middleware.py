@@ -128,9 +128,7 @@ class LoggingContextMiddleware(BaseHTTPMiddleware):
                 sanitized_params = sanitize_query_params(dict(request.query_params))
                 # If hitting /graphql, never log raw GraphQL payload in query string
                 # Comment this out to see the raw GraphQL payload in the query string
-                if request.url.path == "/graphql" and isinstance(
-                    sanitized_params, dict
-                ):
+                if request.url.path == "/graphql" and isinstance(sanitized_params, dict):
                     for k in ("query", "variables", "extensions"):
                         if k in sanitized_params:
                             sanitized_params[k] = "[REDACTED]"
@@ -210,9 +208,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
 
         # Validate tenant header in multi-tenant mode
         if settings.multi_tenant_mode:
-            tenant_validation_result = await self._validate_tenant_header(
-                x_tenant, request
-            )
+            tenant_validation_result = await self._validate_tenant_header(x_tenant, request)
             if tenant_validation_result is not None:
                 return tenant_validation_result
 
@@ -264,8 +260,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
                     content={
                         "error": "Missing X-Tenant header",
                         "detail": (
-                            "X-Tenant header is required in multi-tenant mode "
-                            "for this endpoint"
+                            "X-Tenant header is required in multi-tenant mode " "for this endpoint"
                         ),
                         "multi_tenant_mode": True,
                     },
@@ -336,9 +331,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
             return "Tenant slug too long (max 255 characters)"
 
         if not re.match(r"^[a-z0-9-]+$", tenant_slug):
-            return (
-                "Tenant slug must contain only lowercase letters, numbers, and hyphens"
-            )
+            return "Tenant slug must contain only lowercase letters, numbers, and hyphens"
 
         if tenant_slug.startswith("-") or tenant_slug.endswith("-"):
             return "Tenant slug cannot start or end with hyphen"

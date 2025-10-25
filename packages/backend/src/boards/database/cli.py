@@ -71,16 +71,12 @@ def downgrade(revision: str) -> None:
 
 @main.command()
 @click.option("-m", "--message", required=True, help="Revision message")
-@click.option(
-    "--autogenerate/--no-autogenerate", default=True, help="Auto-generate migration"
-)
+@click.option("--autogenerate/--no-autogenerate", default=True, help="Auto-generate migration")
 def revision(message: str, autogenerate: bool) -> None:
     """Create a new migration revision."""
     try:
         config = get_alembic_config()
-        logger.info(
-            "Creating new migration", message=message, autogenerate=autogenerate
-        )
+        logger.info("Creating new migration", message=message, autogenerate=autogenerate)
         command.revision(config, message=message, autogenerate=autogenerate)
         logger.info("Migration created successfully")
     except Exception as e:

@@ -70,9 +70,7 @@ async def download_artifact_to_temp(
 
     # Create temporary file with appropriate extension (use random prefix for security)
     random_id = uuid.uuid4().hex[:8]
-    temp_fd, temp_path = tempfile.mkstemp(
-        suffix=extension, prefix=f"boards_artifact_{random_id}_"
-    )
+    temp_fd, temp_path = tempfile.mkstemp(suffix=extension, prefix=f"boards_artifact_{random_id}_")
 
     try:
         async with httpx.AsyncClient() as client:

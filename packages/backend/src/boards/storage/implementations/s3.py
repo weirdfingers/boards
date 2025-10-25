@@ -232,9 +232,7 @@ class S3StorageProvider(StorageProvider):
             if isinstance(e, StorageException):
                 raise
             logger.error(f"Failed to create presigned download URL for {key}: {e}")
-            raise StorageException(
-                f"S3 presigned download URL creation failed: {e}"
-            ) from e
+            raise StorageException(f"S3 presigned download URL creation failed: {e}") from e
 
     async def delete(self, key: str) -> bool:
         """Delete file by storage key."""

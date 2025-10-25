@@ -61,25 +61,19 @@ async def lifespan(app: FastAPI):
             # Log detailed error information
             logger.error(
                 "Application configuration validation failed - some features may not work properly",
-                database_errors=validation_results.get("database", {}).get(
-                    "errors", []
-                ),
+                database_errors=validation_results.get("database", {}).get("errors", []),
                 tenant_errors=validation_results["tenant"].get("errors", []),
                 auth_errors=validation_results["auth"].get("errors", []),
             )
 
             # In production, we might want to fail hard here
             if settings.environment.lower() in ("production", "prod"):
-                raise ValidationError(
-                    "Critical configuration validation failed in production"
-                )
+                raise ValidationError("Critical configuration validation failed in production")
 
         # Log recommendations
         recommendations = get_startup_recommendations(validation_results)
         if recommendations:
-            logger.info(
-                "Configuration recommendations", recommendations=recommendations
-            )
+            logger.info("Configuration recommendations", recommendations=recommendations)
 
     except ValidationError:
         # Re-raise validation errors to fail startup
@@ -141,9 +135,7 @@ def create_app() -> FastAPI:
             # Create and mount the GraphQL router
             graphql_router = create_graphql_router()
             app.include_router(graphql_router, prefix="")
-            logger.info(
-                "GraphQL endpoint initialized successfully", endpoint="/graphql"
-            )
+            logger.info("GraphQL endpoint initialized successfully", endpoint="/graphql")
         except Exception as e:  # pragma: no cover
             logger.error("Failed to initialize GraphQL endpoint", error=str(e))
             # Re-raise to fail fast - server should not start with broken GraphQL

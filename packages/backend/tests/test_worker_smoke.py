@@ -51,9 +51,7 @@ def test_worker_smoke(monkeypatch):
 
     monkeypatch.setattr(jobs_repo, "get_generation", fake_get_generation)
     monkeypatch.setattr(jobs_repo, "finalize_success", fake_finalize_success)
-    monkeypatch.setattr(
-        ProgressPublisher, "_persist_update", fake_persist, raising=False
-    )
+    monkeypatch.setattr(ProgressPublisher, "_persist_update", fake_persist, raising=False)
 
     # Provide API key env for generator
     import os

@@ -62,7 +62,7 @@ def extract_tenant_from_claims(
             return tenant_slug
 
     # Strategy 3: Custom claims (configurable)
-    custom_tenant_claim = getattr(settings, 'jwt_tenant_claim', None)
+    custom_tenant_claim = getattr(settings, "jwt_tenant_claim", None)
     if custom_tenant_claim and (custom_value := claims.get(custom_tenant_claim)):
         tenant_slug = _normalize_tenant_slug(custom_value)
         logger.info(
@@ -153,28 +153,27 @@ def _normalize_tenant_slug(value: Any) -> str:
     """
     if isinstance(value, dict):
         # Extract slug if it's an object with slug/id fields
-        return _normalize_tenant_slug(
-            value.get("slug") or value.get("id") or value.get("name", "")
-        )
+        return _normalize_tenant_slug(value.get("slug") or value.get("id") or value.get("name", ""))
 
     # Convert to string and normalize
     slug = str(value).lower().strip()
 
     # Replace spaces and invalid characters with hyphens
     import re
-    slug = re.sub(r'[^a-z0-9-]', '-', slug)
+
+    slug = re.sub(r"[^a-z0-9-]", "-", slug)
 
     # Remove multiple consecutive hyphens
-    slug = re.sub(r'-+', '-', slug)
+    slug = re.sub(r"-+", "-", slug)
 
     # Remove leading/trailing hyphens
-    slug = slug.strip('-')
+    slug = slug.strip("-")
 
     # Ensure it's not empty and not too long
     if not slug:
         slug = "unknown"
     elif len(slug) > 50:  # Reasonable limit for tenant slugs
-        slug = slug[:50].rstrip('-')
+        slug = slug[:50].rstrip("-")
 
     return slug
 
@@ -199,10 +198,11 @@ def _validate_tenant_slug(slug: str) -> str:
         raise ValueError("Tenant slug too long (max 255 characters)")
 
     import re
-    if not re.match(r'^[a-z0-9-]+$', slug):
+
+    if not re.match(r"^[a-z0-9-]+$", slug):
         raise ValueError("Tenant slug must contain only lowercase letters, numbers, and hyphens")
 
-    if slug.startswith('-') or slug.endswith('-'):
+    if slug.startswith("-") or slug.endswith("-"):
         raise ValueError("Tenant slug cannot start or end with hyphen")
 
     return slug
@@ -222,12 +222,17 @@ def _extract_tenant_from_email_domain(email: str) -> str | None:
         Tenant slug derived from domain, or None if not applicable
     """
     try:
-        domain = email.split('@')[1].lower()
+        domain = email.split("@")[1].lower()
 
         # Skip common public email domains
         public_domains = {
-            'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com',
-            'icloud.com', 'protonmail.com', 'aol.com'
+            "gmail.com",
+            "yahoo.com",
+            "outlook.com",
+            "hotmail.com",
+            "icloud.com",
+            "protonmail.com",
+            "aol.com",
         }
 
         if domain in public_domains:
@@ -239,7 +244,7 @@ def _extract_tenant_from_email_domain(email: str) -> str | None:
 
         # Extract organization name from domain
         # e.g., "user@acme-corp.com" -> "acme-corp"
-        org_name = domain.split('.')[0]
+        org_name = domain.split(".")[0]
         return _normalize_tenant_slug(org_name)
 
     except (IndexError, AttributeError):
@@ -257,10 +262,17 @@ def get_tenant_extraction_config() -> dict[str, Any]:
     return {
         "multi_tenant_mode": settings.multi_tenant_mode,
         "default_tenant_slug": settings.default_tenant_slug,
-        "custom_tenant_claim": getattr(settings, 'jwt_tenant_claim', None),
+        "custom_tenant_claim": getattr(settings, "jwt_tenant_claim", None),
         "domain_based_extraction": settings.multi_tenant_mode,
         "supported_claim_names": [
-            "tenant", "org", "organization", "org_slug", "org_name",
-            "namespace", "group", "team", "workspace"
-        ]
+            "tenant",
+            "org",
+            "organization",
+            "org_slug",
+            "org_name",
+            "namespace",
+            "group",
+            "team",
+            "workspace",
+        ],
     }

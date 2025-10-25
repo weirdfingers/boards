@@ -102,7 +102,29 @@ uv sync
 uv run alembic upgrade head
 ```
 
-### 5. Start Development Servers
+### 5. Set Up Pre-commit Hooks (Optional but Recommended)
+
+Pre-commit hooks automatically run linters and type checks before each commit:
+
+```bash
+# Install pre-commit hooks
+cd packages/backend
+uv run pre-commit install
+
+# Manually run all hooks (optional - they'll run automatically on commit)
+uv run pre-commit run --all-files
+```
+
+The hooks will automatically:
+
+- Lint Python code with `ruff`
+- Format Python code with `ruff format`
+- Type check backend with `pyright`
+- Lint frontend packages
+- Type check frontend packages
+- Check for common issues (trailing whitespace, large files, etc.)
+
+### 6. Start Development Servers
 
 ```bash
 # Start all development servers

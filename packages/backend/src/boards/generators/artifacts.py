@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class AudioArtifact(BaseModel):
     """Represents an audio file artifact from a generation."""
+
     generation_id: str = Field(description="ID of the generation that created this artifact")
     storage_url: str = Field(description="URL where the audio file is stored")
     duration: float | None = Field(None, description="Duration in seconds")
@@ -20,6 +21,7 @@ class AudioArtifact(BaseModel):
 
 class VideoArtifact(BaseModel):
     """Represents a video file artifact from a generation."""
+
     generation_id: str = Field(description="ID of the generation that created this artifact")
     storage_url: str = Field(description="URL where the video file is stored")
     duration: float | None = Field(None, description="Duration in seconds")
@@ -31,6 +33,7 @@ class VideoArtifact(BaseModel):
 
 class ImageArtifact(BaseModel):
     """Represents an image file artifact from a generation."""
+
     generation_id: str = Field(description="ID of the generation that created this artifact")
     storage_url: str = Field(description="URL where the image file is stored")
     width: int = Field(description="Image width in pixels")
@@ -40,6 +43,7 @@ class ImageArtifact(BaseModel):
 
 class TextArtifact(BaseModel):
     """Represents a text artifact from a generation."""
+
     generation_id: str = Field(description="ID of the generation that created this artifact")
     content: str = Field(description="The generated text content")
     format: str = Field(default="plain", description="Text format (plain, markdown, html, etc.)")
@@ -47,6 +51,7 @@ class TextArtifact(BaseModel):
 
 class LoRArtifact(BaseModel):
     """Represents a LoRA (Low-Rank Adaptation) model artifact."""
+
     generation_id: str = Field(description="ID of the generation that created this artifact")
     storage_url: str = Field(description="URL where the LoRA file is stored")
     base_model: str = Field(description="Base model this LoRA was trained on")

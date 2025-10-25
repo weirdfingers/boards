@@ -14,12 +14,8 @@ class WhisperInput(BaseModel):
     """Input schema for Whisper transcription."""
 
     audio_source: AudioArtifact = Field(description="Audio file to transcribe")
-    language: str = Field(
-        default="en", description="Language code (e.g., 'en', 'es', 'fr')"
-    )
-    prompt: str = Field(
-        default="", description="Optional prompt to guide transcription"
-    )
+    language: str = Field(default="en", description="Language code (e.g., 'en', 'es', 'fr')")
+    prompt: str = Field(default="", description="Optional prompt to guide transcription")
 
 
 class WhisperOutput(BaseModel):

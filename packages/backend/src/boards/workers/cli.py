@@ -118,18 +118,14 @@ def main(
         try:
             from watchfiles import run_process
         except ImportError:
-            logger.error(
-                "watchfiles not installed - install with: uv add --dev watchfiles"
-            )
+            logger.error("watchfiles not installed - install with: uv add --dev watchfiles")
             sys.exit(1)
 
         import pathlib
 
         # Watch the boards package directory
         watch_path = pathlib.Path(__file__).parent.parent
-        logger.info(
-            "Auto-reload enabled - watching for file changes", path=str(watch_path)
-        )
+        logger.info("Auto-reload enabled - watching for file changes", path=str(watch_path))
 
         # run_process will restart the worker when files change
         # It kills the entire process tree (parent + all worker children)

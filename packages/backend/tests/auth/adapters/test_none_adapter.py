@@ -87,9 +87,7 @@ class TestNoAuthAdapter:
 
     def test_custom_configuration(self):
         """Test custom adapter configuration."""
-        adapter = NoAuthAdapter(
-            default_user_id="custom-dev-user", default_tenant="custom-tenant"
-        )
+        adapter = NoAuthAdapter(default_user_id="custom-dev-user", default_tenant="custom-tenant")
 
         assert adapter.default_user_id == "custom-dev-user"
         assert adapter.default_tenant == "custom-tenant"

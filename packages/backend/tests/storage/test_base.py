@@ -209,9 +209,7 @@ class TestStorageManager:
         assert manager._parse_size("1GB") == 1024 * 1024 * 1024  # type: ignore
 
     @pytest.mark.asyncio
-    async def test_store_artifact_success(
-        self, manager: StorageManager, mock_provider: AsyncMock
-    ):
+    async def test_store_artifact_success(self, manager: StorageManager, mock_provider: AsyncMock):
         manager.register_provider("local", mock_provider)
 
         content = b"test image content"
@@ -271,13 +269,9 @@ class TestStorageManager:
             )
 
     @pytest.mark.asyncio
-    async def test_get_download_url(
-        self, manager: StorageManager, mock_provider: AsyncMock
-    ):
+    async def test_get_download_url(self, manager: StorageManager, mock_provider: AsyncMock):
         manager.register_provider("local", mock_provider)
-        mock_provider.get_presigned_download_url.return_value = (
-            "http://example.com/download"
-        )
+        mock_provider.get_presigned_download_url.return_value = "http://example.com/download"
 
         url = await manager.get_download_url("test/key", "local")
 
@@ -285,9 +279,7 @@ class TestStorageManager:
         mock_provider.get_presigned_download_url.assert_called_once_with("test/key")
 
     @pytest.mark.asyncio
-    async def test_delete_artifact(
-        self, manager: StorageManager, mock_provider: AsyncMock
-    ):
+    async def test_delete_artifact(self, manager: StorageManager, mock_provider: AsyncMock):
         manager.register_provider("local", mock_provider)
         mock_provider.delete.return_value = True
 

@@ -4,27 +4,27 @@
 storage:
   # Default provider to use when no routing rules match
   default_provider: "local"
-  
+
   # Maximum file size (in bytes)
   max_file_size: 104857600  # 100MB
-  
+
   # Allowed content types
   allowed_content_types:
     - "image/jpeg"
-    - "image/png" 
+    - "image/png"
     - "image/webp"
     - "image/gif"
     - "video/mp4"
     - "video/webm"
     - "video/quicktime"
     - "audio/mpeg"
-    - "audio/wav" 
+    - "audio/wav"
     - "audio/ogg"
     - "text/plain"
     - "application/json"
     - "text/markdown"
     - "application/octet-stream"
-  
+
   # Storage provider configurations
   providers:
     # Local filesystem storage (development)
@@ -33,7 +33,7 @@ storage:
       config:
         base_path: "/tmp/boards/storage"
         public_url_base: "http://localhost:8000/storage"
-    
+
     # AWS S3 storage
     s3:
       type: "s3"
@@ -51,7 +51,7 @@ storage:
         upload_config:
           ServerSideEncryption: "AES256"
           StorageClass: "STANDARD"
-    
+
     # Google Cloud Storage
     gcs:
       type: "gcs"
@@ -59,22 +59,22 @@ storage:
         bucket: "my-boards-gcs-bucket"
         project_id: "my-gcp-project"
         # Use one of the following authentication methods:
-        
+
         # Option 1: Service account key file path
         credentials_path: "/path/to/service-account-key.json"
-        
+
         # Option 2: Service account JSON as string (use environment variable)
         # credentials_json: "${GCP_SERVICE_ACCOUNT_JSON}"
-        
+
         # Option 3: Use default credentials (gcloud, environment, etc.)
         # Leave both credentials_path and credentials_json empty
-        
+
         # Optional: Cloud CDN domain
         cdn_domain: "cdn.example.com"
         # Optional: Upload configuration
         upload_config:
           cache_control: "public, max-age=3600"
-    
+
     # Supabase storage (existing)
     supabase:
       type: "supabase"
@@ -82,24 +82,24 @@ storage:
         url: "${SUPABASE_URL}"
         key: "${SUPABASE_ANON_KEY}"
         bucket: "boards-artifacts"
-  
+
   # Routing rules to select providers based on conditions
   routing_rules:
     # Large files (>50MB) go to S3 for better performance
     - condition:
         size_gt: "50MB"
       provider: "s3"
-    
+
     # Images go to GCS with CDN for fast delivery
     - condition:
         artifact_type: "image"
       provider: "gcs"
-    
+
     # Videos go to S3 for CloudFront streaming
     - condition:
         artifact_type: "video"
       provider: "s3"
-    
+
     # Default fallback (no conditions = always matches)
     - provider: "local"
 
@@ -118,14 +118,14 @@ production_storage:
         upload_config:
           ServerSideEncryption: "aws:kms"
           StorageClass: "STANDARD_IA"  # Infrequent Access for cost savings
-    
+
     gcs:
-      type: "gcs" 
+      type: "gcs"
       config:
         bucket: "prod-boards-media"
         project_id: "boards-production"
         cdn_domain: "media.boards.io"
-  
+
   routing_rules:
     - condition:
         artifact_type: "model"

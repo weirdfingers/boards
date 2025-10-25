@@ -6,9 +6,9 @@ export { ClerkAuthProvider } from './ClerkAuthProvider';
 export type { ClerkConfig } from './types';
 
 // Re-export core types for convenience
-export type { 
-  AuthState, 
-  User, 
+export type {
+  AuthState,
+  User,
   AuthProviderConfig,
-  AuthContextValue 
+  AuthContextValue
 } from '@weirdfingers/boards';

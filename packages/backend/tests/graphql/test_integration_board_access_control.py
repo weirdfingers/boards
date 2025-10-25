@@ -14,9 +14,7 @@ from boards.database.seed_data import ensure_tenant
 from boards.dbmodels import BoardMembers, Boards, Tenants, Users
 
 
-def generate_auth_adapter_user_id(
-    provider: str, subject: str, tenant_id: str
-) -> uuid.UUID:
+def generate_auth_adapter_user_id(provider: str, subject: str, tenant_id: str) -> uuid.UUID:
     """Generate user ID using the same algorithm as the NoAuthAdapter."""
     import hashlib
 
@@ -36,9 +34,7 @@ async def cleanup_test_data(session):
         test_user_ids_stmt = select(Users.id).where(
             Users.auth_subject.in_(["access-user-1", "access-user-2", "access-user-3"])
         )
-        await session.execute(
-            delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt))
-        )
+        await session.execute(delete(Boards).where(Boards.owner_id.in_(test_user_ids_stmt)))
 
         await session.execute(
             delete(BoardMembers).where(BoardMembers.user_id.in_(test_user_ids_stmt))
@@ -46,15 +42,11 @@ async def cleanup_test_data(session):
 
         await session.execute(
             delete(Users).where(
-                Users.auth_subject.in_(
-                    ["access-user-1", "access-user-2", "access-user-3"]
-                )
+                Users.auth_subject.in_(["access-user-1", "access-user-2", "access-user-3"])
             )
         )
 
-        await session.execute(
-            delete(Tenants).where(Tenants.slug.like("access-tenant%"))
-        )
+        await session.execute(delete(Tenants).where(Tenants.slug.like("access-tenant%")))
 
         await session.commit()
     except Exception:
@@ -93,9 +85,7 @@ async def test_board_access_control_integration(
             tenant_id = await ensure_tenant(session, slug="access-tenant")
 
             # Create users with deterministic IDs matching NoAuthAdapter fallback
-            user1_id = generate_auth_adapter_user_id(
-                "none", "access-user-1", "access-tenant"
-            )
+            user1_id = generate_auth_adapter_user_id("none", "access-user-1", "access-tenant")
             user1 = Users(  # Default authenticated user
                 id=user1_id,
                 tenant_id=tenant_id,
@@ -110,9 +100,7 @@ async def test_board_access_control_integration(
             )
             session.add(user1)
 
-            user2_id = generate_auth_adapter_user_id(
-                "none", "access-user-2", "access-tenant"
-            )
+            user2_id = generate_auth_adapter_user_id("none", "access-user-2", "access-tenant")
             user2 = Users(  # Board owner
                 id=user2_id,
                 tenant_id=tenant_id,
@@ -127,9 +115,7 @@ async def test_board_access_control_integration(
             )
             session.add(user2)
 
-            user3_id = generate_auth_adapter_user_id(
-                "none", "access-user-3", "access-tenant"
-            )
+            user3_id = generate_auth_adapter_user_id("none", "access-user-3", "access-tenant")
             user3 = Users(  # Board member
                 id=user3_id,
                 tenant_id=tenant_id,
