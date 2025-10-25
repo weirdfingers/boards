@@ -3,7 +3,7 @@ Tests for FluxProGenerator.
 """
 
 import os
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
@@ -123,10 +123,22 @@ class TestFluxProGenerator:
         with patch.dict(os.environ, {"REPLICATE_API_TOKEN": "fake-token"}):
             # Create a mock replicate module via sys.modules
             import sys
+            from types import ModuleType, SimpleNamespace
 
-            mock_replicate = AsyncMock()
-            mock_replicate.async_run = AsyncMock(return_value=[fake_output_url])
+            # Create mock FileOutput with url as a plain string
+            mock_file_output = SimpleNamespace(url=fake_output_url)
+
+            # Create mock helpers module
+            mock_helpers = ModuleType("helpers")
+            mock_helpers.FileOutput = MagicMock  # type: ignore[attr-defined]
+
+            # Create mock replicate module
+            mock_replicate = ModuleType("replicate")
+            mock_replicate.async_run = AsyncMock(return_value=mock_file_output)  # type: ignore[attr-defined]
+            mock_replicate.helpers = mock_helpers  # type: ignore[attr-defined]
+
             sys.modules["replicate"] = mock_replicate
+            sys.modules["replicate.helpers"] = mock_helpers
 
             # Mock storage result
             mock_artifact = ImageArtifact(
@@ -184,10 +196,22 @@ class TestFluxProGenerator:
 
         with patch.dict(os.environ, {"REPLICATE_API_TOKEN": "fake-token"}):
             import sys
+            from types import ModuleType, SimpleNamespace
 
-            mock_replicate = AsyncMock()
-            mock_replicate.async_run = AsyncMock(return_value=fake_output_url)
+            # Create mock FileOutput with url as a plain string
+            mock_file_output = SimpleNamespace(url=fake_output_url)
+
+            # Create mock helpers module
+            mock_helpers = ModuleType("helpers")
+            mock_helpers.FileOutput = MagicMock  # type: ignore[attr-defined]
+
+            # Create mock replicate module
+            mock_replicate = ModuleType("replicate")
+            mock_replicate.async_run = AsyncMock(return_value=mock_file_output)  # type: ignore[attr-defined]
+            mock_replicate.helpers = mock_helpers  # type: ignore[attr-defined]
+
             sys.modules["replicate"] = mock_replicate
+            sys.modules["replicate.helpers"] = mock_helpers
 
             mock_artifact = ImageArtifact(
                 generation_id="test_gen",

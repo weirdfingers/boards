@@ -12,12 +12,23 @@ from boards.workers.actors import process_generation
 def test_worker_smoke(monkeypatch):
     # Mock replicate module to avoid network
     import sys
+    from types import ModuleType
+    from unittest.mock import AsyncMock, MagicMock
 
-    class FakeReplicate:
-        async def async_run(self, *args, **kwargs):
-            return ["https://example.com/fake.png"]
+    # Create mock FileOutput with url as a plain string
+    mock_file_output = SimpleNamespace(url="https://example.com/fake.png")
 
-    sys.modules["replicate"] = FakeReplicate()  # type: ignore
+    # Create mock helpers module
+    mock_helpers = ModuleType("helpers")
+    mock_helpers.FileOutput = MagicMock  # type: ignore[attr-defined]
+
+    # Create mock replicate module
+    mock_replicate = ModuleType("replicate")
+    mock_replicate.async_run = AsyncMock(return_value=mock_file_output)  # type: ignore[attr-defined]
+    mock_replicate.helpers = mock_helpers  # type: ignore[attr-defined]
+
+    sys.modules["replicate"] = mock_replicate
+    sys.modules["replicate.helpers"] = mock_helpers
 
     # Bypass DB in repository and persistence
     from boards.generators.implementations.image.flux_pro import FluxProGenerator
