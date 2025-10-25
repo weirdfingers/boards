@@ -8,16 +8,12 @@ This demonstrates the simple pattern for creating generators:
 """
 
 import os
-from typing import TYPE_CHECKING, AsyncIterator, Union
+from collections.abc import AsyncIterator
 
 from pydantic import BaseModel, Field
 
 from ...artifacts import ImageArtifact
 from ...base import BaseGenerator, GeneratorExecutionContext
-
-if TYPE_CHECKING:
-    import replicate
-    from replicate.helpers import FileOutput
 
 
 class FluxProInput(BaseModel):
