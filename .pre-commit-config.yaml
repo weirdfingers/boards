@@ -72,7 +72,7 @@ repos:
         entry: bash -c 'cd packages/backend && uv run pytest tests/ -x --ff'
         language: system
         pass_filenames: false
-        stages: [push]
+        stages: [pre-push]
         verbose: true
 
       - id: test-frontend
@@ -80,7 +80,7 @@ repos:
         entry: make test-frontend
         language: system
         pass_filenames: false
-        stages: [push]
+        stages: [pre-push]
         verbose: true
 
 # Configuration for specific hooks
