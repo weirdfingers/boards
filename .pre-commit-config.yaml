@@ -64,17 +64,24 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
 
-  # Optional: Python tests (commented out by default as they can be slow)
-  # Uncomment to run tests on every commit
+  # Tests run before push (not on every commit to keep commits fast)
   - repo: local
     hooks:
-      - id: pytest-backend
-        name: pytest (backend tests)
+      - id: test-backend
+        name: test (backend)
         entry: bash -c 'cd packages/backend && uv run pytest tests/ -x --ff'
         language: system
-        files: ^packages/backend/.*\.py$
         pass_filenames: false
-        stages: [push] # Only run on push, not on every commit
+        stages: [push]
+        verbose: true
+
+      - id: test-frontend
+        name: test (frontend)
+        entry: make test-frontend
+        language: system
+        pass_filenames: false
+        stages: [push]
+        verbose: true
 
 # Configuration for specific hooks
 ci:

@@ -213,20 +213,28 @@ Set up pre-commit hooks to automatically check code quality before commits:
 
 ```bash
 # Install pre-commit hooks (one-time setup)
-uv run pre-commit install
+uv run pre-commit install                      # Runs on every commit
+uv run pre-commit install --hook-type pre-push  # Runs before push
 
 # Run all hooks manually
-uv run pre-commit run --all-files
+uv run pre-commit run --all-files              # Commit hooks
+uv run pre-commit run --hook-stage push --all-files  # Push hooks (includes tests)
 
 # Run a specific hook
 uv run pre-commit run ruff --all-files
 ```
 
-The pre-commit hooks will automatically:
+**On every commit**, the hooks automatically:
 
 - Lint and format Python code with `ruff`
 - Type check with `pyright`
+- Lint and type check frontend packages
 - Check for common issues (trailing whitespace, large files, merge conflicts)
+
+**Before every push**, the hooks automatically:
+
+- Run all backend tests (pytest)
+- Run all frontend tests (vitest)
 
 ### Linting
 

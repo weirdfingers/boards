@@ -109,13 +109,15 @@ Pre-commit hooks automatically run linters and type checks before each commit:
 ```bash
 # Install pre-commit hooks
 cd packages/backend
-uv run pre-commit install
+uv run pre-commit install                      # Install commit hooks
+uv run pre-commit install --hook-type pre-push  # Install push hooks
 
-# Manually run all hooks (optional - they'll run automatically on commit)
-uv run pre-commit run --all-files
+# Manually run all hooks (optional - they'll run automatically)
+uv run pre-commit run --all-files              # Run commit hooks
+uv run pre-commit run --hook-stage push --all-files  # Run push hooks (includes tests)
 ```
 
-The hooks will automatically:
+**On every commit**, the hooks automatically:
 
 - Lint Python code with `ruff`
 - Format Python code with `ruff format`
@@ -123,6 +125,11 @@ The hooks will automatically:
 - Lint frontend packages
 - Type check frontend packages
 - Check for common issues (trailing whitespace, large files, etc.)
+
+**Before every push**, the hooks automatically:
+
+- Run all backend tests (pytest)
+- Run all frontend tests (vitest)
 
 ### 6. Start Development Servers
 
