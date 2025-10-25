@@ -18,7 +18,7 @@ Users want to collaborate with clients and co-workers on these collections of ar
 
 ## Use case 1: semi-technical
 
-They use npx or some other simple command to install the CLI. They run the CLI. It runs a script that prompts them for all the various API keys they need in order to use the providers and the models. It is configurable, so users can opt in to whichever models and providers they want. When they are done configuring, then the backend (python) and stock/standard/example frontend (nextjs) are started. They can surf to localhost:3000 and they can log in, and create and edit boards using all of the models and providers they have configured.
+They use npx or some other simple command to install the CLI. They run the CLI. It runs a script that prompts them for all the various API keys they need in order to use the providers and the models. It is configurable, so users can opt in to whichever models and providers they want. When they are done configuring, then the backend (python) and stock/standard/example frontend (nextjs) are started. They can surf to localhost:3033 and they can log in, and create and edit boards using all of the models and providers they have configured.
 
 ## Use case 2: technical
 

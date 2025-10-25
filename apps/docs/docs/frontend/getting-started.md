@@ -42,7 +42,7 @@ Wrap your app with the `BoardsProvider`:
 
 ```tsx
 // app/layout.tsx (Next.js App Router)
-import { BoardsProvider } from '@weirdfingers/boards';
+import { BoardsProvider } from "@weirdfingers/boards";
 
 export default function RootLayout({
   children,
@@ -52,10 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <BoardsProvider
-          apiUrl="http://localhost:8000"
-          tenant="your-tenant-id"
-        >
+        <BoardsProvider apiUrl="http://localhost:8088" tenant="your-tenant-id">
           {children}
         </BoardsProvider>
       </body>
@@ -66,15 +63,12 @@ export default function RootLayout({
 
 ```tsx
 // pages/_app.tsx (Next.js Pages Router)
-import { BoardsProvider } from '@weirdfingers/boards';
-import type { AppProps } from 'next/app';
+import { BoardsProvider } from "@weirdfingers/boards";
+import type { AppProps } from "next/app";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <BoardsProvider
-      apiUrl="http://localhost:8000"
-      tenant="your-tenant-id"
-    >
+    <BoardsProvider apiUrl="http://localhost:8088" tenant="your-tenant-id">
       <Component {...pageProps} />
     </BoardsProvider>
   );
@@ -87,8 +81,8 @@ Configure authentication with your preferred provider:
 
 ```tsx
 // With Supabase
-import { BoardsProvider } from '@weirdfingers/boards';
-import { createClient } from '@supabase/supabase-js';
+import { BoardsProvider } from "@weirdfingers/boards";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -98,10 +92,10 @@ const supabase = createClient(
 export default function RootLayout({ children }) {
   return (
     <BoardsProvider
-      apiUrl="http://localhost:8000"
+      apiUrl="http://localhost:8088"
       tenant="your-tenant-id"
       auth={{
-        type: 'supabase',
+        type: "supabase",
         client: supabase,
       }}
     >
@@ -118,15 +112,16 @@ export default function RootLayout({ children }) {
 Manage boards (collections) of generated content:
 
 ```tsx
-import { useBoards } from '@weirdfingers/boards';
+import { useBoards } from "@weirdfingers/boards";
 
 function BoardsList() {
-  const { boards, createBoard, updateBoard, deleteBoard, isLoading } = useBoards();
+  const { boards, createBoard, updateBoard, deleteBoard, isLoading } =
+    useBoards();
 
   const handleCreateBoard = async () => {
     await createBoard({
-      title: 'My New Board',
-      description: 'A collection of AI-generated content',
+      title: "My New Board",
+      description: "A collection of AI-generated content",
     });
   };
 
@@ -151,21 +146,18 @@ function BoardsList() {
 Handle AI content generation with real-time progress:
 
 ```tsx
-import { useGenerations } from '@weirdfingers/boards';
+import { useGenerations } from "@weirdfingers/boards";
 
 function GenerationPanel({ boardId }) {
-  const { 
-    generations, 
-    createGeneration, 
-    isGenerating 
-  } = useGenerations(boardId);
+  const { generations, createGeneration, isGenerating } =
+    useGenerations(boardId);
 
   const handleGenerate = async () => {
     await createGeneration({
       boardId,
-      provider: 'replicate',
-      generator: 'stable-diffusion',
-      prompt: 'A beautiful landscape painting',
+      provider: "replicate",
+      generator: "stable-diffusion",
+      prompt: "A beautiful landscape painting",
       params: {
         width: 1024,
         height: 1024,
@@ -176,19 +168,14 @@ function GenerationPanel({ boardId }) {
 
   return (
     <div>
-      <button 
-        onClick={handleGenerate}
-        disabled={isGenerating}
-      >
-        {isGenerating ? 'Generating...' : 'Generate Image'}
+      <button onClick={handleGenerate} disabled={isGenerating}>
+        {isGenerating ? "Generating..." : "Generate Image"}
       </button>
 
       {generations.map((generation) => (
         <div key={generation.id}>
           <div>Status: {generation.status}</div>
-          {generation.progress && (
-            <div>Progress: {generation.progress}%</div>
-          )}
+          {generation.progress && <div>Progress: {generation.progress}%</div>}
           {generation.output?.url && (
             <img src={generation.output.url} alt={generation.prompt} />
           )}
@@ -204,7 +191,7 @@ function GenerationPanel({ boardId }) {
 Access available AI providers and their capabilities:
 
 ```tsx
-import { useProviders } from '@weirdfingers/boards';
+import { useProviders } from "@weirdfingers/boards";
 
 function ProviderSelector({ onSelect }) {
   const { providers, isLoading } = useProviders();
@@ -229,18 +216,20 @@ function ProviderSelector({ onSelect }) {
 Subscribe to real-time updates:
 
 ```tsx
-import { useRealtime } from '@weirdfingers/boards';
+import { useRealtime } from "@weirdfingers/boards";
 
 function RealtimeUpdates({ boardId }) {
   const { isConnected, lastEvent } = useRealtime({
-    topics: [`board:${boardId}`, 'generations'],
+    topics: [`board:${boardId}`, "generations"],
   });
 
   return (
     <div>
-      <div>Connection: {isConnected ? '🟢 Connected' : '🔴 Disconnected'}</div>
+      <div>Connection: {isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       {lastEvent && (
-        <div>Last update: {lastEvent.type} at {lastEvent.timestamp}</div>
+        <div>
+          Last update: {lastEvent.type} at {lastEvent.timestamp}
+        </div>
       )}
     </div>
   );
@@ -254,7 +243,7 @@ function RealtimeUpdates({ boardId }) {
 Create a custom progress component with detailed feedback:
 
 ```tsx
-import { useGeneration } from '@weirdfingers/boards';
+import { useGeneration } from "@weirdfingers/boards";
 
 function GenerationProgress({ generationId }) {
   const { generation, progress, logs } = useGeneration(generationId);
@@ -262,15 +251,10 @@ function GenerationProgress({ generationId }) {
   return (
     <div className="generation-progress">
       <div className="progress-bar">
-        <div 
-          className="progress-fill"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
-      
-      <div className="status">
-        Status: {generation.status}
-      </div>
+
+      <div className="status">Status: {generation.status}</div>
 
       {logs.length > 0 && (
         <div className="logs">
@@ -293,26 +277,23 @@ function GenerationProgress({ generationId }) {
 Handle multiple generations simultaneously:
 
 ```tsx
-import { useBatchGenerations } from '@weirdfingers/boards';
+import { useBatchGenerations } from "@weirdfingers/boards";
 
 function BatchGenerator({ boardId }) {
-  const { 
-    batchGenerate, 
-    activeBatch, 
-    isBatchRunning 
-  } = useBatchGenerations(boardId);
+  const { batchGenerate, activeBatch, isBatchRunning } =
+    useBatchGenerations(boardId);
 
   const handleBatchGenerate = async () => {
     const prompts = [
-      'A serene mountain landscape',
-      'A bustling city street at night',
-      'An abstract digital artwork',
+      "A serene mountain landscape",
+      "A bustling city street at night",
+      "An abstract digital artwork",
     ];
 
     await batchGenerate({
-      provider: 'replicate',
-      generator: 'stable-diffusion',
-      requests: prompts.map(prompt => ({
+      provider: "replicate",
+      generator: "stable-diffusion",
+      requests: prompts.map((prompt) => ({
         prompt,
         params: { width: 512, height: 512 },
       })),
@@ -321,17 +302,15 @@ function BatchGenerator({ boardId }) {
 
   return (
     <div>
-      <button 
-        onClick={handleBatchGenerate}
-        disabled={isBatchRunning}
-      >
+      <button onClick={handleBatchGenerate} disabled={isBatchRunning}>
         Generate Batch ({activeBatch?.total || 0})
       </button>
 
       {activeBatch && (
         <div>
-          Progress: {activeBatch.completed}/{activeBatch.total}
-          ({Math.round((activeBatch.completed / activeBatch.total) * 100)}%)
+          Progress: {activeBatch.completed}/{activeBatch.total}({Math.round(
+            (activeBatch.completed / activeBatch.total) * 100
+          )}%)
         </div>
       )}
     </div>
@@ -344,13 +323,13 @@ function BatchGenerator({ boardId }) {
 The hooks are fully typed with TypeScript. Import types as needed:
 
 ```tsx
-import type { 
-  Board, 
-  Generation, 
+import type {
+  Board,
+  Generation,
   Provider,
   GenerationRequest,
-  GenerationStatus 
-} from '@weirdfingers/boards';
+  GenerationStatus,
+} from "@weirdfingers/boards";
 
 interface BoardCardProps {
   board: Board;
@@ -373,7 +352,7 @@ function BoardCard({ board, onSelect }: BoardCardProps) {
 Handle errors gracefully with built-in error states:
 
 ```tsx
-import { useBoards } from '@weirdfingers/boards';
+import { useBoards } from "@weirdfingers/boards";
 
 function BoardsWithErrorHandling() {
   const { boards, error, retry, isLoading } = useBoards();

@@ -160,7 +160,7 @@ Configure these redirect URLs in your Supabase project:
 **Development:**
 
 ```
-http://localhost:3000/auth/callback
+http://localhost:3033/auth/callback
 ```
 
 **Production:**

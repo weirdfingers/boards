@@ -38,13 +38,11 @@ def load_storage_config(
                 "type": "local",
                 "config": {
                     "base_path": "/tmp/boards/storage",
-                    "public_url_base": "http://localhost:8000/storage",
+                    "public_url_base": "http://localhost:8088/storage",
                 },
             }
         },
-        "routing_rules": [
-            {"provider": "local"}  # Default rule
-        ],
+        "routing_rules": [{"provider": "local"}],  # Default rule
         "max_file_size": 100 * 1024 * 1024,  # 100MB
     }
 
@@ -148,7 +146,7 @@ def create_example_config() -> str:
                     "type": "local",
                     "config": {
                         "base_path": "/var/boards/storage",
-                        "public_url_base": "http://localhost:8000/storage",
+                        "public_url_base": "http://localhost:8088/storage",
                     },
                 },
                 "supabase": {
@@ -170,7 +168,10 @@ def create_example_config() -> str:
                 },
             },
             "routing_rules": [
-                {"condition": {"artifact_type": "video", "size_gt": "100MB"}, "provider": "s3"},
+                {
+                    "condition": {"artifact_type": "video", "size_gt": "100MB"},
+                    "provider": "s3",
+                },
                 {"condition": {"artifact_type": "model"}, "provider": "supabase"},
                 {"provider": "supabase"},
             ],

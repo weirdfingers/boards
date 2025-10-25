@@ -24,7 +24,7 @@ class TestLocalStorageProvider:
     @pytest.fixture
     def provider(self, temp_dir: Path) -> LocalStorageProvider:
         return LocalStorageProvider(
-            base_path=temp_dir, public_url_base="http://localhost:8000/storage"
+            base_path=temp_dir, public_url_base="http://localhost:8088/storage"
         )
 
     def test_init(self, temp_dir: Path) -> None:
@@ -55,11 +55,11 @@ class TestLocalStorageProvider:
 
     def test_get_public_url_with_base(self, provider: LocalStorageProvider) -> None:
         url = provider._get_public_url("folder/file.txt")
-        assert url == "http://localhost:8000/storage/folder/file.txt"
+        assert url == "http://localhost:8088/storage/folder/file.txt"
 
     def test_get_public_url_with_special_chars(self, provider: LocalStorageProvider) -> None:
         url = provider._get_public_url("folder/file with spaces.txt")
-        assert url == "http://localhost:8000/storage/folder/file%20with%20spaces.txt"
+        assert url == "http://localhost:8088/storage/folder/file%20with%20spaces.txt"
 
     def test_get_public_url_without_base(self, temp_dir: Path) -> None:
         provider = LocalStorageProvider(temp_dir)
@@ -84,7 +84,7 @@ class TestLocalStorageProvider:
         assert stored_content == content
 
         # Check return URL
-        assert url == "http://localhost:8000/storage/test/file.txt"
+        assert url == "http://localhost:8088/storage/test/file.txt"
 
     @pytest.mark.asyncio
     async def test_upload_with_metadata(self, provider: LocalStorageProvider, temp_dir: Path):
@@ -121,7 +121,7 @@ class TestLocalStorageProvider:
             content = await f.read()
 
         assert content == b"chunk1chunk2chunk3"
-        assert url == "http://localhost:8000/storage/test/streamed.txt"
+        assert url == "http://localhost:8088/storage/test/streamed.txt"
 
     @pytest.mark.asyncio
     async def test_upload_creates_directories(self, provider: LocalStorageProvider, temp_dir: Path):
@@ -169,7 +169,7 @@ class TestLocalStorageProvider:
     @pytest.mark.asyncio
     async def test_get_presigned_download_url(self, provider: LocalStorageProvider):
         url = await provider.get_presigned_download_url("test/file.txt")
-        assert url == "http://localhost:8000/storage/test/file.txt"
+        assert url == "http://localhost:8088/storage/test/file.txt"
 
     @pytest.mark.asyncio
     async def test_delete_success(self, provider: LocalStorageProvider, temp_dir: Path):

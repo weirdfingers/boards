@@ -88,7 +88,7 @@ CMD ["python", "-m", "boards.cli", "serve", "--host", "0.0.0.0", "--port", "8000
 
 ```yaml
 # docker-compose.prod.yml
-version: '3.8'
+version: "3.8"
 services:
   boards-api:
     build: .
@@ -178,39 +178,39 @@ spec:
         app: boards-api
     spec:
       containers:
-      - name: boards-api
-        image: boards/api:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: BOARDS_MULTI_TENANT_MODE
-          value: "true"
-        - name: BOARDS_AUTH_PROVIDER
-          value: "oidc"
-        - name: BOARDS_JWT_TENANT_CLAIM
-          value: "organization"
-        - name: BOARDS_DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: boards-secrets
-              key: database-url
-        - name: BOARDS_OIDC_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: boards-secrets
-              key: oidc-client-secret
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: boards-api
+          image: boards/api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: BOARDS_MULTI_TENANT_MODE
+              value: "true"
+            - name: BOARDS_AUTH_PROVIDER
+              value: "oidc"
+            - name: BOARDS_JWT_TENANT_CLAIM
+              value: "organization"
+            - name: BOARDS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: boards-secrets
+                  key: database-url
+            - name: BOARDS_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: boards-secrets
+                  key: oidc-client-secret
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 
 ---
 apiVersion: v1
@@ -221,8 +221,8 @@ spec:
   selector:
     app: boards-api
   ports:
-  - port: 80
-    targetPort: 8000
+    - port: 80
+      targetPort: 8000
   type: ClusterIP
 
 ---
@@ -235,20 +235,20 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
   tls:
-  - hosts:
-    - api.boards.com
-    secretName: boards-api-tls
+    - hosts:
+        - api.boards.com
+      secretName: boards-api-tls
   rules:
-  - host: api.boards.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: boards-api-service
-            port:
-              number: 80
+    - host: api.boards.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: boards-api-service
+                port:
+                  number: 80
 ```
 
 ### 4. Enterprise Multi-Tenant
@@ -294,12 +294,14 @@ BOARDS_DATABASE_URL=postgresql://boards:password@db:5432/boards_prod
 ```
 
 Pros:
+
 - Simpler management
 - Cost-effective
 - Built-in backup/recovery
 - Query optimization across tenants
 
 Cons:
+
 - Requires careful query filtering
 - Shared resource limits
 - Cross-tenant data leak risk
@@ -317,11 +319,13 @@ def get_database_url(tenant_slug: str = None) -> str:
 ```
 
 Pros:
+
 - Complete data isolation
 - Independent scaling
 - Tenant-specific backups
 
 Cons:
+
 - Complex management
 - Higher costs
 - Migration complexity
@@ -514,12 +518,12 @@ spec:
   minReplicas: 3
   maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
 ```
 
 **Database:**
@@ -687,15 +691,17 @@ BOARDS_ENABLE_AUDIT_LOGGING=true
 ### Common Deployment Issues
 
 1. **Database Connection Failures**
+
    ```bash
    # Test database connectivity
    python -c "from boards.database.connection import get_async_session; print('DB OK')"
    ```
 
 2. **JWT Verification Errors**
+
    ```bash
    # Validate JWT configuration
-   curl -H "Authorization: Bearer $TEST_TOKEN" http://localhost:8000/health
+   curl -H "Authorization: Bearer $TEST_TOKEN" http://localhost:8088/health
    ```
 
 3. **Tenant Isolation Issues**

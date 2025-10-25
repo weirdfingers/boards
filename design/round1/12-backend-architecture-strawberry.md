@@ -1,9 +1,11 @@
 # Backend Architecture with Strawberry GraphQL
 
 ## Overview
+
 Python backend using Strawberry GraphQL, SQLAlchemy, and a plugin-based provider/generator system.
 
 ## Tech Stack
+
 - **GraphQL**: Strawberry (type-hint based, async support)
 - **ORM**: SQLAlchemy 2.0 with async support
 - **Server**: FastAPI (REST endpoints) + Strawberry GraphQL
@@ -108,12 +110,12 @@ class Board:
     owner: User
     is_public: bool
     created_at: datetime.datetime
-    
+
     @strawberry.field
     async def generations(self) -> List["Generation"]:
         # Fetch generations for this board
         pass
-    
+
     @strawberry.field
     async def members(self) -> List["BoardMember"]:
         # Fetch board members
@@ -139,12 +141,12 @@ class Query:
     async def board(self, id: strawberry.ID) -> Optional[Board]:
         # Fetch board by ID with permission check
         pass
-    
+
     @strawberry.field
     async def my_boards(self) -> List[Board]:
         # Fetch boards for current user
         pass
-    
+
     @strawberry.field
     async def generation(self, id: strawberry.ID) -> Optional[Generation]:
         # Fetch generation by ID
@@ -156,7 +158,7 @@ class Mutation:
     async def create_board(self, title: str, description: Optional[str] = None) -> Board:
         # Create new board
         pass
-    
+
     @strawberry.mutation
     async def create_generation(
         self,
@@ -185,18 +187,18 @@ class ProviderConfig(BaseModel):
 
 class BaseProvider(ABC):
     """Base class for all providers"""
-    
+
     name: str
     supported_generators: List[str]
-    
+
     def __init__(self, config: ProviderConfig):
         self.config = config
-    
+
     @abstractmethod
     async def validate_credentials(self) -> bool:
         """Validate provider credentials"""
         pass
-    
+
     @abstractmethod
     def get_generator(self, name: str) -> "BaseGenerator":
         """Get a specific generator from this provider"""
@@ -218,15 +220,15 @@ class GenerationOutput(BaseModel):
 
 class BaseGenerator(ABC):
     """Base class for all generators"""
-    
+
     name: str
     artifact_type: str  # 'image', 'video', 'audio', etc.
-    
+
     @abstractmethod
     def get_input_schema(self) -> type[GenerationInput]:
         """Return Pydantic schema for inputs"""
         pass
-    
+
     @abstractmethod
     async def generate(
         self,
@@ -235,7 +237,7 @@ class BaseGenerator(ABC):
     ) -> GenerationOutput:
         """Execute generation"""
         pass
-    
+
     @abstractmethod
     async def estimate_cost(self, inputs: GenerationInput) -> float:
         """Estimate cost in credits"""
@@ -256,7 +258,7 @@ app = FastAPI(title="Boards API")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3033"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -287,21 +289,21 @@ from typing import Optional
 class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql://boards:boards_dev@localhost/boards_dev"
-    
+
     # Redis (for job queue)
     redis_url: str = "redis://localhost:6380"
-    
+
     # Storage
     storage_provider: str = "local"  # 'local', 'supabase', 's3', 'gcs'
     storage_config: dict = {}
-    
+
     # Auth
     auth_provider: str = "none"  # 'none', 'supabase', 'clerk', 'jwt'
     auth_config: dict = {}
-    
+
     # Providers (loaded from YAML)
     providers_config_path: str = "providers.yaml"
-    
+
     class Config:
         env_file = ".env"
         env_prefix = "BOARDS_"
@@ -313,15 +315,15 @@ settings = Settings()
 
 ```typescript
 // packages/frontend/src/graphql/client.ts
-import { Client, cacheExchange, fetchExchange } from 'urql';
-import { authExchange } from '@urql/exchange-auth';
+import { Client, cacheExchange, fetchExchange } from "urql";
+import { authExchange } from "@urql/exchange-auth";
 
 const client = new Client({
-  url: process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:8000/graphql',
+  url: process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:8088/graphql",
   exchanges: [
     cacheExchange,
     authExchange(async (utils) => {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       return {
         addAuthToOperation(operation) {
           if (!token) return operation;
@@ -330,7 +332,9 @@ const client = new Client({
           });
         },
         didAuthError(error) {
-          return error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED');
+          return error.graphQLErrors.some(
+            (e) => e.extensions?.code === "UNAUTHENTICATED"
+          );
         },
         async refreshAuth() {
           // Handle token refresh logic here if needed

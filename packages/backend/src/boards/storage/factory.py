@@ -221,7 +221,7 @@ def create_development_storage() -> StorageManager:
                 "type": "local",
                 "config": {
                     "base_path": "/tmp/boards/storage",
-                    "public_url_base": "http://localhost:8000/storage",
+                    "public_url_base": "http://localhost:8088/storage",
                 },
             }
         },

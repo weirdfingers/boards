@@ -40,7 +40,7 @@ Choose and configure your auth provider:
 import { NoAuthProvider } from "@weirdfingers/boards";
 
 const authProvider = new NoAuthProvider({
-  apiUrl: "http://localhost:8000/api",
+  apiUrl: "http://localhost:8088/api",
   tenantId: "default",
 });
 ```
@@ -50,7 +50,7 @@ const authProvider = new NoAuthProvider({
 import { JWTAuthProvider } from "@weirdfingers/auth-jwt";
 
 const authProvider = new JWTAuthProvider({
-  apiUrl: "http://localhost:8000/api",
+  apiUrl: "http://localhost:8088/api",
   tenantId: "my-company",
   loginEndpoint: "/auth/login",
   signupEndpoint: "/auth/signup",
@@ -79,7 +79,7 @@ function App() {
   // a variable for the client isnt what we want to do. State, probably?
   // Create GraphQL client with auth integration
   const graphqlClient = createGraphQLClient({
-    url: "http://localhost:8000/graphql",
+    url: "http://localhost:8088/graphql",
     auth: authProvider,
     tenantId: "my-company",
   });
@@ -318,7 +318,7 @@ Configure your auth provider with environment variables:
 
 ```bash
 # Next.js (.env.local)
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8088
 NEXT_PUBLIC_TENANT_ID=my-company
 
 # For Supabase

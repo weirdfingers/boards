@@ -5,6 +5,7 @@ Boards supports both single-tenant and multi-tenant deployments. This guide cove
 ## Overview
 
 A **tenant** in Boards represents an organizational boundary that contains:
+
 - Users and their authentication data
 - Boards and generated content
 - Provider configurations and credits
@@ -19,6 +20,7 @@ For most deployments, single-tenant mode is the simplest approach where one tena
 The easiest way is to let Boards create the default tenant automatically:
 
 1. **Run database migrations**:
+
    ```bash
    alembic upgrade head
    ```
@@ -48,7 +50,7 @@ alembic upgrade head
 Use the setup API for programmatic tenant creation:
 
 ```bash
-curl -X POST http://localhost:8000/api/setup/tenant \
+curl -X POST http://localhost:8088/api/setup/tenant \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My Company",
@@ -69,11 +71,11 @@ python -m boards.cli tenant create --name "My Company" --slug "my-company"
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BOARDS_TENANT_NAME` | `"Default Tenant"` | Display name for the default tenant |
-| `BOARDS_TENANT_SLUG` | `"default"` | URL-safe identifier for the tenant |
-| `BOARDS_MULTI_TENANT_MODE` | `false` | Enable multi-tenant support |
+| Variable                   | Default            | Description                         |
+| -------------------------- | ------------------ | ----------------------------------- |
+| `BOARDS_TENANT_NAME`       | `"Default Tenant"` | Display name for the default tenant |
+| `BOARDS_TENANT_SLUG`       | `"default"`        | URL-safe identifier for the tenant  |
+| `BOARDS_MULTI_TENANT_MODE` | `false`            | Enable multi-tenant support         |
 
 ### Settings in config.py
 
@@ -96,8 +98,9 @@ export BOARDS_MULTI_TENANT_MODE=true
 ### Create Tenants
 
 **Via API**:
+
 ```bash
-curl -X POST http://localhost:8000/api/setup/tenant \
+curl -X POST http://localhost:8088/api/setup/tenant \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Customer A",
@@ -106,6 +109,7 @@ curl -X POST http://localhost:8000/api/setup/tenant \
 ```
 
 **Via CLI**:
+
 ```bash
 python -m boards.cli tenant create --name "Customer A" --slug "customer-a"
 ```
@@ -115,7 +119,7 @@ python -m boards.cli tenant create --name "Customer A" --slug "customer-a"
 In multi-tenant mode, specify the tenant via the `X-Tenant` header:
 
 ```bash
-curl -H "X-Tenant: customer-a" http://localhost:8000/graphql
+curl -H "X-Tenant: customer-a" http://localhost:8088/graphql
 ```
 
 ## Validation and Status
@@ -125,10 +129,11 @@ curl -H "X-Tenant: customer-a" http://localhost:8000/graphql
 The setup status endpoint shows your current configuration:
 
 ```bash
-curl http://localhost:8000/api/setup/status
+curl http://localhost:8088/api/setup/status
 ```
 
 **Example Response**:
+
 ```json
 {
   "setup_needed": false,
@@ -173,6 +178,7 @@ python -m boards.cli seed
 If you start with single-tenant and want to migrate to multi-tenant:
 
 1. **Set multi-tenant mode**:
+
    ```bash
    export BOARDS_MULTI_TENANT_MODE=true
    ```
@@ -210,6 +216,7 @@ With real auth providers, users are provisioned into tenants based on:
 If you see errors about missing tenants:
 
 1. **Check if tenant exists**:
+
    ```bash
    python -m boards.cli tenant list
    ```

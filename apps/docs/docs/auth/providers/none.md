@@ -118,7 +118,7 @@ import { createGraphQLClient, NoAuthProvider } from "@weirdfingers/boards";
 const authProvider = new NoAuthProvider();
 
 const client = createGraphQLClient({
-  url: "http://localhost:8000/graphql",
+  url: "http://localhost:8088/graphql",
   auth: authProvider, // Will provide fake tokens
 });
 

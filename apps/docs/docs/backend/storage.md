@@ -5,8 +5,9 @@ The Boards storage system provides a pluggable architecture for handling artifac
 ## Overview
 
 The storage system handles diverse content types:
+
 - **Images**: PNG, JPG, WebP, GIF
-- **Videos**: MP4, WebM, MOV  
+- **Videos**: MP4, WebM, MOV
 - **Audio**: MP3, WAV, OGG
 - **Models**: LoRA weights, checkpoints
 - **Metadata**: JSON, text files
@@ -25,7 +26,7 @@ storage = create_development_storage()
 artifact_ref = await storage.store_artifact(
     artifact_id="my_image",
     content=image_bytes,
-    artifact_type="image", 
+    artifact_type="image",
     content_type="image/png",
     tenant_id="user123",
     board_id="board456"
@@ -70,6 +71,7 @@ storage = create_storage_manager(storage_config=config)
 ## Storage Providers
 
 ### Local Storage
+
 For development and self-hosted deployments:
 
 ```python
@@ -81,7 +83,8 @@ provider = LocalStorageProvider(
 )
 ```
 
-### Supabase Storage  
+### Supabase Storage
+
 Integrated with Supabase auth and CDN:
 
 ```python
@@ -89,7 +92,7 @@ from boards.storage.implementations import SupabaseStorageProvider
 
 provider = SupabaseStorageProvider(
     url="https://your-project.supabase.co",
-    key="your-anon-key", 
+    key="your-anon-key",
     bucket="artifacts"
 )
 ```
@@ -120,48 +123,50 @@ BOARDS_STORAGE_MAX_FILE_SIZE=104857600  # 100MB
 ```yaml
 storage:
   default_provider: "supabase"
-  
+
   providers:
     local:
       type: "local"
       config:
         base_path: "/var/boards/storage"
-        public_url_base: "http://localhost:8000/storage"
-        
+        public_url_base: "http://localhost:8088/storage"
+
     supabase:
-      type: "supabase"  
+      type: "supabase"
       config:
         url: "${SUPABASE_URL}"
         key: "${SUPABASE_ANON_KEY}"
         bucket: "boards-artifacts"
-        
+
   routing_rules:
     # Large files go to specialized storage
-    - condition: 
+    - condition:
         artifact_type: "video"
         size_gt: "100MB"
       provider: "s3"
-      
+
     # Default to Supabase
     - provider: "supabase"
-    
-  max_file_size: 1073741824  # 1GB
+
+  max_file_size: 1073741824 # 1GB
 ```
 
 ## Storage Key Structure
 
 Files are organized hierarchically:
+
 ```
 {tenant_id}/{artifact_type}/{board_id}/{artifact_id}_{timestamp}_{uuid}/{variant}
 ```
 
 Examples:
+
 ```
 # User image in board
 user123/image/board456/avatar_20241230143000_a1b2c3d4/original.png
 user123/image/board456/avatar_20241230143000_a1b2c3d4/thumbnail.webp
 
-# LoRA model  
+# LoRA model
 user123/model/lora_789_20241230143001_e5f6g7h8/weights.safetensors
 user123/model/lora_789_20241230143001_e5f6g7h8/config.json
 ```
@@ -182,7 +187,7 @@ class GenerationJob:
     def __init__(self, job_id: str):
         self.job_id = job_id
         self.temp_files = []
-    
+
     async def cleanup(self):
         """Clean up temp files when job completes/fails."""
         for temp_key in self.temp_files:
@@ -242,11 +247,13 @@ Artifacts are stored with hierarchical keys that provide organization and preven
 ```
 
 Example:
+
 ```
 abc123/image/def456/gen_789_20250124120000_a1b2c3d4/original
 ```
 
 This structure enables:
+
 - Tenant data isolation
 - Type-based routing (e.g., videos to high-bandwidth storage)
 - Board-level organization
@@ -303,6 +310,7 @@ async def generate(self, inputs, context: GeneratorExecutionContext):
 ```
 
 The `resolve_artifact()` method:
+
 - Downloads the artifact if it's a remote URL
 - Returns local file paths as-is
 - Caches downloads in temp directory

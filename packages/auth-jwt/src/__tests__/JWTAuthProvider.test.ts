@@ -2,8 +2,8 @@
  * Tests for JWTAuthProvider.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { JWTAuthProvider } from '../JWTAuthProvider';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { JWTAuthProvider } from "../JWTAuthProvider";
 
 // Mock localStorage
 const mockLocalStorage = {
@@ -13,21 +13,21 @@ const mockLocalStorage = {
   clear: vi.fn(),
 };
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: mockLocalStorage,
 });
 
 // Mock fetch
 global.fetch = vi.fn();
 
-describe('JWTAuthProvider', () => {
+describe("JWTAuthProvider", () => {
   let provider: JWTAuthProvider;
 
   beforeEach(() => {
     vi.clearAllMocks();
     provider = new JWTAuthProvider({
-      apiUrl: 'http://localhost:3000/api',
-      tenantId: 'test-tenant',
+      apiUrl: "http://localhost:3033/api",
+      tenantId: "test-tenant",
     });
   });
 
@@ -35,12 +35,12 @@ describe('JWTAuthProvider', () => {
     provider.destroy();
   });
 
-  describe('initialization', () => {
-    it('should restore user from valid stored token', async () => {
+  describe("initialization", () => {
+    it("should restore user from valid stored token", async () => {
       const validToken = createMockJWT({
-        sub: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
+        sub: "user-123",
+        email: "test@example.com",
+        name: "Test User",
         exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
       });
 
@@ -49,26 +49,26 @@ describe('JWTAuthProvider', () => {
       await provider.initialize();
       const state = await provider.getAuthState();
 
-      expect(state.status).toBe('authenticated');
+      expect(state.status).toBe("authenticated");
       expect(state.user).toEqual({
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
+        id: "user-123",
+        email: "test@example.com",
+        name: "Test User",
         avatar: undefined,
         metadata: {
-          provider: 'jwt',
-          subject: 'user-123'
+          provider: "jwt",
+          subject: "user-123",
         },
         credits: {
           balance: 0,
-          reserved: 0
+          reserved: 0,
         },
       });
     });
 
-    it('should not restore user from expired token', async () => {
+    it("should not restore user from expired token", async () => {
       const expiredToken = createMockJWT({
-        sub: 'user-123',
+        sub: "user-123",
         exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
       });
 
@@ -77,28 +77,30 @@ describe('JWTAuthProvider', () => {
       await provider.initialize();
       const state = await provider.getAuthState();
 
-      expect(state.status).toBe('unauthenticated');
+      expect(state.status).toBe("unauthenticated");
       expect(state.user).toBeNull();
     });
 
-    it('should handle no stored token', async () => {
+    it("should handle no stored token", async () => {
       mockLocalStorage.getItem.mockReturnValue(null);
 
       await provider.initialize();
       const state = await provider.getAuthState();
 
-      expect(state.status).toBe('unauthenticated');
+      expect(state.status).toBe("unauthenticated");
       expect(state.user).toBeNull();
     });
 
-    it('should handle invalid stored token', async () => {
-      mockLocalStorage.getItem.mockReturnValue('invalid-jwt-token');
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it("should handle invalid stored token", async () => {
+      mockLocalStorage.getItem.mockReturnValue("invalid-jwt-token");
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
 
       await provider.initialize();
       const state = await provider.getAuthState();
 
-      expect(state.status).toBe('unauthenticated');
+      expect(state.status).toBe("unauthenticated");
       expect(state.user).toBeNull();
       expect(consoleSpy).toHaveBeenCalled();
 
@@ -106,12 +108,12 @@ describe('JWTAuthProvider', () => {
     });
   });
 
-  describe('signIn', () => {
-    it('should sign in successfully with valid credentials', async () => {
+  describe("signIn", () => {
+    it("should sign in successfully with valid credentials", async () => {
       const mockToken = createMockJWT({
-        sub: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
+        sub: "user-123",
+        email: "test@example.com",
+        name: "Test User",
         exp: Math.floor(Date.now() / 1000) + 3600,
       });
 
@@ -121,63 +123,63 @@ describe('JWTAuthProvider', () => {
       });
 
       await provider.signIn({
-        email: 'test@example.com',
-        password: 'password123',
+        email: "test@example.com",
+        password: "password123",
       });
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/login',
+        "http://localhost:3033/api/auth/login",
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'X-Tenant': 'test-tenant',
+            "Content-Type": "application/json",
+            "X-Tenant": "test-tenant",
           },
           body: JSON.stringify({
-            email: 'test@example.com',
-            password: 'password123',
+            email: "test@example.com",
+            password: "password123",
           }),
         }
       );
 
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        'boards_jwt_token',
+        "boards_jwt_token",
         mockToken
       );
 
       const state = await provider.getAuthState();
-      expect(state.status).toBe('authenticated');
+      expect(state.status).toBe("authenticated");
     });
 
-    it('should handle sign in failure', async () => {
+    it("should handle sign in failure", async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: false,
-        statusText: 'Unauthorized',
+        statusText: "Unauthorized",
       });
 
       await expect(
         provider.signIn({
-          email: 'wrong@example.com',
-          password: 'wrongpassword',
+          email: "wrong@example.com",
+          password: "wrongpassword",
         })
-      ).rejects.toThrow('Authentication failed: Unauthorized');
+      ).rejects.toThrow("Authentication failed: Unauthorized");
 
       const state = await provider.getAuthState();
-      expect(state.status).toBe('unauthenticated');
+      expect(state.status).toBe("unauthenticated");
     });
 
-    it('should handle network error', async () => {
-      (fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    it("should handle network error", async () => {
+      (fetch as any).mockRejectedValueOnce(new Error("Network error"));
 
       await expect(
         provider.signIn({
-          email: 'test@example.com',
-          password: 'password123',
+          email: "test@example.com",
+          password: "password123",
         })
-      ).rejects.toThrow('Network error');
+      ).rejects.toThrow("Network error");
     });
 
-    it('should handle missing token in response', async () => {
+    it("should handle missing token in response", async () => {
       (fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({}), // No token in response
@@ -185,30 +187,34 @@ describe('JWTAuthProvider', () => {
 
       await expect(
         provider.signIn({
-          email: 'test@example.com',
-          password: 'password123',
+          email: "test@example.com",
+          password: "password123",
         })
-      ).rejects.toThrow('No token received from server');
+      ).rejects.toThrow("No token received from server");
     });
   });
 
-  describe('signOut', () => {
-    it('should sign out and clear stored data', async () => {
+  describe("signOut", () => {
+    it("should sign out and clear stored data", async () => {
       await provider.signOut();
 
-      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('boards_jwt_token');
-      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('boards_user_info');
+      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(
+        "boards_jwt_token"
+      );
+      expect(mockLocalStorage.removeItem).toHaveBeenCalledWith(
+        "boards_user_info"
+      );
 
       const state = await provider.getAuthState();
-      expect(state.status).toBe('unauthenticated');
+      expect(state.status).toBe("unauthenticated");
       expect(state.user).toBeNull();
     });
   });
 
-  describe('getToken', () => {
-    it('should return valid stored token', async () => {
+  describe("getToken", () => {
+    it("should return valid stored token", async () => {
       const validToken = createMockJWT({
-        sub: 'user-123',
+        sub: "user-123",
         exp: Math.floor(Date.now() / 1000) + 3600,
       });
 
@@ -218,9 +224,9 @@ describe('JWTAuthProvider', () => {
       expect(token).toBe(validToken);
     });
 
-    it('should return null for expired token', async () => {
+    it("should return null for expired token", async () => {
       const expiredToken = createMockJWT({
-        sub: 'user-123',
+        sub: "user-123",
         exp: Math.floor(Date.now() / 1000) - 3600,
       });
 
@@ -230,7 +236,7 @@ describe('JWTAuthProvider', () => {
       expect(token).toBeNull();
     });
 
-    it('should return null when no token stored', async () => {
+    it("should return null when no token stored", async () => {
       mockLocalStorage.getItem.mockReturnValue(null);
 
       const token = await provider.getToken();
@@ -238,14 +244,14 @@ describe('JWTAuthProvider', () => {
     });
   });
 
-  describe('auth state change listeners', () => {
-    it('should notify listeners on state change', async () => {
+  describe("auth state change listeners", () => {
+    it("should notify listeners on state change", async () => {
       const mockCallback = vi.fn();
       const unsubscribe = provider.onAuthStateChange(mockCallback);
 
       const mockToken = createMockJWT({
-        sub: 'user-123',
-        email: 'test@example.com',
+        sub: "user-123",
+        email: "test@example.com",
         exp: Math.floor(Date.now() / 1000) + 3600,
       });
 
@@ -255,22 +261,22 @@ describe('JWTAuthProvider', () => {
       });
 
       await provider.signIn({
-        email: 'test@example.com',
-        password: 'password123',
+        email: "test@example.com",
+        password: "password123",
       });
 
       expect(mockCallback).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'loading',
+          status: "loading",
         })
       );
 
       expect(mockCallback).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'authenticated',
+          status: "authenticated",
           user: expect.objectContaining({
-            id: 'user-123',
-            email: 'test@example.com',
+            id: "user-123",
+            email: "test@example.com",
           }),
         })
       );
@@ -278,7 +284,7 @@ describe('JWTAuthProvider', () => {
       unsubscribe();
     });
 
-    it('should handle unsubscribe correctly', async () => {
+    it("should handle unsubscribe correctly", async () => {
       const mockCallback = vi.fn();
       const unsubscribe = provider.onAuthStateChange(mockCallback);
 
@@ -291,31 +297,31 @@ describe('JWTAuthProvider', () => {
     });
   });
 
-  describe('configuration', () => {
-    it('should use custom storage keys', () => {
+  describe("configuration", () => {
+    it("should use custom storage keys", () => {
       const customProvider = new JWTAuthProvider({
-        apiUrl: 'http://localhost:3000/api',
-        tokenStorageKey: 'custom_token_key',
-        userStorageKey: 'custom_user_key',
+        apiUrl: "http://localhost:3033/api",
+        tokenStorageKey: "custom_token_key",
+        userStorageKey: "custom_user_key",
       });
 
-      expect(customProvider['config'].tokenStorageKey).toBe('custom_token_key');
-      expect(customProvider['config'].userStorageKey).toBe('custom_user_key');
+      expect(customProvider["config"].tokenStorageKey).toBe("custom_token_key");
+      expect(customProvider["config"].userStorageKey).toBe("custom_user_key");
     });
 
-    it('should use default storage keys', () => {
-      expect(provider['config'].tokenStorageKey).toBe('boards_jwt_token');
-      expect(provider['config'].userStorageKey).toBe('boards_user_info');
+    it("should use default storage keys", () => {
+      expect(provider["config"].tokenStorageKey).toBe("boards_jwt_token");
+      expect(provider["config"].userStorageKey).toBe("boards_user_info");
     });
   });
 });
 
 // Helper function to create mock JWT tokens
 function createMockJWT(payload: any): string {
-  const header = { alg: 'HS256', typ: 'JWT' };
+  const header = { alg: "HS256", typ: "JWT" };
   const encodedHeader = btoa(JSON.stringify(header));
   const encodedPayload = btoa(JSON.stringify(payload));
-  const signature = 'mock-signature';
+  const signature = "mock-signature";
 
   return `${encodedHeader}.${encodedPayload}.${signature}`;
 }

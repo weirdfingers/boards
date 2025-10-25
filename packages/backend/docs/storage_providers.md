@@ -9,22 +9,25 @@ Boards supports multiple storage providers for artifact storage through a plugga
 The local filesystem provider is ideal for development and testing.
 
 **Features:**
+
 - Stores files on the local filesystem
 - Optional public URL serving for development
 - No external dependencies
 - Fast for small to medium files
 
 **Configuration:**
+
 ```yaml
 providers:
   local:
     type: "local"
     config:
-      base_path: "/tmp/boards/storage"  # Storage directory
-      public_url_base: "http://localhost:8000/storage"  # Optional: base URL for serving files
+      base_path: "/tmp/boards/storage" # Storage directory
+      public_url_base: "http://localhost:8088/storage" # Optional: base URL for serving files
 ```
 
 **Use Cases:**
+
 - Local development
 - Testing environments
 - Small deployments without cloud requirements
@@ -36,6 +39,7 @@ providers:
 The S3 provider offers robust cloud storage with optional CloudFront CDN integration.
 
 **Features:**
+
 - Scalable cloud storage
 - Server-side encryption
 - CloudFront CDN integration
@@ -44,6 +48,7 @@ The S3 provider offers robust cloud storage with optional CloudFront CDN integra
 - Cross-region replication support
 
 **Dependencies:**
+
 ```bash
 pip install boto3 aioboto3
 # or
@@ -51,19 +56,20 @@ pip install boards-backend[storage-s3]
 ```
 
 **Configuration:**
+
 ```yaml
 providers:
   s3:
     type: "s3"
     config:
-      bucket: "my-boards-bucket"               # Required: S3 bucket name
-      region: "us-east-1"                      # AWS region
-      aws_access_key_id: "${AWS_ACCESS_KEY_ID}"  # AWS credentials
+      bucket: "my-boards-bucket" # Required: S3 bucket name
+      region: "us-east-1" # AWS region
+      aws_access_key_id: "${AWS_ACCESS_KEY_ID}" # AWS credentials
       aws_secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
-      aws_session_token: "${AWS_SESSION_TOKEN}"  # Optional: for temporary credentials
-      endpoint_url: "https://s3.amazonaws.com"  # Optional: custom endpoint (for S3-compatible services)
-      cloudfront_domain: "d123.cloudfront.net"  # Optional: CloudFront distribution
-      upload_config:                           # Optional: S3 upload parameters
+      aws_session_token: "${AWS_SESSION_TOKEN}" # Optional: for temporary credentials
+      endpoint_url: "https://s3.amazonaws.com" # Optional: custom endpoint (for S3-compatible services)
+      cloudfront_domain: "d123.cloudfront.net" # Optional: CloudFront distribution
+      upload_config: # Optional: S3 upload parameters
         ServerSideEncryption: "AES256"
         StorageClass: "STANDARD"
         # Or use KMS encryption:
@@ -72,12 +78,14 @@ providers:
 ```
 
 **Environment Variables:**
+
 - `AWS_ACCESS_KEY_ID`: AWS access key (if not in config)
 - `AWS_SECRET_ACCESS_KEY`: AWS secret key (if not in config)
 - `AWS_SESSION_TOKEN`: Temporary session token (optional)
 - `AWS_REGION`: Default region (if not in config)
 
 **Use Cases:**
+
 - Production deployments
 - Large file storage
 - Global content distribution with CloudFront
@@ -91,6 +99,7 @@ providers:
 The GCS provider integrates with Google Cloud Platform and Cloud CDN.
 
 **Features:**
+
 - Google Cloud native storage
 - Automatic encryption at rest
 - Cloud CDN integration
@@ -99,6 +108,7 @@ The GCS provider integrates with Google Cloud Platform and Cloud CDN.
 - Lifecycle management policies
 
 **Dependencies:**
+
 ```bash
 pip install google-cloud-storage
 # or
@@ -106,19 +116,20 @@ pip install boards-backend[storage-gcs]
 ```
 
 **Configuration:**
+
 ```yaml
 providers:
   gcs:
     type: "gcs"
     config:
-      bucket: "my-boards-gcs-bucket"           # Required: GCS bucket name
-      project_id: "my-gcp-project"             # GCP project ID
+      bucket: "my-boards-gcs-bucket" # Required: GCS bucket name
+      project_id: "my-gcp-project" # GCP project ID
       # Authentication options (choose one):
-      credentials_path: "/path/to/service-account-key.json"  # Service account key file
-      credentials_json: "${GCP_SERVICE_ACCOUNT_JSON}"        # Service account JSON as string
+      credentials_path: "/path/to/service-account-key.json" # Service account key file
+      credentials_json: "${GCP_SERVICE_ACCOUNT_JSON}" # Service account JSON as string
       # Or use default credentials (gcloud, environment, etc.)
-      cdn_domain: "cdn.example.com"            # Optional: Cloud CDN domain
-      upload_config:                           # Optional: GCS upload parameters
+      cdn_domain: "cdn.example.com" # Optional: Cloud CDN domain
+      upload_config: # Optional: GCS upload parameters
         cache_control: "public, max-age=3600"
         predefined_acl: "bucket-owner-read"
 ```
@@ -126,11 +137,13 @@ providers:
 **Authentication Methods:**
 
 1. **Service Account Key File:**
+
    ```yaml
    credentials_path: "/path/to/service-account-key.json"
    ```
 
 2. **Service Account JSON String:**
+
    ```yaml
    credentials_json: "${GCP_SERVICE_ACCOUNT_JSON}"
    ```
@@ -142,6 +155,7 @@ providers:
    - Cloud Run/Cloud Functions default credentials
 
 **Use Cases:**
+
 - Google Cloud Platform deployments
 - Integration with other GCP services
 - Global content distribution
@@ -155,6 +169,7 @@ providers:
 The Supabase provider integrates with Supabase's storage and authentication system.
 
 **Features:**
+
 - Integrated with Supabase auth
 - Built-in CDN
 - Row Level Security (RLS) integration
@@ -162,22 +177,25 @@ The Supabase provider integrates with Supabase's storage and authentication syst
 - Automatic image transformations
 
 **Dependencies:**
+
 ```bash
 pip install supabase
 ```
 
 **Configuration:**
+
 ```yaml
 providers:
   supabase:
     type: "supabase"
     config:
-      url: "${SUPABASE_URL}"                   # Supabase project URL
-      key: "${SUPABASE_ANON_KEY}"              # Supabase anon key
-      bucket: "boards-artifacts"               # Storage bucket name
+      url: "${SUPABASE_URL}" # Supabase project URL
+      key: "${SUPABASE_ANON_KEY}" # Supabase anon key
+      bucket: "boards-artifacts" # Storage bucket name
 ```
 
 **Use Cases:**
+
 - Supabase-based applications
 - Real-time collaborative features
 - Integrated authentication and storage
@@ -193,17 +211,17 @@ routing_rules:
   - condition:
       size_gt: "50MB"
     provider: "s3"
-  
+
   # Images go to GCS with CDN
   - condition:
       artifact_type: "image"
     provider: "gcs"
-  
+
   # Videos go to S3 for CloudFront streaming
   - condition:
       artifact_type: "video"
     provider: "s3"
-  
+
   # Default fallback
   - provider: "local"
 ```
@@ -237,6 +255,7 @@ routing_rules:
 ### Development vs Production
 
 **Development:**
+
 ```yaml
 default_provider: "local"
 providers:
@@ -247,6 +266,7 @@ providers:
 ```
 
 **Production:**
+
 ```yaml
 default_provider: "s3"
 providers:
@@ -273,6 +293,7 @@ When migrating between providers, consider:
 5. **Backup strategies** for data safety
 
 Example gradual migration:
+
 ```yaml
 # Phase 1: Route new uploads to S3, keep existing on local
 routing_rules:
@@ -299,6 +320,7 @@ routing_rules:
 ### Debugging
 
 Enable debug logging:
+
 ```python
 import logging
 logging.getLogger("boards.storage").setLevel(logging.DEBUG)
@@ -307,6 +329,7 @@ logging.getLogger("boards.storage").setLevel(logging.DEBUG)
 ### Monitoring
 
 Key metrics to monitor:
+
 - Upload success rates
 - Download latency
 - Storage costs

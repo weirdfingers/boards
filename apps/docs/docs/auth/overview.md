@@ -59,7 +59,7 @@ const authProvider = new NoAuthProvider();
 // JWT (self-managed - separate package)
 import { JWTAuthProvider } from "@weirdfingers/auth-jwt";
 const authProvider = new JWTAuthProvider({
-  apiUrl: "http://localhost:8000/api",
+  apiUrl: "http://localhost:8088/api",
   tenantId: "my-company",
 });
 
@@ -84,7 +84,7 @@ import { AuthProvider, createGraphQLClient } from "@weirdfingers/boards";
 
 function App() {
   const graphqlClient = createGraphQLClient({
-    url: "http://localhost:8000/graphql",
+    url: "http://localhost:8088/graphql",
     auth: authProvider,
     tenantId: "my-company",
   });
