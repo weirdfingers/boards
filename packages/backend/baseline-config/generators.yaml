@@ -9,12 +9,12 @@ strict_mode: true
 allow_unlisted: false
 
 generators:
-  # Audio generators
-  - class: "boards.generators.implementations.audio.whisper.WhisperGenerator"
-    enabled: true
-
   # Image generators
   - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+    enabled: true
+
+  # Audio generators
+  - class: "boards.generators.implementations.audio.whisper.WhisperGenerator"
     enabled: true
 
   - class: "boards.generators.implementations.image.dalle3.DallE3Generator"

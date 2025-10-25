@@ -79,7 +79,7 @@ from boards.storage.implementations import LocalStorageProvider
 
 provider = LocalStorageProvider(
     base_path="/var/boards/storage",
-    public_url_base="https://your-domain.com/storage"
+    public_url_base="https://your-domain.com/api/storage"
 )
 ```
 
@@ -112,7 +112,7 @@ BOARDS_STORAGE_SUPABASE_BUCKET=artifacts
 
 # Local storage
 BOARDS_STORAGE_LOCAL_BASE_PATH=/var/boards/storage
-BOARDS_STORAGE_LOCAL_PUBLIC_URL_BASE=https://your-domain.com/storage
+BOARDS_STORAGE_LOCAL_PUBLIC_URL_BASE=https://your-domain.com/api/storage
 
 # File limits
 BOARDS_STORAGE_MAX_FILE_SIZE=104857600  # 100MB
@@ -129,7 +129,7 @@ storage:
       type: "local"
       config:
         base_path: "/var/boards/storage"
-        public_url_base: "http://localhost:8088/storage"
+        public_url_base: "http://localhost:8088/api/storage"
 
     supabase:
       type: "supabase"

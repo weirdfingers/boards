@@ -571,8 +571,13 @@ async def create_generation(info: strawberry.Info, input: CreateGenerationInput)
         )
 
         # Enqueue job for processing
-        process_generation.send(str(gen.id))
-        logger.info("Generation job enqueued", generation_id=str(gen.id))
+        message = process_generation.send(str(gen.id))
+        logger.info(
+            "Generation job enqueued",
+            generation_id=str(gen.id),
+            message_id=message.message_id,
+            queue_name=message.queue_name,
+        )
 
         # Convert to GraphQL type
         from ..types.generation import ArtifactType, GenerationStatus

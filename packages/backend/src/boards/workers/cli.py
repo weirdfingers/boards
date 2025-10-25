@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 """
 CLI entry point for Boards background workers.
+
+For auto-reload during development, use a file watcher like entr or nodemon:
+
+    # Using entr (recommended):
+    make dev-worker-watch
+
+    # Or manually with entr:
+    find packages/backend/src -name '*.py' | entr -r uv run boards-worker
+
+    # Using nodemon:
+    nodemon --watch packages/backend/src --exec "uv run boards-worker"
 """
 
 import sys
@@ -20,13 +31,13 @@ def start_worker(
     log_level: str,
 ) -> None:
     """Start the Dramatiq worker process."""
-    # Configure logging (important: when using --watch, this runs in a subprocess)
+    # Configure logging
     configure_logging(debug=(log_level == "debug"))
 
     try:
         # Import workers to register them (if they exist)
         try:
-            from boards.workers import actors  # noqa
+            from boards.workers import actors  # noqa: F401
         except ImportError:
             logger.warning("No worker actors found - continuing with empty worker")
 
@@ -84,18 +95,12 @@ def start_worker(
     type=click.Choice(["debug", "info", "warning", "error"]),
     help="Log level (default: info)",
 )
-@click.option(
-    "--watch",
-    is_flag=True,
-    help="Auto-reload when source files change (development only)",
-)
 @click.version_option(version=__version__, prog_name="boards-worker")
 def main(
     processes: int,
     threads: int,
     queues: str,
     log_level: str,
-    watch: bool,
 ) -> None:
     """Start Boards background workers."""
 
@@ -110,34 +115,11 @@ def main(
         threads=threads,
         queues=queue_list,
         log_level=log_level,
-        watch=watch,
     )
 
-    if watch:
-        # Use watchfiles to auto-reload on file changes (development only)
-        try:
-            from watchfiles import run_process
-        except ImportError:
-            logger.error("watchfiles not installed - install with: uv add --dev watchfiles")
-            sys.exit(1)
-
-        import pathlib
-
-        # Watch the boards package directory
-        watch_path = pathlib.Path(__file__).parent.parent
-        logger.info("Auto-reload enabled - watching for file changes", path=str(watch_path))
-
-        # run_process will restart the worker when files change
-        # It kills the entire process tree (parent + all worker children)
-        run_process(
-            watch_path,
-            target=start_worker,
-            args=(processes, threads, queue_list, log_level),
-        )
-    else:
-        # Normal mode - just start the worker
-        start_worker(processes, threads, queue_list, log_level)
+    start_worker(processes, threads, queue_list, log_level)
 
 
+# meaningless
 if __name__ == "__main__":
     main()

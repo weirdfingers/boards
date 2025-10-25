@@ -61,7 +61,7 @@ async def ensure_tenant(
     existing_tenant = result.scalar_one_or_none()
 
     if existing_tenant:
-        logger.info(
+        logger.debug(
             "Tenant already exists",
             tenant_id=str(existing_tenant.id),
             slug=slug,

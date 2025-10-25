@@ -235,6 +235,10 @@ export function useGeneration(): GenerationHook {
           // Connect to SSE for progress updates
           connectToSSE(jobId);
 
+          // Re-enable the submit button now that submission is complete
+          // The SSE connection will continue tracking progress in the background
+          setIsGenerating(false);
+
           return jobId;
         } catch (err) {
           lastError =

@@ -57,9 +57,17 @@ dev-backend: ## Start backend development server only
 	@echo "Starting backend server..."
 	cd $(BACKEND_DIR) && uv run boards-server serve --reload --log-level debug
 
-dev-worker: ## Start background worker with auto-reload (development only)
-	@echo "Starting background worker with auto-reload..."
-	cd $(BACKEND_DIR) && uv run boards-worker --watch --log-level debug --processes=1 --threads=1
+dev-worker: ## Start background worker (development)
+	@echo "Starting background worker..."
+	cd $(BACKEND_DIR) && uv run boards-worker --log-level debug --processes=1 --threads=1
+
+dev-worker-watch: ## Start background worker with auto-reload using entr (requires: brew install entr)
+	@echo "Starting background worker with auto-reload (Press Ctrl+C to stop)..."
+	@if ! command -v entr > /dev/null 2>&1; then \
+		echo "Error: entr is not installed. Install with: brew install entr"; \
+		exit 1; \
+	fi
+	@cd $(BACKEND_DIR) && while sleep 0.1; do find src -name '*.py' | entr -drz uv run boards-worker --log-level debug --processes=1 --threads=1 || exit 0; done
 
 dev-frontend: ## Start frontend development servers only
 	@echo "Starting frontend development servers..."

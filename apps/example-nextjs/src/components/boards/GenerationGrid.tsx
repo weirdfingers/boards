@@ -19,13 +19,7 @@ export function GenerationGrid({
   generations,
   onGenerationClick,
 }: GenerationGridProps) {
-  // Sort generations: newest last
-  const sortedGenerations = [...generations].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  if (sortedGenerations.length === 0) {
+  if (generations.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 text-gray-500">
         <p>No generations yet. Create your first one below!</p>
@@ -35,7 +29,7 @@ export function GenerationGrid({
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {sortedGenerations.map((generation) => (
+      {generations.map((generation) => (
         <ArtifactPreview
           key={generation.id}
           artifactType={generation.artifactType}

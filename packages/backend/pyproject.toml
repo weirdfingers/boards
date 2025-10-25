@@ -54,6 +54,7 @@ dependencies = [
     "click>=8.0.0",
     "redis>=5.0.0",
     "pyjwt[crypto]>=2.8.0",
+    "psutil>=7.0.0",
 ]
 
 [project.optional-dependencies]

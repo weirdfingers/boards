@@ -86,7 +86,7 @@ async def get_auth_context(
         # Extract tenant from JWT/OIDC claims with fallback to header
         tenant_slug = extract_tenant_from_claims(principal, fallback_tenant=x_tenant)
 
-        logger.info(
+        logger.debug(
             "Tenant resolved for authenticated request",
             tenant_slug=tenant_slug,
             header_tenant=x_tenant,
@@ -105,7 +105,7 @@ async def get_auth_context(
                 # Now provision the user with the tenant UUID
                 user_id = await ensure_local_user(db, tenant_uuid, principal)
 
-            logger.info(
+            logger.debug(
                 "User provisioned and tenant resolved",
                 user_id=str(user_id),
                 tenant_uuid=str(tenant_uuid),
