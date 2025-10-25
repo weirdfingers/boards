@@ -20,13 +20,12 @@ from boards.workers.context import GeneratorExecutionContext
 
 def create_mock_http_response(content: bytes):
     """Helper to create a properly mocked HTTP response."""
+    from unittest.mock import MagicMock
+
     mock_response = AsyncMock()
     mock_response.content = content
-
-    async def mock_raise_for_status():
-        pass
-
-    mock_response.raise_for_status = mock_raise_for_status
+    # raise_for_status is not async in httpx
+    mock_response.raise_for_status = MagicMock()
     return mock_response
 
 
@@ -183,6 +182,17 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
     import sys
     from types import ModuleType
     from unittest.mock import AsyncMock, MagicMock
+
+    # Mock Redis client FIRST, before any imports that use it
+    # We need to mock at the RedisPoolManager level since it's a singleton
+    mock_redis = MagicMock()
+    mock_redis.publish = AsyncMock()
+
+    from boards import redis_pool
+
+    # Mock the singleton's client property
+    monkeypatch.setattr(redis_pool._redis_pool_manager, "_client", mock_redis)
+    monkeypatch.setattr(redis_pool, "get_redis_client", lambda: mock_redis)
 
     # Mock replicate module
     mock_file_output = SimpleNamespace(url="https://replicate.delivery/fake.png")

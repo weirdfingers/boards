@@ -87,12 +87,16 @@ class TestDownloadArtifactToTemp:
         fake_content = b"fake image content"
 
         # Mock httpx client
+        from unittest.mock import MagicMock
+
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = AsyncMock()
             mock_response.content = fake_content
+            # raise_for_status is not async in httpx
+            mock_response.raise_for_status = MagicMock()
             mock_client.get.return_value = mock_response
 
             result_path = await download_artifact_to_temp(artifact)
@@ -193,13 +197,12 @@ class TestStoreResults:
         local_provider.base_path.mkdir(parents=True, exist_ok=True)
 
         # Mock HTTP download
+        from unittest.mock import MagicMock
+
         mock_response = AsyncMock()
         mock_response.content = b"fake image data"
-
-        async def mock_raise():
-            pass
-
-        mock_response.raise_for_status = mock_raise
+        # raise_for_status is not async in httpx
+        mock_response.raise_for_status = MagicMock()
 
         with patch("httpx.AsyncClient") as mock_client:
             mock_client.return_value.__aenter__.return_value.get = AsyncMock(

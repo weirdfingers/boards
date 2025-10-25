@@ -17,7 +17,7 @@ from generations
 where status = 'completed';
 --
 -- for any generations where the storage_url is non-null and starts
--- with http://localhost:8088/storage/ make it start with http://localhost:8088/api/storage/
+-- with http://localhost:8088/api/storage/ make it start with http://localhost:8088/api/storage/
 update generations
 set storage_url = replace(
         storage_url,

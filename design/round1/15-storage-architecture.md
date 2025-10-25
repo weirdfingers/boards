@@ -629,7 +629,7 @@ storage:
       type: "local"
       config:
         base_path: "/var/boards/storage"
-        public_url_base: "http://localhost:8088/storage"
+        public_url_base: "http://localhost:8088/api/storage"
 
     supabase:
       type: "supabase"

@@ -23,7 +23,7 @@ providers:
     type: "local"
     config:
       base_path: "/tmp/boards/storage" # Storage directory
-      public_url_base: "http://localhost:8088/storage" # Optional: base URL for serving files
+      public_url_base: "http://localhost:8088/api/storage" # Optional: base URL for serving files
 ```
 
 **Use Cases:**

@@ -20,14 +20,14 @@ class TestCreateStorageProvider:
     def test_create_local_provider(self):
         config = {
             "base_path": "/tmp/test",
-            "public_url_base": "http://localhost:8088/storage",
+            "public_url_base": "http://localhost:8088/api/storage",
         }
 
         provider = create_storage_provider("local", config)
 
         assert isinstance(provider, LocalStorageProvider)
         assert provider.base_path == Path("/tmp/test").resolve()
-        assert provider.public_url_base == "http://localhost:8088/storage"
+        assert provider.public_url_base == "http://localhost:8088/api/storage"
 
     def test_create_local_provider_minimal(self):
         provider = create_storage_provider("local", {})
@@ -123,7 +123,7 @@ storage:
       type: local
       config:
         base_path: /tmp/test
-        public_url_base: http://localhost:8088/storage
+        public_url_base: http://localhost:8088/api/storage
   routing_rules:
     - provider: local
 """
@@ -171,4 +171,4 @@ class TestCreateDevelopmentStorage:
         # Check configuration
         local_provider = manager.providers["local"]
         assert local_provider.base_path == Path("/tmp/boards/storage").resolve()
-        assert local_provider.public_url_base == "http://localhost:8088/storage"
+        assert local_provider.public_url_base == "http://localhost:8088/api/storage"

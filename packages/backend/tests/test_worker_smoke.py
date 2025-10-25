@@ -129,11 +129,8 @@ async def test_worker_integration(
     def create_mock_http_response(content: bytes):
         mock_response = AsyncMock()
         mock_response.content = content
-
-        async def mock_raise_for_status():
-            pass
-
-        mock_response.raise_for_status = mock_raise_for_status
+        # raise_for_status is not async in httpx
+        mock_response.raise_for_status = MagicMock()
         return mock_response
 
     # Execute the worker function
