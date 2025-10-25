@@ -43,11 +43,8 @@ packages/backend/
 ```bash
 cd packages/backend
 
-# Create virtual environment
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
+# Install dependencies (automatically creates venv and installs dev dependencies)
+# Dev dependencies include all providers (OpenAI, Anthropic, etc.) and storage backends for typecheck
 uv sync
 ```
 

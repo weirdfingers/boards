@@ -84,7 +84,7 @@ boards/
 - **SQLAlchemy 2.0** models in `boards.dbmodels`
 - **Alembic** for database migrations (async, timestamped filenames)
 - **PostgreSQL** with multi-tenant architecture
-- **Redis** for job queue and caching
+- **Redis** for job queue, progress tracking, and caching (required)
 
 ### Frontend
 

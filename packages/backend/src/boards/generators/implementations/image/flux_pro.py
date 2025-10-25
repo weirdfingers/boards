@@ -8,14 +8,16 @@ This demonstrates the simple pattern for creating generators:
 """
 
 import os
-from typing import AsyncIterator, Union
+from typing import TYPE_CHECKING, AsyncIterator, Union
 
-import replicate
 from pydantic import BaseModel, Field
-from replicate.helpers import FileOutput
 
 from ...artifacts import ImageArtifact
 from ...base import BaseGenerator, GeneratorExecutionContext
+
+if TYPE_CHECKING:
+    import replicate
+    from replicate.helpers import FileOutput
 
 
 class FluxProInput(BaseModel):
@@ -58,6 +60,13 @@ class FluxProGenerator(BaseGenerator):
         # Check for API key
         if not os.getenv("REPLICATE_API_TOKEN"):
             raise ValueError("API configuration invalid. Missing REPLICATE_API_TOKEN")
+
+        # Import SDK directly
+        try:
+            import replicate
+            from replicate.helpers import FileOutput
+        except ImportError as e:
+            raise ValueError("Required dependencies not available") from e
 
         # Use Replicate SDK directly
         prediction: FileOutput | AsyncIterator[FileOutput] = await replicate.async_run(

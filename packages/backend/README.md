@@ -16,20 +16,20 @@ Backend for the Boards open-source creative toolkit for AI-generated content.
 ## Installation
 
 ```bash
-# Install from PyPI
+# Install from PyPI (includes core dependencies: Redis, PyJWT)
 pip install boards-backend
 
-# Or with optional dependencies
+# Or with optional provider/storage dependencies
 pip install boards-backend[providers,storage-s3,storage-gcs]
 ```
 
 ### Development Installation
 
 ```bash
-# Clone the repository and install
+# Clone the repository and install (includes all extras for typecheck)
 git clone https://github.com/weirdfingers/boards.git
 cd boards/packages/backend
-uv sync
+uv sync  # Automatically installs dev dependencies including all providers/storage
 ```
 
 ## Configuration

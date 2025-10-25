@@ -39,7 +39,7 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 # Via pip
 pip install uv
 
-# Via Homebrew (macOS) 
+# Via Homebrew (macOS)
 brew install uv
 
 # Via script
@@ -65,6 +65,7 @@ make install
 ```
 
 This will:
+
 - Install Python dependencies with `uv`
 - Install Node.js dependencies with `pnpm`
 - Set up workspace linking
@@ -79,6 +80,7 @@ make docker-up
 ```
 
 This creates:
+
 - **PostgreSQL 15** on port 5433
   - Database: `boards_dev`
   - User: `boards`
@@ -93,15 +95,11 @@ Initialize the database schema:
 cd packages/backend
 
 # Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv pip install -e ".[dev]"
+# Note: uv sync automatically installs dev dependencies (includes all providers/storage for typecheck)
+uv sync
 
-# Apply initial schema
-psql boards_dev < migrations/schemas/001_initial_schema.sql
-
-# Generate SQLAlchemy models
-python scripts/generate_models.py
+# Apply database migrations
+uv run alembic upgrade head
 ```
 
 ### 5. Start Development Servers
@@ -142,6 +140,7 @@ Open http://localhost:3033 in your browser to see the example Next.js applicatio
 ### Common Issues
 
 **Docker services won't start:**
+
 ```bash
 # Check if ports are in use
 lsof -i :5433  # PostgreSQL
@@ -153,15 +152,16 @@ make docker-up
 ```
 
 **Python dependency issues:**
+
 ```bash
 # Clean and reinstall
 cd packages/backend
 rm -rf .venv
-uv venv
-uv pip install -e ".[dev]"
+uv sync  # Automatically includes dev dependencies
 ```
 
 **Node.js dependency issues:**
+
 ```bash
 # Clean and reinstall
 pnpm clean
@@ -169,6 +169,7 @@ pnpm install
 ```
 
 **Database connection errors:**
+
 ```bash
 # Verify PostgreSQL is running
 docker ps | grep postgres
@@ -189,7 +190,7 @@ psql -h localhost -U boards -d boards_dev
 
 - **VS Code** with extensions:
   - Python
-  - Pylance  
+  - Pylance
   - ES7+ React/Redux/React-Native snippets
   - GraphQL
 
