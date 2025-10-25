@@ -2,6 +2,7 @@
 Configuration management for Boards backend
 """
 
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
 
     # Generators Configuration
     generators_config_path: str | None = None
+    generator_api_keys: dict[str, str] = {}
 
     # Environment
     environment: str = "development"  # 'development', 'staging', 'production'
@@ -93,6 +95,18 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+
+def initialize_generator_api_keys() -> None:
+    """
+    Sync generator API keys from settings to os.environ.
+
+    This allows third-party packages (like replicate) that expect
+    environment variables to work correctly with our Pydantic settings.
+    """
+    for key, value in settings.generator_api_keys.items():
+        if value:  # Only set non-empty values
+            os.environ[key] = value
 
 
 # Helper functions

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from dramatiq.middleware import Middleware
 
+from ..config import initialize_generator_api_keys
 from ..generators.loader import load_generators_from_config
 from ..generators.registry import registry as generator_registry
 from ..logging import get_logger
@@ -42,6 +43,10 @@ class GeneratorLoaderMiddleware(Middleware):
             worker: The worker process instance
         """
         logger.info("Loading generators in worker process", worker_id=id(worker))
+
+        # Initialize generator API keys before loading generators
+        initialize_generator_api_keys()
+        logger.info("Generator API keys initialized in worker process")
 
         load_generators_from_config()
 

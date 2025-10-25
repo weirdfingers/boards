@@ -52,6 +52,7 @@ dependencies = [
     "aiofiles>=23.0.0",
     "pyyaml>=6.0.0",
     "click>=8.0.0",
+    "replicate>=1.0.7",
 ]
 
 [project.optional-dependencies]

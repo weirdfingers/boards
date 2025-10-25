@@ -8,8 +8,11 @@ This demonstrates the simple pattern for creating generators:
 """
 
 import os
+from typing import AsyncIterator, Union
 
+import replicate
 from pydantic import BaseModel, Field
+from replicate.helpers import FileOutput
 
 from ...artifacts import ImageArtifact
 from ...base import BaseGenerator, GeneratorExecutionContext
@@ -56,14 +59,8 @@ class FluxProGenerator(BaseGenerator):
         if not os.getenv("REPLICATE_API_TOKEN"):
             raise ValueError("API configuration invalid. Missing REPLICATE_API_TOKEN")
 
-        # Import SDK directly - no wrapper layer
-        try:
-            import replicate  # type: ignore
-        except ImportError as e:
-            raise ValueError("Required dependencies not available") from e
-
         # Use Replicate SDK directly
-        prediction = await replicate.async_run(
+        prediction: FileOutput | AsyncIterator[FileOutput] = await replicate.async_run(
             "black-forest-labs/flux-1.1-pro",
             input={
                 "prompt": inputs.prompt,
@@ -72,8 +69,13 @@ class FluxProGenerator(BaseGenerator):
             },
         )
 
-        # prediction is a list with the output URL
-        output_url = prediction[0] if isinstance(prediction, list) else prediction
+        # If prediction is an async iterator, get the first item; else, use as is.
+        if isinstance(prediction, AsyncIterator):
+            file_output = await anext(prediction)
+        else:
+            file_output = prediction
+
+        output_url = file_output.url
 
         image_artifact = await context.store_image_result(
             storage_url=output_url,

@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..config import settings
+from ..config import initialize_generator_api_keys, settings
 from ..database import init_database
 from ..generators.loader import load_generators_from_config
 from ..logging import configure_logging, get_logger
@@ -26,6 +26,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Boards API...")
     init_database()
     logger.info("Database initialized")
+
+    # Initialize generator API keys from settings
+    initialize_generator_api_keys()
+    logger.info("Generator API keys initialized")
 
     # Load generators based on configuration
     try:
