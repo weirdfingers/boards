@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useParams } from "next/navigation";
 import { useBoard, useGenerators, useGeneration } from "@weirdfingers/boards";
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
@@ -12,7 +13,12 @@ export default function BoardPage() {
 
   const boardHookResult = useBoard(boardId);
   console.log("[BoardPage] useBoard result:", boardHookResult);
-  const { board, loading: boardLoading, error: boardError } = boardHookResult;
+  const {
+    board,
+    loading: boardLoading,
+    error: boardError,
+    refresh: refreshBoard,
+  } = boardHookResult;
 
   // Fetch available generators
   const generatorsHookResult = useGenerators();
@@ -23,12 +29,67 @@ export default function BoardPage() {
     error: generatorsError,
   } = generatorsHookResult;
 
-  // Use generation hook for submitting generations
-  const { submit, isGenerating } = useGeneration();
+  // Use generation hook for submitting generations and real-time progress
+  const {
+    submit,
+    isGenerating,
+    progress,
+    error: generationError,
+    result,
+  } = useGeneration();
 
   console.log("[BoardPage] board:", board);
   console.log("[BoardPage] boardError:", boardError);
   console.log("[BoardPage] board is null/undefined?", !board);
+
+  // Refresh board when a generation completes or fails
+  // MUST be before conditional returns to satisfy Rules of Hooks
+  React.useEffect(() => {
+    if (
+      progress &&
+      (progress.status === "completed" || progress.status === "failed")
+    ) {
+      console.log(
+        "[BoardPage] Generation finished, refreshing board:",
+        progress.status
+      );
+      refreshBoard();
+    }
+  }, [progress, refreshBoard]);
+
+  // Merge database generations with live progress for real-time updates
+  // MUST be before conditional returns to satisfy Rules of Hooks
+  const generations = React.useMemo(() => {
+    const dbGenerations = board?.generations || [];
+
+    // If we have live progress, update the matching generation's status
+    if (progress) {
+      return dbGenerations.map((gen) => {
+        if (gen.id === progress.jobId) {
+          // Map SSE status to GraphQL status format (lowercase to UPPERCASE)
+          const statusMap: Record<string, string> = {
+            queued: "PENDING",
+            processing: "PROCESSING",
+            completed: "COMPLETED",
+            failed: "FAILED",
+            cancelled: "CANCELLED",
+          };
+
+          return {
+            ...gen,
+            status: statusMap[progress.status] || gen.status,
+            errorMessage:
+              progress.status === "failed"
+                ? progress.message || "Generation failed"
+                : gen.errorMessage,
+          };
+        }
+        return gen;
+      });
+    }
+
+    return dbGenerations;
+  }, [board?.generations, progress]);
 
   // Handle board error
   if (boardError) {
@@ -74,8 +135,6 @@ export default function BoardPage() {
   }
 
   console.log("[BoardPage] Board loaded successfully:", board);
-
-  const generations = board.generations || [];
 
   // Filter completed generations that can be used as inputs
   const availableArtifacts = generations.filter(

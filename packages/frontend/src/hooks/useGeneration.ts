@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useState, useEffect, useRef } from "react";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { useMutation } from "urql";
 import {
   CREATE_GENERATION,
@@ -11,6 +12,8 @@ import {
   CreateGenerationInput,
   ArtifactType,
 } from "../graphql/operations";
+import { useAuth } from "../auth/context";
+import { useApiConfig } from "../config/ApiConfigContext";
 
 export interface GenerationRequest {
   model: string;
@@ -50,6 +53,8 @@ export interface GenerationProgress {
   jobId: string;
   status: "queued" | "processing" | "completed" | "failed" | "cancelled";
   progress: number; // 0-100
+  phase: string;
+  message?: string | null;
   estimatedTimeRemaining?: number;
   currentStep?: string;
   logs?: string[];
@@ -106,8 +111,12 @@ export function useGeneration(): GenerationHook {
   const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<GenerationResult[]>([]);
 
-  // Keep track of active SSE connections
-  const sseConnections = useRef<Map<string, EventSource>>(new Map());
+  // Get API configuration and auth
+  const { apiUrl } = useApiConfig();
+  const auth = useAuth();
+
+  // Keep track of active SSE connections (using AbortControllers)
+  const abortControllers = useRef<Map<string, AbortController>>(new Map());
 
   // Mutations
   const [, createGenerationMutation] = useMutation(CREATE_GENERATION);
@@ -117,83 +126,147 @@ export function useGeneration(): GenerationHook {
   // Clean up SSE connections on unmount
   useEffect(() => {
     return () => {
-      sseConnections.current.forEach((eventSource) => {
-        eventSource.close();
+      abortControllers.current.forEach((controller) => {
+        controller.abort();
       });
-      sseConnections.current.clear();
+      abortControllers.current.clear();
     };
   }, []);
 
-  const connectToSSE = useCallback((jobId: string) => {
-    // Close existing connection if any
-    const existingConnection = sseConnections.current.get(jobId);
-    if (existingConnection) {
-      existingConnection.close();
-    }
-
-    // Create new SSE connection
-    const eventSource = new EventSource(`/api/sse/generation/${jobId}`);
-    sseConnections.current.set(jobId, eventSource);
-
-    eventSource.onmessage = (event) => {
-      try {
-        const progressData: GenerationProgress = JSON.parse(event.data);
-        setProgress(progressData);
-
-        // If generation is complete, handle the result
-        if (
-          progressData.status === "completed" ||
-          progressData.status === "failed" ||
-          progressData.status === "cancelled"
-        ) {
-          setIsGenerating(false);
-
-          if (progressData.status === "completed") {
-            // TODO: Fetch the complete result from GraphQL
-            // For now, create a mock result
-            const mockResult: GenerationResult = {
-              id: progressData.jobId,
-              jobId: progressData.jobId,
-              boardId: "", // Would be filled from the original request
-              request: {} as GenerationRequest,
-              artifacts: [],
-              credits: { cost: 0, balanceBefore: 0, balance: 0 },
-              performance: { queueTime: 0, processingTime: 0, totalTime: 0 },
-              createdAt: new Date(),
-            };
-
-            setResult(mockResult);
-            setHistory((prev) => [...prev, mockResult]);
-          } else if (progressData.status === "failed") {
-            setError(new Error("Generation failed"));
-          }
-          // For cancelled, just stop generating without error
-
-          // Always close SSE connection and clean up when done
-          eventSource.close();
-          sseConnections.current.delete(jobId);
-        }
-      } catch (err) {
-        console.error("Failed to parse SSE message:", err);
-        setError(new Error("Failed to parse progress update"));
-        setIsGenerating(false);
-
-        // Close SSE connection on parse error and clean up
-        eventSource.close();
-        sseConnections.current.delete(jobId);
+  const connectToSSE = useCallback(
+    async (jobId: string) => {
+      // Close existing connection if any
+      const existingController = abortControllers.current.get(jobId);
+      if (existingController) {
+        existingController.abort();
       }
-    };
 
-    eventSource.onerror = (event) => {
-      console.error("SSE connection error:", event);
-      setError(new Error("Lost connection to generation progress"));
-      setIsGenerating(false);
-      eventSource.close();
-      sseConnections.current.delete(jobId);
-    };
+      // Create new abort controller
+      const abortController = new AbortController();
+      abortControllers.current.set(jobId, abortController);
 
-    return eventSource;
-  }, []);
+      // Get auth token
+      const token = await auth.getToken();
+
+      // Build headers
+      const headers: Record<string, string> = {
+        Accept: "text/event-stream",
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Connect to SSE endpoint directly
+      const sseUrl = `${apiUrl}/api/sse/generations/${jobId}/progress`;
+      console.log("SSE: Connecting to", sseUrl, "with headers:", headers);
+
+      try {
+        await fetchEventSource(sseUrl, {
+          headers,
+          signal: abortController.signal,
+
+          async onopen(response) {
+            console.log(
+              "SSE: Connection opened",
+              response.status,
+              response.statusText
+            );
+            if (response.ok) {
+              console.log("SSE: Connection successful");
+            } else {
+              console.error("SSE: Connection failed", response.status);
+              throw new Error(`SSE connection failed: ${response.statusText}`);
+            }
+          },
+
+          onmessage(event) {
+            console.log("SSE: Raw event received:", event);
+
+            // Skip empty messages (like keep-alive comments)
+            if (!event.data || event.data.trim() === "") {
+              console.log("SSE: Skipping empty message");
+              return;
+            }
+
+            try {
+              const progressData: GenerationProgress = JSON.parse(event.data);
+              console.log("SSE: progress data received:", progressData);
+              setProgress(progressData);
+
+              // If generation is complete, handle the result
+              if (
+                progressData.status === "completed" ||
+                progressData.status === "failed" ||
+                progressData.status === "cancelled"
+              ) {
+                setIsGenerating(false);
+
+                if (progressData.status === "completed") {
+                  // TODO: Fetch the complete result from GraphQL
+                  // For now, create a mock result
+                  const mockResult: GenerationResult = {
+                    id: progressData.jobId,
+                    jobId: progressData.jobId,
+                    boardId: "", // Would be filled from the original request
+                    request: {} as GenerationRequest,
+                    artifacts: [],
+                    credits: { cost: 0, balanceBefore: 0, balance: 0 },
+                    performance: {
+                      queueTime: 0,
+                      processingTime: 0,
+                      totalTime: 0,
+                    },
+                    createdAt: new Date(),
+                  };
+
+                  setResult(mockResult);
+                  setHistory((prev) => [...prev, mockResult]);
+                } else if (progressData.status === "failed") {
+                  setError(new Error("Generation failed"));
+                }
+
+                // Close connection
+                abortController.abort();
+                abortControllers.current.delete(jobId);
+              }
+            } catch (err) {
+              console.error("Failed to parse SSE message:", err);
+              setError(new Error("Failed to parse progress update"));
+              setIsGenerating(false);
+              abortController.abort();
+              abortControllers.current.delete(jobId);
+            }
+          },
+
+          onerror(err) {
+            console.error("SSE connection error:", err);
+            console.error("SSE error details:", {
+              message: err instanceof Error ? err.message : String(err),
+              jobId,
+              url: sseUrl,
+            });
+            setError(new Error("Lost connection to generation progress"));
+            setIsGenerating(false);
+            abortController.abort();
+            abortControllers.current.delete(jobId);
+            // Re-throw to stop retry
+            throw err;
+          },
+
+          openWhenHidden: true, // Keep connection open when tab is hidden
+        });
+      } catch (err) {
+        // Connection was aborted or failed
+        if (abortController.signal.aborted) {
+          console.log("SSE connection aborted for job:", jobId);
+        } else {
+          console.error("SSE connection failed:", err);
+        }
+      }
+    },
+    [apiUrl, auth]
+  );
 
   const submit = useCallback(
     async (request: GenerationRequest): Promise<string> => {
@@ -290,10 +363,10 @@ export function useGeneration(): GenerationHook {
         }
 
         // Close SSE connection
-        const connection = sseConnections.current.get(jobId);
-        if (connection) {
-          connection.close();
-          sseConnections.current.delete(jobId);
+        const controller = abortControllers.current.get(jobId);
+        if (controller) {
+          controller.abort();
+          abortControllers.current.delete(jobId);
         }
 
         setIsGenerating(false);

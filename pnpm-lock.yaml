@@ -241,6 +241,9 @@ importers:
 
   packages/frontend:
     dependencies:
+      '@microsoft/fetch-event-source':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@urql/core':
         specifier: ^6.0.1
         version: 6.0.1(graphql@16.11.0)
@@ -258,13 +261,13 @@ importers:
         version: 6.0.6(graphql@16.11.0)(ws@8.18.3)
       react:
         specifier: ^18.0.0
-        version: 18.3.1
+        version: 19.1.1
       react-dom:
         specifier: ^18.0.0
         version: 18.3.1(react@18.3.1)
       urql:
         specifier: ^5.0.1
-        version: 5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@18.3.1)
+        version: 5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@19.1.1)
     devDependencies:
       '@types/react':
         specifier: ^18.3.0
@@ -1914,6 +1917,9 @@ packages:
     peerDependencies:
       '@types/react': '>=16'
       react: '>=16'
+
+  '@microsoft/fetch-event-source@2.0.1':
+    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -10029,6 +10035,8 @@ snapshots:
       '@types/react': 18.3.24
       react: 19.1.1
 
+  '@microsoft/fetch-event-source@2.0.1': {}
+
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
       '@emnapi/core': 1.5.0
@@ -16395,10 +16403,10 @@ snapshots:
     optionalDependencies:
       file-loader: 6.2.0(webpack@5.101.3)
 
-  urql@5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@18.3.1):
+  urql@5.0.1(@urql/core@6.0.1(graphql@16.11.0))(react@19.1.1):
     dependencies:
       '@urql/core': 6.0.1(graphql@16.11.0)
-      react: 18.3.1
+      react: 19.1.1
       wonka: 6.3.5
 
   use-sync-external-store@1.5.0(react@18.3.1):

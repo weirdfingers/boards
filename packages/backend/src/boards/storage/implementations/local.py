@@ -1,7 +1,6 @@
 """Local filesystem storage provider for development and self-hosted deployments."""
 
 import json
-import logging
 from collections.abc import AsyncIterable
 from datetime import timedelta
 from pathlib import Path
@@ -10,9 +9,10 @@ from urllib.parse import quote
 
 import aiofiles
 
+from ...logging import get_logger
 from ..base import SecurityException, StorageException, StorageProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LocalStorageProvider(StorageProvider):

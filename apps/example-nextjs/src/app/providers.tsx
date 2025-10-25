@@ -9,7 +9,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <BoardsProvider
       authProvider={new NoAuthProvider()}
-      graphqlUrl={`${apiUrl}/graphql`}
+      apiUrl={apiUrl}
+      // graphqlUrl will default to `${apiUrl}/graphql`
     >
       {children}
     </BoardsProvider>

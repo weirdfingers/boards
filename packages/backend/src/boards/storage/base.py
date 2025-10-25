@@ -1,7 +1,6 @@
 """Core storage interfaces and manager implementation."""
 
 import asyncio
-import logging
 import re
 import uuid
 from abc import ABC, abstractmethod
@@ -10,7 +9,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from ..logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass

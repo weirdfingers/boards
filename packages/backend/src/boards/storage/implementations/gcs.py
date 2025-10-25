@@ -1,7 +1,6 @@
 """Google Cloud Storage provider with IAM auth and CDN support."""
 
 import json
-import logging
 import os
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -28,9 +27,10 @@ except ImportError:
     DefaultCredentialsError = None
     _gcs_available = False
 
+from ...logging import get_logger
 from ..base import StorageException, StorageProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GCSStorageProvider(StorageProvider):

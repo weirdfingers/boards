@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import logging
 from uuid import UUID
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 
 from ..auth import AuthContext, get_auth_context, get_auth_context_optional
+from ..logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AuthenticatedUser(BaseModel):

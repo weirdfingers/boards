@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,10 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...database.connection import get_db_session
 from ...jobs import repository as jobs_repo
+from ...logging import get_logger
 from ...workers.actors import process_generation
 from ..auth import AuthenticatedUser, get_current_user
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 router = APIRouter()

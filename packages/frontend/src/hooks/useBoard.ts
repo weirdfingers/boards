@@ -103,6 +103,7 @@ interface BoardHook {
   // Board operations
   updateBoard: (updates: Partial<UpdateBoardInput>) => Promise<Board>;
   deleteBoard: () => Promise<void>;
+  refresh: () => Promise<void>;
 
   // Member management
   addMember: (email: string, role: MemberRole) => Promise<BoardMember>;
@@ -300,6 +301,10 @@ export function useBoard(boardId: string): BoardHook {
     []
   );
 
+  const refresh = useCallback(async (): Promise<void> => {
+    await reexecuteQuery({ requestPolicy: "network-only" });
+  }, [reexecuteQuery]);
+
   return {
     board,
     members,
@@ -308,6 +313,7 @@ export function useBoard(boardId: string): BoardHook {
     error: error ? new Error(error.message) : null,
     updateBoard,
     deleteBoard,
+    refresh,
     addMember,
     removeMember,
     updateMemberRole,

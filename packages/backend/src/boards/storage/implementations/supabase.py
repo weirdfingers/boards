@@ -1,6 +1,5 @@
 """Supabase storage provider with integrated auth and CDN support."""
 
-import logging
 import os
 import tempfile
 from collections.abc import AsyncIterator
@@ -22,9 +21,10 @@ except ImportError:
     # AsyncClient = None
     _supabase_available = False
 
+from ...logging import get_logger
 from ..base import StorageException, StorageProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SupabaseStorageProvider(StorageProvider):

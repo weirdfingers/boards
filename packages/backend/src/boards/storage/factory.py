@@ -1,14 +1,14 @@
 """Factory for creating storage providers and managers."""
 
-import logging
 from pathlib import Path
 from typing import Any
 
+from ..logging import get_logger
 from .base import StorageManager, StorageProvider
 from .config import StorageConfig, load_storage_config
 from .implementations.local import LocalStorageProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Optional imports for cloud providers
 try:

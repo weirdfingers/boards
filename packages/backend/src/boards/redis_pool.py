@@ -6,14 +6,13 @@ across the application to reduce connection overhead and improve performance.
 
 from __future__ import annotations
 
-import logging
-
 import redis.asyncio as redis
 from redis.asyncio.connection import ConnectionPool
 
 from .config import Settings
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RedisPoolManager:

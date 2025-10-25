@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import logging
-
 from ..config import Settings
 from ..database.connection import get_async_session
 from ..jobs import repository as jobs_repo
+from ..logging import get_logger
 from ..redis_pool import get_redis_client
 from .models import ProgressUpdate
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProgressPublisher:
@@ -22,7 +21,17 @@ class ProgressPublisher:
     async def publish_progress(self, job_id: str, update: ProgressUpdate) -> None:
         channel = f"job:{job_id}:progress"
         await self._persist_update(job_id, update)
-        await self._redis.publish(channel, update.model_dump_json())
+        json_data = update.model_dump_json()
+        logger.info(
+            "Publishing progress update to Redis",
+            job_id=job_id,
+            channel=channel,
+            status=update.status,
+            progress=update.progress,
+            data_length=len(json_data),
+        )
+        await self._redis.publish(channel, json_data)
+        logger.debug("Progress update published successfully", job_id=job_id)
 
     async def _persist_update(self, job_id: str, update: ProgressUpdate) -> None:
         async with get_async_session() as session:

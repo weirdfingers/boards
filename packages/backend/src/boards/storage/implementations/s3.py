@@ -1,6 +1,5 @@
 """AWS S3 storage provider with IAM auth and CloudFront CDN support."""
 
-import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
@@ -23,9 +22,10 @@ except ImportError:
     aioboto3 = None
     _s3_available = False
 
+from ...logging import get_logger
 from ..base import StorageException, StorageProvider
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class S3StorageProvider(StorageProvider):
