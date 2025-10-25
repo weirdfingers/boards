@@ -9,8 +9,7 @@ import os
 from pydantic import BaseModel, Field
 
 from ...artifacts import ImageArtifact
-from ...base import BaseGenerator
-from ...resolution import store_image_result
+from ...base import BaseGenerator, GeneratorExecutionContext
 
 
 class DallE3Input(BaseModel):
@@ -45,7 +44,9 @@ class DallE3Generator(BaseGenerator):
     def get_output_schema(self) -> type[DallE3Output]:
         return DallE3Output
 
-    async def generate(self, inputs: DallE3Input) -> DallE3Output:
+    async def generate(
+        self, inputs: DallE3Input, context: GeneratorExecutionContext
+    ) -> DallE3Output:
         """Generate image using OpenAI DALL-E 3."""
         # Check for API key
         if not os.getenv("OPENAI_API_KEY"):
@@ -77,11 +78,10 @@ class DallE3Generator(BaseGenerator):
         # Parse dimensions from size
         width, height = map(int, inputs.size.split("x"))
 
-        # Create artifact with the OpenAI URL
-        image_artifact = await store_image_result(
+        # Store via context (downloads from OpenAI and uploads to our storage)
+        image_artifact = await context.store_image_result(
             storage_url=image_url,
             format="png",  # DALL-E 3 outputs PNG
-            generation_id="temp_gen_id",  # TODO: Get from context
             width=width,
             height=height,
         )

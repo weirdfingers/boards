@@ -83,6 +83,8 @@ class TestFluxProGenerator:
             class DummyCtx(GeneratorExecutionContext):
                 generation_id = "test_gen"
                 provider_correlation_id = "corr"
+                tenant_id = "test_tenant"
+                board_id = "test_board"
 
                 async def resolve_artifact(self, artifact):
                     return ""
@@ -153,6 +155,8 @@ class TestFluxProGenerator:
             class DummyCtx(GeneratorExecutionContext):
                 generation_id = "test_gen"
                 provider_correlation_id = "corr"
+                tenant_id = "test_tenant"
+                board_id = "test_board"
 
                 async def resolve_artifact(self, artifact):
                     return ""
@@ -224,6 +228,8 @@ class TestFluxProGenerator:
             class DummyCtx(GeneratorExecutionContext):
                 generation_id = "test_gen"
                 provider_correlation_id = "corr"
+                tenant_id = "test_tenant"
+                board_id = "test_board"
 
                 async def resolve_artifact(self, artifact):
                     return ""

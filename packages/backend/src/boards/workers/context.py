@@ -10,16 +10,32 @@ from ..jobs import repository as jobs_repo
 from ..logging import get_logger
 from ..progress.models import ProgressUpdate
 from ..progress.publisher import ProgressPublisher
+from ..storage.base import StorageManager
 
 logger = get_logger(__name__)
 
 
 class GeneratorExecutionContext:
-    def __init__(self, generation_id: UUID, publisher: ProgressPublisher) -> None:
+    def __init__(
+        self,
+        generation_id: UUID,
+        publisher: ProgressPublisher,
+        storage_manager: StorageManager,
+        tenant_id: UUID,
+        board_id: UUID,
+    ) -> None:
         self.generation_id = str(generation_id)
         self.publisher = publisher
+        self.storage_manager = storage_manager
+        self.tenant_id = str(tenant_id)
+        self.board_id = str(board_id)
         self.provider_correlation_id = uuid4().hex
-        logger.info("Created execution context", generation_id=str(generation_id))
+        logger.info(
+            "Created execution context",
+            generation_id=str(generation_id),
+            tenant_id=str(tenant_id),
+            board_id=str(board_id),
+        )
 
     async def resolve_artifact(self, artifact) -> str:
         """Resolve an artifact to a file path."""
@@ -32,33 +48,51 @@ class GeneratorExecutionContext:
             logger.error("Failed to resolve artifact", error=str(e))
             raise
 
-    async def store_image_result(self, *args, **kwargs):
+    async def store_image_result(self, **kwargs):
         """Store image generation result."""
         logger.debug("Storing image result", generation_id=self.generation_id)
         try:
-            result = await resolution.store_image_result(*args, **kwargs)
+            result = await resolution.store_image_result(
+                storage_manager=self.storage_manager,
+                generation_id=self.generation_id,
+                tenant_id=self.tenant_id,
+                board_id=self.board_id,
+                **kwargs,
+            )
             logger.info("Image result stored", generation_id=self.generation_id)
             return result
         except Exception as e:
             logger.error("Failed to store image result", error=str(e))
             raise
 
-    async def store_video_result(self, *args, **kwargs):
+    async def store_video_result(self, **kwargs):
         """Store video generation result."""
         logger.debug("Storing video result", generation_id=self.generation_id)
         try:
-            result = await resolution.store_video_result(*args, **kwargs)
+            result = await resolution.store_video_result(
+                storage_manager=self.storage_manager,
+                generation_id=self.generation_id,
+                tenant_id=self.tenant_id,
+                board_id=self.board_id,
+                **kwargs,
+            )
             logger.info("Video result stored", generation_id=self.generation_id)
             return result
         except Exception as e:
             logger.error("Failed to store video result", error=str(e))
             raise
 
-    async def store_audio_result(self, *args, **kwargs):
+    async def store_audio_result(self, **kwargs):
         """Store audio generation result."""
         logger.debug("Storing audio result", generation_id=self.generation_id)
         try:
-            result = await resolution.store_audio_result(*args, **kwargs)
+            result = await resolution.store_audio_result(
+                storage_manager=self.storage_manager,
+                generation_id=self.generation_id,
+                tenant_id=self.tenant_id,
+                board_id=self.board_id,
+                **kwargs,
+            )
             logger.info("Audio result stored", generation_id=self.generation_id)
             return result
         except Exception as e:

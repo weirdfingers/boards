@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 
@@ -13,7 +14,7 @@ def test_worker_smoke(monkeypatch):
     # Mock replicate module to avoid network
     import sys
     from types import ModuleType
-    from unittest.mock import AsyncMock, MagicMock
+    from unittest.mock import AsyncMock, MagicMock, patch
 
     # Create mock FileOutput with url as a plain string
     mock_file_output = SimpleNamespace(url="https://example.com/fake.png")
@@ -52,6 +53,8 @@ def test_worker_smoke(monkeypatch):
                 "aspect_ratio": "1:1",
                 "safety_tolerance": 2,
             },
+            tenant_id=uuid4(),
+            board_id=uuid4(),
         )
 
     async def fake_finalize_success(session, generation_id, **kwargs):
@@ -69,8 +72,23 @@ def test_worker_smoke(monkeypatch):
 
     os.environ["REPLICATE_API_TOKEN"] = "test-token"
 
-    # Execute the underlying async function directly (bypass dramatiq actor wrapper)
+    # Mock HTTP download for storage integration
+    def create_mock_http_response(content: bytes):
+        mock_response = AsyncMock()
+        mock_response.content = content
 
-    # Access the original function before AsyncIO middleware wrapping
-    original_fn = process_generation.fn.__wrapped__
-    asyncio.run(original_fn("00000000-0000-0000-0000-00000000a1a1"))
+        async def mock_raise_for_status():
+            pass
+
+        mock_response.raise_for_status = mock_raise_for_status
+        return mock_response
+
+    # Execute the underlying async function directly (bypass dramatiq actor wrapper)
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=create_mock_http_response(b"fake image content")
+        )
+
+        # Access the original function before AsyncIO middleware wrapping
+        original_fn = process_generation.fn.__wrapped__
+        asyncio.run(original_fn("00000000-0000-0000-0000-00000000a1a1"))

@@ -8,6 +8,8 @@ import uuid
 
 import httpx
 
+from ..logging import get_logger
+from ..storage.base import StorageManager
 from .artifacts import (
     AudioArtifact,
     ImageArtifact,
@@ -15,6 +17,8 @@ from .artifacts import (
     TextArtifact,
     VideoArtifact,
 )
+
+logger = get_logger(__name__)
 
 
 async def resolve_artifact(
@@ -117,20 +121,143 @@ def _get_file_extension(
     return format_ext
 
 
-# TODO: This function will be implemented when we integrate with the storage system
+async def download_from_url(url: str) -> bytes:
+    """
+    Download content from a URL (typically a provider's temporary URL).
+
+    This is used to download generated content from providers like Replicate, OpenAI, etc.
+    before uploading to our permanent storage.
+
+    Args:
+        url: URL to download from
+
+    Returns:
+        bytes: Downloaded content
+
+    Raises:
+        httpx.HTTPError: If download fails
+        ValueError: If downloaded content is empty
+    """
+    logger.debug("Downloading content from URL", url=url)
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.get(url)
+        response.raise_for_status()
+
+        # Validate content
+        if len(response.content) == 0:
+            raise ValueError(f"Downloaded file from {url} is empty")
+
+        logger.info(
+            "Successfully downloaded content",
+            url=url,
+            size_bytes=len(response.content),
+        )
+        return response.content
 
 
-# Placeholder functions for storing generated results
-# These will be implemented when integrating with the storage system
+def _get_content_type_from_format(artifact_type: str, format: str) -> str:
+    """
+    Get MIME content type from artifact type and format.
+
+    Args:
+        artifact_type: Type of artifact ('image', 'video', 'audio')
+        format: Format string (e.g., 'png', 'mp4', 'mp3')
+
+    Returns:
+        str: MIME content type
+    """
+    format_lower = format.lower()
+
+    # Map common formats to content types
+    content_type_map = {
+        "image": {
+            "png": "image/png",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "webp": "image/webp",
+            "gif": "image/gif",
+        },
+        "video": {
+            "mp4": "video/mp4",
+            "webm": "video/webm",
+            "mov": "video/quicktime",
+        },
+        "audio": {
+            "mp3": "audio/mpeg",
+            "wav": "audio/wav",
+            "ogg": "audio/ogg",
+        },
+    }
+
+    type_map = content_type_map.get(artifact_type, {})
+    return type_map.get(format_lower, "application/octet-stream")
 
 
 async def store_image_result(
-    storage_url: str, format: str, generation_id: str, width: int, height: int
+    storage_manager: StorageManager,
+    generation_id: str,
+    tenant_id: str,
+    board_id: str,
+    storage_url: str,
+    format: str,
+    width: int,
+    height: int,
 ) -> ImageArtifact:
-    """Create ImageArtifact from stored content."""
+    """
+    Store an image result by downloading from provider URL and uploading to storage.
+
+    Args:
+        storage_manager: Storage manager instance
+        generation_id: ID of the generation
+        tenant_id: Tenant ID for storage isolation
+        board_id: Board ID for organization
+        storage_url: Provider's temporary URL to download from
+        format: Image format (png, jpg, etc.)
+        width: Image width in pixels
+        height: Image height in pixels
+
+    Returns:
+        ImageArtifact with permanent storage URL
+
+    Raises:
+        StorageException: If storage operation fails
+        httpx.HTTPError: If download fails
+    """
+    logger.info(
+        "Storing image result",
+        generation_id=generation_id,
+        provider_url=storage_url,
+        format=format,
+    )
+
+    # Download content from provider URL
+    content = await download_from_url(storage_url)
+
+    # Determine content type
+    content_type = _get_content_type_from_format("image", format)
+
+    # Upload to storage system
+    artifact_ref = await storage_manager.store_artifact(
+        artifact_id=generation_id,
+        content=content,
+        artifact_type="image",
+        content_type=content_type,
+        tenant_id=tenant_id,
+        board_id=board_id,
+    )
+
+    logger.info(
+        "Image stored successfully",
+        generation_id=generation_id,
+        storage_key=artifact_ref.storage_key,
+        storage_url=artifact_ref.storage_url,
+    )
+
+    # Return artifact with our permanent storage URL
     return ImageArtifact(
         generation_id=generation_id,
-        storage_url=storage_url,
+        storage_url=artifact_ref.storage_url,
         width=width,
         height=height,
         format=format,
@@ -138,18 +265,73 @@ async def store_image_result(
 
 
 async def store_video_result(
+    storage_manager: StorageManager,
+    generation_id: str,
+    tenant_id: str,
+    board_id: str,
     storage_url: str,
     format: str,
-    generation_id: str,
     width: int,
     height: int,
     duration: float | None = None,
     fps: float | None = None,
 ) -> VideoArtifact:
-    """Create VideoArtifact from stored content."""
+    """
+    Store a video result by downloading from provider URL and uploading to storage.
+
+    Args:
+        storage_manager: Storage manager instance
+        generation_id: ID of the generation
+        tenant_id: Tenant ID for storage isolation
+        board_id: Board ID for organization
+        storage_url: Provider's temporary URL to download from
+        format: Video format (mp4, webm, etc.)
+        width: Video width in pixels
+        height: Video height in pixels
+        duration: Video duration in seconds (optional)
+        fps: Frames per second (optional)
+
+    Returns:
+        VideoArtifact with permanent storage URL
+
+    Raises:
+        StorageException: If storage operation fails
+        httpx.HTTPError: If download fails
+    """
+    logger.info(
+        "Storing video result",
+        generation_id=generation_id,
+        provider_url=storage_url,
+        format=format,
+    )
+
+    # Download content from provider URL
+    content = await download_from_url(storage_url)
+
+    # Determine content type
+    content_type = _get_content_type_from_format("video", format)
+
+    # Upload to storage system
+    artifact_ref = await storage_manager.store_artifact(
+        artifact_id=generation_id,
+        content=content,
+        artifact_type="video",
+        content_type=content_type,
+        tenant_id=tenant_id,
+        board_id=board_id,
+    )
+
+    logger.info(
+        "Video stored successfully",
+        generation_id=generation_id,
+        storage_key=artifact_ref.storage_key,
+        storage_url=artifact_ref.storage_url,
+    )
+
+    # Return artifact with our permanent storage URL
     return VideoArtifact(
         generation_id=generation_id,
-        storage_url=storage_url,
+        storage_url=artifact_ref.storage_url,
         width=width,
         height=height,
         format=format,
@@ -159,17 +341,71 @@ async def store_video_result(
 
 
 async def store_audio_result(
+    storage_manager: StorageManager,
+    generation_id: str,
+    tenant_id: str,
+    board_id: str,
     storage_url: str,
     format: str,
-    generation_id: str,
     duration: float | None = None,
     sample_rate: int | None = None,
     channels: int | None = None,
 ) -> AudioArtifact:
-    """Create AudioArtifact from stored content."""
+    """
+    Store an audio result by downloading from provider URL and uploading to storage.
+
+    Args:
+        storage_manager: Storage manager instance
+        generation_id: ID of the generation
+        tenant_id: Tenant ID for storage isolation
+        board_id: Board ID for organization
+        storage_url: Provider's temporary URL to download from
+        format: Audio format (mp3, wav, etc.)
+        duration: Audio duration in seconds (optional)
+        sample_rate: Sample rate in Hz (optional)
+        channels: Number of audio channels (optional)
+
+    Returns:
+        AudioArtifact with permanent storage URL
+
+    Raises:
+        StorageException: If storage operation fails
+        httpx.HTTPError: If download fails
+    """
+    logger.info(
+        "Storing audio result",
+        generation_id=generation_id,
+        provider_url=storage_url,
+        format=format,
+    )
+
+    # Download content from provider URL
+    content = await download_from_url(storage_url)
+
+    # Determine content type
+    content_type = _get_content_type_from_format("audio", format)
+
+    # Upload to storage system
+    artifact_ref = await storage_manager.store_artifact(
+        artifact_id=generation_id,
+        content=content,
+        artifact_type="audio",
+        content_type=content_type,
+        tenant_id=tenant_id,
+        board_id=board_id,
+    )
+
+    logger.info(
+        "Audio stored successfully",
+        generation_id=generation_id,
+        storage_key=artifact_ref.storage_key,
+        storage_url=artifact_ref.storage_url,
+    )
+
+    # Return artifact with our permanent storage URL
     return AudioArtifact(
         generation_id=generation_id,
-        storage_url=storage_url,
+        storage_url=artifact_ref.storage_url,
         format=format,
         duration=duration,
         sample_rate=sample_rate,

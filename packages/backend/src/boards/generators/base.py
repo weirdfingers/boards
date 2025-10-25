@@ -80,19 +80,37 @@ class BaseGenerator(ABC):
 
 @runtime_checkable
 class GeneratorExecutionContext(Protocol):
-    """Typed protocol for the execution context passed to generators."""
+    """Typed protocol for the execution context passed to generators.
+
+    This protocol defines the interface that generators can use to interact
+    with storage, database, and progress tracking systems.
+    """
 
     generation_id: str
     provider_correlation_id: str
+    tenant_id: str
+    board_id: str
 
-    async def resolve_artifact(self, artifact: BaseModel) -> str: ...
+    async def resolve_artifact(self, artifact: BaseModel) -> str:
+        """Resolve an artifact to a local file path for use with provider SDKs."""
+        ...
 
-    async def store_image_result(self, *args: Any, **kwargs: Any) -> ImageArtifact: ...
+    async def store_image_result(self, *args: Any, **kwargs: Any) -> ImageArtifact:
+        """Store an image result to permanent storage."""
+        ...
 
-    async def store_video_result(self, *args: Any, **kwargs: Any) -> VideoArtifact: ...
+    async def store_video_result(self, *args: Any, **kwargs: Any) -> VideoArtifact:
+        """Store a video result to permanent storage."""
+        ...
 
-    async def store_audio_result(self, *args: Any, **kwargs: Any) -> AudioArtifact: ...
+    async def store_audio_result(self, *args: Any, **kwargs: Any) -> AudioArtifact:
+        """Store an audio result to permanent storage."""
+        ...
 
-    async def publish_progress(self, update: ProgressUpdate) -> None: ...
+    async def publish_progress(self, update: ProgressUpdate) -> None:
+        """Publish a progress update for this generation."""
+        ...
 
-    async def set_external_job_id(self, external_id: str) -> None: ...
+    async def set_external_job_id(self, external_id: str) -> None:
+        """Set the external job ID from the provider (e.g., Replicate prediction ID)."""
+        ...

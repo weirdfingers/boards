@@ -16,6 +16,7 @@ from ..jobs import repository as jobs_repo
 from ..logging import get_logger
 from ..progress.models import ProgressUpdate
 from ..progress.publisher import ProgressPublisher
+from ..storage.factory import create_storage_manager
 from .context import GeneratorExecutionContext
 from .middleware import GeneratorLoaderMiddleware
 
@@ -72,6 +73,12 @@ async def process_generation(generation_id: str) -> None:
             generator_name = gen.generator_name
             input_params = gen.input_params
             gen_id = gen.id
+            tenant_id = gen.tenant_id
+            board_id = gen.board_id
+
+        # Initialize storage manager
+        # This will use the default storage configuration from environment/config
+        storage_manager = create_storage_manager()
 
         # Validate generator exists
         generator = generator_registry.get(generator_name)
@@ -90,7 +97,7 @@ async def process_generation(generation_id: str) -> None:
             raise ValueError(f"Invalid input parameters: {e}") from e
 
         # Build context and run generator
-        context = GeneratorExecutionContext(gen_id, publisher)
+        context = GeneratorExecutionContext(gen_id, publisher, storage_manager, tenant_id, board_id)
 
         await publisher.publish_progress(
             generation_id,
@@ -111,16 +118,31 @@ async def process_generation(generation_id: str) -> None:
         )
         # TODO: Consider implementing credit refund logic on failure
         # await refund_credits(gen.user_id, gen.estimated_cost)
-        await generator.generate(typed_inputs, context)
+        output = await generator.generate(typed_inputs, context)
         logger.info(
             "Generator completed successfully",
             generator_name=generator_name,
             generation_id=generation_id,
         )
 
-        # Finalize DB
+        # Extract storage URL from the output artifact
+        storage_url: str | None = None
+        if hasattr(output, "image"):
+            image = output.image  # type: ignore[attr-defined]
+            if hasattr(image, "storage_url"):
+                storage_url = str(image.storage_url)
+        elif hasattr(output, "video"):
+            video = output.video  # type: ignore[attr-defined]
+            if hasattr(video, "storage_url"):
+                storage_url = str(video.storage_url)
+        elif hasattr(output, "audio"):
+            audio = output.audio  # type: ignore[attr-defined]
+            if hasattr(audio, "storage_url"):
+                storage_url = str(audio.storage_url)
+
+        # Finalize DB with storage URL
         async with get_async_session() as session:
-            await jobs_repo.finalize_success(session, generation_id)
+            await jobs_repo.finalize_success(session, generation_id, storage_url=storage_url)
 
         logger.info("Job finalized successfully", generation_id=generation_id)
 

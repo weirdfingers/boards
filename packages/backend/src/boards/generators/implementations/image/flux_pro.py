@@ -83,7 +83,6 @@ class FluxProGenerator(BaseGenerator):
         image_artifact = await context.store_image_result(
             storage_url=output_url,
             format="png",
-            generation_id=context.generation_id,
             width=1024,
             height=1024,
         )
