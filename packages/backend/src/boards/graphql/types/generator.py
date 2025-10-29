@@ -15,4 +15,3 @@ class GeneratorInfo:
     description: str
     artifact_type: ArtifactType
     input_schema: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
-    output_schema: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]

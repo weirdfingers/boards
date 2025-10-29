@@ -8,52 +8,46 @@ that can be used as inputs and outputs for generators.
 from pydantic import BaseModel, Field
 
 
-class AudioArtifact(BaseModel):
-    """Represents an audio file artifact from a generation."""
+class DigitalArtifact(BaseModel):
+    """Represents a digital artifact from a generation."""
 
     generation_id: str = Field(description="ID of the generation that created this artifact")
-    storage_url: str = Field(description="URL where the audio file is stored")
+    storage_url: str = Field(description="URL where the digital file is stored")
+    format: str = Field(description="Digital format (png, jpg, webp, etc.)")
+
+
+class AudioArtifact(DigitalArtifact):
+    """Represents an audio file artifact from a generation."""
+
     duration: float | None = Field(None, description="Duration in seconds")
-    format: str = Field(description="Audio format (mp3, wav, etc.)")
     sample_rate: int | None = Field(None, description="Sample rate in Hz")
     channels: int | None = Field(None, description="Number of audio channels")
 
 
-class VideoArtifact(BaseModel):
+class VideoArtifact(DigitalArtifact):
     """Represents a video file artifact from a generation."""
 
-    generation_id: str = Field(description="ID of the generation that created this artifact")
-    storage_url: str = Field(description="URL where the video file is stored")
     duration: float | None = Field(None, description="Duration in seconds")
     width: int = Field(description="Video width in pixels")
     height: int = Field(description="Video height in pixels")
-    format: str = Field(description="Video format (mp4, webm, etc.)")
     fps: float | None = Field(None, description="Frames per second")
 
 
-class ImageArtifact(BaseModel):
+class ImageArtifact(DigitalArtifact):
     """Represents an image file artifact from a generation."""
 
-    generation_id: str = Field(description="ID of the generation that created this artifact")
-    storage_url: str = Field(description="URL where the image file is stored")
     width: int = Field(description="Image width in pixels")
     height: int = Field(description="Image height in pixels")
-    format: str = Field(description="Image format (png, jpg, webp, etc.)")
 
 
-class TextArtifact(BaseModel):
+class TextArtifact(DigitalArtifact):
     """Represents a text artifact from a generation."""
 
-    generation_id: str = Field(description="ID of the generation that created this artifact")
     content: str = Field(description="The generated text content")
-    format: str = Field(default="plain", description="Text format (plain, markdown, html, etc.)")
 
 
-class LoRArtifact(BaseModel):
+class LoRArtifact(DigitalArtifact):
     """Represents a LoRA (Low-Rank Adaptation) model artifact."""
 
-    generation_id: str = Field(description="ID of the generation that created this artifact")
-    storage_url: str = Field(description="URL where the LoRA file is stored")
     base_model: str = Field(description="Base model this LoRA was trained on")
-    format: str = Field(description="LoRA format (safetensors, etc.)")
     trigger_words: list[str] | None = Field(None, description="Trigger words for this LoRA")

@@ -38,7 +38,9 @@ class TestAudioArtifact:
     def test_audio_artifact_minimal(self):
         """Test creating audio artifact with only required fields."""
         artifact = AudioArtifact(  # type: ignore
-            generation_id="gen_123", storage_url="https://example.com/audio.mp3", format="mp3"
+            generation_id="gen_123",
+            storage_url="https://example.com/audio.mp3",
+            format="mp3",
         )
 
         assert artifact.generation_id == "gen_123"
@@ -115,7 +117,10 @@ class TestTextArtifact:
     def test_valid_text_artifact(self):
         """Test creating a valid text artifact."""
         artifact = TextArtifact(
-            generation_id="gen_text", content="This is generated text content.", format="plain"
+            generation_id="gen_text",
+            content="This is generated text content.",
+            format="plain",
+            storage_url="",
         )
 
         assert artifact.generation_id == "gen_text"
@@ -124,7 +129,9 @@ class TestTextArtifact:
 
     def test_text_artifact_default_format(self):
         """Test text artifact uses default format."""
-        artifact = TextArtifact(generation_id="gen_text", content="Content")
+        artifact = TextArtifact(
+            generation_id="gen_text", content="Content", storage_url="", format="plain"
+        )
 
         assert artifact.format == "plain"
 

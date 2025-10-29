@@ -8,7 +8,7 @@ with automatic artifact resolution.
 from pydantic import BaseModel, Field
 
 from ...artifacts import AudioArtifact, VideoArtifact
-from ...base import BaseGenerator, GeneratorExecutionContext
+from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class LipsyncInput(BaseModel):
@@ -17,12 +17,6 @@ class LipsyncInput(BaseModel):
     audio_source: AudioArtifact = Field(description="Audio track for lip sync")
     video_source: VideoArtifact = Field(description="Video to sync lips in")
     prompt: str | None = Field(None, description="Optional prompt for generation")
-
-
-class LipsyncOutput(BaseModel):
-    """Output schema for lipsync generation."""
-
-    video: VideoArtifact
 
 
 class LipsyncGenerator(BaseGenerator):
@@ -35,12 +29,9 @@ class LipsyncGenerator(BaseGenerator):
     def get_input_schema(self) -> type[LipsyncInput]:
         return LipsyncInput
 
-    def get_output_schema(self) -> type[LipsyncOutput]:
-        return LipsyncOutput
-
     async def generate(
         self, inputs: LipsyncInput, context: GeneratorExecutionContext
-    ) -> LipsyncOutput:
+    ) -> GeneratorResult:
         """Generate lip-synced video."""
         # Import SDK directly
         try:
@@ -66,13 +57,12 @@ class LipsyncGenerator(BaseGenerator):
         video_artifact = await context.store_video_result(
             storage_url=result,
             format="mp4",
-            generation_id=context.generation_id,
             width=inputs.video_source.width,
             height=inputs.video_source.height,
             duration=inputs.audio_source.duration,
         )
 
-        return LipsyncOutput(video=video_artifact)
+        return GeneratorResult(outputs=[video_artifact])
 
     async def estimate_cost(self, inputs: LipsyncInput) -> float:
         """Estimate cost for lipsync generation."""

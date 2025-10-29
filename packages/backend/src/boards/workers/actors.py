@@ -97,6 +97,8 @@ async def process_generation(generation_id: str) -> None:
             raise ValueError(f"Invalid input parameters: {e}") from e
 
         # Build context and run generator
+        # TODO(generators): make a way for a generator to add additional generations
+        # based on eg outputs=4, or similar.
         context = GeneratorExecutionContext(gen_id, publisher, storage_manager, tenant_id, board_id)
 
         await publisher.publish_progress(
@@ -126,6 +128,8 @@ async def process_generation(generation_id: str) -> None:
         )
 
         # Extract storage URL from the output artifact
+        # TODO(generators): this code is supposed to be generalized, but is
+        # specific to the known outputs. why do we need a unique output type for each generator?
         storage_url: str | None = None
         if hasattr(output, "image"):
             image = output.image  # type: ignore[attr-defined]
@@ -141,6 +145,7 @@ async def process_generation(generation_id: str) -> None:
                 storage_url = str(audio.storage_url)
 
         # Finalize DB with storage URL
+        # TODO(generators): finalizing here and then finalizing again below, bug?
         async with get_async_session() as session:
             await jobs_repo.finalize_success(session, generation_id, storage_url=storage_url)
 

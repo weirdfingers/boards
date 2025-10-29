@@ -411,3 +411,62 @@ async def store_audio_result(
         sample_rate=sample_rate,
         channels=channels,
     )
+
+
+async def store_text_result(
+    storage_manager: StorageManager,
+    generation_id: str,
+    tenant_id: str,
+    board_id: str,
+    content: str,
+    format: str,
+) -> TextArtifact:
+    """
+    Store a text result by uploading to storage.
+
+    Args:
+        storage_manager: Storage manager instance
+        generation_id: ID of the generation
+        tenant_id: Tenant ID for storage isolation
+        board_id: Board ID for organization
+        content: Text content to store
+        format: Text format (plain, markdown, html, etc.)
+
+    Returns:
+        TextArtifact with permanent storage URL
+
+    Raises:
+        StorageException: If storage operation fails
+        httpx.HTTPError: If upload fails
+    """
+    logger.info(
+        "Storing text result",
+        generation_id=generation_id,
+        content=content,
+        format=format,
+    )
+
+    # Upload to storage system
+    artifact_ref = await storage_manager.store_artifact(
+        artifact_id=generation_id,
+        content=content.encode("utf-8"),
+        artifact_type="text",
+        content_type="text/plain",
+        tenant_id=tenant_id,
+        board_id=board_id,
+    )
+
+    logger.info(
+        "Text stored successfully",
+        generation_id=generation_id,
+        storage_key=artifact_ref.storage_key,
+        storage_url=artifact_ref.storage_url,
+    )
+
+    # Return artifact with our permanent storage URL
+    return TextArtifact(
+        generation_id=generation_id,
+        storage_url=artifact_ref.storage_url,
+        content=content,
+        format=format,
+    )

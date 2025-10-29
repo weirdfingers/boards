@@ -34,7 +34,6 @@ async def resolve_generators(
     result = []
     for gen in generators:
         input_schema_class = gen.get_input_schema()
-        output_schema_class = gen.get_output_schema()
 
         # Convert string artifact_type to enum
         artifact_type_enum = ArtifactType(gen.artifact_type)
@@ -45,7 +44,6 @@ async def resolve_generators(
                 description=gen.description,
                 artifact_type=artifact_type_enum,
                 input_schema=input_schema_class.model_json_schema(),
-                output_schema=output_schema_class.model_json_schema(),
             )
         )
 

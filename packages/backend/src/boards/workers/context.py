@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from ..database.connection import get_async_session
 from ..generators import resolution
@@ -16,6 +16,10 @@ logger = get_logger(__name__)
 
 
 class GeneratorExecutionContext:
+    generation_id: str
+    tenant_id: str
+    board_id: str
+
     def __init__(
         self,
         generation_id: UUID,
@@ -29,7 +33,6 @@ class GeneratorExecutionContext:
         self.storage_manager = storage_manager
         self.tenant_id = str(tenant_id)
         self.board_id = str(board_id)
-        self.provider_correlation_id = uuid4().hex
         logger.info(
             "Created execution context",
             generation_id=str(generation_id),
@@ -97,6 +100,23 @@ class GeneratorExecutionContext:
             return result
         except Exception as e:
             logger.error("Failed to store audio result", error=str(e))
+            raise
+
+    async def store_text_result(self, **kwargs):
+        """Store text generation result."""
+        logger.debug("Storing text result", generation_id=self.generation_id)
+        try:
+            result = await resolution.store_text_result(
+                storage_manager=self.storage_manager,
+                generation_id=self.generation_id,
+                tenant_id=self.tenant_id,
+                board_id=self.board_id,
+                **kwargs,
+            )
+            logger.info("Text result stored", generation_id=self.generation_id)
+            return result
+        except Exception as e:
+            logger.error("Failed to store text result", error=str(e))
             raise
 
     async def publish_progress(self, update: ProgressUpdate) -> None:

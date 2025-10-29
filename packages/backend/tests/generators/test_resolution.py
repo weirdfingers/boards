@@ -49,7 +49,9 @@ class TestResolveArtifact:
     async def test_resolve_remote_file(self):
         """Test resolving artifact that needs to be downloaded."""
         artifact = AudioArtifact(  # type: ignore
-            generation_id="test", storage_url="https://example.com/audio.mp3", format="mp3"
+            generation_id="test",
+            storage_url="https://example.com/audio.mp3",
+            format="mp3",
         )
 
         # Mock the download function
@@ -64,7 +66,12 @@ class TestResolveArtifact:
     @pytest.mark.asyncio
     async def test_resolve_text_artifact_fails(self):
         """Test that resolving TextArtifact raises an error."""
-        artifact = TextArtifact(generation_id="test", content="Some text content")
+        artifact = TextArtifact(
+            generation_id="test",
+            content="Some text content",
+            storage_url="",
+            format="plain",
+        )
 
         with pytest.raises(ValueError, match="TextArtifact cannot be resolved to a file path"):
             await resolve_artifact(artifact)  # type: ignore
