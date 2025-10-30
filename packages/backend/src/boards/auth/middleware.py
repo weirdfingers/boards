@@ -6,6 +6,8 @@ from uuid import UUID
 
 from fastapi import Header, HTTPException
 
+from ..database.connection import get_async_session
+from ..database.seed_data import ensure_tenant
 from ..logging import get_logger
 from .adapters.base import AuthenticationError
 from .context import DEFAULT_TENANT_UUID, AuthContext
@@ -96,9 +98,6 @@ async def get_auth_context(
 
         # Resolve tenant slug to UUID and perform JIT user provisioning
         try:
-            from ..database.connection import get_async_session
-            from ..database.seed_data import ensure_tenant
-
             async with get_async_session() as db:
                 # Ensure tenant exists and get its UUID
                 tenant_uuid = await ensure_tenant(db, slug=tenant_slug)
@@ -110,45 +109,6 @@ async def get_auth_context(
                 user_id=str(user_id),
                 tenant_uuid=str(tenant_uuid),
                 tenant_slug=tenant_slug,
-            )
-        except ImportError as e:
-            # Database module not available, use deterministic fallback
-            logger.warning(
-                "Database connection not available, using fallback user ID generation",
-                error=str(e),
-                principal_provider=principal.get("provider"),
-                principal_subject=principal.get("subject"),
-                fallback_mode="deterministic_uuid",
-            )
-
-            # Create a deterministic UUID based on principal's subject and provider
-            # This ensures the same user gets the same ID across requests
-            import hashlib
-
-            provider = principal.get("provider", "unknown")
-            subject = principal.get("subject", "anonymous")
-            stable_input = f"{provider}:{subject}:{tenant_slug}"
-            user_id_hash = hashlib.sha256(stable_input.encode()).hexdigest()[:32]
-            # Create a valid UUID from the hash
-            # Format hash as UUID: 8-4-4-4-12 pattern
-            formatted_uuid = (
-                f"{user_id_hash[:8]}-{user_id_hash[8:12]}-"
-                f"{user_id_hash[12:16]}-{user_id_hash[16:20]}-"
-                f"{user_id_hash[20:32]}"
-            )
-            from uuid import UUID
-
-            user_id = UUID(formatted_uuid)
-
-            # Also resolve tenant_uuid in fallback mode
-            tenant_uuid = await _resolve_tenant_uuid(tenant_slug)
-
-            logger.info(
-                "Generated deterministic fallback user ID",
-                user_id=str(user_id),
-                tenant_uuid=str(tenant_uuid),
-                tenant_slug=tenant_slug,
-                provider=principal.get("provider"),
             )
         except Exception as db_error:
             # Database connection failed, use the same deterministic fallback

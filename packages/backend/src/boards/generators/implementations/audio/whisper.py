@@ -6,8 +6,8 @@ Demonstrates audio processing generator that outputs text.
 
 from pydantic import BaseModel, Field
 
-from ...artifacts import AudioArtifact, TextArtifact
-from ...base import BaseGenerator, GeneratorExecutionContext
+from ...artifacts import AudioArtifact
+from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class WhisperInput(BaseModel):
@@ -16,12 +16,6 @@ class WhisperInput(BaseModel):
     audio_source: AudioArtifact = Field(description="Audio file to transcribe")
     language: str = Field(default="en", description="Language code (e.g., 'en', 'es', 'fr')")
     prompt: str = Field(default="", description="Optional prompt to guide transcription")
-
-
-class WhisperOutput(BaseModel):
-    """Output schema for Whisper transcription."""
-
-    text: TextArtifact
 
 
 class WhisperGenerator(BaseGenerator):
@@ -34,15 +28,12 @@ class WhisperGenerator(BaseGenerator):
     def get_input_schema(self) -> type[WhisperInput]:
         return WhisperInput
 
-    def get_output_schema(self) -> type[WhisperOutput]:
-        return WhisperOutput
-
     async def generate(
         self, inputs: WhisperInput, context: GeneratorExecutionContext
-    ) -> WhisperOutput:
+    ) -> GeneratorResult:
         """Transcribe audio using OpenAI Whisper."""
         try:
-            from openai import AsyncOpenAI  # type: ignore
+            from openai import AsyncOpenAI
         except ImportError as e:
             raise ValueError("Required dependencies not available") from e
 
@@ -61,11 +52,12 @@ class WhisperGenerator(BaseGenerator):
             )
 
         # Create text artifact
-        text_artifact = TextArtifact(
-            generation_id=context.generation_id, content=transcript.text, format="plain"
+        text_artifact = await context.store_text_result(
+            content=transcript.text,
+            format="plain",
         )
 
-        return WhisperOutput(text=text_artifact)
+        return GeneratorResult(outputs=[text_artifact])
 
     async def estimate_cost(self, inputs: WhisperInput) -> float:
         """Estimate cost for Whisper transcription."""

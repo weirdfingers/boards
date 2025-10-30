@@ -97,6 +97,8 @@ async def process_generation(generation_id: str) -> None:
             raise ValueError(f"Invalid input parameters: {e}") from e
 
         # Build context and run generator
+        # TODO(generators): make a way for a generator to add additional generations
+        # based on eg outputs=4, or similar.
         context = GeneratorExecutionContext(gen_id, publisher, storage_manager, tenant_id, board_id)
 
         await publisher.publish_progress(
@@ -125,29 +127,42 @@ async def process_generation(generation_id: str) -> None:
             generation_id=generation_id,
         )
 
-        # Extract storage URL from the output artifact
-        storage_url: str | None = None
-        if hasattr(output, "image"):
-            image = output.image  # type: ignore[attr-defined]
-            if hasattr(image, "storage_url"):
-                storage_url = str(image.storage_url)
-        elif hasattr(output, "video"):
-            video = output.video  # type: ignore[attr-defined]
-            if hasattr(video, "storage_url"):
-                storage_url = str(video.storage_url)
-        elif hasattr(output, "audio"):
-            audio = output.audio  # type: ignore[attr-defined]
-            if hasattr(audio, "storage_url"):
-                storage_url = str(audio.storage_url)
+        # Find the artifact with matching generation_id
+        # Generators should return exactly one artifact with the matching generation_id
+        matching_artifacts = [art for art in output.outputs if art.generation_id == generation_id]
 
-        # Finalize DB with storage URL
+        if len(matching_artifacts) == 0:
+            raise RuntimeError(
+                f"No artifact found with generation_id {generation_id} in generator output. "
+                f"Generator returned {len(output.outputs)} artifact(s) but none matched."
+            )
+
+        if len(matching_artifacts) > 1:
+            logger.warning(
+                "Generator returned multiple artifacts with same generation_id, using first one",
+                generation_id=generation_id,
+                artifact_count=len(matching_artifacts),
+            )
+
+        artifact = matching_artifacts[0]
+
+        # Extract storage URL and convert artifact to dict
+        storage_url = artifact.storage_url
+        output_metadata = artifact.model_dump()
+
+        # Finalize DB with storage URL and output metadata
         async with get_async_session() as session:
-            await jobs_repo.finalize_success(session, generation_id, storage_url=storage_url)
+            await jobs_repo.finalize_success(
+                session,
+                generation_id,
+                storage_url=storage_url,
+                output_metadata=output_metadata,
+            )
 
         logger.info("Job finalized successfully", generation_id=generation_id)
 
-        # Publish completion
-        await publisher.publish_progress(
+        # Publish completion (DB already updated by finalize_success)
+        await publisher.publish_only(
             generation_id,
             ProgressUpdate(
                 job_id=generation_id,

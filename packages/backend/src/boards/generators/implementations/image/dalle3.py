@@ -8,8 +8,7 @@ import os
 
 from pydantic import BaseModel, Field
 
-from ...artifacts import ImageArtifact
-from ...base import BaseGenerator, GeneratorExecutionContext
+from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class DallE3Input(BaseModel):
@@ -25,12 +24,6 @@ class DallE3Input(BaseModel):
     style: str = Field(default="vivid", description="Image style", pattern="^(vivid|natural)$")
 
 
-class DallE3Output(BaseModel):
-    """Output schema for DALL-E 3 generation."""
-
-    image: ImageArtifact
-
-
 class DallE3Generator(BaseGenerator):
     """DALL-E 3 image generator using OpenAI API."""
 
@@ -41,12 +34,9 @@ class DallE3Generator(BaseGenerator):
     def get_input_schema(self) -> type[DallE3Input]:
         return DallE3Input
 
-    def get_output_schema(self) -> type[DallE3Output]:
-        return DallE3Output
-
     async def generate(
         self, inputs: DallE3Input, context: GeneratorExecutionContext
-    ) -> DallE3Output:
+    ) -> GeneratorResult:
         """Generate image using OpenAI DALL-E 3."""
         # Check for API key
         if not os.getenv("OPENAI_API_KEY"):
@@ -86,7 +76,7 @@ class DallE3Generator(BaseGenerator):
             height=height,
         )
 
-        return DallE3Output(image=image_artifact)
+        return GeneratorResult(outputs=[image_artifact])
 
     async def estimate_cost(self, inputs: DallE3Input) -> float:
         """Estimate cost for DALL-E 3 generation."""

@@ -12,8 +12,7 @@ from collections.abc import AsyncIterator
 
 from pydantic import BaseModel, Field
 
-from ...artifacts import ImageArtifact
-from ...base import BaseGenerator, GeneratorExecutionContext
+from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class FluxProInput(BaseModel):
@@ -28,12 +27,6 @@ class FluxProInput(BaseModel):
     safety_tolerance: int = Field(default=2, ge=1, le=5, description="Safety tolerance level (1-5)")
 
 
-class FluxProOutput(BaseModel):
-    """Output schema for FLUX.1.1 Pro generation."""
-
-    image: ImageArtifact
-
-
 class FluxProGenerator(BaseGenerator):
     """FLUX.1.1 Pro image generator using Replicate."""
 
@@ -44,12 +37,9 @@ class FluxProGenerator(BaseGenerator):
     def get_input_schema(self) -> type[FluxProInput]:
         return FluxProInput
 
-    def get_output_schema(self) -> type[FluxProOutput]:
-        return FluxProOutput
-
     async def generate(
         self, inputs: FluxProInput, context: GeneratorExecutionContext
-    ) -> FluxProOutput:
+    ) -> GeneratorResult:
         """Generate image using Replicate FLUX.1.1 Pro model."""
         # Check for API key
         if not os.getenv("REPLICATE_API_TOKEN"):
@@ -87,7 +77,7 @@ class FluxProGenerator(BaseGenerator):
             height=1024,
         )
 
-        return FluxProOutput(image=image_artifact)
+        return GeneratorResult(outputs=[image_artifact])
 
     async def estimate_cost(self, inputs: FluxProInput) -> float:
         """Estimate cost for FLUX.1.1 Pro generation."""

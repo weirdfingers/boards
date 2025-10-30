@@ -9,11 +9,10 @@ import pytest
 from pydantic import ValidationError
 
 from boards.generators.artifacts import ImageArtifact
-from boards.generators.base import GeneratorExecutionContext
+from boards.generators.base import GeneratorExecutionContext, GeneratorResult
 from boards.generators.implementations.image.flux_pro import (
     FluxProGenerator,
     FluxProInput,
-    FluxProOutput,
 )
 
 
@@ -69,11 +68,6 @@ class TestFluxProGenerator:
         schema_class = self.generator.get_input_schema()
         assert schema_class == FluxProInput
 
-    def test_output_schema(self):
-        """Test output schema."""
-        schema_class = self.generator.get_output_schema()
-        assert schema_class == FluxProOutput
-
     @pytest.mark.asyncio
     async def test_generate_missing_api_key(self):
         """Test generation fails when API key is missing."""
@@ -102,6 +96,9 @@ class TestFluxProGenerator:
                     raise NotImplementedError
 
                 async def store_audio_result(self, *args, **kwargs):
+                    raise NotImplementedError
+
+                async def store_text_result(self, *args, **kwargs):
                     raise NotImplementedError
 
                 async def publish_progress(self, update):
@@ -170,6 +167,9 @@ class TestFluxProGenerator:
                 async def store_audio_result(self, *args, **kwargs):
                     raise NotImplementedError
 
+                async def store_text_result(self, *args, **kwargs):
+                    raise NotImplementedError
+
                 async def publish_progress(self, update):
                     return None
 
@@ -179,8 +179,8 @@ class TestFluxProGenerator:
             result = await self.generator.generate(input_data, DummyCtx())
 
             # Verify result
-            assert isinstance(result, FluxProOutput)
-            assert result.image == mock_artifact
+            assert isinstance(result, GeneratorResult)
+            assert result.outputs == [mock_artifact]
 
             # Verify API calls
             mock_replicate.async_run.assert_called_once_with(
@@ -243,6 +243,9 @@ class TestFluxProGenerator:
                 async def store_audio_result(self, *args, **kwargs):
                     raise NotImplementedError
 
+                async def store_text_result(self, *args, **kwargs):
+                    raise NotImplementedError
+
                 async def publish_progress(self, update):
                     return None
 
@@ -251,8 +254,8 @@ class TestFluxProGenerator:
 
             result = await self.generator.generate(input_data, DummyCtx())
 
-            assert isinstance(result, FluxProOutput)
-            assert result.image == mock_artifact
+            assert isinstance(result, GeneratorResult)
+            assert result.outputs == [mock_artifact]
 
     @pytest.mark.asyncio
     async def test_estimate_cost(self):

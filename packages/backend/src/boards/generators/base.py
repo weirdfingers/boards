@@ -3,12 +3,24 @@ Base generator classes and interfaces for the Boards generators system.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
 from ..progress.models import ProgressUpdate
-from .artifacts import AudioArtifact, ImageArtifact, VideoArtifact
+from .artifacts import (
+    AudioArtifact,
+    DigitalArtifact,
+    ImageArtifact,
+    TextArtifact,
+    VideoArtifact,
+)
+
+
+class GeneratorResult(BaseModel):
+    """All generators return a list of urls to the artifacts they produce."""
+
+    outputs: list[DigitalArtifact]
 
 
 class BaseGenerator(ABC):
@@ -35,7 +47,9 @@ class BaseGenerator(ABC):
         pass
 
     @abstractmethod
-    async def generate(self, inputs: BaseModel, context: "GeneratorExecutionContext") -> BaseModel:
+    async def generate(
+        self, inputs: BaseModel, context: "GeneratorExecutionContext"
+    ) -> GeneratorResult:
         """
         Execute the generation process using the provided inputs.
 
@@ -60,20 +74,6 @@ class BaseGenerator(ABC):
         """
         pass
 
-    def get_output_schema(self) -> type[BaseModel]:
-        """
-        Return the Pydantic model class that defines the output schema for this generator.
-
-        By default, this assumes the generate method returns the output directly.
-        Override this method if you need custom output schema definition.
-
-        Returns:
-            Type[BaseModel]: Pydantic model class for output validation
-        """
-        # This is a simple default implementation
-        # Generators can override this if they need custom output schemas
-        return BaseModel
-
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}(name='{self.name}', type='{self.artifact_type}')>"
 
@@ -86,25 +86,49 @@ class GeneratorExecutionContext(Protocol):
     with storage, database, and progress tracking systems.
     """
 
-    generation_id: str
-    provider_correlation_id: str
-    tenant_id: str
-    board_id: str
-
-    async def resolve_artifact(self, artifact: BaseModel) -> str:
+    async def resolve_artifact(self, artifact: DigitalArtifact) -> str:
         """Resolve an artifact to a local file path for use with provider SDKs."""
         ...
 
-    async def store_image_result(self, *args: Any, **kwargs: Any) -> ImageArtifact:
+    async def store_image_result(
+        self,
+        storage_url: str,
+        format: str,
+        width: int,
+        height: int,
+    ) -> ImageArtifact:
         """Store an image result to permanent storage."""
         ...
 
-    async def store_video_result(self, *args: Any, **kwargs: Any) -> VideoArtifact:
+    async def store_video_result(
+        self,
+        storage_url: str,
+        format: str,
+        width: int,
+        height: int,
+        duration: float | None = None,
+        fps: float | None = None,
+    ) -> VideoArtifact:
         """Store a video result to permanent storage."""
         ...
 
-    async def store_audio_result(self, *args: Any, **kwargs: Any) -> AudioArtifact:
+    async def store_audio_result(
+        self,
+        storage_url: str,
+        format: str,
+        duration: float | None = None,
+        sample_rate: int | None = None,
+        channels: int | None = None,
+    ) -> AudioArtifact:
         """Store an audio result to permanent storage."""
+        ...
+
+    async def store_text_result(
+        self,
+        content: str,
+        format: str,
+    ) -> TextArtifact:
+        """Store a text result to permanent storage."""
         ...
 
     async def publish_progress(self, update: ProgressUpdate) -> None:
