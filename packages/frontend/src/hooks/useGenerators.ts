@@ -11,7 +11,6 @@ interface Generator {
   description: string;
   artifactType: ArtifactType;
   inputSchema: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
 }
 
 interface UseGeneratorsOptions {

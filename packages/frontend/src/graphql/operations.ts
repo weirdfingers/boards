@@ -114,7 +114,6 @@ export const GET_GENERATORS = gql`
       description
       artifactType
       inputSchema
-      outputSchema
     }
   }
 `;
