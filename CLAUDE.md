@@ -32,29 +32,42 @@ make install              # Install all dependencies (Python and Node)
 make docker-up           # Start PostgreSQL and Redis
 
 # Development
-make dev                 # Start all development servers
+make dev                 # Start all development servers (backend + frontend)
+make dev-backend         # Start backend development server only
+make dev-worker          # Start background worker (development)
+make dev-worker-watch    # Start background worker with auto-reload (requires entr)
+make dev-frontend        # Start frontend development servers only
+make dev-example-nextjs  # Start example Next.js development server
 pnpm turbo dev          # Alternative: start dev servers via Turbo
 
 # Documentation
 make docs               # Start documentation development server
-make docs-dev           # Start documentation development server (same as above)
-make docs-build         # Build documentation for production
-make docs-serve         # Serve built documentation
+make dev-docs           # Start documentation development server (same as above)
+make build-docs         # Build documentation for production
+make serve-docs         # Serve built documentation
 
 # Testing
 make test               # Run all tests (Python pytest + Node tests)
-pnpm turbo test         # Run Node tests only
+make test-backend       # Run backend (Python) tests only
+make test-frontend      # Run frontend (Node) tests only
+pnpm turbo test         # Run Node tests only via Turbo
 uv run pytest tests/    # Run Python tests in a specific package
 
 # Code Quality
 make lint               # Run all linters (ruff, pyright for Python; ESLint for JS)
-make typecheck          # Run TypeScript type checking
-pnpm turbo lint         # Run Node linters only
-pnpm turbo typecheck    # Run TypeScript checking only
+make lint-backend       # Lint backend (Python) only
+make lint-frontend      # Lint frontend (Node) only
+make typecheck          # Run all type checking (Python and TypeScript)
+make typecheck-backend  # Typecheck backend (Python) only
+make typecheck-frontend # Typecheck frontend (TypeScript) only
+pnpm turbo lint         # Run Node linters only via Turbo
+pnpm turbo typecheck    # Run TypeScript checking only via Turbo
 
 # Building
 make build              # Build all packages (Python and Node)
-pnpm turbo build        # Build Node packages only
+make build-backend      # Build backend (Python) only
+make build-frontend     # Build frontend (Node) only
+pnpm turbo build        # Build Node packages only via Turbo
 
 # Docker Services
 make docker-up          # Start PostgreSQL and Redis
@@ -63,6 +76,11 @@ make docker-logs        # View service logs
 
 # Cleanup
 make clean              # Remove all build artifacts and dependencies
+make clean-backend      # Clean backend (Python) artifacts only
+make clean-frontend     # Clean frontend (Node) artifacts only
+
+# Other
+make help               # Show all available Makefile commands
 ```
 
 ## Development Workflow

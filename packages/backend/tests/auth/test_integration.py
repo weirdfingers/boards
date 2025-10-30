@@ -49,7 +49,7 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    @patch("boards.database.seed_data.ensure_tenant")
+    @patch("boards.auth.middleware.ensure_tenant")
     def test_none_auth_integration(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test end-to-end authentication with none adapter."""
         # Setup mocks
@@ -137,7 +137,7 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    @patch("boards.database.seed_data.ensure_tenant")
+    @patch("boards.auth.middleware.ensure_tenant")
     def test_tenant_header(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test tenant header is processed correctly."""
         # Setup mocks
@@ -197,7 +197,7 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    @patch("boards.database.seed_data.ensure_tenant")
+    @patch("boards.auth.middleware.ensure_tenant")
     def test_jit_provisioning_called(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test that JIT provisioning is called correctly."""
         # Setup mocks - JIT provisioning is now called since database module is available
@@ -240,7 +240,7 @@ class TestAuthIntegration:
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "none"})
     @patch("boards.auth.middleware.ensure_local_user")
-    @patch("boards.database.seed_data.ensure_tenant")
+    @patch("boards.auth.middleware.ensure_tenant")
     def test_database_error_handling(self, mock_ensure_tenant, mock_ensure_user, client):
         """Test handling of database errors."""
 
