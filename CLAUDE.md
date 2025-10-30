@@ -159,3 +159,19 @@ grep -r "fieldName" packages/frontend apps/example-nextjs
 # 4. Run typecheck to catch any missed TypeScript references
 make typecheck
 ```
+
+### Git Commit Policy
+**IMPORTANT**: Claude Code must NEVER commit changes to git without being explicitly instructed to do so by the user.
+
+Claude Code should:
+- Make code changes as requested
+- Run tests and verify changes
+- Show git status and explain what files have been modified
+- Suggest commit messages if helpful
+
+But Claude Code must NOT:
+- Run `git add` commands
+- Run `git commit` commands
+- Run `git push` commands
+
+Unless the user explicitly asks for commits to be made.

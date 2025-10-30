@@ -16,10 +16,6 @@ logger = get_logger(__name__)
 
 
 class GeneratorExecutionContext:
-    generation_id: str
-    tenant_id: str
-    board_id: str
-
     def __init__(
         self,
         generation_id: UUID,

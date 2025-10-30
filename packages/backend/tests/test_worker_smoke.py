@@ -111,12 +111,23 @@ async def test_worker_integration(
     except Exception:
         pass
 
-    # Mock Redis progress publishing (avoid Redis dependency)
+    # Mock Redis client to avoid Redis dependency
+    # This prevents ProgressPublisher.__init__ from trying to connect to Redis
+    mock_redis = AsyncMock()
+    mock_redis.publish = AsyncMock()
+    monkeypatch.setattr("boards.progress.publisher.get_redis_client", lambda: mock_redis)
+
+    # Mock Redis progress publishing methods (avoid Redis dependency)
     async def fake_publish_progress(self, generation_id: UUID, update):
         # No-op for testing
         pass
 
+    async def fake_publish_only(self, generation_id: UUID, update):
+        # No-op for testing
+        pass
+
     monkeypatch.setattr(ProgressPublisher, "publish_progress", fake_publish_progress)
+    monkeypatch.setattr(ProgressPublisher, "publish_only", fake_publish_only)
 
     # Configure storage to use tmp_path (local filesystem)
     # Unset Supabase env vars if present to force local storage
