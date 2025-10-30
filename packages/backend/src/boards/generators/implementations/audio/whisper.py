@@ -55,7 +55,6 @@ class WhisperGenerator(BaseGenerator):
         text_artifact = await context.store_text_result(
             content=transcript.text,
             format="plain",
-            storage_url="",
         )
 
         return GeneratorResult(outputs=[text_artifact])

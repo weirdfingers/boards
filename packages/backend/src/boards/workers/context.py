@@ -51,7 +51,13 @@ class GeneratorExecutionContext:
             logger.error("Failed to resolve artifact", error=str(e))
             raise
 
-    async def store_image_result(self, **kwargs):
+    async def store_image_result(
+        self,
+        storage_url: str,
+        format: str,
+        width: int,
+        height: int,
+    ):
         """Store image generation result."""
         logger.debug("Storing image result", generation_id=self.generation_id)
         try:
@@ -60,7 +66,10 @@ class GeneratorExecutionContext:
                 generation_id=self.generation_id,
                 tenant_id=self.tenant_id,
                 board_id=self.board_id,
-                **kwargs,
+                storage_url=storage_url,
+                format=format,
+                width=width,
+                height=height,
             )
             logger.info("Image result stored", generation_id=self.generation_id)
             return result
@@ -68,7 +77,15 @@ class GeneratorExecutionContext:
             logger.error("Failed to store image result", error=str(e))
             raise
 
-    async def store_video_result(self, **kwargs):
+    async def store_video_result(
+        self,
+        storage_url: str,
+        format: str,
+        width: int,
+        height: int,
+        duration: float | None = None,
+        fps: float | None = None,
+    ):
         """Store video generation result."""
         logger.debug("Storing video result", generation_id=self.generation_id)
         try:
@@ -77,7 +94,12 @@ class GeneratorExecutionContext:
                 generation_id=self.generation_id,
                 tenant_id=self.tenant_id,
                 board_id=self.board_id,
-                **kwargs,
+                storage_url=storage_url,
+                format=format,
+                width=width,
+                height=height,
+                duration=duration,
+                fps=fps,
             )
             logger.info("Video result stored", generation_id=self.generation_id)
             return result
@@ -85,7 +107,14 @@ class GeneratorExecutionContext:
             logger.error("Failed to store video result", error=str(e))
             raise
 
-    async def store_audio_result(self, **kwargs):
+    async def store_audio_result(
+        self,
+        storage_url: str,
+        format: str,
+        duration: float | None = None,
+        sample_rate: int | None = None,
+        channels: int | None = None,
+    ):
         """Store audio generation result."""
         logger.debug("Storing audio result", generation_id=self.generation_id)
         try:
@@ -94,7 +123,11 @@ class GeneratorExecutionContext:
                 generation_id=self.generation_id,
                 tenant_id=self.tenant_id,
                 board_id=self.board_id,
-                **kwargs,
+                storage_url=storage_url,
+                format=format,
+                duration=duration,
+                sample_rate=sample_rate,
+                channels=channels,
             )
             logger.info("Audio result stored", generation_id=self.generation_id)
             return result
@@ -102,7 +135,11 @@ class GeneratorExecutionContext:
             logger.error("Failed to store audio result", error=str(e))
             raise
 
-    async def store_text_result(self, **kwargs):
+    async def store_text_result(
+        self,
+        content: str,
+        format: str,
+    ):
         """Store text generation result."""
         logger.debug("Storing text result", generation_id=self.generation_id)
         try:
@@ -111,7 +148,8 @@ class GeneratorExecutionContext:
                 generation_id=self.generation_id,
                 tenant_id=self.tenant_id,
                 board_id=self.board_id,
-                **kwargs,
+                content=content,
+                format=format,
             )
             logger.info("Text result stored", generation_id=self.generation_id)
             return result

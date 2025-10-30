@@ -3,7 +3,7 @@ Base generator classes and interfaces for the Boards generators system.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -90,19 +90,44 @@ class GeneratorExecutionContext(Protocol):
         """Resolve an artifact to a local file path for use with provider SDKs."""
         ...
 
-    async def store_image_result(self, *args: Any, **kwargs: Any) -> ImageArtifact:
+    async def store_image_result(
+        self,
+        storage_url: str,
+        format: str,
+        width: int,
+        height: int,
+    ) -> ImageArtifact:
         """Store an image result to permanent storage."""
         ...
 
-    async def store_video_result(self, *args: Any, **kwargs: Any) -> VideoArtifact:
+    async def store_video_result(
+        self,
+        storage_url: str,
+        format: str,
+        width: int,
+        height: int,
+        duration: float | None = None,
+        fps: float | None = None,
+    ) -> VideoArtifact:
         """Store a video result to permanent storage."""
         ...
 
-    async def store_audio_result(self, *args: Any, **kwargs: Any) -> AudioArtifact:
+    async def store_audio_result(
+        self,
+        storage_url: str,
+        format: str,
+        duration: float | None = None,
+        sample_rate: int | None = None,
+        channels: int | None = None,
+    ) -> AudioArtifact:
         """Store an audio result to permanent storage."""
         ...
 
-    async def store_text_result(self, *args: Any, **kwargs: Any) -> TextArtifact:
+    async def store_text_result(
+        self,
+        content: str,
+        format: str,
+    ) -> TextArtifact:
         """Store a text result to permanent storage."""
         ...
 

@@ -19,11 +19,31 @@ class ProgressPublisher:
         self._redis = get_redis_client()
 
     async def publish_progress(self, job_id: str, update: ProgressUpdate) -> None:
+        """Publish progress update to Redis and persist to database."""
         channel = f"job:{job_id}:progress"
         await self._persist_update(job_id, update)
         json_data = update.model_dump_json()
         logger.info(
             "Publishing progress update to Redis",
+            job_id=job_id,
+            channel=channel,
+            status=update.status,
+            progress=update.progress,
+            data_length=len(json_data),
+        )
+        await self._redis.publish(channel, json_data)
+        logger.debug("Progress update published successfully", job_id=job_id)
+
+    async def publish_only(self, job_id: str, update: ProgressUpdate) -> None:
+        """Publish progress update to Redis without persisting to database.
+
+        Use this when the database has already been updated separately,
+        e.g., after calling finalize_success in the repository.
+        """
+        channel = f"job:{job_id}:progress"
+        json_data = update.model_dump_json()
+        logger.info(
+            "Publishing progress update to Redis (no DB persist)",
             job_id=job_id,
             channel=channel,
             status=update.status,

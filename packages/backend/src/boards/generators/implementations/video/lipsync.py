@@ -53,9 +53,12 @@ class LipsyncGenerator(BaseGenerator):
                 },
             )
 
+        # Convert result to URL string
+        output_url = str(result)
+
         # Store output and create artifact via context
         video_artifact = await context.store_video_result(
-            storage_url=result,
+            storage_url=output_url,
             format="mp4",
             width=inputs.video_source.width,
             height=inputs.video_source.height,
