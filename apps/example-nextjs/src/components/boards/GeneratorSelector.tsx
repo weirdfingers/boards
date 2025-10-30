@@ -8,7 +8,6 @@ export interface GeneratorInfo {
   description: string;
   artifactType: string;
   inputSchema: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
 }
 
 interface GeneratorSelectorProps {
