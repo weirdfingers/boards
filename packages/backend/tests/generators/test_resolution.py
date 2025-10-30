@@ -93,18 +93,30 @@ class TestDownloadArtifactToTemp:
 
         fake_content = b"fake image content"
 
-        # Mock httpx client
+        # Mock httpx client with streaming support
         from unittest.mock import MagicMock
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
+            # Mock streaming response
             mock_response = AsyncMock()
-            mock_response.content = fake_content
-            # raise_for_status is not async in httpx
             mock_response.raise_for_status = MagicMock()
-            mock_client.get.return_value = mock_response
+
+            # Mock aiter_bytes to return chunks
+            async def mock_aiter_bytes(chunk_size=8192):
+                yield fake_content
+
+            mock_response.aiter_bytes = mock_aiter_bytes
+
+            # Mock stream context manager
+            mock_stream_context = MagicMock()
+            mock_stream_context.__aenter__ = AsyncMock(return_value=mock_response)
+            mock_stream_context.__aexit__ = AsyncMock(return_value=None)
+
+            # Make stream() a regular method, not async
+            mock_client.stream = MagicMock(return_value=mock_stream_context)
 
             result_path = await download_artifact_to_temp(artifact)
 
@@ -117,7 +129,7 @@ class TestDownloadArtifactToTemp:
                 assert content == fake_content
 
             # Verify the HTTP call was made correctly
-            mock_client.get.assert_called_once_with("https://example.com/image.png")
+            mock_client.stream.assert_called_once_with("GET", "https://example.com/image.png")
             mock_response.raise_for_status.assert_called_once()
 
             # Clean up
@@ -134,15 +146,27 @@ class TestDownloadArtifactToTemp:
             format="png",
         )
 
-        # Mock httpx client to raise an error on get
+        # Mock httpx client to raise an error on stream
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
-            # Make the get call itself raise the error
-            mock_client.get.side_effect = httpx.HTTPStatusError(
-                "404 Not Found", request=AsyncMock(), response=AsyncMock()
+            # Mock stream response to raise error
+            mock_response = AsyncMock()
+            from unittest.mock import MagicMock
+
+            mock_response.raise_for_status = MagicMock(
+                side_effect=httpx.HTTPStatusError(
+                    "404 Not Found", request=AsyncMock(), response=AsyncMock()
+                )
             )
+
+            mock_stream_context = MagicMock()
+            mock_stream_context.__aenter__ = AsyncMock(return_value=mock_response)
+            mock_stream_context.__aexit__ = AsyncMock(return_value=None)
+
+            # Make stream() a regular method, not async
+            mock_client.stream = MagicMock(return_value=mock_stream_context)
 
             with pytest.raises(httpx.HTTPStatusError):
                 await download_artifact_to_temp(artifact)
@@ -203,17 +227,27 @@ class TestStoreResults:
         local_provider.base_path = tmp_path / "storage"
         local_provider.base_path.mkdir(parents=True, exist_ok=True)
 
-        # Mock HTTP download
+        # Mock HTTP download with streaming
         from unittest.mock import MagicMock
 
+        fake_content = b"fake image data"
+
         mock_response = AsyncMock()
-        mock_response.content = b"fake image data"
-        # raise_for_status is not async in httpx
         mock_response.raise_for_status = MagicMock()
 
+        # Mock aiter_bytes to return chunks
+        async def mock_aiter_bytes(chunk_size=8192):
+            yield fake_content
+
+        mock_response.aiter_bytes = mock_aiter_bytes
+
         with patch("httpx.AsyncClient") as mock_client:
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                return_value=mock_response
+            # Mock stream context manager
+            mock_stream_context = MagicMock()
+            mock_stream_context.__aenter__ = AsyncMock(return_value=mock_response)
+            mock_stream_context.__aexit__ = AsyncMock(return_value=None)
+            mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+                return_value=mock_stream_context
             )
 
             result = await store_image_result(

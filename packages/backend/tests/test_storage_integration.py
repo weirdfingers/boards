@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -19,14 +19,27 @@ from boards.workers.context import GeneratorExecutionContext
 
 
 def create_mock_http_response(content: bytes):
-    """Helper to create a properly mocked HTTP response."""
-    from unittest.mock import MagicMock
-
+    """Helper to create a properly mocked streaming HTTP response."""
     mock_response = AsyncMock()
-    mock_response.content = content
     # raise_for_status is not async in httpx
     mock_response.raise_for_status = MagicMock()
+
+    # Mock aiter_bytes to return content in chunks
+    async def mock_aiter_bytes(chunk_size=8192):
+        if content:
+            yield content
+
+    mock_response.aiter_bytes = mock_aiter_bytes
     return mock_response
+
+
+def create_mock_stream_context(content: bytes):
+    """Helper to create a mock streaming context manager."""
+    mock_stream_context = MagicMock()
+    # Make it an async context manager
+    mock_stream_context.__aenter__ = AsyncMock(return_value=create_mock_http_response(content))
+    mock_stream_context.__aexit__ = AsyncMock(return_value=None)
+    return mock_stream_context
 
 
 @pytest.mark.asyncio
@@ -36,8 +49,9 @@ async def test_download_from_url():
     test_url = "https://example.com/test.png"
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=create_mock_http_response(test_content)
+        # stream() should return the context manager directly, not as a coroutine
+        mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+            return_value=create_mock_stream_context(test_content)
         )
 
         # Test successful download
@@ -51,8 +65,8 @@ async def test_download_from_url_empty_content():
     test_url = "https://example.com/empty.png"
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=create_mock_http_response(b"")
+        mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+            return_value=create_mock_stream_context(b"")
         )
 
         # Test empty content raises error
@@ -83,8 +97,8 @@ async def test_store_image_result_integration(tmp_path: Path):
 
     # Mock the HTTP download
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=create_mock_http_response(test_image_data)
+        mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+            return_value=create_mock_stream_context(test_image_data)
         )
 
         # Store the image result
@@ -162,8 +176,8 @@ async def test_execution_context_store_methods(tmp_path: Path):
 
     # Mock HTTP download
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=create_mock_http_response(test_image_data)
+        mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+            return_value=create_mock_stream_context(test_image_data)
         )
 
         artifact = await context.store_image_result(
@@ -278,8 +292,8 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
 
     # Mock HTTP download
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=create_mock_http_response(b"fake image content")
+        mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+            return_value=create_mock_stream_context(b"fake image content")
         )
 
         # Execute worker

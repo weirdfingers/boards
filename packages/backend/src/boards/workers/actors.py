@@ -128,14 +128,23 @@ async def process_generation(generation_id: str) -> None:
         )
 
         # Find the artifact with matching generation_id
-        artifact = next(
-            (art for art in output.outputs if art.generation_id == generation_id),
-            None,
-        )
-        if artifact is None:
+        # Generators should return exactly one artifact with the matching generation_id
+        matching_artifacts = [art for art in output.outputs if art.generation_id == generation_id]
+
+        if len(matching_artifacts) == 0:
             raise RuntimeError(
-                f"No artifact found with generation_id {generation_id} in generator output"
+                f"No artifact found with generation_id {generation_id} in generator output. "
+                f"Generator returned {len(output.outputs)} artifact(s) but none matched."
             )
+
+        if len(matching_artifacts) > 1:
+            logger.warning(
+                "Generator returned multiple artifacts with same generation_id, using first one",
+                generation_id=generation_id,
+                artifact_count=len(matching_artifacts),
+            )
+
+        artifact = matching_artifacts[0]
 
         # Extract storage URL and convert artifact to dict
         storage_url = artifact.storage_url

@@ -136,18 +136,30 @@ async def test_worker_integration(
     monkeypatch.setenv("BOARDS_STORAGE_DEFAULT_PROVIDER", "local")
     monkeypatch.setenv("REPLICATE_API_TOKEN", "test-token")
 
-    # Mock HTTP download for storage integration
+    # Mock HTTP download for storage integration with streaming
     def create_mock_http_response(content: bytes):
         mock_response = AsyncMock()
-        mock_response.content = content
         # raise_for_status is not async in httpx
         mock_response.raise_for_status = MagicMock()
+
+        # Mock aiter_bytes to return content in chunks
+        async def mock_aiter_bytes(chunk_size=8192):
+            if content:
+                yield content
+
+        mock_response.aiter_bytes = mock_aiter_bytes
         return mock_response
+
+    def create_mock_stream_context(content: bytes):
+        mock_stream_context = MagicMock()
+        mock_stream_context.__aenter__ = AsyncMock(return_value=create_mock_http_response(content))
+        mock_stream_context.__aexit__ = AsyncMock(return_value=None)
+        return mock_stream_context
 
     # Execute the worker function
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-            return_value=create_mock_http_response(b"fake image data from replicate")
+        mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+            return_value=create_mock_stream_context(b"fake image data from replicate")
         )
 
         # Access the original function before AsyncIO middleware wrapping

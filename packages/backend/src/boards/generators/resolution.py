@@ -5,7 +5,9 @@ Artifact resolution utilities for converting Generation references to actual fil
 import os
 import tempfile
 import uuid
+from urllib.parse import urlparse
 
+import aiofiles
 import httpx
 
 from ..logging import get_logger
@@ -46,8 +48,22 @@ async def resolve_artifact(
             "TextArtifact cannot be resolved to a file path - use artifact.content directly"
         )
 
-    # Check if the storage_url is already a local file
+    # Validate that storage_url is actually a URL (not a local file path)
+    # This prevents potential security issues with paths like /etc/passwd
+    parsed = urlparse(artifact.storage_url)
+
+    # Check if it's a valid URL with a scheme (http, https, s3, etc.)
+    if parsed.scheme in ("http", "https", "s3", "gs"):
+        # It's a remote URL, download it
+        return await download_artifact_to_temp(artifact)
+
+    # If no scheme, it might be a local file path
+    # Only allow this if the file actually exists (for backward compatibility)
     if os.path.exists(artifact.storage_url):
+        logger.debug(
+            "Using local file path for artifact",
+            storage_url=artifact.storage_url,
+        )
         return artifact.storage_url
 
     # Download the file to a temporary location
@@ -76,18 +92,34 @@ async def download_artifact_to_temp(
     random_id = uuid.uuid4().hex[:8]
     temp_fd, temp_path = tempfile.mkstemp(suffix=extension, prefix=f"boards_artifact_{random_id}_")
 
+    # Set restrictive file permissions (owner read/write only: 0o600)
+    os.chmod(temp_path, 0o600)
+
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(artifact.storage_url)
-            response.raise_for_status()
+        # Stream the download to avoid loading large files into memory
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            async with client.stream("GET", artifact.storage_url) as response:
+                response.raise_for_status()
 
-            # Basic validation of content length
-            if len(response.content) == 0:
-                raise ValueError("Downloaded file is empty")
+                # Close the file descriptor returned by mkstemp and use aiofiles
+                os.close(temp_fd)
 
-            # Write content to temporary file
-            with os.fdopen(temp_fd, "wb") as temp_file:
-                temp_file.write(response.content)
+                # Stream content to file using async I/O
+                total_bytes = 0
+                async with aiofiles.open(temp_path, "wb") as temp_file:
+                    async for chunk in response.aiter_bytes(chunk_size=8192):
+                        await temp_file.write(chunk)
+                        total_bytes += len(chunk)
+
+                # Validate that we downloaded something
+                if total_bytes == 0:
+                    raise ValueError("Downloaded file is empty")
+
+                logger.debug(
+                    "Successfully downloaded artifact to temp file",
+                    temp_path=temp_path,
+                    size_bytes=total_bytes,
+                )
 
         return temp_path
 
@@ -128,6 +160,9 @@ async def download_from_url(url: str) -> bytes:
     This is used to download generated content from providers like Replicate, OpenAI, etc.
     before uploading to our permanent storage.
 
+    Note: For very large files, consider using streaming downloads directly to storage
+    instead of loading into memory.
+
     Args:
         url: URL to download from
 
@@ -140,20 +175,28 @@ async def download_from_url(url: str) -> bytes:
     """
     logger.debug("Downloading content from URL", url=url)
 
+    # Stream download to avoid loading entire file into memory at once
     async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.get(url)
-        response.raise_for_status()
+        async with client.stream("GET", url) as response:
+            response.raise_for_status()
 
-        # Validate content
-        if len(response.content) == 0:
-            raise ValueError(f"Downloaded file from {url} is empty")
+            # Collect chunks
+            chunks = []
+            total_bytes = 0
+            async for chunk in response.aiter_bytes(chunk_size=8192):
+                chunks.append(chunk)
+                total_bytes += len(chunk)
 
-        logger.info(
-            "Successfully downloaded content",
-            url=url,
-            size_bytes=len(response.content),
-        )
-        return response.content
+            # Validate content
+            if total_bytes == 0:
+                raise ValueError(f"Downloaded file from {url} is empty")
+
+            logger.info(
+                "Successfully downloaded content",
+                url=url,
+                size_bytes=total_bytes,
+            )
+            return b"".join(chunks)
 
 
 def _get_content_type_from_format(artifact_type: str, format: str) -> str:

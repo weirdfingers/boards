@@ -6,6 +6,7 @@ from uuid import UUID
 
 from ..database.connection import get_async_session
 from ..generators import resolution
+from ..generators.artifacts import AudioArtifact, ImageArtifact, TextArtifact, VideoArtifact
 from ..jobs import repository as jobs_repo
 from ..logging import get_logger
 from ..progress.models import ProgressUpdate
@@ -53,7 +54,7 @@ class GeneratorExecutionContext:
         format: str,
         width: int,
         height: int,
-    ):
+    ) -> ImageArtifact:
         """Store image generation result."""
         logger.debug("Storing image result", generation_id=self.generation_id)
         try:
@@ -81,7 +82,7 @@ class GeneratorExecutionContext:
         height: int,
         duration: float | None = None,
         fps: float | None = None,
-    ):
+    ) -> VideoArtifact:
         """Store video generation result."""
         logger.debug("Storing video result", generation_id=self.generation_id)
         try:
@@ -110,7 +111,7 @@ class GeneratorExecutionContext:
         duration: float | None = None,
         sample_rate: int | None = None,
         channels: int | None = None,
-    ):
+    ) -> AudioArtifact:
         """Store audio generation result."""
         logger.debug("Storing audio result", generation_id=self.generation_id)
         try:
@@ -135,7 +136,7 @@ class GeneratorExecutionContext:
         self,
         content: str,
         format: str,
-    ):
+    ) -> TextArtifact:
         """Store text generation result."""
         logger.debug("Storing text result", generation_id=self.generation_id)
         try:
@@ -164,8 +165,17 @@ class GeneratorExecutionContext:
         try:
             await self.publisher.publish_progress(self.generation_id, update)
         except Exception as e:
-            logger.error("Failed to publish progress", error=str(e))
+            logger.error(
+                "Failed to publish progress update - "
+                "generation will continue but progress may not be visible",
+                generation_id=self.generation_id,
+                status=update.status,
+                progress=update.progress,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             # Don't raise here - progress updates are non-critical
+            # The generation should continue even if progress updates fail
 
     async def set_external_job_id(self, external_id: str) -> None:
         """Set the external job ID from the provider."""
