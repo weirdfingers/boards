@@ -5,14 +5,11 @@ export default defineConfig({
   format: ["esm"],
   dts: true,
   clean: true,
-  shims: true,
+  shims: false,
   bundle: true,
   splitting: false,
   sourcemap: true,
   minify: false,
   target: "node20",
   outDir: "dist",
-  banner: {
-    js: "#!/usr/bin/env node",
-  },
 });

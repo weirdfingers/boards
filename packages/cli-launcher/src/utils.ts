@@ -126,8 +126,8 @@ export function isScaffolded(dir: string): boolean {
   // Check for key files that indicate scaffolding
   const keyFiles = [
     'compose.yaml',
-    'packages/web/package.json',
-    'packages/api/pyproject.toml',
+    'web/package.json',
+    'api/pyproject.toml',
   ];
 
   return keyFiles.every((file) => fs.existsSync(path.join(dir, file)));

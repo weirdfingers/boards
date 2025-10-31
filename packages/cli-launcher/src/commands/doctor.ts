@@ -61,8 +61,8 @@ export async function doctor(directory: string): Promise<void> {
     console.log(chalk.gray('  Directory:'), dir);
 
     // Check for key files
-    const webPkg = path.join(dir, 'packages/web/package.json');
-    const apiPkg = path.join(dir, 'packages/api/pyproject.toml');
+    const webPkg = path.join(dir, 'web/package.json');
+    const apiPkg = path.join(dir, 'api/pyproject.toml');
     const composeFile = path.join(dir, 'compose.yaml');
 
     console.log(
@@ -80,8 +80,8 @@ export async function doctor(directory: string): Promise<void> {
 
     // Check .env files
     console.log(chalk.cyan('\n🔐 Environment:'));
-    const webEnv = path.join(dir, 'packages/web/.env');
-    const apiEnv = path.join(dir, 'packages/api/.env');
+    const webEnv = path.join(dir, 'web/.env');
+    const apiEnv = path.join(dir, 'api/.env');
     const dockerEnv = path.join(dir, 'docker/.env');
 
     console.log(
@@ -113,8 +113,8 @@ export async function doctor(directory: string): Promise<void> {
 
     // Check config files
     console.log(chalk.cyan('\n⚙️  Configuration:'));
-    const generatorsYaml = path.join(dir, 'packages/api/config/generators.yaml');
-    const storageYaml = path.join(dir, 'packages/api/config/storage_config.yaml');
+    const generatorsYaml = path.join(dir, 'api/config/generators.yaml');
+    const storageYaml = path.join(dir, 'api/config/storage_config.yaml');
 
     console.log(
       chalk.gray('  generators.yaml:'),

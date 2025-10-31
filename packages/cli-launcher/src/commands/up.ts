@@ -80,12 +80,12 @@ export async function up(
   await ensureEnvFiles(ctx);
 
   // Step 6: Detect missing API keys
-  const apiEnvPath = path.join(ctx.dir, 'packages/api/.env');
+  const apiEnvPath = path.join(ctx.dir, 'api/.env');
   const missingKeys = detectMissingProviderKeys(apiEnvPath);
 
   if (missingKeys.length > 0) {
     console.log(chalk.yellow('\n⚠️  Provider API keys not configured!'));
-    console.log(chalk.gray('   Add at least one API key to packages/api/.env:'));
+    console.log(chalk.gray('   Add at least one API key to api/.env:'));
     console.log(chalk.cyan('   • REPLICATE_API_KEY') + chalk.gray(' - https://replicate.com/account/api-tokens'));
     console.log(chalk.cyan('   • FAL_KEY') + chalk.gray(' - https://fal.ai/dashboard/keys'));
     console.log(chalk.cyan('   • OPENAI_API_KEY') + chalk.gray(' - https://platform.openai.com/api-keys'));
@@ -115,11 +115,22 @@ async function scaffoldProject(ctx: ProjectContext): Promise<void> {
   // Create project directory
   fs.ensureDirSync(ctx.dir);
 
-  // Copy all templates
-  fs.copySync(templatesDir, ctx.dir, {
-    overwrite: false,
-    errorOnExist: false,
-  });
+  // Copy web and api directly to root
+  fs.copySync(path.join(templatesDir, 'web'), path.join(ctx.dir, 'web'));
+  fs.copySync(path.join(templatesDir, 'api'), path.join(ctx.dir, 'api'));
+
+  // Copy root files (compose, docker, README, .gitignore)
+  const rootFiles = ['compose.yaml', 'compose.dev.yaml', 'README.md', '.gitignore'];
+  for (const file of rootFiles) {
+    const src = path.join(templatesDir, file);
+    const dest = path.join(ctx.dir, file);
+    if (fs.existsSync(src)) {
+      fs.copySync(src, dest);
+    }
+  }
+
+  // Copy docker directory
+  fs.copySync(path.join(templatesDir, 'docker'), path.join(ctx.dir, 'docker'));
 
   spinner.succeed('Templates copied');
 
@@ -138,8 +149,8 @@ async function ensureEnvFiles(ctx: ProjectContext): Promise<void> {
   const spinner = ora('Configuring environment...').start();
 
   // Web .env
-  const webEnvPath = path.join(ctx.dir, 'packages/web/.env');
-  const webEnvExamplePath = path.join(ctx.dir, 'packages/web/.env.example');
+  const webEnvPath = path.join(ctx.dir, 'web/.env');
+  const webEnvExamplePath = path.join(ctx.dir, 'web/.env.example');
 
   if (!fs.existsSync(webEnvPath) && fs.existsSync(webEnvExamplePath)) {
     let webEnv = fs.readFileSync(webEnvExamplePath, 'utf-8');
@@ -148,8 +159,8 @@ async function ensureEnvFiles(ctx: ProjectContext): Promise<void> {
   }
 
   // API .env
-  const apiEnvPath = path.join(ctx.dir, 'packages/api/.env');
-  const apiEnvExamplePath = path.join(ctx.dir, 'packages/api/.env.example');
+  const apiEnvPath = path.join(ctx.dir, 'api/.env');
+  const apiEnvExamplePath = path.join(ctx.dir, 'api/.env.example');
 
   if (!fs.existsSync(apiEnvPath) && fs.existsSync(apiEnvExamplePath)) {
     let apiEnv = fs.readFileSync(apiEnvExamplePath, 'utf-8');
@@ -299,7 +310,7 @@ function printSuccessMessage(ctx: ProjectContext, detached: boolean, hasKeyWarni
 
   if (hasKeyWarning) {
     console.log(chalk.yellow('\n⚠️  Remember to configure provider API keys!'));
-    console.log(chalk.gray('   Edit:'), chalk.cyan('packages/api/.env'));
+    console.log(chalk.gray('   Edit:'), chalk.cyan('api/.env'));
     console.log(chalk.gray('   Docs:'), chalk.cyan('https://baseboards.dev/docs/setup'));
   }
 

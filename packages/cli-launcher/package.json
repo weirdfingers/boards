@@ -13,7 +13,7 @@
     "scripts": {
         "prepare-templates": "node scripts/prepare-templates.js",
         "prebuild": "pnpm run prepare-templates",
-        "build": "tsup",
+        "build": "tsup && node scripts/add-shebang.js",
         "dev": "tsup --watch",
         "typecheck": "tsc --noEmit",
         "clean": "rm -rf dist templates"

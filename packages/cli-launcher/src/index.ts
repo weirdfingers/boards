@@ -104,37 +104,27 @@ program
   .argument("[directory]", "Project directory", ".")
   .action(doctor);
 
-// Error handling
-program.exitOverride();
-
+// Parse without exitOverride - let commander handle exits naturally
 try {
   await program.parseAsync(process.argv);
 } catch (error: unknown) {
-  const err = error as { code?: string; message?: string; stderr?: string };
-  if (err.code === "commander.help") {
-    // Help was displayed, exit cleanly
-    process.exit(0);
-  } else if (err.code === "commander.version") {
-    // Version was displayed, exit cleanly
-    process.exit(0);
-  } else {
-    // Actual error
-    console.error(chalk.red("\n❌ Error:"), err.message || "Unknown error");
+  const err = error as { message?: string; stderr?: string };
+  // Actual error (not help/version)
+  console.error(chalk.red("\n❌ Error:"), err.message || "Unknown error");
 
-    if (err.stderr) {
-      console.error(chalk.gray("\nDetails:"));
-      console.error(chalk.gray(err.stderr));
-    }
-
-    console.error(
-      chalk.yellow("\n💡 Try running:"),
-      chalk.cyan("baseboards doctor")
-    );
-    console.error(
-      chalk.yellow("📖 Documentation:"),
-      chalk.cyan("https://baseboards.dev/docs")
-    );
-
-    process.exit(1);
+  if (err.stderr) {
+    console.error(chalk.gray("\nDetails:"));
+    console.error(chalk.gray(err.stderr));
   }
+
+  console.error(
+    chalk.yellow("\n💡 Try running:"),
+    chalk.cyan("baseboards doctor")
+  );
+  console.error(
+    chalk.yellow("📖 Documentation:"),
+    chalk.cyan("https://baseboards.dev/docs")
+  );
+
+  process.exit(1);
 }
