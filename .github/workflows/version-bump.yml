@@ -65,6 +65,8 @@ jobs:
   publish-python:
     needs: bump-and-release
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,4 +112,4 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           cd packages/frontend
-          pnpm publish --access public
+          pnpm publish --access public --no-git-checks
