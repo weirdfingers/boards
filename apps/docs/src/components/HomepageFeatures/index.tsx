@@ -5,14 +5,14 @@ import styles from './styles.module.css';
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
+  icon: string;
   description: ReactNode;
 };
 
 const FeatureList: FeatureItem[] = [
   {
     title: 'Multi-modal AI Generation',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    icon: '🎨',
     description: (
       <>
         Generate and combine text, images, video, and audio using advanced AI models.
@@ -22,7 +22,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Collaborative Workspace',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    icon: '🤝',
     description: (
       <>
         Work together in real-time with your team. Share, edit, and organize ideas
@@ -32,7 +32,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Provider Integrations',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    icon: '🔌',
     description: (
       <>
         Connect with multiple AI providers and data sources. Boards integrates with
@@ -42,11 +42,11 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({title, icon, description}: FeatureItem) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        <div className={styles.featureIcon}>{icon}</div>
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>

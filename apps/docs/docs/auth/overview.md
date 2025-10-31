@@ -51,31 +51,21 @@ graph TB
 
 ### 1. Choose Your Auth Provider
 
+For development, use the built-in `NoAuthProvider`:
+
 ```typescript
 // No Auth (development only - included in core package)
 import { NoAuthProvider } from "@weirdfingers/boards";
 const authProvider = new NoAuthProvider();
-
-// JWT (self-managed - separate package)
-import { JWTAuthProvider } from "@weirdfingers/auth-jwt";
-const authProvider = new JWTAuthProvider({
-  apiUrl: "http://localhost:8088/api",
-  tenantId: "my-company",
-});
-
-// Supabase (separate package)
-import { SupabaseAuthProvider } from "@weirdfingers/auth-supabase";
-const authProvider = new SupabaseAuthProvider({
-  url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
-
-// Clerk (separate package)
-import { ClerkAuthProvider } from "@weirdfingers/auth-clerk";
-const authProvider = new ClerkAuthProvider({
-  publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-});
 ```
+
+**Production Auth Providers** (coming soon):
+- JWT (self-managed)
+- Supabase
+- Clerk
+- Auth0
+
+Until production providers are available, you can implement custom auth by extending the `BaseAuthProvider` class.
 
 ### 2. Set Up Your App
 
@@ -145,37 +135,33 @@ BOARDS_AUTH_CONFIG='{"default_user_id": "my-dev-user"}'
 
 ### Frontend Configuration
 
-Install the core package and your chosen auth provider:
+Install the core package which includes `NoAuthProvider` for development:
 
 ```bash
-# Core package (always required)
 npm install @weirdfingers/boards
-
-# Choose one or more auth providers:
-npm install @weirdfingers/auth-supabase @supabase/supabase-js
-npm install @weirdfingers/auth-clerk @clerk/clerk-js
-npm install @weirdfingers/auth-auth0 @auth0/auth0-spa-js
-npm install @weirdfingers/auth-jwt
 ```
 
-## Provider Packages
+## Auth Provider Architecture
 
-Each auth provider is in its own package to keep your bundle size minimal:
+The auth system is designed to support pluggable providers in separate packages (coming soon). This approach will keep your bundle size minimal:
 
-| Package                       | Dependencies            | Bundle Impact     |
-| ----------------------------- | ----------------------- | ----------------- |
-| `@weirdfingers/boards`        | None                    | ~15KB (core only) |
-| `@weirdfingers/auth-supabase` | `@supabase/supabase-js` | ~40KB             |
-| `@weirdfingers/auth-clerk`    | `@clerk/clerk-js`       | ~50KB             |
-| `@weirdfingers/auth-auth0`    | `@auth0/auth0-spa-js`   | ~25KB             |
-| `@weirdfingers/auth-jwt`      | None                    | ~5KB              |
+**Planned Provider Packages:**
 
-**Benefits:**
+| Package                       | Dependencies            | Status      |
+| ----------------------------- | ----------------------- | ----------- |
+| `@weirdfingers/boards`        | None                    | ✅ Available (includes NoAuthProvider) |
+| `@weirdfingers/auth-jwt`      | None                    | 🚧 Planned  |
+| `@weirdfingers/auth-supabase` | `@supabase/supabase-js` | 🚧 Planned  |
+| `@weirdfingers/auth-clerk`    | `@clerk/clerk-js`       | 🚧 Planned  |
+| `@weirdfingers/auth-auth0`    | `@auth0/auth0-spa-js`   | 🚧 Planned  |
+
+**Benefits of this architecture:**
 
 - 🌲 **Tree-shakable**: Only bundle what you use
 - 📦 **Small bundles**: Core package is tiny
 - 🔄 **Easy migration**: Swap providers without breaking changes
 - 🛡️ **Type-safe**: Full TypeScript support
+- 🔧 **Extensible**: Implement custom providers by extending `BaseAuthProvider`
 
 ## Next Steps
 

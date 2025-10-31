@@ -20,13 +20,72 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Backend Development",
       collapsed: false,
-      items: ["backend/getting-started", "backend/migrations"],
+      items: [
+        "backend/index",
+        "backend/getting-started",
+        "backend/graphql-api",
+        "backend/storage",
+        "backend/migrations",
+        "backend/testing",
+      ],
     },
     {
       type: "category",
       label: "Frontend Development",
       collapsed: false,
-      items: ["frontend/getting-started"],
+      items: [
+        "frontend/getting-started",
+        "frontend/configuration",
+        "frontend/ui-examples",
+        "frontend/realtime",
+        "frontend/testing",
+      ],
+    },
+    {
+      type: "category",
+      label: "Authentication & Authorization",
+      collapsed: false,
+      items: [
+        "auth/overview",
+        {
+          type: "category",
+          label: "Backend",
+          collapsed: true,
+          items: [
+            "auth/backend/auth-adapters",
+            "auth/backend/authorization",
+          ],
+        },
+        {
+          type: "category",
+          label: "Frontend",
+          collapsed: true,
+          items: [
+            "auth/frontend/getting-started",
+          ],
+        },
+        {
+          type: "category",
+          label: "Auth Providers",
+          collapsed: true,
+          items: [
+            "auth/providers/none",
+            "auth/providers/jwt",
+            "auth/providers/supabase",
+          ],
+        },
+        {
+          type: "category",
+          label: "Multi-Tenancy",
+          collapsed: true,
+          items: [
+            "auth/multi-tenant",
+            "auth/tenant-setup",
+            "auth/tenant-management-api",
+            "auth/multi-tenant-deployment",
+          ],
+        },
+      ],
     },
     {
       type: "category",

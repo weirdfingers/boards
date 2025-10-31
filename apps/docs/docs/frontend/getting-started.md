@@ -141,69 +141,75 @@ function BoardsList() {
 }
 ```
 
-### useGenerations
+### useBoard
 
-Handle AI content generation with real-time progress:
+Load and manage a single board with its generations:
 
 ```tsx
-import { useGenerations } from "@weirdfingers/boards";
+import { useBoard } from "@weirdfingers/boards";
 
-function GenerationPanel({ boardId }) {
-  const { generations, createGeneration, isGenerating } =
-    useGenerations(boardId);
+function BoardDetail({ boardId }) {
+  const { board, updateBoard, deleteBoard, isLoading } = useBoard(boardId);
 
-  const handleGenerate = async () => {
-    await createGeneration({
-      boardId,
-      provider: "replicate",
-      generator: "stable-diffusion",
-      prompt: "A beautiful landscape painting",
-      params: {
-        width: 1024,
-        height: 1024,
-        steps: 20,
-      },
-    });
-  };
+  if (isLoading) return <div>Loading board...</div>;
+  if (!board) return <div>Board not found</div>;
 
   return (
     <div>
-      <button onClick={handleGenerate} disabled={isGenerating}>
-        {isGenerating ? "Generating..." : "Generate Image"}
+      <h2>{board.title}</h2>
+      <p>{board.description}</p>
+      <button onClick={() => updateBoard({ title: "Updated Title" })}>
+        Update
       </button>
-
-      {generations.map((generation) => (
-        <div key={generation.id}>
-          <div>Status: {generation.status}</div>
-          {generation.progress && <div>Progress: {generation.progress}%</div>}
-          {generation.output?.url && (
-            <img src={generation.output.url} alt={generation.prompt} />
-          )}
-        </div>
-      ))}
+      <button onClick={deleteBoard}>Delete</button>
     </div>
   );
 }
 ```
 
-### useProviders
+### useGeneration
 
-Access available AI providers and their capabilities:
+Handle AI content generation with real-time progress:
 
 ```tsx
-import { useProviders } from "@weirdfingers/boards";
+import { useGeneration } from "@weirdfingers/boards";
 
-function ProviderSelector({ onSelect }) {
-  const { providers, isLoading } = useProviders();
+function GenerationDetail({ generationId }) {
+  const { generation, isLoading } = useGeneration(generationId);
 
-  if (isLoading) return <div>Loading providers...</div>;
+  if (isLoading) return <div>Loading generation...</div>;
+  if (!generation) return <div>Generation not found</div>;
+
+  return (
+    <div>
+      <div>Status: {generation.status}</div>
+      {generation.progress && <div>Progress: {generation.progress}%</div>}
+      {generation.output?.url && (
+        <img src={generation.output.url} alt={generation.prompt || ""} />
+      )}
+    </div>
+  );
+}
+```
+
+### useGenerators
+
+Access available AI generators and their configurations:
+
+```tsx
+import { useGenerators } from "@weirdfingers/boards";
+
+function GeneratorSelector({ onSelect }) {
+  const { generators, isLoading } = useGenerators();
+
+  if (isLoading) return <div>Loading generators...</div>;
 
   return (
     <select onChange={(e) => onSelect(e.target.value)}>
-      <option value="">Select a provider</option>
-      {providers.map((provider) => (
-        <option key={provider.name} value={provider.name}>
-          {provider.displayName}
+      <option value="">Select a generator</option>
+      {generators.map((generator) => (
+        <option key={generator.id} value={generator.id}>
+          {generator.name}
         </option>
       ))}
     </select>
@@ -211,108 +217,32 @@ function ProviderSelector({ onSelect }) {
 }
 ```
 
-### useRealtime
-
-Subscribe to real-time updates:
-
-```tsx
-import { useRealtime } from "@weirdfingers/boards";
-
-function RealtimeUpdates({ boardId }) {
-  const { isConnected, lastEvent } = useRealtime({
-    topics: [`board:${boardId}`, "generations"],
-  });
-
-  return (
-    <div>
-      <div>Connection: {isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
-      {lastEvent && (
-        <div>
-          Last update: {lastEvent.type} at {lastEvent.timestamp}
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
 ## Advanced Usage
 
-### Custom Generation Progress
+### Combining Hooks
 
-Create a custom progress component with detailed feedback:
-
-```tsx
-import { useGeneration } from "@weirdfingers/boards";
-
-function GenerationProgress({ generationId }) {
-  const { generation, progress, logs } = useGeneration(generationId);
-
-  return (
-    <div className="generation-progress">
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${progress}%` }} />
-      </div>
-
-      <div className="status">Status: {generation.status}</div>
-
-      {logs.length > 0 && (
-        <div className="logs">
-          <h4>Generation Logs</h4>
-          {logs.map((log, index) => (
-            <div key={index} className={`log-entry log-${log.level}`}>
-              <span className="timestamp">{log.timestamp}</span>
-              <span className="message">{log.message}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-### Batch Operations
-
-Handle multiple generations simultaneously:
+Build complex UIs by combining multiple hooks:
 
 ```tsx
-import { useBatchGenerations } from "@weirdfingers/boards";
+import { useBoard, useGenerators } from "@weirdfingers/boards";
 
-function BatchGenerator({ boardId }) {
-  const { batchGenerate, activeBatch, isBatchRunning } =
-    useBatchGenerations(boardId);
+function BoardWithGenerators({ boardId }) {
+  const { board, isLoading: boardLoading } = useBoard(boardId);
+  const { generators, isLoading: generatorsLoading } = useGenerators();
 
-  const handleBatchGenerate = async () => {
-    const prompts = [
-      "A serene mountain landscape",
-      "A bustling city street at night",
-      "An abstract digital artwork",
-    ];
-
-    await batchGenerate({
-      provider: "replicate",
-      generator: "stable-diffusion",
-      requests: prompts.map((prompt) => ({
-        prompt,
-        params: { width: 512, height: 512 },
-      })),
-    });
-  };
+  if (boardLoading || generatorsLoading) return <div>Loading...</div>;
 
   return (
     <div>
-      <button onClick={handleBatchGenerate} disabled={isBatchRunning}>
-        Generate Batch ({activeBatch?.total || 0})
-      </button>
-
-      {activeBatch && (
-        <div>
-          Progress: {activeBatch.completed}/{activeBatch.total}({Math.round(
-            (activeBatch.completed / activeBatch.total) * 100
-          )}%)
-        </div>
-      )}
+      <h2>{board.title}</h2>
+      <div className="generators">
+        {generators.map((generator) => (
+          <div key={generator.id}>
+            <h3>{generator.name}</h3>
+            <p>{generator.description}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
