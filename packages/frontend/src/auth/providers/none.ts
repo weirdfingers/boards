@@ -43,7 +43,7 @@ export class NoAuthProvider extends BaseAuthProvider {
       const warning =
         "NoAuthProvider is being used in a production environment. " +
         "This means authentication is disabled! " +
-        "For production use, configure a proper authentication provider (JWT, Supabase, Clerk, etc.)";
+        "For production use on a server that is visible to the public, configure a proper authentication provider (JWT, Supabase, Clerk, etc.)";
       console.warn("⚠️  SECURITY WARNING:", warning);
     }
 
