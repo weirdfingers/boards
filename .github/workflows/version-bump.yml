@@ -79,11 +79,10 @@ jobs:
           uv build
       - name: Publish to PyPI
         env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           cd packages/backend
-          uv publish
+          uv publish --token $UV_PUBLISH_TOKEN
 
   publish-npm:
     needs: bump-and-release
