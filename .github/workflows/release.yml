@@ -5,43 +5,29 @@ on:
     types: [published]
 
 jobs:
-  detect-packages:
+  extract-version:
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.detect.outputs.packages }}
+      version: ${{ steps.extract.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Detect packages from tag
-        id: detect
+      - name: Extract version from tag
+        id: extract
         shell: bash
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          if [[ $TAG == backend@* ]]; then
-            echo "packages=[\"backend\"]" >> $GITHUB_OUTPUT
-          elif [[ $TAG == frontend@* ]]; then
-            echo "packages=[\"frontend\"]" >> $GITHUB_OUTPUT
-          else
-            echo "packages=[]" >> $GITHUB_OUTPUT
-          fi
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   release-python:
-    needs: detect-packages
-    if: contains(needs.detect-packages.outputs.packages, 'backend')
+    needs: extract-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#backend@}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Update version in src/boards/__init__.py safely
         run: |
-          python3 scripts/update_version.py "${{ steps.version.outputs.version }}" --package backend
+          python3 scripts/update_version.py "${{ needs.extract-version.outputs.version }}" --package backend
       - name: Build package
         run: |
           cd packages/backend
@@ -55,8 +41,7 @@ jobs:
           uv publish
 
   release-npm:
-    needs: detect-packages
-    if: contains(needs.detect-packages.outputs.packages, 'frontend')
+    needs: extract-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,17 +54,10 @@ jobs:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          VERSION="${TAG#frontend@}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Update version
         run: |
           cd packages/frontend
-          pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
+          pnpm version ${{ needs.extract-version.outputs.version }} --no-git-tag-version
       - name: Install dependencies
         run: pnpm install
       - name: Build package

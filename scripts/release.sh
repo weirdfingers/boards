@@ -2,15 +2,7 @@
 
 set -euo pipefail
 
-PACKAGES=("backend" "frontend")
-
-echo "Which package do you want to release?"
-select PACKAGE in "${PACKAGES[@]}"; do
-  if [[ -n $PACKAGE ]]; then
-    break
-  fi
-done
-
+echo "This will release both backend and frontend packages with the same version."
 echo "What type of version bump?"
 select BUMP in "patch" "minor" "major"; do
   if [[ -n $BUMP ]]; then
@@ -18,5 +10,5 @@ select BUMP in "patch" "minor" "major"; do
   fi
 done
 
-gh workflow run version-bump.yml -f package=$PACKAGE -f bump_type=$BUMP
-echo "Release workflow triggered for $PACKAGE ($BUMP bump)"
+gh workflow run version-bump.yml -f bump_type=$BUMP
+echo "Release workflow triggered for backend and frontend ($BUMP bump)"

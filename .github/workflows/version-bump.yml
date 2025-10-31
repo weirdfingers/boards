@@ -3,13 +3,6 @@ name: Version Bump
 on:
   workflow_dispatch:
     inputs:
-      package:
-        description: "Package to bump"
-        required: true
-        type: choice
-        options:
-          - backend
-          - frontend
       bump_type:
         description: "Bump type"
         required: true
@@ -22,6 +15,8 @@ on:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,32 +27,34 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Bump Python package version (__version__)
-        if: inputs.package == 'backend'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Bump backend version
+        id: bump
         run: |
           NEW_VERSION=$(python3 scripts/bump_version.py backend ${{ inputs.bump_type }})
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Bump npm package version (pnpm)
-        if: inputs.package == 'frontend'
+      - name: Bump frontend version to match
         run: |
           cd packages/frontend
-          pnpm version ${{ inputs.bump_type }} --no-git-tag-version
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          pnpm version ${{ steps.bump.outputs.version }} --no-git-tag-version
 
       - name: Commit and tag
         run: |
           git add .
-          git commit -m "chore: bump ${{ inputs.package }} to ${{ env.NEW_VERSION }}"
-          git tag "${{ inputs.package }}@${{ env.NEW_VERSION }}"
+          git commit -m "chore: bump to v${{ steps.bump.outputs.version }}"
+          git tag "v${{ steps.bump.outputs.version }}"
           git push origin main --tags
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "${{ inputs.package }}@${{ env.NEW_VERSION }}"
-          name: "${{ inputs.package }} v${{ env.NEW_VERSION }}"
+          tag_name: "v${{ steps.bump.outputs.version }}"
+          name: "v${{ steps.bump.outputs.version }}"
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
