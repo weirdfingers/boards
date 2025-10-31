@@ -3,13 +3,15 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "boards-backend"
+name = "weirdfingers-boards"
 dynamic = ["version"]
 description = "Backend API server for Boards - AI creative toolkit with GraphQL, auth adapters, and generation workers"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [{ name = "Boards Contributors", email = "dev@boards.io" }]
+authors = [
+    { name = "Boards Contributors", email = "ai.overlord@weirdfingers.com" },
+]
 keywords = [
     "ai",
     "creative",

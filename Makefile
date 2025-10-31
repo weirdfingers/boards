@@ -130,7 +130,7 @@ clean-frontend: ## Clean frontend (Node) artifacts only
 	@find . -path "./$(BACKEND_DIR)" -prune -o -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
 	@find . -path "./$(BACKEND_DIR)" -prune -o -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
 	@find . -path "./$(BACKEND_DIR)" -prune -o -type d -name ".turbo" -exec rm -rf {} + 2>/dev/null || true
-	@rm -f pnpm-lock.yaml package-lock.json yarn.lock
+	@rm -f package-lock.json yarn.lock
 
 docker-up: ## Start Docker services (databases, etc.)
 	docker-compose up -d
