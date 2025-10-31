@@ -1,4 +1,4 @@
-name: Version Bump
+name: Version Bump and Release
 
 on:
   workflow_dispatch:
@@ -13,10 +13,12 @@ on:
           - major
 
 jobs:
-  bump-version:
+  bump-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,3 +61,61 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-python:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Update version in src/boards/__init__.py safely
+        run: |
+          python3 scripts/update_version.py "${{ needs.bump-and-release.outputs.version }}" --package backend
+      - name: Build package
+        run: |
+          cd packages/backend
+          uv build
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          cd packages/backend
+          uv publish
+
+  publish-npm:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+      - name: Update version
+        run: |
+          cd packages/frontend
+          jq --arg version "${{ needs.bump-and-release.outputs.version }}" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build package
+        run: |
+          cd packages/frontend
+          pnpm build
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd packages/frontend
+          pnpm publish --access public
