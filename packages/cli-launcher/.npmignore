@@ -1,0 +1,19 @@
+# Source files (published package only includes dist/ and templates/)
+src/
+scripts/
+
+# Config files
+tsconfig.json
+tsup.config.ts
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+coverage/
+*.test.ts
+
+# Documentation (README is included)
+# README.md is NOT ignored

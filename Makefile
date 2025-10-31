@@ -1,7 +1,9 @@
 .PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs dev-docs docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
 
 BACKEND_DIR := packages/backend
-FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=baseboards...
+FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=example-nextjs... --filter=baseboards...  --filter=@weirdfingers/baseboards...
+DEV_FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=baseboards...
+
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -72,10 +74,10 @@ dev-worker-watch: ## Start background worker with auto-reload using entr (requir
 dev-frontend: ## Start frontend development servers only
 	@echo "Starting frontend development servers..."
 	@if command -v turbo > /dev/null 2>&1; then \
-		pnpm turbo dev $(FRONTEND_FILTER); \
+		pnpm turbo dev $(DEV_FRONTEND_FILTER); \
 	else \
 		echo "Turbo not found, running frontend package dev scripts individually..."; \
-		pnpm --parallel $(FRONTEND_FILTER) dev; \
+		pnpm --parallel $(DEV_FRONTEND_FILTER) dev; \
 	fi
 
 build-backend: ## Build backend (Python) only
