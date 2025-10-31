@@ -215,15 +215,21 @@ const webEnvExample = `# Frontend Environment Variables
 NEXT_PUBLIC_API_URL=http://localhost:8800
 NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8800/graphql
 
-# Auth Provider (choose one and configure)
+# Auth Provider
+# For local development, 'none' allows unauthenticated access
+NEXT_PUBLIC_AUTH_PROVIDER=none
+
 # Clerk
+# NEXT_PUBLIC_AUTH_PROVIDER=clerk
 # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 
 # Supabase
+# NEXT_PUBLIC_AUTH_PROVIDER=supabase
 # NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 # NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
 # Auth0
+# NEXT_PUBLIC_AUTH_PROVIDER=auth0
 # NEXT_PUBLIC_AUTH0_DOMAIN=...
 # NEXT_PUBLIC_AUTH0_CLIENT_ID=...
 `;
@@ -260,17 +266,23 @@ OPENAI_API_KEY=
 GOOGLE_API_KEY=
 
 # ============================================
-# AUTH PROVIDER (choose one)
+# AUTH PROVIDER
 # ============================================
+# For local development, 'none' allows unauthenticated access
+# For production, configure a proper provider (clerk, supabase, auth0, jwt)
+AUTH_PROVIDER=none
 
 # Clerk
+# AUTH_PROVIDER=clerk
 # CLERK_SECRET_KEY=sk_test_...
 
 # Supabase
+# AUTH_PROVIDER=supabase
 # SUPABASE_URL=https://xxx.supabase.co
 # SUPABASE_SERVICE_KEY=...
 
 # Auth0
+# AUTH_PROVIDER=auth0
 # AUTH0_DOMAIN=...
 # AUTH0_CLIENT_ID=...
 # AUTH0_CLIENT_SECRET=...

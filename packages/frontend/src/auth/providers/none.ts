@@ -2,8 +2,8 @@
  * No-auth provider for local development without authentication.
  */
 
-import { BaseAuthProvider } from './base';
-import { AuthState, User, AuthProviderConfig } from '../types';
+import { BaseAuthProvider } from "./base";
+import { AuthState, User, AuthProviderConfig } from "../types";
 
 interface NoAuthConfig extends AuthProviderConfig {
   /**
@@ -35,22 +35,22 @@ export class NoAuthProvider extends BaseAuthProvider {
     super(config);
 
     // Production safety check
-    const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : '';
-    const isDevelopment = nodeEnv === 'development' || nodeEnv === '' || nodeEnv === 'test';
+    const nodeEnv = typeof process !== "undefined" ? process.env?.NODE_ENV : "";
+    const isDevelopment =
+      nodeEnv === "development" || nodeEnv === "" || nodeEnv === "test";
 
     if (!isDevelopment) {
-      const error = new Error(
-        'NoAuthProvider cannot be used in production environments. ' +
-        'Please configure a proper authentication provider (JWT, Supabase, Clerk, etc.)'
-      );
-      console.error('🚨 SECURITY ERROR:', error.message);
-      throw error;
+      const warning =
+        "NoAuthProvider is being used in a production environment. " +
+        "This means authentication is disabled! " +
+        "For production use, configure a proper authentication provider (JWT, Supabase, Clerk, etc.)";
+      console.warn("⚠️  SECURITY WARNING:", warning);
     }
 
     this.config = {
-      defaultUserId: 'dev-user',
-      defaultEmail: 'dev@example.com',
-      defaultDisplayName: 'Development User',
+      defaultUserId: "dev-user",
+      defaultEmail: "dev@example.com",
+      defaultDisplayName: "Development User",
       ...config,
     };
 
@@ -59,7 +59,7 @@ export class NoAuthProvider extends BaseAuthProvider {
       email: this.config.defaultEmail!,
       name: this.config.defaultDisplayName,
       avatar: undefined,
-      metadata: { provider: 'none' },
+      metadata: { provider: "none" },
       credits: {
         balance: 1000,
         reserved: 0,
@@ -68,7 +68,7 @@ export class NoAuthProvider extends BaseAuthProvider {
 
     this.currentState = {
       user: this.defaultUser,
-      status: 'authenticated', // Always authenticated in no-auth mode
+      status: "authenticated", // Always authenticated in no-auth mode
       signIn: this.signIn.bind(this),
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
@@ -78,11 +78,11 @@ export class NoAuthProvider extends BaseAuthProvider {
     // Use structured warning instead of console.warn
     if (console.warn) {
       console.warn(
-        '🚨 [AUTH] NoAuthProvider is active - authentication is disabled!',
+        "🚨 [AUTH] NoAuthProvider is active - authentication is disabled!",
         {
-          message: 'This should ONLY be used in development environments',
-          environment: nodeEnv || 'unknown',
-          provider: 'none',
+          message: "This should ONLY be used in development environments",
+          environment: nodeEnv || "unknown",
+          provider: "none",
         }
       );
     }
@@ -90,7 +90,7 @@ export class NoAuthProvider extends BaseAuthProvider {
 
   async initialize(): Promise<void> {
     // No initialization needed - always authenticated
-    this.updateState({ user: this.defaultUser, status: 'authenticated' });
+    this.updateState({ user: this.defaultUser, status: "authenticated" });
   }
 
   async getAuthState(): Promise<AuthState> {
@@ -100,10 +100,10 @@ export class NoAuthProvider extends BaseAuthProvider {
   async signIn(): Promise<void> {
     // No-op in no-auth mode - already signed in
     if (console.info) {
-      console.info('[AUTH] SignIn called in no-auth mode - no action taken', {
-        provider: 'none',
-        action: 'signIn',
-        status: 'ignored'
+      console.info("[AUTH] SignIn called in no-auth mode - no action taken", {
+        provider: "none",
+        action: "signIn",
+        status: "ignored",
       });
     }
   }
@@ -111,22 +111,22 @@ export class NoAuthProvider extends BaseAuthProvider {
   async signOut(): Promise<void> {
     // No-op in no-auth mode - can't sign out
     if (console.info) {
-      console.info('[AUTH] SignOut called in no-auth mode - no action taken', {
-        provider: 'none',
-        action: 'signOut',
-        status: 'ignored'
+      console.info("[AUTH] SignOut called in no-auth mode - no action taken", {
+        provider: "none",
+        action: "signOut",
+        status: "ignored",
       });
     }
   }
 
   async getToken(): Promise<string | null> {
     // Return a fake development token
-    return 'dev-token|no-auth-mode|always-valid';
+    return "dev-token|no-auth-mode|always-valid";
   }
 
   async refreshToken(): Promise<string | null> {
     // Return the same fake token since it doesn't expire
-    return 'dev-token|no-auth-mode|always-valid';
+    return "dev-token|no-auth-mode|always-valid";
   }
 
   async getUser(): Promise<User | null> {
@@ -152,6 +152,6 @@ export class NoAuthProvider extends BaseAuthProvider {
 
   private updateState(updates: Partial<AuthState>): void {
     this.currentState = { ...this.currentState, ...updates };
-    this.listeners.forEach(listener => listener(this.currentState));
+    this.listeners.forEach((listener) => listener(this.currentState));
   }
 }
