@@ -86,6 +86,7 @@ jobs:
   publish-npm:
     needs: bump-and-release
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       id-token: write
       contents: read
@@ -104,6 +105,10 @@ jobs:
           cache: "pnpm"
       - name: Update npm to latest
         run: npm install -g npm@latest
+      - name: Verify npm version
+        run: |
+          echo "npm version: $(npm --version)"
+          echo "Required: >= 11.5.1 for OIDC trusted publishing"
       - name: Install dependencies
         run: pnpm install
       - name: Build package
