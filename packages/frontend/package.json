@@ -5,6 +5,10 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weirdfingers/boards.git"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",

@@ -17,19 +17,21 @@ This document describes how to configure PyPI and NPM to use OIDC (OpenID Connec
 2. Under "Trusted Publisher", click "Add a new publisher"
 3. Select "GitHub Actions"
 4. Configure the following:
-   - **Organization or user**: `weirdfingers`
-   - **Repository**: `boards`
-   - **Workflow filename**: `version-bump.yml`
-   - **Environment name**: (leave empty unless using GitHub environments)
+   - **Owner**: `weirdfingers`
+   - **Repository name**: `boards`
+   - **Workflow name**: `version-bump.yml`
+   - **Environment name**: `release` (STRONGLY RECOMMENDED for additional security)
 
 ### 2. Verify Workflow Configuration
 
-The workflow already includes the required OIDC permissions:
+The workflow already includes the required OIDC permissions and environment:
 
 ```yaml
-permissions:
-  id-token: write
-  contents: read
+publish-python:
+  environment: release  # Must match PyPI configuration
+  permissions:
+    id-token: write
+    contents: read
 ```
 
 ### 3. How It Works
@@ -59,15 +61,24 @@ After verifying OIDC publishing works:
    - **Organization or user**: `weirdfingers`
    - **Repository**: `boards`
    - **Workflow filename**: `version-bump.yml` (filename only, no path)
-   - **Environment name**: (leave empty unless using GitHub environments)
+   - **Environment name**: `release` (STRONGLY RECOMMENDED for additional security)
 
 ### 2. Verify Workflow Configuration
 
 The workflow already includes:
 
 - Required OIDC permissions (`id-token: write`)
+- Environment declaration (`environment: release`)
 - Updated npm to version 11.5.1+ (required for OIDC support)
 - Removed `NODE_AUTH_TOKEN` environment variable
+
+```yaml
+publish-npm:
+  environment: release  # Must match npm configuration
+  permissions:
+    id-token: write
+    contents: read
+```
 
 ### 3. How It Works
 
@@ -92,6 +103,35 @@ After verifying OIDC publishing works:
 
 1. Delete the `NPM_TOKEN` secret from GitHub repository settings
 2. Revoke any automation tokens on npmjs.com that are no longer needed
+
+## Package Configuration Requirements
+
+### NPM: Repository Field Required
+
+For npm to generate provenance attestations, your `package.json` **must** include a `repository` field that matches your GitHub repository:
+
+```json
+{
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weirdfingers/boards.git"
+  }
+}
+```
+
+Without this field, npm will reject the publish with an error like:
+```
+Error verifying sigstore provenance bundle: Failed to validate repository information
+```
+
+### PyPI: Repository URL (Optional but Recommended)
+
+While not required for OIDC, it's good practice to include repository information in your `pyproject.toml`:
+
+```toml
+[project.urls]
+Repository = "https://github.com/weirdfingers/boards"
+```
 
 ## Automatic Provenance Generation
 
