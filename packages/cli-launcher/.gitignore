@@ -1,0 +1,21 @@
+# Build outputs
+dist/
+templates/
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# Testing
+coverage/
