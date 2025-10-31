@@ -246,163 +246,6 @@ wheels = [
 ]
 
 [[package]]
-name = "boards-backend"
-source = { editable = "." }
-dependencies = [
-    { name = "aiofiles" },
-    { name = "alembic" },
-    { name = "asyncpg" },
-    { name = "click" },
-    { name = "dramatiq", extra = ["redis", "watch"] },
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "numpy" },
-    { name = "pillow" },
-    { name = "psutil" },
-    { name = "psycopg2-binary" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "pyjwt", extra = ["crypto"] },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "redis" },
-    { name = "sqlalchemy" },
-    { name = "strawberry-graphql", extra = ["fastapi"] },
-    { name = "structlog" },
-    { name = "supabase" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "aioboto3" },
-    { name = "anthropic" },
-    { name = "black" },
-    { name = "boto3" },
-    { name = "google-cloud-storage" },
-    { name = "openai" },
-    { name = "pre-commit" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-postgresql" },
-    { name = "replicate" },
-    { name = "ruff" },
-    { name = "together" },
-    { name = "types-redis" },
-]
-providers = [
-    { name = "anthropic" },
-    { name = "openai" },
-    { name = "replicate" },
-    { name = "together" },
-]
-storage-gcs = [
-    { name = "google-cloud-storage" },
-]
-storage-s3 = [
-    { name = "aioboto3" },
-    { name = "boto3" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "aioboto3" },
-    { name = "anthropic" },
-    { name = "black" },
-    { name = "boto3" },
-    { name = "build" },
-    { name = "google-cloud-storage" },
-    { name = "openai" },
-    { name = "pre-commit" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-postgresql" },
-    { name = "replicate" },
-    { name = "ruff" },
-    { name = "together" },
-    { name = "twine" },
-    { name = "types-redis" },
-    { name = "watchfiles" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aioboto3", marker = "extra == 'dev'", specifier = ">=12.0.0" },
-    { name = "aioboto3", marker = "extra == 'storage-s3'", specifier = ">=12.0.0" },
-    { name = "aiofiles", specifier = ">=23.0.0" },
-    { name = "alembic", specifier = ">=1.13.2" },
-    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.25.0" },
-    { name = "anthropic", marker = "extra == 'providers'", specifier = ">=0.25.0" },
-    { name = "asyncpg", specifier = ">=0.29.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
-    { name = "boto3", marker = "extra == 'dev'", specifier = ">=1.34.0" },
-    { name = "boto3", marker = "extra == 'storage-s3'", specifier = ">=1.34.0" },
-    { name = "click", specifier = ">=8.0.0" },
-    { name = "dramatiq", extras = ["redis", "watch"], specifier = ">=1.15.0" },
-    { name = "fastapi", specifier = ">=0.100.0" },
-    { name = "google-cloud-storage", marker = "extra == 'dev'", specifier = ">=2.10.0" },
-    { name = "google-cloud-storage", marker = "extra == 'storage-gcs'", specifier = ">=2.10.0" },
-    { name = "httpx", specifier = ">=0.24.0" },
-    { name = "numpy", specifier = ">=1.24.0" },
-    { name = "openai", marker = "extra == 'dev'", specifier = ">=1.60.1" },
-    { name = "openai", marker = "extra == 'providers'", specifier = ">=1.60.1" },
-    { name = "pillow", specifier = ">=10.0.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
-    { name = "psutil", specifier = ">=7.0.0" },
-    { name = "psycopg2-binary", specifier = ">=2.9.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "pydantic-settings", specifier = ">=2.0.0" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8.0" },
-    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "pytest-postgresql", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "pyyaml", specifier = ">=6.0.0" },
-    { name = "redis", specifier = ">=5.0.0" },
-    { name = "replicate", marker = "extra == 'dev'", specifier = ">=1.0.4" },
-    { name = "replicate", marker = "extra == 'providers'", specifier = ">=1.0.4" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.0" },
-    { name = "strawberry-graphql", extras = ["fastapi"], specifier = ">=0.200.0" },
-    { name = "structlog", specifier = ">=23.0.0" },
-    { name = "supabase", specifier = ">=2.0.0" },
-    { name = "together", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "together", marker = "extra == 'providers'", specifier = ">=1.0.0" },
-    { name = "types-redis", marker = "extra == 'dev'", specifier = ">=4.6.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.23.0" },
-]
-provides-extras = ["dev", "providers", "storage-s3", "storage-gcs"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "aioboto3", specifier = ">=12.0.0" },
-    { name = "anthropic", specifier = ">=0.25.0" },
-    { name = "black", specifier = ">=23.0.0" },
-    { name = "boto3", specifier = ">=1.34.0" },
-    { name = "build", specifier = ">=1.3.0" },
-    { name = "google-cloud-storage", specifier = ">=2.10.0" },
-    { name = "openai", specifier = ">=1.60.1" },
-    { name = "pre-commit", specifier = ">=3.0.0" },
-    { name = "pyright", specifier = ">=1.1.0" },
-    { name = "pytest", specifier = ">=7.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.21.0" },
-    { name = "pytest-cov", specifier = ">=4.0.0" },
-    { name = "pytest-postgresql", specifier = ">=6.0.0" },
-    { name = "replicate", specifier = ">=1.0.4" },
-    { name = "ruff", specifier = ">=0.1.0" },
-    { name = "together", specifier = ">=1.0.0" },
-    { name = "twine", specifier = ">=6.1.0" },
-    { name = "types-redis", specifier = ">=4.6.0" },
-    { name = "watchfiles", specifier = ">=1.1.0" },
-]
-
-[[package]]
 name = "boto3"
 version = "1.39.11"
 source = { registry = "https://pypi.org/simple" }
@@ -2809,6 +2652,163 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/86/eb/20b6cdf273913d0ad05a6a14aed4b9a85591c18a987a3d47f20fa13dcc47/websockets-15.0.1-cp313-cp313-win32.whl", hash = "sha256:ba9e56e8ceeeedb2e080147ba85ffcd5cd0711b89576b83784d8605a7df455fa", size = 176393 },
     { url = "https://files.pythonhosted.org/packages/1b/6c/c65773d6cab416a64d191d6ee8a8b1c68a09970ea6909d16965d26bfed1e/websockets-15.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:e09473f095a819042ecb2ab9465aee615bd9c2028e4ef7d933600a8401c79561", size = 176837 },
     { url = "https://files.pythonhosted.org/packages/fa/a8/5b41e0da817d64113292ab1f8247140aac61cbf6cfd085d6a0fa77f4984f/websockets-15.0.1-py3-none-any.whl", hash = "sha256:f7a866fbc1e97b5c617ee4116daaa09b722101d4a3c170c787450ba409f9736f", size = 169743 },
+]
+
+[[package]]
+name = "weirdfingers-boards"
+source = { editable = "." }
+dependencies = [
+    { name = "aiofiles" },
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "click" },
+    { name = "dramatiq", extra = ["redis", "watch"] },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "psutil" },
+    { name = "psycopg2-binary" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "pyjwt", extra = ["crypto"] },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "redis" },
+    { name = "sqlalchemy" },
+    { name = "strawberry-graphql", extra = ["fastapi"] },
+    { name = "structlog" },
+    { name = "supabase" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "aioboto3" },
+    { name = "anthropic" },
+    { name = "black" },
+    { name = "boto3" },
+    { name = "google-cloud-storage" },
+    { name = "openai" },
+    { name = "pre-commit" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-postgresql" },
+    { name = "replicate" },
+    { name = "ruff" },
+    { name = "together" },
+    { name = "types-redis" },
+]
+providers = [
+    { name = "anthropic" },
+    { name = "openai" },
+    { name = "replicate" },
+    { name = "together" },
+]
+storage-gcs = [
+    { name = "google-cloud-storage" },
+]
+storage-s3 = [
+    { name = "aioboto3" },
+    { name = "boto3" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "aioboto3" },
+    { name = "anthropic" },
+    { name = "black" },
+    { name = "boto3" },
+    { name = "build" },
+    { name = "google-cloud-storage" },
+    { name = "openai" },
+    { name = "pre-commit" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-postgresql" },
+    { name = "replicate" },
+    { name = "ruff" },
+    { name = "together" },
+    { name = "twine" },
+    { name = "types-redis" },
+    { name = "watchfiles" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aioboto3", marker = "extra == 'dev'", specifier = ">=12.0.0" },
+    { name = "aioboto3", marker = "extra == 'storage-s3'", specifier = ">=12.0.0" },
+    { name = "aiofiles", specifier = ">=23.0.0" },
+    { name = "alembic", specifier = ">=1.13.2" },
+    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.25.0" },
+    { name = "anthropic", marker = "extra == 'providers'", specifier = ">=0.25.0" },
+    { name = "asyncpg", specifier = ">=0.29.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
+    { name = "boto3", marker = "extra == 'dev'", specifier = ">=1.34.0" },
+    { name = "boto3", marker = "extra == 'storage-s3'", specifier = ">=1.34.0" },
+    { name = "click", specifier = ">=8.0.0" },
+    { name = "dramatiq", extras = ["redis", "watch"], specifier = ">=1.15.0" },
+    { name = "fastapi", specifier = ">=0.100.0" },
+    { name = "google-cloud-storage", marker = "extra == 'dev'", specifier = ">=2.10.0" },
+    { name = "google-cloud-storage", marker = "extra == 'storage-gcs'", specifier = ">=2.10.0" },
+    { name = "httpx", specifier = ">=0.24.0" },
+    { name = "numpy", specifier = ">=1.24.0" },
+    { name = "openai", marker = "extra == 'dev'", specifier = ">=1.60.1" },
+    { name = "openai", marker = "extra == 'providers'", specifier = ">=1.60.1" },
+    { name = "pillow", specifier = ">=10.0.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
+    { name = "psutil", specifier = ">=7.0.0" },
+    { name = "psycopg2-binary", specifier = ">=2.9.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.0.0" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8.0" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
+    { name = "pytest-postgresql", marker = "extra == 'dev'", specifier = ">=6.0.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "pyyaml", specifier = ">=6.0.0" },
+    { name = "redis", specifier = ">=5.0.0" },
+    { name = "replicate", marker = "extra == 'dev'", specifier = ">=1.0.4" },
+    { name = "replicate", marker = "extra == 'providers'", specifier = ">=1.0.4" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.0" },
+    { name = "strawberry-graphql", extras = ["fastapi"], specifier = ">=0.200.0" },
+    { name = "structlog", specifier = ">=23.0.0" },
+    { name = "supabase", specifier = ">=2.0.0" },
+    { name = "together", marker = "extra == 'dev'", specifier = ">=1.0.0" },
+    { name = "together", marker = "extra == 'providers'", specifier = ">=1.0.0" },
+    { name = "types-redis", marker = "extra == 'dev'", specifier = ">=4.6.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.23.0" },
+]
+provides-extras = ["dev", "providers", "storage-s3", "storage-gcs"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "aioboto3", specifier = ">=12.0.0" },
+    { name = "anthropic", specifier = ">=0.25.0" },
+    { name = "black", specifier = ">=23.0.0" },
+    { name = "boto3", specifier = ">=1.34.0" },
+    { name = "build", specifier = ">=1.3.0" },
+    { name = "google-cloud-storage", specifier = ">=2.10.0" },
+    { name = "openai", specifier = ">=1.60.1" },
+    { name = "pre-commit", specifier = ">=3.0.0" },
+    { name = "pyright", specifier = ">=1.1.0" },
+    { name = "pytest", specifier = ">=7.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.0" },
+    { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "pytest-postgresql", specifier = ">=6.0.0" },
+    { name = "replicate", specifier = ">=1.0.4" },
+    { name = "ruff", specifier = ">=0.1.0" },
+    { name = "together", specifier = ">=1.0.0" },
+    { name = "twine", specifier = ">=6.1.0" },
+    { name = "types-redis", specifier = ">=4.6.0" },
+    { name = "watchfiles", specifier = ">=1.1.0" },
 ]
 
 [[package]]
