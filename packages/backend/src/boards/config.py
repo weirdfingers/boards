@@ -3,7 +3,6 @@ Configuration management for Boards backend
 """
 
 import os
-from pathlib import Path
 
 from pydantic_settings import BaseSettings
 
@@ -20,9 +19,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6380"
 
     # Storage
-    storage_provider: str = "local"  # 'local', 'supabase', 's3', 'gcs'
-    storage_config: dict = {}
-    local_storage_path: str = "/tmp/boards-storage"
+    storage_config_path: str | None = None
 
     # Auth
     auth_provider: str = "none"  # 'none', 'supabase', 'clerk', 'auth0', 'jwt'
@@ -117,11 +114,3 @@ def get_database_url(tenant_slug: str | None = None) -> str:
         # For now, we'll use the same database with tenant isolation via queries
         return settings.database_url
     return settings.database_url
-
-
-def get_storage_path(tenant_slug: str | None = None) -> Path:
-    """Get storage path for local storage provider."""
-    base_path = Path(settings.local_storage_path)
-    if settings.multi_tenant_mode and tenant_slug:
-        return base_path / tenant_slug
-    return base_path

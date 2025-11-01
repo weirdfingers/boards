@@ -1,0 +1,23 @@
+# Frontend Environment Variables
+
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8800
+NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8800/graphql
+
+# Auth Provider
+# For local development, 'none' allows unauthenticated access
+NEXT_PUBLIC_AUTH_PROVIDER=none
+
+# Clerk
+# NEXT_PUBLIC_AUTH_PROVIDER=clerk
+# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+
+# Supabase
+# NEXT_PUBLIC_AUTH_PROVIDER=supabase
+# NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+
+# Auth0
+# NEXT_PUBLIC_AUTH_PROVIDER=auth0
+# NEXT_PUBLIC_AUTH0_DOMAIN=...
+# NEXT_PUBLIC_AUTH0_CLIENT_ID=...

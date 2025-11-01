@@ -29,6 +29,7 @@ from .factory import (
     create_development_storage,
     create_storage_manager,
     create_storage_provider,
+    get_storage_config,
 )
 
 __all__ = [
@@ -44,6 +45,7 @@ __all__ = [
     "create_storage_provider",
     "create_storage_manager",
     "create_development_storage",
+    "get_storage_config",
     # Configuration
     "load_storage_config",
     "create_example_config",

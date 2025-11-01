@@ -29,6 +29,7 @@ async def serve_file(full_path: str):
     The full_path includes the tenant_id/artifact_type/board_id/artifact_id/variant structure.
     """
     try:
+        logger.info("Serving file", full_path=full_path)
         # Create storage manager to get the configured local storage path
         storage_manager = create_storage_manager()
 
