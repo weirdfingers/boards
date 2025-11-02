@@ -31,55 +31,6 @@ storage:
         base_path: "/tmp/boards/storage"
         public_url_base: "http://localhost:8088/api/storage"
 
-    # AWS S3 storage
-    s3:
-      type: "s3"
-      config:
-        bucket: "my-boards-bucket"
-        region: "us-east-1"
-        # AWS credentials (use environment variables in production)
-        aws_access_key_id: "${AWS_ACCESS_KEY_ID}"
-        aws_secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
-        # Optional: Custom S3-compatible endpoint
-        # endpoint_url: "https://s3.amazonaws.com"
-        # Optional: CloudFront distribution domain
-        cloudfront_domain: "d1234567890.cloudfront.net"
-        # Optional: Upload configuration
-        upload_config:
-          ServerSideEncryption: "AES256"
-          StorageClass: "STANDARD"
-
-    # Google Cloud Storage
-    gcs:
-      type: "gcs"
-      config:
-        bucket: "my-boards-gcs-bucket"
-        project_id: "my-gcp-project"
-        # Use one of the following authentication methods:
-
-        # Option 1: Service account key file path
-        credentials_path: "/path/to/service-account-key.json"
-
-        # Option 2: Service account JSON as string (use environment variable)
-        # credentials_json: "${GCP_SERVICE_ACCOUNT_JSON}"
-
-        # Option 3: Use default credentials (gcloud, environment, etc.)
-        # Leave both credentials_path and credentials_json empty
-
-        # Optional: Cloud CDN domain
-        cdn_domain: "cdn.example.com"
-        # Optional: Upload configuration
-        upload_config:
-          cache_control: "public, max-age=3600"
-
-    # Supabase storage (existing)
-    supabase:
-      type: "supabase"
-      config:
-        url: "${SUPABASE_URL}"
-        key: "${SUPABASE_ANON_KEY}"
-        bucket: "boards-artifacts"
-
   # Routing rules to select providers based on conditions
   routing_rules:
     # Default fallback (no conditions = always matches)

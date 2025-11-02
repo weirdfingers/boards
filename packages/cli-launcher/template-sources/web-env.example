@@ -4,6 +4,11 @@
 NEXT_PUBLIC_API_URL=http://localhost:8800
 NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8800/graphql
 
+# Internal API URL for Docker
+# When running in Docker, this URL is used for server-side requests (like image optimization)
+# to access the API via the internal Docker network instead of localhost
+INTERNAL_API_URL=http://api:8800
+
 # Auth Provider
 # For local development, 'none' allows unauthenticated access
 NEXT_PUBLIC_AUTH_PROVIDER=none

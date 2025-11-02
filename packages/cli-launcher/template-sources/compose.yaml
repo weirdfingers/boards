@@ -58,7 +58,7 @@ services:
       [
         "boards-worker",
         "--log-level",
-        "info",
+        "debug",
         "--processes",
         "1",
         "--threads",

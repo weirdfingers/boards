@@ -76,6 +76,7 @@ const API_EXCLUDE = [
   "MANIFEST.in",
   "pyrightconfig.json",
   "baseline-config",
+  "example-config",
   "examples",
 ];
 

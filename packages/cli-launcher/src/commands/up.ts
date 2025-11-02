@@ -231,13 +231,16 @@ async function ensureEnvFiles(ctx: ProjectContext): Promise<void> {
 
     // Generate database password
     const dbPassword = generatePassword(24);
+    // URL-encode the password for use in database URLs
+    const dbPasswordEncoded = encodeURIComponent(dbPassword);
+
     dockerEnv = dockerEnv.replace(
       /POSTGRES_PASSWORD=.*/g,
       `POSTGRES_PASSWORD=${dbPassword}`
     );
     dockerEnv = dockerEnv.replace(
       /REPLACE_WITH_GENERATED_PASSWORD/g,
-      dbPassword
+      dbPasswordEncoded
     );
 
     // Set ports
