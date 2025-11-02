@@ -43,6 +43,7 @@ class LocalStorageProvider(StorageProvider):
         content_type: str,
         metadata: dict[str, Any] | None = None,
     ) -> str:
+        logger.info("Uploading file", key=key, content_type=content_type, metadata=metadata)
         try:
             file_path = self._get_safe_file_path(key)
             file_path.parent.mkdir(parents=True, exist_ok=True)

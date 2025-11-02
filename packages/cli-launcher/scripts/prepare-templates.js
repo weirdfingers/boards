@@ -133,6 +133,44 @@ if (fs.existsSync(nextConfigPath)) {
     fs.writeFileSync(nextConfigPath, nextConfig);
     console.log("   ✅ Updated next.config.js for Docker standalone build");
   }
+
+  // Update image remote patterns port from 8088 to 8800
+  nextConfig = fs.readFileSync(nextConfigPath, "utf-8");
+  if (nextConfig.includes('port: "8088"')) {
+    nextConfig = nextConfig.replace('port: "8088"', 'port: "8800"');
+    fs.writeFileSync(nextConfigPath, nextConfig);
+    console.log("   ✅ Updated next.config.js images port to 8800");
+  }
+
+  // Add 'api' hostname for internal Docker network (server-side image fetching)
+  nextConfig = fs.readFileSync(nextConfigPath, "utf-8");
+  if (!nextConfig.includes('hostname: "api"')) {
+    // Add api hostname pattern after the localhost pattern
+    nextConfig = nextConfig.replace(
+      /(hostname: "localhost",[\s\S]*?},)/,
+      `$1
+      {
+        protocol: "http",
+        hostname: "api",
+        port: "8800",
+        pathname: "/api/storage/**",
+      },`
+    );
+    fs.writeFileSync(nextConfigPath, nextConfig);
+    console.log("   ✅ Added internal Docker hostname to next.config.js");
+  }
+
+  // Add unoptimized: true for Docker compatibility
+  nextConfig = fs.readFileSync(nextConfigPath, "utf-8");
+  if (!nextConfig.includes("unoptimized:")) {
+    nextConfig = nextConfig.replace(
+      /images: \{/,
+      `images: {
+    unoptimized: true, // Disable server-side optimization for Docker compatibility`
+    );
+    fs.writeFileSync(nextConfigPath, nextConfig);
+    console.log("   ✅ Added unoptimized images for Docker compatibility");
+  }
 }
 
 // Step 2: Copy backend

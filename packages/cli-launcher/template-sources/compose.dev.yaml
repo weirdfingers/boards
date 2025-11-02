@@ -8,7 +8,18 @@ services:
       - ./data/storage:/app/data/storage
     environment:
       - PYTHONUNBUFFERED=1
-      - RELOAD=true
+    command:
+      [
+        "uvicorn",
+        "boards.api.app:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8800",
+        "--reload",
+        "--log-level",
+        "debug",
+      ]
 
   worker:
     volumes:
@@ -25,3 +36,4 @@ services:
       - /app/.next
     environment:
       - NODE_ENV=development
+      - INTERNAL_API_URL=http://api:8800

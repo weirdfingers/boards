@@ -198,4 +198,4 @@ async def process_generation(generation_id: str) -> None:
             logger.error("Failed to publish error status", error=str(pub_error))
 
         # Re-raise for Dramatiq retry mechanism
-        raise
+        # raise

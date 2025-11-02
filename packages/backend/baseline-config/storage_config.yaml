@@ -1,6 +1,3 @@
-# Example storage configuration for Boards
-# This file shows how to configure different storage providers
-
 storage:
   # Default provider to use when no routing rules match
   default_provider: "local"
@@ -85,65 +82,5 @@ storage:
 
   # Routing rules to select providers based on conditions
   routing_rules:
-    # Large files (>50MB) go to S3 for better performance
-    - condition:
-        size_gt: "50MB"
-      provider: "s3"
-
-    # Images go to GCS with CDN for fast delivery
-    - condition:
-        artifact_type: "image"
-      provider: "gcs"
-
-    # Videos go to S3 for CloudFront streaming
-    - condition:
-        artifact_type: "video"
-      provider: "s3"
-
     # Default fallback (no conditions = always matches)
-    - provider: "local"
-
-# Environment-specific configurations
-
-# Production configuration example
-production_storage:
-  default_provider: "s3"
-  providers:
-    s3:
-      type: "s3"
-      config:
-        bucket: "prod-boards-artifacts"
-        region: "us-east-1"
-        cloudfront_domain: "cdn.boards.io"
-        upload_config:
-          ServerSideEncryption: "aws:kms"
-          StorageClass: "STANDARD_IA" # Infrequent Access for cost savings
-
-    gcs:
-      type: "gcs"
-      config:
-        bucket: "prod-boards-media"
-        project_id: "boards-production"
-        cdn_domain: "media.boards.io"
-
-  routing_rules:
-    - condition:
-        artifact_type: "model"
-        size_gt: "100MB"
-      provider: "s3"
-    - condition:
-        artifact_type: "image"
-      provider: "gcs"
-    - provider: "s3"
-
-# Development configuration example
-development_storage:
-  default_provider: "local"
-  providers:
-    local:
-      type: "local"
-      config:
-        base_path: "/tmp/boards/dev-storage"
-        public_url_base: "http://localhost:8088/api/storage"
-  routing_rules:
     - provider: "local"
