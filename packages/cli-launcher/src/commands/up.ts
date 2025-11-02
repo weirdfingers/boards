@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
+import prompts from "prompts";
 import type { ProjectContext, UpOptions } from "../types.js";
 import {
   assertPrerequisites,
@@ -59,6 +60,9 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     version,
   };
 
+  // Track if this is a fresh scaffold to prompt for API keys later
+  const isFreshScaffold = !ctx.isScaffolded;
+
   // Step 3: Scaffold if needed
   if (!ctx.isScaffolded) {
     console.log(
@@ -81,6 +85,11 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
 
   // Step 5: Ensure environment files
   await ensureEnvFiles(ctx);
+
+  // Step 5.5: Prompt for API keys (only on fresh scaffold)
+  if (isFreshScaffold) {
+    await promptForApiKeys(ctx);
+  }
 
   // Step 6: Detect missing API keys
   const apiEnvPath = path.join(ctx.dir, "api/.env");
@@ -260,6 +269,75 @@ async function ensureEnvFiles(ctx: ProjectContext): Promise<void> {
   }
 
   spinner.succeed("Environment configured");
+}
+
+/**
+ * Prompt user for API keys during initial scaffold
+ */
+async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
+  console.log(chalk.cyan("\n🔑 API Key Configuration"));
+  console.log(chalk.gray("Add API keys to enable image generation providers"));
+  console.log(chalk.gray("Press Enter to skip any key\n"));
+
+  const response = await prompts([
+    {
+      type: "text",
+      name: "REPLICATE_API_KEY",
+      message: "Replicate API Key (https://replicate.com/account/api-tokens):",
+      initial: "",
+    },
+    {
+      type: "text",
+      name: "OPENAI_API_KEY",
+      message: "OpenAI API Key (https://platform.openai.com/api-keys):",
+      initial: "",
+    },
+  ]);
+
+  // Build the API keys dictionary (only include non-empty keys)
+  const apiKeys: Record<string, string> = {};
+
+  if (response.REPLICATE_API_KEY && response.REPLICATE_API_KEY.trim()) {
+    apiKeys.REPLICATE_API_KEY = response.REPLICATE_API_KEY.trim();
+  }
+
+  if (response.OPENAI_API_KEY && response.OPENAI_API_KEY.trim()) {
+    apiKeys.OPENAI_API_KEY = response.OPENAI_API_KEY.trim();
+  }
+
+  // Only write if we have at least one key
+  if (Object.keys(apiKeys).length > 0) {
+    // Read current api/.env
+    const apiEnvPath = path.join(ctx.dir, "api/.env");
+    let apiEnv = fs.readFileSync(apiEnvPath, "utf-8");
+
+    // Format as JSON string for the environment variable
+    const jsonKeys = JSON.stringify(apiKeys);
+
+    // Update or add BOARDS_GENERATOR_API_KEYS
+    if (apiEnv.includes("BOARDS_GENERATOR_API_KEYS=")) {
+      apiEnv = apiEnv.replace(
+        /BOARDS_GENERATOR_API_KEYS=.*$/m,
+        `BOARDS_GENERATOR_API_KEYS=${jsonKeys}`
+      );
+    } else {
+      // Add it after the JWT secret section
+      apiEnv = apiEnv.replace(
+        /(BOARDS_JWT_SECRET=.*\n)/,
+        `$1\n# Generator API Keys (JSON format)\nBOARDS_GENERATOR_API_KEYS=${jsonKeys}\n`
+      );
+    }
+
+    fs.writeFileSync(apiEnvPath, apiEnv);
+
+    console.log(chalk.green("\n✅ API keys saved to api/.env"));
+    console.log(
+      chalk.gray("   You can edit this file anytime to add/update keys\n")
+    );
+  } else {
+    console.log(chalk.yellow("\n⚠️  No API keys provided"));
+    console.log(chalk.gray("   You can add them later by editing api/.env\n"));
+  }
 }
 
 /**

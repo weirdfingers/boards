@@ -46,6 +46,12 @@ jobs:
           jq --arg version "${{ steps.bump.outputs.version }}" '.version = $version' package.json > package.json.tmp
           mv package.json.tmp package.json
 
+      - name: Bump cli-launcher version to match
+        run: |
+          cd packages/cli-launcher
+          jq --arg version "${{ steps.bump.outputs.version }}" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+
       - name: Commit and tag
         run: |
           git add .
@@ -120,3 +126,44 @@ jobs:
         run: |
           cd packages/frontend
           pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-cli-launcher:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+      - name: Update npm to latest
+        run: npm install -g npm@latest
+      - name: Verify npm version
+        run: |
+          echo "npm version: $(npm --version)"
+          echo "Required: >= 11.5.1 for OIDC trusted publishing"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build CLI package
+        run: |
+          cd packages/cli-launcher
+          pnpm build
+      - name: Publish CLI to npm
+        run: |
+          cd packages/cli-launcher
+          pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

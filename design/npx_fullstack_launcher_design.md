@@ -103,8 +103,10 @@ npx @weirdfingers/baseboards update
 |                    npx Full‑Stack Launcher                   |
 |  Node.js CLI (TypeScript)                                    |
 |  - scaffold generator (templates)                             |
-|  - env management (.env/.env.local)                           |
+|  - interactive API key setup                                  |
+|  - env management (.env files)                                |
 |  - docker-compose orchestrator                                |
+|  - automatic migrations                                       |
 |  - health checks & port management                            |
 |  - logs, status, update checker                               |
 +--------------------------+-----------------------------------+
@@ -113,19 +115,21 @@ npx @weirdfingers/baseboards update
                  docker compose (v2) files
                 /project/compose.yaml (+ overrides)
                            |
-     +-----------+-----------+-----------+-----------+
-     |           |           |           |           |
-     v           v           v           v
-  Next.js      FastAPI     Postgres     Redis
-  (web)         (api)        (db)        (cache)
+     +-----------+-----------+-----------+-----------+-----------+
+     |           |           |           |           |           |
+     v           v           v           v           v
+  Next.js      FastAPI     Worker      Postgres     Redis
+  (web)         (api)      (Dramatiq)   (db)        (cache)
 ```
 
-- **Images:**
-  - `weirdfingers/baseboards-web:TAG` (Next.js, Node 20-alpine)
-  - `weirdfingers/baseboards-api:TAG` (FastAPI, Python 3.12-slim)
-  - `postgres:16` (official)
-  - `redis:7` (official)
-- **Compose:** One base `compose.yaml` plus `compose.dev.yaml` for live‑reload and host mounts.
+- **Services:**
+  - `web`: Next.js frontend (Node 20-alpine, standalone build)
+  - `api`: FastAPI backend (Python 3.12-slim with uv)
+  - `worker`: Dramatiq background jobs (same image as api)
+  - `db`: PostgreSQL 16 (official)
+  - `cache`: Redis 7 (official)
+- **Compose:** Base `compose.yaml` + `compose.dev.yaml` for live‑reload and volume mounts
+- **Images:** Built locally from Dockerfiles included in scaffolded project
 
 ---
 
@@ -143,25 +147,32 @@ npx @weirdfingers/baseboards update
 
 - **Templates** (bundled in the npm package):
 
-  - `packages/web` — The Boards Next.js frontend (App Router + Tailwind + shadcn).
-  - `packages/api` — The Boards FastAPI backend (with uvicorn, SQLAlchemy, Alembic, Dramatiq).
-  - `compose.yaml` & `compose.dev.yaml`.
-  - `Makefile` helpers (optional).
-  - Configuration templates from `baseline-config/`: `generators.yaml`, `storage_config.yaml` (work out-of-the-box).
+  - `web/` — The Boards Next.js frontend (App Router + Tailwind + shadcn + SSE)
+  - `api/` — The Boards FastAPI backend (uvicorn, SQLAlchemy, Alembic, Dramatiq workers)
+  - `compose.yaml`, `compose.dev.yaml`, Dockerfiles
+  - Configuration templates from `baseline-config/`: `generators.yaml`, `storage_config.yaml` (work out-of-the-box)
 
   **Template Preparation (Build-Time):**
 
   - Templates are **auto-copied** from monorepo during CLI build via `scripts/prepare-templates.js`
-  - Copies `apps/baseboards` → `templates/web/` (excluding build artifacts)
-  - Copies `packages/backend` → `templates/api/` (excluding .venv, **pycache**)
-  - Transforms `workspace:*` dependencies → `^{version}` (published package versions)
-  - Generates `.env.example` files from templates
-  - Updates `storage_config.yaml` paths to be relative to project root
+  - Copies `apps/baseboards` → `templates/web/` (excluding build artifacts, tests)
+  - Copies `packages/backend` → `templates/api/` (excluding .venv, **pycache**, tests, examples)
+  - Copies standalone template files from `template-sources/`:
+    - `compose.yaml`, `compose.dev.yaml` (with worker service)
+    - `Dockerfile.web`, `Dockerfile.api` (local build configs)
+    - `.env.example` files for web, api, and docker
+    - `.gitignore`, `README.md`
+  - **Transformations applied:**
+    - `workspace:*` dependencies → `^{version}` (e.g., `@weirdfingers/boards: ^0.1.8`)
+    - Next.js config: adds `output: "standalone"`, `unoptimized: true`, `rewrites` for `/api/storage`
+    - Storage config: updates `base_path` from `/tmp/boards/storage` to `./data/storage`
+    - Storage config: updates `public_url_base` to `http://localhost:8800/api/storage`
   - Result: Editing source apps automatically includes changes in next CLI build
 
 - **Docker Images**
-  - Built in CI and pushed to GHCR or Docker Hub.
-  - Tagged by semantic version matching the CLI version (e.g., `1.2.0`).
+  - **Development**: Built locally from included Dockerfiles during `docker compose up`
+  - Dockerfiles are part of the scaffolded project for customization
+  - Future: Can be pre-built and pushed to registry for faster startup
 
 ---
 
@@ -192,17 +203,27 @@ run(process.argv);
 ```ts
 // src/commands/up.ts
 export async function up(args: UpArgs) {
-  await assertPrereqs(); // docker, node, platform
+  await assertPrerequisites(); // docker, node, platform
   const ctx = await resolveProject(args.dir);
-  await scaffoldIfMissing(ctx); // copies templates including baseline-config YAMLs
-  await ensureEnvFiles(ctx); // writes .env files from .example templates
-  await ensureDataDirectory(ctx); // creates data/storage/ for local files
-  await reservePorts(ctx); // picks non-conflicting ports
-  await writeComposeOverrides(ctx); // compose.dev.yaml if --dev
-  await dockerComposeUp(ctx, { detached: args.detached });
-  await waitForHealth(ctx, { timeoutMs: 120_000 });
+  const isFreshScaffold = !ctx.isScaffolded;
+
+  if (!ctx.isScaffolded) {
+    await scaffoldProject(ctx); // copies templates including baseline-config YAMLs
+  }
+
+  await reservePorts(ctx); // picks non-conflicting ports (3300, 8800)
+  await ensureEnvFiles(ctx); // writes .env files from .example templates, generates secrets
+
+  if (isFreshScaffold) {
+    await promptForApiKeys(ctx); // interactive prompts for REPLICATE_API_KEY, OPENAI_API_KEY
+  }
+
   await detectMissingProviderKeys(ctx); // warns if no API keys configured
-  printEndpoints(ctx); // http://localhost:PORTs + setup instructions
+  await startDockerCompose(ctx, { detached: true }); // always start in detached mode
+  await waitForHealth(ctx, { timeoutMs: 120_000 }); // web, api, db, cache, worker
+  await runMigrations(ctx); // docker compose exec api alembic upgrade head
+  printSuccessMessage(ctx); // http://localhost:PORTs + setup instructions
+  await attachToLogs(ctx); // stream logs (graceful Ctrl+C to exit)
 }
 ```
 
@@ -211,7 +232,8 @@ export async function up(args: UpArgs) {
 - `commander` (CLI parsing)
 - `execa` (shelling out to `docker compose`)
 - `fs-extra`, `yaml` (file ops)
-- `ora`, `chalk` (UX)
+- `ora`, `chalk` (UX - spinners and colors)
+- `prompts` (interactive user input for API keys)
 - `which` (locating executables)
 
 **Distribution**
@@ -225,25 +247,25 @@ export async function up(args: UpArgs) {
 
 ```
 my-app/
-├─ packages/
-│  ├─ web/                     # Next.js app (App Router)
-│  │  ├─ .env.example          # frontend env template
-│  │  └─ .env                  # generated (gitignored)
-│  └─ api/                     # FastAPI app
-│     ├─ .env.example          # backend env template (API keys!)
-│     ├─ .env                  # generated (gitignored)
-│     └─ config/
-│        ├─ generators.yaml    # works OOB, user customizes
-│        └─ storage_config.yaml # works OOB, user customizes
+├─ web/                        # Next.js app (App Router)
+│  ├─ .env.example             # frontend env template
+│  ├─ .env                     # generated (gitignored)
+│  └─ Dockerfile               # Next.js standalone build
+├─ api/                        # FastAPI app
+│  ├─ .env.example             # backend env template (API keys!)
+│  ├─ .env                     # generated (gitignored)
+│  ├─ Dockerfile               # Python backend build
+│  └─ config/
+│     ├─ generators.yaml       # works OOB, user customizes
+│     └─ storage_config.yaml   # works OOB, user customizes
 ├─ data/
 │  └─ storage/                 # local file storage (gitignored)
 ├─ docker/
 │  ├─ env.example              # example compose env
 │  └─ .env                     # generated (gitignored)
 ├─ .gitignore                  # ignores .env, data/storage, node_modules, etc.
-├─ compose.yaml
-├─ compose.dev.yaml
-├─ Makefile                    # optional helpers
+├─ compose.yaml                # base services (web, api, db, cache, worker)
+├─ compose.dev.yaml            # dev overrides (volume mounts, hot reload)
 └─ README.md
 ```
 
@@ -253,15 +275,18 @@ my-app/
 - `data/storage/` (generated media stays local)
 - Standard patterns (`node_modules`, `.venv`, `__pycache__`, `.next`, etc.)
 
-### packages/web (Next.js)
+### web/ (Next.js)
 
-- Dev server in dev mode with bind mount `./packages/web:/app` + `node_modules` volume.
-- Production build baked in `weirdfingers/baseboards-web:TAG`.
+- Dev mode: bind mount `./web:/app` + `node_modules` volume for hot reload
+- Built locally with `output: "standalone"` for Docker optimization
+- Image optimization disabled (`unoptimized: true`) for local development
+- Rewrites `/api/storage` to `http://api:8800/api/storage` for server-side image fetching
 
-### packages/api (FastAPI)
+### api/ (FastAPI)
 
-- `uvicorn app.main:app --host 0.0.0.0 --port 8800 --reload` in dev.
-- `gunicorn -k uvicorn.workers.UvicornWorker app.main:app` in prod.
+- Dev mode: bind mount `./api:/app` + `uvicorn --reload` for hot reload
+- Built locally from Dockerfile during `docker compose up`
+- Includes Alembic migrations, Dramatiq workers, and all dependencies
 
 ---
 
@@ -269,65 +294,81 @@ my-app/
 
 ### compose.yaml (base)
 
-- Services: `web`, `api`, `db` (Postgres 16), `cache` (Redis 7).
-- Networks: `internal` (private).
+- Services: `web`, `api`, `worker`, `db` (Postgres 16), `cache` (Redis 7)
+- Networks: `internal` (private)
 - Healthchecks:
-  - `web`: `curl -f http://localhost:3300/api/health`
+  - `web`: `curl -f http://localhost:3300/`
   - `api`: `curl -f http://localhost:8800/health`
+  - `worker`: `dramatiq-gevent boards.workers.actors:broker --processes 1 --threads 50`
   - `db`: `pg_isready -U $POSTGRES_USER`
   - `cache`: `redis-cli ping`
-- Labels: `com.weirdfingers.baseboards.project=<dir>` to scope cleanup.
+- **Automatic migrations**: CLI runs `alembic upgrade head` in API container after services are healthy
+- Labels: `com.weirdfingers.baseboards.project=<dir>` to scope cleanup
 
 ### compose.dev.yaml (overrides)
 
-- Binds local sources into containers for hot reload.
-- Mounts `node_modules` and `.next` as named volumes to avoid host pollution.
-- Binds `./data/storage` into API container for local file access.
-- Uses `pip install -e .` or `uvicorn --reload` patterns for API.
+- Binds local sources into containers for hot reload
+- Web: `sh -c "pnpm install && pnpm dev"` for auto-install dependencies
+- API: `uvicorn boards.api.app:app --host 0.0.0.0 --port 8800 --reload`
+- Worker: volume mounts `./api/src:/app/src` for hot reload
+- Mounts `node_modules` and `.next` as named volumes to avoid host pollution
+- Binds `./data/storage` into API and worker containers for local file access
 
 ### Images
 
-- Prebuilt for quick start. For contributors, `docker buildx bake` can rebuild.
+- **Built locally** during `docker compose up` (not pulled from registry)
+- Dockerfiles included in scaffolded project for customization
+- Web: Node 20-alpine with Next.js standalone output
+- API/Worker: Python 3.12-slim with uv for fast dependency installation
 
 ---
 
 ## 8) Environment & Secrets Management
 
-- `packages/web/.env` (frontend):
+- `web/.env` (frontend):
   - `NEXT_PUBLIC_API_URL=http://localhost:8800`
   - `NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8800/graphql`
-- `packages/api/.env` (backend - **critical for users**):
-  - `JWT_SECRET=...` (generated)
-  - **Provider API keys** (user must configure at least one):
-    - `REPLICATE_API_KEY=r8_...` — Get from replicate.com
-    - `FAL_KEY=...` — Get from fal.ai
-    - `OPENAI_API_KEY=sk-...` — Get from openai.com
-    - `GOOGLE_API_KEY=...` — For Gemini models
-  - Auth configuration (Clerk/Supabase/Auth0 keys)
+  - `NEXT_PUBLIC_AUTH_PROVIDER=none` (for local development)
+- `api/.env` (backend - **critical for users**):
+  - `BOARDS_JWT_SECRET=...` (auto-generated by CLI)
+  - `BOARDS_API_PORT=8800`
+  - `BOARDS_CORS_ORIGINS=["http://localhost:3300"]`
+  - `BOARDS_AUTH_PROVIDER=none` (for local development)
+  - **Generator API Keys** (JSON format, user prompted during scaffold):
+    - `BOARDS_GENERATOR_API_KEYS={"REPLICATE_API_KEY":"r8_...","OPENAI_API_KEY":"sk-..."}`
+    - CLI prompts for `REPLICATE_API_KEY` and `OPENAI_API_KEY` during initial scaffold
+    - Users can skip and add later by editing `api/.env`
+  - Optional auth configuration (Clerk/Supabase/Auth0 keys)
 - `docker/.env` (compose-level):
+  - `PROJECT_NAME=<dir-name>`
+  - `VERSION=<cli-version>` (for image tags)
+  - `WEB_PORT=3300`
+  - `API_PORT=8800`
   - `POSTGRES_USER=baseboards`
   - `POSTGRES_PASSWORD=<generated>`
   - `POSTGRES_DB=baseboards`
-  - `DB_URL=postgresql://baseboards:<pw>@db:5432/baseboards`
-  - `REDIS_URL=redis://cache:6379/0`
+  - `BOARDS_DATABASE_URL=postgresql://baseboards:<pw>@db:5432/baseboards` (note BOARDS\_ prefix)
+  - `BOARDS_REDIS_URL=redis://cache:6379/0` (note BOARDS\_ prefix)
 - Generated by CLI on first run; never committed.
-- **First-run UX**: CLI detects missing provider keys and prints setup instructions with docs link.
+- **Interactive setup**: CLI prompts for API keys during initial scaffold with helpful URLs
+- **Detection**: CLI warns if no provider keys are configured but allows startup
 
 ### Configuration Files
 
-YAML configuration files in `packages/api/config/` are copied from `baseline-config/` templates:
+YAML configuration files in `api/config/` are copied from `baseline-config/` templates:
 
 - **`generators.yaml`** — Defines available image generation providers and models
   - Works out-of-the-box with common providers (Replicate, FAL, OpenAI, Google)
-  - Users enable providers by adding API keys to `.env`
+  - Users enable providers by adding API keys to `BOARDS_GENERATOR_API_KEYS` in `.env`
   - Optional customization: add custom models, toggle specific workflows
-  - Source: `baseline-config/generators.yaml`
+  - Source: `packages/backend/baseline-config/generators.yaml`
 - **`storage_config.yaml`** — Configures where generated images are stored
-  - **Default: local filesystem at `data/storage/`** (relative to project root)
+  - **Default: local filesystem at `./data/storage/`** (relative to project root)
+  - CLI automatically updates path from `/tmp/boards/storage` to `./data/storage` during scaffold
   - Works immediately; generated media is accessible in the project directory
   - Optional customization: switch to S3, GCS, Cloudflare R2, or Supabase
   - Users can customize routing rules (e.g., large files → S3, images → CDN)
-  - Source: `baseline-config/storage_config.yaml`
+  - Source: `packages/backend/baseline-config/storage_config.yaml`
 
 The CLI copies these files on first scaffold. They work immediately but are fully customizable for production deployments.
 
@@ -526,11 +567,14 @@ services:
       retries: 20
 
   api:
-    image: weirdfingers/baseboards-api:${VERSION}
-    env_file: docker/.env
-    environment:
-      - DB_URL=${DB_URL}
-      - REDIS_URL=${REDIS_URL}
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    env_file:
+      - docker/.env
+      - api/.env
+    volumes:
+      - ./data/storage:/app/data/storage
     depends_on:
       db:
         condition: service_healthy
@@ -544,17 +588,47 @@ services:
       timeout: 3s
       retries: 50
 
+  worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    env_file:
+      - docker/.env
+      - api/.env
+    command:
+      [
+        "dramatiq-gevent",
+        "boards.workers.actors:broker",
+        "--processes",
+        "1",
+        "--threads",
+        "50",
+      ]
+    volumes:
+      - ./data/storage:/app/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "dramatiq"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   web:
-    image: weirdfingers/baseboards-web:${VERSION}
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    env_file: web/.env
     depends_on:
       api:
         condition: service_healthy
     ports:
       - "${WEB_PORT:-3300}:3300"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3300/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3300/"]
       interval: 5s
       timeout: 3s
       retries: 50
@@ -619,13 +693,47 @@ export async function GET() {
 ## Quick Start
 
 ```bash
-npx @weirdfingers/baseboards up
+npx @weirdfingers/baseboards up my-app
+cd my-app
 ```
 
-After scaffolding, **configure your API keys** in `packages/api/.env`:
+During setup, you'll be prompted to enter API keys for image generation providers:
 
-- Add at least one provider key (Replicate, FAL, OpenAI, or Google)
-- See docs: https://baseboards.dev/docs/setup
+- **Replicate**: Get from https://replicate.com/account/api-tokens
+- **OpenAI**: Get from https://platform.openai.com/api-keys
 
-Visit http://localhost:3300
+You can skip these prompts and add keys later by editing `api/.env`.
+
+The CLI will:
+
+1. Scaffold the project with full source code
+2. Generate environment files with secure secrets
+3. Build and start all services (web, api, worker, database, cache)
+4. Run database migrations automatically
+5. Open your app at http://localhost:3300
+
+Press Ctrl+C to stop viewing logs (services continue running in background).
+
+## Managing Your App
+
+```bash
+# View logs
+npx @weirdfingers/baseboards logs
+
+# Stop services
+npx @weirdfingers/baseboards down
+
+# Check status
+npx @weirdfingers/baseboards status
+```
+
+## Adding More API Keys
+
+Edit `api/.env` and add keys to the JSON object:
+
+```
+BOARDS_GENERATOR_API_KEYS={"REPLICATE_API_KEY":"r8_...","OPENAI_API_KEY":"sk-...","FAL_KEY":"..."}
+```
+
+Then restart: `npx @weirdfingers/baseboards down && npx @weirdfingers/baseboards up`
 ````
