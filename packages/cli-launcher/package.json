@@ -28,6 +28,18 @@
     ],
     "author": "weirdfingers",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/weirdfingers/boards.git",
+        "directory": "packages/cli-launcher"
+    },
+    "homepage": "https://github.com/weirdfingers/boards#readme",
+    "bugs": {
+        "url": "https://github.com/weirdfingers/boards/issues"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
     "engines": {
         "node": ">=20.0.0"
     },

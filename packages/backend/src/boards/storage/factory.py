@@ -10,6 +10,35 @@ from .implementations.local import LocalStorageProvider
 
 logger = get_logger(__name__)
 
+# Singleton storage configuration
+# Loaded once at module import time to avoid re-parsing YAML on every request
+_storage_config: StorageConfig | None = None
+
+
+def get_storage_config() -> StorageConfig:
+    """Get the singleton storage configuration.
+
+    Loads the configuration from settings.storage_config_path on first access.
+    Subsequent calls return the cached configuration.
+
+    Returns:
+        StorageConfig instance
+    """
+    global _storage_config
+
+    if _storage_config is None:
+        from ..config import settings
+
+        config_path = Path(settings.storage_config_path) if settings.storage_config_path else None
+        _storage_config = load_storage_config(config_path)
+        logger.info(
+            f"Loaded storage configuration: default_provider={_storage_config.default_provider}, "
+            f"providers={list(_storage_config.providers.keys())}"
+        )
+
+    return _storage_config
+
+
 # Optional imports for cloud providers
 try:
     from .implementations.supabase import SupabaseStorageProvider
@@ -157,24 +186,20 @@ def _create_gcs_provider(config: dict[str, Any]) -> StorageProvider:
     )
 
 
-def create_storage_manager(
-    config_path: str | Path | None = None, storage_config: StorageConfig | None = None
-) -> StorageManager:
-    """Create a configured storage manager.
+def _build_storage_manager_from_config(storage_config: StorageConfig) -> StorageManager:
+    """Build a storage manager from a StorageConfig, registering all providers.
+
+    This is an internal helper that can be used for testing.
 
     Args:
-        config_path: Path to configuration file (optional)
-        storage_config: Pre-built storage configuration (optional)
+        storage_config: Storage configuration
 
     Returns:
         StorageManager instance with registered providers
+
+    Raises:
+        RuntimeError: If no storage providers were successfully registered
     """
-
-    # Load configuration
-    if storage_config is None:
-        config_path = Path(config_path) if config_path else None
-        storage_config = load_storage_config(config_path)
-
     # Create storage manager
     manager = StorageManager(storage_config)
 
@@ -209,10 +234,25 @@ def create_storage_manager(
     return manager
 
 
+def create_storage_manager() -> StorageManager:
+    """Create a configured storage manager using global singleton config.
+
+    The storage configuration is loaded once from settings.storage_config_path
+    and cached for the lifetime of the process.
+
+    Returns:
+        StorageManager instance with registered providers
+    """
+    storage_config = get_storage_config()
+    return _build_storage_manager_from_config(storage_config)
+
+
 def create_development_storage() -> StorageManager:
     """Create a simple storage manager for development use.
 
     Uses local filesystem storage with sensible defaults.
+    This is primarily used for testing and creates a standalone manager
+    rather than using global settings.
     """
     config = StorageConfig(
         default_provider="local",
@@ -228,4 +268,11 @@ def create_development_storage() -> StorageManager:
         routing_rules=[{"provider": "local"}],
     )
 
-    return create_storage_manager(storage_config=config)
+    # Create storage manager directly without using global settings
+    manager = StorageManager(config)
+
+    # Register the local provider
+    local_provider = create_storage_provider("local", config.providers["local"]["config"])
+    manager.register_provider("local", local_provider)
+
+    return manager

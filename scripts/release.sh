@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-echo "This will release both backend and frontend packages with the same version."
+echo "This will release backend, frontend, and CLI launcher packages with the same version."
 echo "What type of version bump?"
 select BUMP in "patch" "minor" "major"; do
   if [[ -n $BUMP ]]; then

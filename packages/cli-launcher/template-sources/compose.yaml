@@ -1,0 +1,109 @@
+# Docker Compose Configuration for Baseboards
+name: ${PROJECT_NAME:-baseboards}
+
+services:
+  db:
+    image: postgres:16
+    env_file: docker/.env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - internal
+
+  cache:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: baseboards-api:local
+    env_file:
+      - docker/.env
+      - api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8800}:8800"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8800/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 50
+    networks:
+      - internal
+
+  worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: baseboards-api:local
+    command:
+      [
+        "boards-worker",
+        "--log-level",
+        "debug",
+        "--processes",
+        "1",
+        "--threads",
+        "1",
+      ]
+    env_file:
+      - docker/.env
+      - api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    networks:
+      - internal
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
+        - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:${API_PORT:-8800}/graphql
+    image: baseboards-web:local
+    env_file: web/.env
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
+      - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:${API_PORT:-8800}/graphql
+      - INTERNAL_API_URL=http://api:8800
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3300}:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 50
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  db-data:

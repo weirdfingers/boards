@@ -5,10 +5,9 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from boards.storage.base import StorageConfig
+from boards.storage.base import StorageConfig, StorageManager
 from boards.storage.factory import (
     create_development_storage,
-    create_storage_manager,
     create_storage_provider,
 )
 from boards.storage.implementations.local import LocalStorageProvider
@@ -108,7 +107,10 @@ class TestCreateStorageManager:
             routing_rules=[{"provider": "local"}],
         )
 
-        manager = create_storage_manager(storage_config=config)
+        # Create manager directly for testing
+        manager = StorageManager(config)
+        local_provider = create_storage_provider("local", {"base_path": "/tmp/test"})
+        manager.register_provider("local", local_provider)
 
         assert manager.default_provider == "local"
         assert "local" in manager.providers
@@ -127,27 +129,38 @@ storage:
   routing_rules:
     - provider: local
 """
+        from boards.storage.config import load_storage_config
 
+        # Test loading config from file
         with patch("builtins.open", mock_open(read_data=yaml_content)):
             with patch("pathlib.Path.exists", return_value=True):
-                manager = create_storage_manager("test_config.yaml")
+                config = load_storage_config(Path("test_config.yaml"))
+
+        # Create manager with loaded config
+        manager = StorageManager(config)
+        local_provider = create_storage_provider("local", config.providers["local"]["config"])
+        manager.register_provider("local", local_provider)
 
         assert manager.default_provider == "local"
         assert "local" in manager.providers
 
     def test_create_missing_default_provider_fallback(self):
+        from boards.storage.factory import _build_storage_manager_from_config
+
         config = StorageConfig(
             default_provider="nonexistent",
             providers={"local": {"type": "local", "config": {}}},
             routing_rules=[],
         )
 
-        manager = create_storage_manager(storage_config=config)
+        manager = _build_storage_manager_from_config(config)
 
         # Should fallback to available provider
         assert manager.default_provider == "local"
 
     def test_create_no_providers_available(self):
+        from boards.storage.factory import _build_storage_manager_from_config
+
         config = StorageConfig(
             default_provider="local",
             providers={"broken": {"type": "unknown", "config": {}}},
@@ -155,7 +168,7 @@ storage:
         )
 
         with pytest.raises(RuntimeError, match="No storage providers"):
-            create_storage_manager(storage_config=config)
+            _build_storage_manager_from_config(config)
 
 
 class TestCreateDevelopmentStorage:
