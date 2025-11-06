@@ -15,7 +15,7 @@ BOARDS_JWT_SECRET=
 # ============================================
 
 # Replicate - https://replicate.com/account/api-tokens
-REPLICATE_API_KEY=
+REPLICATE_API_TOKEN=
 
 # FAL - https://fal.ai/dashboard/keys
 FAL_KEY=

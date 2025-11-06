@@ -99,7 +99,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     console.log(chalk.yellow("\n⚠️  Provider API keys not configured!"));
     console.log(chalk.gray("   Add at least one API key to api/.env:"));
     console.log(
-      chalk.cyan("   • REPLICATE_API_KEY") +
+      chalk.cyan("   • REPLICATE_API_TOKEN") +
         chalk.gray(" - https://replicate.com/account/api-tokens")
     );
     console.log(
@@ -282,7 +282,7 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
   const response = await prompts([
     {
       type: "text",
-      name: "REPLICATE_API_KEY",
+      name: "REPLICATE_API_TOKEN",
       message: "Replicate API Key (https://replicate.com/account/api-tokens):",
       initial: "",
     },
@@ -297,8 +297,8 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
   // Build the API keys dictionary (only include non-empty keys)
   const apiKeys: Record<string, string> = {};
 
-  if (response.REPLICATE_API_KEY && response.REPLICATE_API_KEY.trim()) {
-    apiKeys.REPLICATE_API_KEY = response.REPLICATE_API_KEY.trim();
+  if (response.REPLICATE_API_TOKEN && response.REPLICATE_API_TOKEN.trim()) {
+    apiKeys.REPLICATE_API_TOKEN = response.REPLICATE_API_TOKEN.trim();
   }
 
   if (response.OPENAI_API_KEY && response.OPENAI_API_KEY.trim()) {
