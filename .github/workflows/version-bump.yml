@@ -126,8 +126,6 @@ jobs:
         run: |
           cd packages/frontend
           pnpm publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-cli-launcher:
     needs: bump-and-release
@@ -165,5 +163,3 @@ jobs:
         run: |
           cd packages/cli-launcher
           pnpm publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
