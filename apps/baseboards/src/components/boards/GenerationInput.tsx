@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Settings, ArrowUp, X } from "lucide-react";
 import Image from "next/image";
+import { parseGeneratorSchema } from "@weirdfingers/boards";
 import { GeneratorSelector, GeneratorInfo } from "./GeneratorSelector";
 import { ArtifactInputSlots } from "./ArtifactInputSlots";
 
@@ -11,12 +12,6 @@ interface Generation {
   artifactType: string;
   storageUrl?: string | null;
   thumbnailUrl?: string | null;
-}
-
-interface ArtifactSlot {
-  name: string;
-  type: string;
-  required: boolean;
 }
 
 interface GenerationInputProps {
@@ -46,50 +41,22 @@ export function GenerationInput({
   const [attachedImage, setAttachedImage] = useState<Generation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Parse input schema to determine if this generator needs artifact inputs
-  const getArtifactSlots = (): ArtifactSlot[] => {
-    if (!selectedGenerator) return [];
-
-    const schema = selectedGenerator.inputSchema as {
-      properties?: Record<
-        string,
-        {
-          type?: string;
-          anyOf?: Array<{ $ref?: string }>;
-          description?: string;
-        }
-      >;
-      required?: string[];
-    };
-
-    if (!schema.properties) return [];
-
-    const slots: ArtifactSlot[] = [];
-
-    for (const [key, value] of Object.entries(schema.properties)) {
-      // Check if this property references an artifact type
-      const isArtifact =
-        value.anyOf?.some((ref) => ref.$ref?.includes("Artifact")) || false;
-
-      if (isArtifact) {
-        // Determine artifact type from the key or description
-        let type = "video";
-        if (key.toLowerCase().includes("audio")) type = "audio";
-        if (key.toLowerCase().includes("video")) type = "video";
-        if (key.toLowerCase().includes("image")) type = "image";
-
-        slots.push({
-          name: key,
-          type,
-          required: schema.required?.includes(key) || false,
-        });
-      }
+  // Parse input schema using the toolkit's schema parser
+  const parsedSchema = useMemo(() => {
+    if (!selectedGenerator) {
+      return { artifactSlots: [], promptField: null, settingsFields: [] };
     }
+    return parseGeneratorSchema(selectedGenerator.inputSchema);
+  }, [selectedGenerator]);
 
-    return slots;
-  };
+  const artifactSlots = useMemo(() => {
+    return parsedSchema.artifactSlots.map((slot) => ({
+      name: slot.fieldName,
+      type: slot.artifactType,
+      required: slot.required,
+    }));
+  }, [parsedSchema.artifactSlots]);
 
-  const artifactSlots = getArtifactSlots();
   const needsArtifactInputs = artifactSlots.length > 0;
 
   const handleSubmit = () => {

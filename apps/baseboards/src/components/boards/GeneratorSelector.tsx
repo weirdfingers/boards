@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Zap, Check } from "lucide-react";
+import type { JSONSchema7 } from "@weirdfingers/boards";
 
 export interface GeneratorInfo {
   name: string;
   description: string;
   artifactType: string;
-  inputSchema: Record<string, unknown>;
+  inputSchema: JSONSchema7;
 }
 
 interface GeneratorSelectorProps {

@@ -20,6 +20,11 @@ export { useBoards } from "./hooks/useBoards";
 export { useBoard } from "./hooks/useBoard";
 export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
+export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
+
+// Generator schema utilities
+export * from "./types/generatorSchema";
+export * from "./utils/schemaParser";
 
 // Provider components
 export { BoardsProvider } from "./providers/BoardsProvider";
