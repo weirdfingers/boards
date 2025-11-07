@@ -288,6 +288,12 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
     },
     {
       type: "text",
+      name: "FAL_KEY",
+      message: "Fal AI API Key (https://fal.ai/dashboard/keys):",
+      initial: "",
+    },
+    {
+      type: "text",
       name: "OPENAI_API_KEY",
       message: "OpenAI API Key (https://platform.openai.com/api-keys):",
       initial: "",
@@ -299,6 +305,10 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
 
   if (response.REPLICATE_API_TOKEN && response.REPLICATE_API_TOKEN.trim()) {
     apiKeys.REPLICATE_API_TOKEN = response.REPLICATE_API_TOKEN.trim();
+  }
+
+  if (response.FAL_KEY && response.FAL_KEY.trim()) {
+    apiKeys.FAL_KEY = response.FAL_KEY.trim();
   }
 
   if (response.OPENAI_API_KEY && response.OPENAI_API_KEY.trim()) {
