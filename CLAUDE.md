@@ -95,6 +95,242 @@ make help               # Show all available Makefile commands
 - **Observability**: Structured logs, job metrics, audit trail on credit transactions
 - **GraphQL abstraction**: Example applications MUST NOT directly import from `urql` or GraphQL operations (e.g., `@weirdfingers/boards/graphql/operations`). All GraphQL usage must be abstracted behind hooks from `@weirdfingers/boards` (e.g., `useBoards`, `useBoard`, `useGenerators`). When adding new GraphQL functionality, create a hook in `/packages/frontend/src/hooks/` first, then use that hook in example applications.
 
+## Code Placement Guidelines
+
+**CRITICAL**: Boards is a toolkit of reusable packages, not just an application. Most code should go into published packages (`packages/`), not the application (`apps/baseboards`).
+
+### Published Packages
+
+The following packages are published to public registries:
+
+- **`packages/backend`** → PyPI (Python package for backends)
+- **`packages/frontend`** → npm as `@weirdfingers/boards` (React hooks)
+- **`packages/cli-launcher`** → npm (CLI tool for scaffolding/deployment)
+- **Auth packages** (planned) → npm as `@weirdfingers/boards-auth-*` (separate packages per provider)
+
+### Package Decision Tree
+
+**When adding new code, ask:**
+
+1. **Is this specific to the Baseboards application UI/UX?**
+   - YES → `apps/baseboards`
+   - NO → Continue to question 2
+
+2. **Is this reusable toolkit functionality?**
+   - NO → Reconsider the design
+   - YES → Continue to question 3
+
+3. **Is this backend/server-side logic?**
+   - YES → `packages/backend`
+   - NO → Continue to question 4
+
+4. **Is this React/frontend logic?**
+   - YES → `packages/frontend`
+   - NO → Determine appropriate package (CLI, auth, etc.)
+
+### packages/backend (Python - Published to PyPI)
+
+**SHOULD contain:**
+- GraphQL schema definitions (Strawberry types and resolvers)
+- SQLAlchemy models and database logic
+- Business logic and service layer
+- FastAPI/Starlette routes and middleware
+- Auth plugins/adapters (backend auth logic)
+- Job queue integration (RQ/Dramatiq workers)
+- Database migrations
+- Reusable utilities for backend development
+
+**SHOULD NOT contain:**
+- Application-specific business rules
+- Hardcoded configuration for specific deployments
+- Frontend-specific logic
+
+**Example:**
+```python
+# ✅ Good - Generic board creation logic
+@strawberry.mutation
+def create_board(self, info: Info, input: CreateBoardInput) -> Board:
+    """Create a new board - reusable across any Boards deployment"""
+    board = Boards()
+    board.title = input.title
+    board.description = input.description
+    # ... generic board creation logic
+    return board
+
+# ❌ Bad - Application-specific business rule
+@strawberry.mutation
+def create_board(self, info: Info, input: CreateBoardInput) -> Board:
+    """Create board with hardcoded Baseboards-specific limits"""
+    if user.boards_count > 10:  # Hardcoded limit specific to Baseboards app
+        raise Exception("Maximum 10 boards")
+    # ...
+```
+
+### packages/frontend (React/TypeScript - Published to npm)
+
+**SHOULD contain:**
+- React hooks for all Boards functionality
+- GraphQL operations and fragments
+- urql client configuration and exchanges
+- TypeScript type definitions for GraphQL responses
+- Generic, unstyled React components (sparingly - favor hooks)
+- Frontend auth adapters (Supabase, Clerk integration)
+- SSE/WebSocket utilities
+- Reusable state management utilities
+
+**MUST be framework-agnostic:**
+- React only (no Next.js-specific code)
+- Should work with Remix, Vite, Create React App, etc.
+- No `next/router`, `next/navigation`, `next/image`, etc.
+
+**Components policy:**
+- Favor hooks over components
+- If shipping components, they MUST support:
+  - Arbitrary theming (no hardcoded styles)
+  - Accessibility (a11y)
+  - Internationalization (i18n)
+- When in doubt, ship a hook and let apps build their own UI
+
+**SHOULD NOT contain:**
+- Next.js-specific code
+- Styled/opinionated components
+- Application business logic
+- Direct imports that bypass hooks (apps importing from `/graphql/operations` directly)
+
+**Example:**
+```typescript
+// ✅ Good - Generic hook for any React app
+export function useBoards() {
+  const [result] = useQuery({ query: BoardsQuery });
+  return {
+    boards: result.data?.boards ?? [],
+    loading: result.fetching,
+    error: result.error,
+  };
+}
+
+// ✅ Good - Unstyled, accessible component
+export function BoardCard({
+  board,
+  className,
+  onSelect
+}: BoardCardProps) {
+  return (
+    <article
+      className={className}
+      role="button"
+      aria-label={board.title}
+      onClick={() => onSelect?.(board)}
+    >
+      {/* Minimal, unstyled structure */}
+    </article>
+  );
+}
+
+// ❌ Bad - Next.js-specific code
+import { useRouter } from 'next/navigation';
+export function useBoards() {
+  const router = useRouter();  // Not framework-agnostic!
+  // ...
+}
+
+// ❌ Bad - Styled, opinionated component
+export function BoardCard({ board }: BoardCardProps) {
+  return (
+    <div className="bg-blue-500 rounded-lg p-4 shadow-xl">
+      {/* Hardcoded Tailwind styles - should be in app */}
+    </div>
+  );
+}
+```
+
+### apps/baseboards (Next.js - Published via Docker)
+
+**Purpose:** Baseboards serves dual roles:
+1. **Reference implementation** - demonstrates best practices for using the packages
+2. **Standalone application** - production-ready Boards instance deployable via Docker
+
+**SHOULD contain:**
+- Next.js pages, layouts, and routing
+- UI components with styling (Tailwind, Radix UI, etc.)
+- Application-specific configuration (environment variables, themes)
+- Sensible defaults that users can deploy as-is
+- Example flows demonstrating package usage
+- Generic application logic (not overly opinionated)
+
+**SHOULD import:**
+- Hooks from `@weirdfingers/boards`
+- Types from `@weirdfingers/boards`
+
+**SHOULD NOT import:**
+- Direct urql client usage (use hooks instead)
+- GraphQL operations from `@weirdfingers/boards/graphql/operations`
+- Anything that bypasses the hooks abstraction
+
+**SHOULD NOT contain:**
+- Reusable business logic (move to `packages/frontend` or `packages/backend`)
+- Hardcoded business rules that make it too opinionated
+- Backend logic (keep in `packages/backend`)
+
+**Philosophy:** Baseboards should be both:
+- Generic enough to deploy unchanged for most use cases
+- Well-structured enough to serve as a customization starting point
+
+**Example:**
+```typescript
+// ✅ Good - Uses hooks from the package
+import { useBoards, useCreateBoard } from '@weirdfingers/boards';
+
+export function BoardsPage() {
+  const { boards, loading } = useBoards();
+  const createBoard = useCreateBoard();
+
+  return (
+    <div className="container mx-auto">
+      {/* Baseboards-specific styled UI */}
+      {boards.map(board => (
+        <StyledBoardCard key={board.id} board={board} />
+      ))}
+    </div>
+  );
+}
+
+// ❌ Bad - Bypasses hooks, imports GraphQL directly
+import { useQuery } from 'urql';
+import { BoardsQuery } from '@weirdfingers/boards/graphql/operations';
+
+export function BoardsPage() {
+  const [result] = useQuery({ query: BoardsQuery });  // Should use useBoards() hook
+  // ...
+}
+
+// ❌ Bad - Reusable logic that should be in packages/frontend
+export function useBoardValidation() {
+  // This is generic logic that other apps would need - move to packages/frontend!
+  return { validateTitle, validateDescription };
+}
+```
+
+### packages/cli-launcher (Node.js - Published to npm)
+
+**SHOULD contain:**
+- CLI commands for project scaffolding
+- Docker deployment utilities
+- Development environment setup
+
+**SHOULD NOT contain:**
+- Application business logic
+- Backend/frontend code (import from published packages instead)
+
+### Auth Packages (Planned - Published to npm)
+
+**Future packages:**
+- `@weirdfingers/boards-auth-supabase`
+- `@weirdfingers/boards-auth-clerk`
+- `@weirdfingers/boards-auth-auth0`
+
+Each should contain frontend auth adapter implementations for their respective providers.
+
 ## Database Configuration
 
 Local development uses Docker Compose with:

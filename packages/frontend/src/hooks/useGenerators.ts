@@ -4,14 +4,18 @@
 
 import { useMemo } from "react";
 import { useQuery } from "urql";
+import type { JSONSchema7 } from "json-schema";
 import { ArtifactType, GET_GENERATORS } from "../graphql/operations";
 
-interface Generator {
+export interface Generator {
   name: string;
   description: string;
   artifactType: ArtifactType;
-  inputSchema: Record<string, unknown>;
+  inputSchema: JSONSchema7;
 }
+
+// Re-export JSONSchema7 for applications
+export type { JSONSchema7 } from "json-schema";
 
 interface UseGeneratorsOptions {
   artifactType?: string;

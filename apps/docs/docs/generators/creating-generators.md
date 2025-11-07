@@ -2,6 +2,10 @@
 
 This guide provides comprehensive information on creating generators for the Boards system, covering advanced patterns, best practices, and real-world examples.
 
+:::tip
+For detailed information about designing input schemas, see the [Input Schemas Guide](./input-schemas.md). Input schemas automatically drive frontend UI generation.
+:::
+
 ## Generator Architecture
 
 Every generator follows the same simple pattern:
