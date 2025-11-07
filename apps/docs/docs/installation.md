@@ -140,9 +140,6 @@ make dev
 # Or start individually:
 # Backend only:
 cd packages/backend && uvicorn boards.api.app:app --reload --port 8088
-
-# Frontend only:
-cd apps/example-nextjs && pnpm dev
 ```
 
 ## Verify Installation

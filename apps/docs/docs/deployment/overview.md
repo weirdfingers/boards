@@ -24,13 +24,6 @@ services:
       - db
       - redis
 
-  web:
-    build: ./apps/example-nextjs
-    environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000
-    depends_on:
-      - api
-
   db:
     image: postgres:15
     environment:
