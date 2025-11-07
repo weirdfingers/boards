@@ -3,7 +3,10 @@
 import { useState, useMemo } from "react";
 import { Settings, ArrowUp, X } from "lucide-react";
 import Image from "next/image";
-import { parseGeneratorSchema } from "@weirdfingers/boards";
+import {
+  ParsedGeneratorSchema,
+  parseGeneratorSchema,
+} from "@weirdfingers/boards";
 import { GeneratorSelector, GeneratorInfo } from "./GeneratorSelector";
 import { ArtifactInputSlots } from "./ArtifactInputSlots";
 
@@ -42,7 +45,7 @@ export function GenerationInput({
   const [showSettings, setShowSettings] = useState(false);
 
   // Parse input schema using the toolkit's schema parser
-  const parsedSchema = useMemo(() => {
+  const parsedSchema = useMemo((): ParsedGeneratorSchema => {
     if (!selectedGenerator) {
       return { artifactSlots: [], promptField: null, settingsFields: [] };
     }
