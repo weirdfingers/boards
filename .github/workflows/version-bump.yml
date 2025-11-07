@@ -37,7 +37,7 @@ jobs:
       - name: Bump backend version
         id: bump
         run: |
-          NEW_VERSION=$(python3 scripts/bump_version.py backend ${{ inputs.bump_type }})
+          NEW_VERSION=$(python3 scripts/bump_version.py ${{ inputs.bump_type }})
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump frontend version to match
@@ -59,11 +59,20 @@ jobs:
           git tag "v${{ steps.bump.outputs.version }}"
           git push origin main --tags
 
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          NOTES=$(python3 scripts/bump_version.py ${{ inputs.bump_type }} --generate-notes --notes-format json --dry-run)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: "v${{ steps.bump.outputs.version }}"
-          name: "v${{ steps.bump.outputs.version }}"
+          name: ${{ fromJson(steps.release_notes.outputs.notes).title }}
+          body: ${{ fromJson(steps.release_notes.outputs.notes).body }}
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
