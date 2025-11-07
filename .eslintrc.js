@@ -46,7 +46,7 @@ module.exports = {
     },
     // Next.js app specific rules
     {
-      files: ["apps/example-nextjs/**/*"],
+      files: ["apps/baseboards/**/*"],
       extends: ["next/core-web-vitals"],
       rules: {
         // Prevent direct GraphQL/urql usage in example apps

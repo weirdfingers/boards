@@ -1,7 +1,7 @@
 .PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs dev-docs docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
 
 BACKEND_DIR := packages/backend
-FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=example-nextjs... --filter=baseboards...  --filter=@weirdfingers/baseboards...
+FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=baseboards...  --filter=@weirdfingers/baseboards...
 DEV_FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=baseboards...
 
 
@@ -156,7 +156,3 @@ build-docs: ## Build documentation for production
 serve-docs: ## Serve built documentation
 	@echo "Serving documentation..."
 	cd apps/docs && pnpm serve
-
-dev-example-nextjs: ## Start example Next.js development server
-	@echo "Starting example Next.js development server..."
-	pnpm turbo dev --filter=example-nextjs...

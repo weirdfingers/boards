@@ -68,7 +68,6 @@ boards/
 │   │   └── tests/            # Backend tests
 │   └── frontend/             # React hooks library (@weirdfingers/boards)
 ├── apps/
-│   ├── example-nextjs/       # Example Next.js application
 │   └── docs/                 # Docusaurus documentation site
 ├── design/                   # Architecture and design documents
 └── docker-compose.yml        # Local development services

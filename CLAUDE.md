@@ -37,7 +37,6 @@ make dev-backend         # Start backend development server only
 make dev-worker          # Start background worker (development)
 make dev-worker-watch    # Start background worker with auto-reload (requires entr)
 make dev-frontend        # Start frontend development servers only
-make dev-example-nextjs  # Start example Next.js development server
 pnpm turbo dev          # Alternative: start dev servers via Turbo
 
 # Documentation
@@ -94,7 +93,7 @@ make help               # Show all available Makefile commands
 - **Hooks-first frontend design**: The toolkit ships React hooks, not mandatory UI components
 - **Pluggable auth**: Support for multiple auth providers via adapters (Supabase, Clerk, Auth0, custom JWT/OIDC)
 - **Observability**: Structured logs, job metrics, audit trail on credit transactions
-- **GraphQL abstraction**: Example applications MUST NOT directly import from `urql` or GraphQL operations (e.g., `@weirdfingers/boards/graphql/operations`). All GraphQL usage must be abstracted behind hooks from `@weirdfingers/boards` (e.g., `useBoards`, `useBoard`, `useGenerators`). When adding new GraphQL functionality, create a hook in `/packages/frontend/src/hooks/` first, then use that hook in example apps.
+- **GraphQL abstraction**: Example applications MUST NOT directly import from `urql` or GraphQL operations (e.g., `@weirdfingers/boards/graphql/operations`). All GraphQL usage must be abstracted behind hooks from `@weirdfingers/boards` (e.g., `useBoards`, `useBoard`, `useGenerators`). When adding new GraphQL functionality, create a hook in `/packages/frontend/src/hooks/` first, then use that hook in example applications.
 
 ## Database Configuration
 
@@ -146,7 +145,7 @@ new_board.descritpion = input.description  # Type checker will error!
 2. **Frontend changes** that MUST be synchronized:
    - Update GraphQL fragments in `/packages/frontend/src/graphql/operations.ts`
    - Update TypeScript interfaces in `/packages/frontend/src/hooks/`
-   - Search for any component usage in `/apps/example-nextjs/`
+   - Search for any component usage in example applications
 
 3. **Validation**: GraphQL queries that reference non-existent fields will fail at schema validation (before resolver execution), returning errors like "Cannot query field 'fieldName' on type 'TypeName'". This prevents resolvers from being called.
 
@@ -154,7 +153,7 @@ new_board.descritpion = input.description  # Type checker will error!
 ```bash
 # 1. Remove from backend GraphQL type
 # 2. Search frontend for references
-grep -r "fieldName" packages/frontend apps/example-nextjs
+grep -r "fieldName" packages/frontend apps/
 # 3. Update all found references
 # 4. Run typecheck to catch any missed TypeScript references
 make typecheck
