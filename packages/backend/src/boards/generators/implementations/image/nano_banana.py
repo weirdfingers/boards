@@ -103,11 +103,46 @@ class NanoBananaGenerator(BaseGenerator):
         if inputs.seed is not None:
             arguments["seed"] = inputs.seed
 
-        # Call fal.ai API
-        result = await fal_client.run_async(
+        # Submit async job and get handler
+        handler = await fal_client.submit_async(
             "fal-ai/nano-banana",
             arguments=arguments,
         )
+
+        # Store the external job ID for tracking
+        await context.set_external_job_id(handler.request_id)
+
+        # Stream progress updates (sample every 3rd event to avoid spam)
+        from ....progress.models import ProgressUpdate
+
+        event_count = 0
+        async for event in handler.iter_events(with_logs=True):
+            event_count += 1
+
+            # Process every 3rd event to provide feedback without overwhelming
+            if event_count % 3 == 0:
+                # Extract logs if available
+                logs = getattr(event, "logs", None)
+                if logs:
+                    # Join log entries into a single message
+                    if isinstance(logs, list):
+                        message = " | ".join(str(log) for log in logs if log)
+                    else:
+                        message = str(logs)
+
+                    if message:
+                        await context.publish_progress(
+                            ProgressUpdate(
+                                job_id=handler.request_id,
+                                status="processing",
+                                progress=50.0,  # Approximate mid-point progress
+                                phase="processing",
+                                message=message,
+                            )
+                        )
+
+        # Get final result
+        result = await handler.get()
 
         # Extract image URLs from result
         # fal.ai returns: {"images": [{"url": "...", "width": ..., "height": ...}, ...]}

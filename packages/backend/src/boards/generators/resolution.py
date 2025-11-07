@@ -2,6 +2,7 @@
 Artifact resolution utilities for converting Generation references to actual files.
 """
 
+import base64
 import os
 import tempfile
 import uuid
@@ -153,6 +154,59 @@ def _get_file_extension(
     return format_ext
 
 
+def _decode_data_url(data_url: str) -> bytes:
+    """
+    Decode a data URL to bytes.
+
+    Supports data URLs in the format: data:[<mediatype>][;base64],<data>
+
+    Args:
+        data_url: Data URL string (e.g., "data:image/png;base64,iVBORw0KGgo...")
+
+    Returns:
+        bytes: Decoded content
+
+    Raises:
+        ValueError: If data URL is malformed or empty
+    """
+    if not data_url.startswith("data:"):
+        raise ValueError("Invalid data URL: must start with 'data:'")
+
+    # Split off the "data:" prefix
+    try:
+        # Format: data:[<mediatype>][;base64],<data>
+        header, data = data_url[5:].split(",", 1)
+    except ValueError as e:
+        raise ValueError("Invalid data URL format: missing comma separator") from e
+
+    if not data:
+        raise ValueError("Data URL contains no data after comma")
+
+    # Check if base64 encoded
+    is_base64 = ";base64" in header
+
+    if is_base64:
+        try:
+            decoded = base64.b64decode(data)
+        except Exception as e:
+            raise ValueError(f"Failed to decode base64 data: {e}") from e
+    else:
+        # URL-encoded data (rare for binary content)
+        from urllib.parse import unquote
+
+        decoded = unquote(data).encode("utf-8")
+
+    if len(decoded) == 0:
+        raise ValueError("Decoded data URL is empty")
+
+    logger.info(
+        "Successfully decoded data URL",
+        size_bytes=len(decoded),
+        is_base64=is_base64,
+    )
+    return decoded
+
+
 async def download_from_url(url: str) -> bytes:
     """
     Download content from a URL (typically a provider's temporary URL).
@@ -160,20 +214,26 @@ async def download_from_url(url: str) -> bytes:
     This is used to download generated content from providers like Replicate, OpenAI, etc.
     before uploading to our permanent storage.
 
+    Supports both HTTP(S) URLs and data URLs (data:mime/type;base64,...)
+
     Note: For very large files, consider using streaming downloads directly to storage
     instead of loading into memory.
 
     Args:
-        url: URL to download from
+        url: URL to download from (HTTP(S) or data URL)
 
     Returns:
         bytes: Downloaded content
 
     Raises:
         httpx.HTTPError: If download fails
-        ValueError: If downloaded content is empty
+        ValueError: If downloaded content is empty or data URL is malformed
     """
-    logger.debug("Downloading content from URL", url=url)
+    logger.debug("Downloading content from URL", url=url[:50])
+
+    # Check if this is a data URL
+    if url.startswith("data:"):
+        return _decode_data_url(url)
 
     # Stream download to avoid loading entire file into memory at once
     async with httpx.AsyncClient(timeout=60.0) as client:
@@ -270,7 +330,7 @@ async def store_image_result(
     logger.info(
         "Storing image result",
         generation_id=generation_id,
-        provider_url=storage_url,
+        provider_url=storage_url[:50],
         format=format,
     )
 
@@ -294,7 +354,7 @@ async def store_image_result(
         "Image stored successfully",
         generation_id=generation_id,
         storage_key=artifact_ref.storage_key,
-        storage_url=artifact_ref.storage_url,
+        storage_url=artifact_ref.storage_url[:50],
     )
 
     # Return artifact with our permanent storage URL
@@ -344,7 +404,7 @@ async def store_video_result(
     logger.info(
         "Storing video result",
         generation_id=generation_id,
-        provider_url=storage_url,
+        provider_url=storage_url[:50],
         format=format,
     )
 
@@ -368,7 +428,7 @@ async def store_video_result(
         "Video stored successfully",
         generation_id=generation_id,
         storage_key=artifact_ref.storage_key,
-        storage_url=artifact_ref.storage_url,
+        storage_url=artifact_ref.storage_url[:50],
     )
 
     # Return artifact with our permanent storage URL
@@ -418,7 +478,7 @@ async def store_audio_result(
     logger.info(
         "Storing audio result",
         generation_id=generation_id,
-        provider_url=storage_url,
+        provider_url=storage_url[:50],
         format=format,
     )
 
@@ -442,7 +502,7 @@ async def store_audio_result(
         "Audio stored successfully",
         generation_id=generation_id,
         storage_key=artifact_ref.storage_key,
-        storage_url=artifact_ref.storage_url,
+        storage_url=artifact_ref.storage_url[:50],
     )
 
     # Return artifact with our permanent storage URL
@@ -485,7 +545,7 @@ async def store_text_result(
     logger.info(
         "Storing text result",
         generation_id=generation_id,
-        content=content,
+        content=content[:50],
         format=format,
     )
 
@@ -503,13 +563,13 @@ async def store_text_result(
         "Text stored successfully",
         generation_id=generation_id,
         storage_key=artifact_ref.storage_key,
-        storage_url=artifact_ref.storage_url,
+        storage_url=artifact_ref.storage_url[:50],
     )
 
     # Return artifact with our permanent storage URL
     return TextArtifact(
         generation_id=generation_id,
         storage_url=artifact_ref.storage_url,
-        content=content,
+        content=content[:50],
         format=format,
     )

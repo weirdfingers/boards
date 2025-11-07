@@ -2,6 +2,7 @@
 Tests for artifact resolution utilities.
 """
 
+import base64
 import os
 import tempfile
 from unittest.mock import AsyncMock, patch
@@ -16,7 +17,9 @@ from boards.generators.artifacts import (
     VideoArtifact,
 )
 from boards.generators.resolution import (
+    _decode_data_url,
     download_artifact_to_temp,
+    download_from_url,
     resolve_artifact,
     store_image_result,
 )
@@ -286,3 +289,94 @@ class TestStoreResults:
     async def test_store_video_result_optional_params(self):
         """Test storing video result with optional parameters as None."""
         pass
+
+
+class TestDataURLDecoding:
+    """Tests for data URL decoding."""
+
+    def test_decode_base64_data_url(self):
+        """Test decoding a base64 data URL."""
+        # Create a simple test image data
+        test_data = b"fake image content"
+        encoded = base64.b64encode(test_data).decode("ascii")
+        data_url = f"data:image/png;base64,{encoded}"
+
+        result = _decode_data_url(data_url)
+
+        assert result == test_data
+
+    def test_decode_data_url_without_base64(self):
+        """Test decoding a non-base64 data URL."""
+        data_url = "data:text/plain,Hello%20World"
+
+        result = _decode_data_url(data_url)
+
+        assert result == b"Hello World"
+
+    def test_decode_data_url_empty_data(self):
+        """Test that empty data raises an error."""
+        data_url = "data:image/png;base64,"
+
+        with pytest.raises(ValueError, match="Data URL contains no data after comma"):
+            _decode_data_url(data_url)
+
+    def test_decode_data_url_missing_comma(self):
+        """Test that missing comma raises an error."""
+        data_url = "data:image/png;base64"
+
+        with pytest.raises(ValueError, match="missing comma separator"):
+            _decode_data_url(data_url)
+
+    def test_decode_data_url_invalid_prefix(self):
+        """Test that invalid prefix raises an error."""
+        data_url = "http://example.com/image.png"
+
+        with pytest.raises(ValueError, match="must start with 'data:'"):
+            _decode_data_url(data_url)
+
+    def test_decode_data_url_invalid_base64(self):
+        """Test that invalid base64 raises an error."""
+        data_url = "data:image/png;base64,not-valid-base64!!!"
+
+        with pytest.raises(ValueError, match="Failed to decode base64 data"):
+            _decode_data_url(data_url)
+
+    @pytest.mark.asyncio
+    async def test_download_from_url_with_data_url(self):
+        """Test that download_from_url handles data URLs."""
+        test_data = b"fake image content"
+        encoded = base64.b64encode(test_data).decode("ascii")
+        data_url = f"data:image/png;base64,{encoded}"
+
+        result = await download_from_url(data_url)
+
+        assert result == test_data
+
+    @pytest.mark.asyncio
+    async def test_download_from_url_with_http_url(self):
+        """Test that download_from_url still handles HTTP URLs."""
+        from unittest.mock import MagicMock
+
+        fake_content = b"fake image data"
+
+        mock_response = AsyncMock()
+        mock_response.raise_for_status = MagicMock()
+
+        # Mock aiter_bytes to return chunks
+        async def mock_aiter_bytes(chunk_size=8192):
+            yield fake_content
+
+        mock_response.aiter_bytes = mock_aiter_bytes
+
+        with patch("httpx.AsyncClient") as mock_client:
+            # Mock stream context manager
+            mock_stream_context = MagicMock()
+            mock_stream_context.__aenter__ = AsyncMock(return_value=mock_response)
+            mock_stream_context.__aexit__ = AsyncMock(return_value=None)
+            mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+                return_value=mock_stream_context
+            )
+
+            result = await download_from_url("https://example.com/image.png")
+
+            assert result == fake_content
