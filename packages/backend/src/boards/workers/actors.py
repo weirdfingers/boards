@@ -135,6 +135,7 @@ async def process_generation(generation_id: str) -> None:
             "Generator completed successfully",
             generator_name=generator_name,
             generation_id=generation_id,
+            artifact_count=len(output.outputs),
         )
 
         # Find the artifact with matching generation_id (primary generation)
@@ -194,7 +195,7 @@ async def process_generation(generation_id: str) -> None:
                     batch_metadata = batch_artifact.model_dump()
                     # Add batch metadata to each batch generation
                     batch_metadata["batch_id"] = context._batch_id
-                    # batch_index was already set during creation in output_metadata
+                    # batch_index was set during generation creation via create_batch_generation()
                     batch_metadata["batch_size"] = len(output.outputs)
 
                     await jobs_repo.finalize_success(

@@ -142,4 +142,4 @@ class NanoBananaGenerator(BaseGenerator):
 
         nano-banana typically costs around $0.003 per image.
         """
-        return 0.039  # $0.039 per image
+        return 0.003 * inputs.num_images  # $0.003 per image, scaled by batch size
