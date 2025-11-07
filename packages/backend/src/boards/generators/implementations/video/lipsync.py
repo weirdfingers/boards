@@ -37,7 +37,10 @@ class LipsyncGenerator(BaseGenerator):
         try:
             import replicate  # type: ignore
         except ImportError as e:
-            raise ValueError("Required dependencies not available") from e
+            raise ImportError(
+                "Replicate SDK is required for LipsyncGenerator. "
+                "Install with: pip install weirdfingers-boards[generators-replicate]"
+            ) from e
 
         # Resolve artifacts via context
         audio_file = await context.resolve_artifact(inputs.audio_source)

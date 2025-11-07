@@ -73,7 +73,7 @@ class TestCreateStorageProvider:
 
     @patch("boards.storage.factory._gcs_available", False)
     def test_create_gcs_not_available(self):
-        with pytest.raises(ImportError, match="GCS storage package required"):
+        with pytest.raises(ImportError, match="GCS storage requires"):
             create_storage_provider("gcs", {})
 
     @patch("boards.storage.factory._supabase_available", True)

@@ -36,7 +36,6 @@ classifiers = [
 ]
 dependencies = [
     "sqlalchemy>=2.0.0",
-    "supabase>=2.0.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "httpx>=0.24.0",
@@ -60,6 +59,52 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Generator providers (per-provider)
+generators-replicate = ["replicate>=1.0.4"]
+generators-openai = ["openai>=1.60.1"]
+generators-fal = ["fal-client>=0.5.0"]
+generators-anthropic = ["anthropic>=0.25.0"]
+generators-together = ["together>=1.0.0"]
+
+# Convenience: all generators
+generators-all = [
+    "replicate>=1.0.4",
+    "openai>=1.60.1",
+    "fal-client>=0.5.0",
+    "anthropic>=0.25.0",
+    "together>=1.0.0",
+]
+
+# Storage providers (per-provider)
+storage-supabase = ["supabase>=2.0.0"]
+storage-s3 = ["boto3>=1.34.0", "aioboto3>=12.0.0"]
+storage-gcs = ["google-cloud-storage>=2.10.0"]
+
+# Convenience: all storage backends
+storage-all = [
+    "supabase>=2.0.0",
+    "boto3>=1.34.0",
+    "aioboto3>=12.0.0",
+    "google-cloud-storage>=2.10.0",
+]
+
+# Auth providers (only Supabase needs extra deps beyond core httpx/pyjwt)
+auth-supabase = ["supabase>=2.0.0"]
+
+# Convenience: everything
+all = [
+    "replicate>=1.0.4",
+    "openai>=1.60.1",
+    "fal-client>=0.5.0",
+    "anthropic>=0.25.0",
+    "together>=1.0.0",
+    "supabase>=2.0.0",
+    "boto3>=1.34.0",
+    "aioboto3>=12.0.0",
+    "google-cloud-storage>=2.10.0",
+]
+
+# Development dependencies
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
@@ -76,21 +121,13 @@ dev = [
     "together>=1.0.0",
     "fal-client>=0.5.0",
     # Include all storage deps for typecheck
+    "supabase>=2.0.0",
     "boto3>=1.34.0",
     "aioboto3>=12.0.0",
     "google-cloud-storage>=2.10.0",
     # Type stubs
     "types-redis>=4.6.0",
 ]
-providers = [
-    "openai>=1.60.1",
-    "anthropic>=0.25.0",
-    "replicate>=1.0.4",
-    "together>=1.0.0",
-    "fal-client>=0.5.0",
-]
-storage-s3 = ["boto3>=1.34.0", "aioboto3>=12.0.0"]
-storage-gcs = ["google-cloud-storage>=2.10.0"]
 
 [project.urls]
 Homepage = "https://github.com/weirdfingers/boards"
