@@ -102,3 +102,52 @@ async def finalize_success(
         )
     )
     await session.execute(stmt)
+
+
+async def create_batch_generation(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    board_id: UUID,
+    user_id: UUID,
+    generator_name: str,
+    artifact_type: str,
+    input_params: dict,
+    batch_id: str,
+    batch_index: int,
+) -> Generations:
+    """Create a batch generation record for multi-output generators.
+
+    This creates a new generation record that is part of a batch, with
+    batch metadata stored in output_metadata.
+
+    Args:
+        session: Database session
+        tenant_id: Tenant ID
+        board_id: Board ID
+        user_id: User ID
+        generator_name: Name of the generator
+        artifact_type: Type of artifact (image, video, etc.)
+        input_params: Input parameters (same as primary generation)
+        batch_id: Unique ID for this batch
+        batch_index: Index of this output in the batch
+
+    Returns:
+        Created generation record
+    """
+    gen = Generations()
+    gen.tenant_id = tenant_id
+    gen.board_id = board_id
+    gen.user_id = user_id
+    gen.generator_name = generator_name
+    gen.artifact_type = artifact_type
+    gen.input_params = input_params
+    gen.status = "processing"
+    gen.progress = Decimal(0.0)
+    gen.output_metadata = {
+        "batch_id": batch_id,
+        "batch_index": batch_index,
+    }
+    session.add(gen)
+    await session.flush()
+    return gen

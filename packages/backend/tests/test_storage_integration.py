@@ -161,6 +161,7 @@ async def test_execution_context_store_methods(tmp_path: Path):
     generation_id = uuid4()
     tenant_id = uuid4()
     board_id = uuid4()
+    user_id = uuid4()
 
     context = GeneratorExecutionContext(
         generation_id=generation_id,
@@ -168,6 +169,10 @@ async def test_execution_context_store_methods(tmp_path: Path):
         storage_manager=storage_manager,
         tenant_id=tenant_id,
         board_id=board_id,
+        user_id=user_id,
+        generator_name="test-generator",
+        artifact_type="image",
+        input_params={},
     )
 
     # Test storing image via context
@@ -246,6 +251,8 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
             },
             tenant_id=uuid4(),
             board_id=uuid4(),
+            user_id=uuid4(),
+            artifact_type="image",
         )
 
     async def fake_finalize_success(session, generation_id, **kwargs):

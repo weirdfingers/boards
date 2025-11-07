@@ -75,6 +75,8 @@ async def process_generation(generation_id: str) -> None:
             gen_id = gen.id
             tenant_id = gen.tenant_id
             board_id = gen.board_id
+            user_id = gen.user_id
+            artifact_type = gen.artifact_type
 
         # Initialize storage manager
         # This will use the default storage configuration from environment/config
@@ -97,9 +99,17 @@ async def process_generation(generation_id: str) -> None:
             raise ValueError(f"Invalid input parameters: {e}") from e
 
         # Build context and run generator
-        # TODO(generators): make a way for a generator to add additional generations
-        # based on eg outputs=4, or similar.
-        context = GeneratorExecutionContext(gen_id, publisher, storage_manager, tenant_id, board_id)
+        context = GeneratorExecutionContext(
+            gen_id,
+            publisher,
+            storage_manager,
+            tenant_id,
+            board_id,
+            user_id,
+            generator_name,
+            artifact_type,
+            input_params,
+        )
 
         await publisher.publish_progress(
             generation_id,
@@ -127,7 +137,7 @@ async def process_generation(generation_id: str) -> None:
             generation_id=generation_id,
         )
 
-        # Find the artifact with matching generation_id
+        # Find the artifact with matching generation_id (primary generation)
         # Generators should return exactly one artifact with the matching generation_id
         matching_artifacts = [art for art in output.outputs if art.generation_id == generation_id]
 
@@ -150,6 +160,18 @@ async def process_generation(generation_id: str) -> None:
         storage_url = artifact.storage_url
         output_metadata = artifact.model_dump()
 
+        # If this was a batch generation, add batch metadata to primary generation
+        if context._batch_id is not None:
+            output_metadata["batch_id"] = context._batch_id
+            output_metadata["batch_index"] = 0
+            output_metadata["batch_size"] = len(output.outputs)
+            logger.info(
+                "Primary generation is part of batch",
+                generation_id=generation_id,
+                batch_id=context._batch_id,
+                batch_size=len(output.outputs),
+            )
+
         # Finalize DB with storage URL and output metadata
         async with get_async_session() as session:
             await jobs_repo.finalize_success(
@@ -158,6 +180,34 @@ async def process_generation(generation_id: str) -> None:
                 storage_url=storage_url,
                 output_metadata=output_metadata,
             )
+
+        # Finalize all batch generation records (if any)
+        if context._batch_id is not None:
+            batch_artifacts = [art for art in output.outputs if art.generation_id != generation_id]
+            logger.info(
+                "Finalizing batch generation records",
+                batch_id=context._batch_id,
+                batch_count=len(batch_artifacts),
+            )
+            for batch_artifact in batch_artifacts:
+                async with get_async_session() as session:
+                    batch_metadata = batch_artifact.model_dump()
+                    # Add batch metadata to each batch generation
+                    batch_metadata["batch_id"] = context._batch_id
+                    # batch_index was already set during creation in output_metadata
+                    batch_metadata["batch_size"] = len(output.outputs)
+
+                    await jobs_repo.finalize_success(
+                        session,
+                        batch_artifact.generation_id,
+                        storage_url=batch_artifact.storage_url,
+                        output_metadata=batch_metadata,
+                    )
+                    logger.info(
+                        "Batch generation finalized",
+                        batch_generation_id=batch_artifact.generation_id,
+                        batch_id=context._batch_id,
+                    )
 
         logger.info("Job finalized successfully", generation_id=generation_id)
 
