@@ -13,11 +13,14 @@ generators:
   - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
     enabled: true
 
-  # Audio generators
-  - class: "boards.generators.implementations.audio.whisper.WhisperGenerator"
+  - class: "boards.generators.implementations.image.dalle3.DallE3Generator"
     enabled: true
 
-  - class: "boards.generators.implementations.image.dalle3.DallE3Generator"
+  - class: "boards.generators.implementations.image.nano_banana.NanoBananaGenerator"
+    enabled: true
+
+  # Audio generators
+  - class: "boards.generators.implementations.audio.whisper.WhisperGenerator"
     enabled: true
 
   # Video generators

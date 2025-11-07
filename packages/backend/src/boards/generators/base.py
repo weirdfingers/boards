@@ -96,6 +96,7 @@ class GeneratorExecutionContext(Protocol):
         format: str,
         width: int,
         height: int,
+        output_index: int = 0,
     ) -> ImageArtifact:
         """Store an image result to permanent storage."""
         ...
@@ -108,6 +109,7 @@ class GeneratorExecutionContext(Protocol):
         height: int,
         duration: float | None = None,
         fps: float | None = None,
+        output_index: int = 0,
     ) -> VideoArtifact:
         """Store a video result to permanent storage."""
         ...
@@ -119,6 +121,7 @@ class GeneratorExecutionContext(Protocol):
         duration: float | None = None,
         sample_rate: int | None = None,
         channels: int | None = None,
+        output_index: int = 0,
     ) -> AudioArtifact:
         """Store an audio result to permanent storage."""
         ...
@@ -127,6 +130,7 @@ class GeneratorExecutionContext(Protocol):
         self,
         content: str,
         format: str,
+        output_index: int = 0,
     ) -> TextArtifact:
         """Store a text result to permanent storage."""
         ...

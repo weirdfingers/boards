@@ -161,6 +161,7 @@ async def test_execution_context_store_methods(tmp_path: Path):
     generation_id = uuid4()
     tenant_id = uuid4()
     board_id = uuid4()
+    user_id = uuid4()
 
     context = GeneratorExecutionContext(
         generation_id=generation_id,
@@ -168,6 +169,10 @@ async def test_execution_context_store_methods(tmp_path: Path):
         storage_manager=storage_manager,
         tenant_id=tenant_id,
         board_id=board_id,
+        user_id=user_id,
+        generator_name="test-generator",
+        artifact_type="image",
+        input_params={},
     )
 
     # Test storing image via context
@@ -246,6 +251,8 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
             },
             tenant_id=uuid4(),
             board_id=uuid4(),
+            user_id=uuid4(),
+            artifact_type="image",
         )
 
     async def fake_finalize_success(session, generation_id, **kwargs):
@@ -305,3 +312,127 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
         # Verify storage URL was saved
         assert stored_url is not None
         assert "storage" in stored_url or stored_url.startswith("file://")
+
+
+@pytest.mark.asyncio
+async def test_batch_generation_context(tmp_path: Path):
+    """Test execution context creating batch generation records."""
+    from boards.storage.implementations.local import LocalStorageProvider
+
+    # Create storage manager
+    storage_manager = create_development_storage()
+    local_provider = storage_manager.providers["local"]
+    assert isinstance(local_provider, LocalStorageProvider)
+    local_provider.base_path = tmp_path / "storage"
+    local_provider.base_path.mkdir(parents=True, exist_ok=True)
+
+    # Create mock progress publisher
+    from boards.config import Settings
+    from boards.progress.publisher import ProgressPublisher
+
+    settings = Settings()
+    publisher = ProgressPublisher(settings)
+
+    async def fake_publish(_job_id, _update):
+        pass
+
+    async def fake_persist(_job_id, _update):
+        pass
+
+    publisher.publish_progress = fake_publish  # type: ignore
+    publisher._persist_update = fake_persist  # type: ignore
+
+    # Create execution context
+    generation_id = uuid4()
+    tenant_id = uuid4()
+    board_id = uuid4()
+    user_id = uuid4()
+
+    context = GeneratorExecutionContext(
+        generation_id=generation_id,
+        publisher=publisher,
+        storage_manager=storage_manager,
+        tenant_id=tenant_id,
+        board_id=board_id,
+        user_id=user_id,
+        generator_name="test-generator",
+        artifact_type="image",
+        input_params={"num_images": 3},
+    )
+
+    # Mock database session and repository
+    from unittest.mock import AsyncMock
+
+    from boards.jobs import repository as jobs_repo
+
+    created_generations = []
+
+    async def fake_create_batch_generation(_session, **kwargs):
+        gen = SimpleNamespace(
+            id=uuid4(),
+            tenant_id=kwargs["tenant_id"],
+            board_id=kwargs["board_id"],
+            user_id=kwargs["user_id"],
+            generator_name=kwargs["generator_name"],
+            artifact_type=kwargs["artifact_type"],
+            input_params=kwargs["input_params"],
+            output_metadata=kwargs.get("output_metadata", {}),
+        )
+        created_generations.append(gen)
+        return gen
+
+    # Mock the async session and repository
+    with patch("boards.workers.context.get_async_session") as mock_session:
+        mock_session.return_value.__aenter__ = AsyncMock(return_value=AsyncMock())
+        mock_session.return_value.__aexit__ = AsyncMock(return_value=None)
+
+        with patch.object(jobs_repo, "create_batch_generation", fake_create_batch_generation):
+            # Test storing multiple images via context
+            test_image_data = b"batch test image"
+
+            # Mock HTTP download
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_client.return_value.__aenter__.return_value.stream = MagicMock(
+                    return_value=create_mock_stream_context(test_image_data)
+                )
+
+                # Store primary output (output_index=0)
+                artifact_0 = await context.store_image_result(
+                    storage_url="https://example.com/image0.png",
+                    format="png",
+                    width=512,
+                    height=512,
+                    output_index=0,
+                )
+
+                # Store batch outputs (output_index=1, 2)
+                artifact_1 = await context.store_image_result(
+                    storage_url="https://example.com/image1.png",
+                    format="png",
+                    width=512,
+                    height=512,
+                    output_index=1,
+                )
+
+                artifact_2 = await context.store_image_result(
+                    storage_url="https://example.com/image2.png",
+                    format="png",
+                    width=512,
+                    height=512,
+                    output_index=2,
+                )
+
+                # Verify primary artifact uses original generation_id
+                assert artifact_0.generation_id == str(generation_id)
+
+                # Verify batch artifacts have different generation_ids
+                assert artifact_1.generation_id != str(generation_id)
+                assert artifact_2.generation_id != str(generation_id)
+                assert artifact_1.generation_id != artifact_2.generation_id
+
+                # Verify batch generations were created
+                assert len(created_generations) == 2  # Two batch generations (index 1 and 2)
+
+                # Verify batch_id is consistent
+                assert context._batch_id is not None
+                assert len(context._batch_generations) == 2
