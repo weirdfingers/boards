@@ -35,7 +35,7 @@ async def test_worker_integration(
     from sqlalchemy import select
 
     from boards.dbmodels import Boards, Generations, Tenants, Users
-    from boards.generators.implementations.image.flux_pro import FluxProGenerator
+    from boards.generators.implementations.replicate.image.flux_pro import ReplicateFluxProGenerator
     from boards.generators.registry import registry
     from boards.progress.publisher import ProgressPublisher
 
@@ -81,7 +81,7 @@ async def test_worker_integration(
     generation.tenant_id = tenant_id
     generation.board_id = board_id
     generation.user_id = user_id
-    generation.generator_name = "flux-pro"
+    generation.generator_name = "replicate-flux-pro"
     generation.artifact_type = "image"
     generation.input_params = {
         "prompt": "a test image",
@@ -107,7 +107,7 @@ async def test_worker_integration(
 
     # Ensure generator is registered
     try:
-        registry.register(FluxProGenerator())
+        registry.register(ReplicateFluxProGenerator())
     except Exception:
         pass
 

@@ -12,13 +12,13 @@ Key components:
 
 Example usage:
     from boards.generators import registry
-    from boards.generators.implementations.image.flux_pro import FluxProGenerator
+    from boards.generators.implementations.replicate.image.flux_pro import ReplicateFluxProGenerator
 
     # Get available generators
     image_generators = registry.list_by_artifact_type("image")
 
     # Use a specific generator
-    flux = registry.get("flux-pro")
+    flux = registry.get("replicate-flux-pro")
     result = await flux.generate(inputs)
 """
 

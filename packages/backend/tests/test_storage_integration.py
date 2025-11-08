@@ -226,12 +226,12 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
     sys.modules["replicate.helpers"] = mock_helpers
 
     # Register generator
-    from boards.generators.implementations.image.flux_pro import FluxProGenerator
+    from boards.generators.implementations.replicate.image.flux_pro import ReplicateFluxProGenerator
     from boards.generators.registry import registry
     from boards.jobs import repository as jobs_repo
 
     try:
-        registry.register(FluxProGenerator())
+        registry.register(ReplicateFluxProGenerator())
     except Exception:
         pass
 
@@ -243,7 +243,7 @@ async def test_worker_integration_with_storage(monkeypatch, tmp_path: Path):
     async def fake_get_generation(session, generation_id):
         return SimpleNamespace(
             id=generation_id,
-            generator_name="flux-pro",
+            generator_name="replicate-flux-pro",
             input_params={
                 "prompt": "test prompt",
                 "aspect_ratio": "1:1",

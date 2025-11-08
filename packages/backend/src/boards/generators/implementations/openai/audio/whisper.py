@@ -6,8 +6,8 @@ Demonstrates audio processing generator that outputs text.
 
 from pydantic import BaseModel, Field
 
-from ...artifacts import AudioArtifact
-from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....artifacts import AudioArtifact
+from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class WhisperInput(BaseModel):
@@ -18,12 +18,12 @@ class WhisperInput(BaseModel):
     prompt: str = Field(default="", description="Optional prompt to guide transcription")
 
 
-class WhisperGenerator(BaseGenerator):
+class OpenAIWhisperGenerator(BaseGenerator):
     """Whisper speech-to-text transcription using OpenAI API."""
 
-    name = "whisper"
+    name = "openai-whisper"
     artifact_type = "text"
-    description = "OpenAI Whisper - speech-to-text transcription"
+    description = "OpenAI: Whisper - speech-to-text transcription"
 
     def get_input_schema(self) -> type[WhisperInput]:
         return WhisperInput

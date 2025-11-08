@@ -7,8 +7,8 @@ with automatic artifact resolution.
 
 from pydantic import BaseModel, Field
 
-from ...artifacts import AudioArtifact, VideoArtifact
-from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....artifacts import AudioArtifact, VideoArtifact
+from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class LipsyncInput(BaseModel):
@@ -19,12 +19,12 @@ class LipsyncInput(BaseModel):
     prompt: str | None = Field(None, description="Optional prompt for generation")
 
 
-class LipsyncGenerator(BaseGenerator):
+class ReplicateLipsyncGenerator(BaseGenerator):
     """Lipsync generator that syncs lips in video to audio."""
 
-    name = "lipsync"
+    name = "replicate-lipsync"
     artifact_type = "video"
-    description = "Sync lips in video to match audio track"
+    description = "Replicate: Sync lips in video to match audio track"
 
     def get_input_schema(self) -> type[LipsyncInput]:
         return LipsyncInput
