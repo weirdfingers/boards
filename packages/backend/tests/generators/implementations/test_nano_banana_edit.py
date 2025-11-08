@@ -525,9 +525,11 @@ class TestFalNanoBananaEditGenerator:
             mock_handler.iter_events = MagicMock(return_value=async_event_iterator())
             mock_handler.get = AsyncMock(return_value={"images": [], "description": ""})
 
+            fake_uploaded_url = "https://fal.media/files/uploaded.png"
+
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
-            mock_fal_client.upload_file_async = AsyncMock(return_value="https://fal.media/files/uploaded.png")  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(return_value=fake_uploaded_url)  # type: ignore[attr-defined]
             sys.modules["fal_client"] = mock_fal_client
 
             class DummyCtx(GeneratorExecutionContext):
