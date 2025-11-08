@@ -11,8 +11,8 @@ from pydantic import ValidationError
 from boards.generators.artifacts import ImageArtifact
 from boards.generators.base import GeneratorExecutionContext, GeneratorResult
 from boards.generators.implementations.replicate.image.flux_pro import (
-    ReplicateFluxProGenerator,
     FluxProInput,
+    ReplicateFluxProGenerator,
 )
 
 
