@@ -16,7 +16,7 @@ from boards.generators.artifacts import ImageArtifact
 from boards.generators.resolution import store_image_result
 from boards.generators.registry import registry
 
-class FluxProInput(BaseModel):
+class ReplicateFluxProInput(BaseModel):
     prompt: str = Field(description="Text prompt for image generation")
     aspect_ratio: str = Field(
         default="1:1",
@@ -30,24 +30,24 @@ class FluxProInput(BaseModel):
         description="Safety tolerance level (1-5)"
     )
 
-class FluxProOutput(BaseModel):
+class ReplicateFluxProOutput(BaseModel):
     image: ImageArtifact
 
-class FluxProGenerator(BaseGenerator):
-    name = "flux-pro"
+class ReplicateFluxProGenerator(BaseGenerator):
+    name = "replicate-flux-pro"
     artifact_type = "image"
     description = "FLUX.1.1 [pro] by Black Forest Labs - high-quality image generation"
-    
-    def get_input_schema(self) -> Type[FluxProInput]:
-        return FluxProInput
-    
-    async def generate(self, inputs: FluxProInput) -> FluxProOutput:
+
+    def get_input_schema(self) -> Type[ReplicateFluxProInput]:
+        return ReplicateFluxProInput
+
+    async def generate(self, inputs: ReplicateFluxProInput) -> ReplicateFluxProOutput:
         import os
         import replicate
-        
+
         if not os.getenv("REPLICATE_API_TOKEN"):
             raise ValueError("REPLICATE_API_TOKEN environment variable is required")
-        
+
         prediction = await replicate.async_run(
             "black-forest-labs/flux-1.1-pro",
             input={
@@ -56,9 +56,9 @@ class FluxProGenerator(BaseGenerator):
                 "safety_tolerance": inputs.safety_tolerance,
             }
         )
-        
+
         output_url = prediction[0] if isinstance(prediction, list) else prediction
-        
+
         image_artifact = await store_image_result(
             storage_url=output_url,
             format="png",
@@ -66,13 +66,13 @@ class FluxProGenerator(BaseGenerator):
             width=1024,
             height=1024
         )
-        
-        return FluxProOutput(image=image_artifact)
-    
-    async def estimate_cost(self, inputs: FluxProInput) -> float:
+
+        return ReplicateFluxProOutput(image=image_artifact)
+
+    async def estimate_cost(self, inputs: ReplicateFluxProInput) -> float:
         return 0.055  # FLUX.1.1 Pro pricing
 
-registry.register(FluxProGenerator())
+registry.register(ReplicateFluxProGenerator())
 ```
 
 ### Style Transfer Generator
@@ -157,7 +157,7 @@ A video generator that syncs lips to audio:
 ```python
 from boards.generators.artifacts import VideoArtifact, AudioArtifact
 
-class LipsyncInput(BaseModel):
+class ReplicateLipsyncInput(BaseModel):
     video_source: VideoArtifact = Field(description="Video to sync lips in")
     audio_source: AudioArtifact = Field(description="Audio track for lip sync")
     quality: str = Field(
@@ -166,23 +166,23 @@ class LipsyncInput(BaseModel):
         pattern="^(low|medium|high)$"
     )
 
-class LipsyncOutput(BaseModel):
+class ReplicateLipsyncOutput(BaseModel):
     video: VideoArtifact
 
-class LipsyncGenerator(BaseGenerator):
-    name = "lipsync"
+class ReplicateLipsyncGenerator(BaseGenerator):
+    name = "replicate-lipsync"
     artifact_type = "video"
     description = "Sync lips in video to match audio track"
-    
-    async def generate(self, inputs: LipsyncInput) -> LipsyncOutput:
+
+    async def generate(self, inputs: ReplicateLipsyncInput) -> ReplicateLipsyncOutput:
         from boards.generators.resolution import resolve_artifact, store_video_result
-        
+
         # Resolve both input artifacts
         video_path = await resolve_artifact(inputs.video_source)
         audio_path = await resolve_artifact(inputs.audio_source)
-        
+
         import replicate
-        
+
         result = await replicate.async_run(
             "cjwbw/wav2lip",
             input={
@@ -191,7 +191,7 @@ class LipsyncGenerator(BaseGenerator):
                 "quality": inputs.quality
             }
         )
-        
+
         video_artifact = await store_video_result(
             storage_url=result,
             format="mp4",
@@ -201,17 +201,17 @@ class LipsyncGenerator(BaseGenerator):
             duration=inputs.audio_source.duration,
             fps=inputs.video_source.fps
         )
-        
-        return LipsyncOutput(video=video_artifact)
-    
-    async def estimate_cost(self, inputs: LipsyncInput) -> float:
+
+        return ReplicateLipsyncOutput(video=video_artifact)
+
+    async def estimate_cost(self, inputs: ReplicateLipsyncInput) -> float:
         # Cost based on video duration
         duration = inputs.video_source.duration or 10  # Default 10s
         base_cost = 0.01
         duration_cost = duration * 0.002  # $0.002 per second
-        
+
         quality_multiplier = {"low": 1.0, "medium": 1.5, "high": 2.0}[inputs.quality]
-        
+
         return (base_cost + duration_cost) * quality_multiplier
 ```
 

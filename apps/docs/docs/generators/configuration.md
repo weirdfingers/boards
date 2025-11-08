@@ -34,13 +34,13 @@ allow_unlisted: false # block registrations not declared in config
 
 generators:
   # Back-compat import (module triggers registry.register on import)
-  - import: "boards.generators.implementations.audio.whisper"
+  - import: "boards.generators.implementations.openai.audio.whisper"
     enabled: true
 
   # Class-based (preferred): class path + constructor options
-  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
     enabled: true
-    name: "flux-pro" # optional override for UI/registry
+    name: "replicate-flux-pro" # optional override for UI/registry
     options: # forwarded to constructor as kwargs
       aspect_ratio: "16:9"
       safety_tolerance: 3
@@ -71,7 +71,7 @@ External packages expose generators via entry points:
 
 ```toml
 [project.entry-points."boards.generators"]
-myorg.whisper = "my_pkg.generators.whisper:WhisperGenerator"
+myorg.whisper = "my_pkg.generators.whisper:OpenAIWhisperGenerator"
 ```
 
 Then reference by name in the config:

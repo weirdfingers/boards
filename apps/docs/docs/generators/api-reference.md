@@ -22,7 +22,7 @@ class MyGenerator(BaseGenerator):
 ```
 
 **name** (`str`, required)
-: Unique string identifier for the generator (e.g., `"flux-pro"`, `"whisper"`)
+: Unique string identifier for the generator (e.g., `"replicate-flux-pro"`, `"openai-whisper"`)
 
 **artifact_type** (`str`, required)
 : Type of artifact this generator produces. Must be one of: `"image"`, `"video"`, `"audio"`, `"text"`, `"lora"`
@@ -73,9 +73,9 @@ def get_output_schema(self) -> Type[BaseModel]:
 : String representation of the generator instance.
 
 ```python
->>> generator = FluxProGenerator()
+>>> generator = ReplicateFluxProGenerator()
 >>> repr(generator)
-'<FluxProGenerator(name=\'flux-pro\', type=\'image\')>'
+'<ReplicateFluxProGenerator(name=\'replicate-flux-pro\', type=\'image\')>'
 ```
 
 ## Artifact Types
@@ -296,7 +296,7 @@ Central registry for managing generators.
 from boards.generators.registry import GeneratorRegistry, registry
 
 # Use global instance
-generator = registry.get("flux-pro")
+generator = registry.get("replicate-flux-pro")
 
 # Or create your own
 my_registry = GeneratorRegistry()
@@ -317,7 +317,7 @@ registry.register(MyGenerator())
 : Get generator by name, returns `None` if not found.
 
 ```python
-generator = registry.get("flux-pro")
+generator = registry.get("replicate-flux-pro")
 if generator:
     result = await generator.generate(inputs)
 ```
@@ -369,7 +369,7 @@ assert len(registry) == 0
 : Check if generator with name is registered.
 
 ```python
-if "flux-pro" in registry:
+if "replicate-flux-pro" in registry:
     print("FLUX Pro is available")
 ```
 

@@ -40,7 +40,7 @@ Generator declaration supports three mutually exclusive forms:
 
 ```yaml
 generators:
-  - import: "boards.generators.implementations.audio.whisper"
+  - import: "boards.generators.implementations.openai.audio.whisper"
     enabled: true
 ```
 
@@ -48,9 +48,9 @@ generators:
 
 ```yaml
 generators:
-  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
     enabled: true
-    name: "flux-pro" # optional override; defaults to class attribute
+    name: "replicate-flux-pro" # optional override; defaults to class attribute
     options: # forwarded as keyword args to the constructor
       aspect_ratio: "16:9"
       safety_tolerance: 3
@@ -103,8 +103,8 @@ External packages can expose generators via a dedicated entry point group. Examp
 
 ```toml
 [project.entry-points."boards.generators"]
-flux_pro = "boards.generators.implementations.image.flux_pro:FluxProGenerator"
-myorg.whisper = "my_pkg.generators.whisper:WhisperGenerator"
+replicate_flux_pro = "boards.generators.implementations.replicate.image.flux_pro:ReplicateFluxProGenerator"
+myorg.whisper = "my_pkg.generators.whisper:OpenAIWhisperGenerator"
 ```
 
 Operational notes:
@@ -145,13 +145,13 @@ allow_unlisted: false
 
 generators:
   # Back-compat import
-  - import: "boards.generators.implementations.audio.whisper"
+  - import: "boards.generators.implementations.openai.audio.whisper"
     enabled: true
 
   # Class with constructor options and name override
-  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
     enabled: true
-    name: "flux-pro"
+    name: "replicate-flux-pro"
     options:
       aspect_ratio: "16:9"
       safety_tolerance: 3
@@ -173,11 +173,11 @@ profiles:
     strict_mode: true
     generators:
       - entrypoint: "myorg.whisper"
-      - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+      - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
   development:
     strict_mode: false
     generators:
-      - import: "boards.generators.implementations.audio.whisper"
+      - import: "boards.generators.implementations.openai.audio.whisper"
 ```
 
 Note: The loader itself consumes the canonical schema (without `profiles`). Profile selection is done externally (CLI, deployment templating) to keep the loader simple.

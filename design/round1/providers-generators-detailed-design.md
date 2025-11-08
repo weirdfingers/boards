@@ -79,30 +79,30 @@ class BaseGenerator(ABC):
 
 ```python
 # Example: Lipsync Generator
-class LipsyncInput(BaseModel):
+class ReplicateLipsyncInput(BaseModel):
     audio_source: AudioArtifact  # Drag/drop slot for audio
     video_source: VideoArtifact  # Drag/drop slot for video
     prompt: Optional[str] = None
 
-class LipsyncOutput(BaseModel):
+class ReplicateLipsyncOutput(BaseModel):
     video: VideoArtifact
 
-class LipsyncGenerator(BaseGenerator):
-    name = "lipsync"
+class ReplicateLipsyncGenerator(BaseGenerator):
+    name = "replicate-lipsync"
     artifact_type = "video"
     description = "Sync lips in video to audio"
-    
-    def get_input_schema(self) -> Type[LipsyncInput]:
-        return LipsyncInput
-    
-    async def generate(self, inputs: LipsyncInput) -> LipsyncOutput:
+
+    def get_input_schema(self) -> Type[ReplicateLipsyncInput]:
+        return ReplicateLipsyncInput
+
+    async def generate(self, inputs: ReplicateLipsyncInput) -> ReplicateLipsyncOutput:
         # Import SDK directly
         import replicate
-        
+
         # System automatically resolves artifacts to file paths
         audio_file = await resolve_artifact(inputs.audio_source)
         video_file = await resolve_artifact(inputs.video_source)
-        
+
         # Use SDK directly - no wrapper layer
         result = await replicate.async_run(
             "replicate/lipsync-model",
@@ -111,12 +111,12 @@ class LipsyncGenerator(BaseGenerator):
                 "video": video_file
             }
         )
-        
+
         # Store output and create artifact
         video_artifact = await store_video_result(result)
-        return LipsyncOutput(video=video_artifact)
-    
-    async def estimate_cost(self, inputs: LipsyncInput) -> float:
+        return ReplicateLipsyncOutput(video=video_artifact)
+
+    async def estimate_cost(self, inputs: ReplicateLipsyncInput) -> float:
         # Simple cost estimation logic
         return 0.05  # $0.05 per generation
 ```
@@ -174,9 +174,9 @@ class GeneratorRegistry:
 registry = GeneratorRegistry()
 
 # Generators register themselves on import
-registry.register(LipsyncGenerator())
-registry.register(FluxProGenerator()) 
-registry.register(DallE3Generator())
+registry.register(ReplicateLipsyncGenerator())
+registry.register(ReplicateFluxProGenerator())
+registry.register(OpenAIDallE3Generator())
 ```
 
 ## Directory Structure
