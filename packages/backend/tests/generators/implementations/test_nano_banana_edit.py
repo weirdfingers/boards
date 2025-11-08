@@ -262,6 +262,7 @@ class TestFalNanoBananaEditGenerator:
 
         fake_output_url = "https://storage.googleapis.com/falserverless/output.png"
         fake_description = "Here is a photo with a more dramatic sky."
+        fake_uploaded_url = "https://fal.media/files/uploaded-input.png"
 
         with patch.dict(os.environ, {"FAL_KEY": "fake-key"}):
             # Mock fal_client module
@@ -296,6 +297,7 @@ class TestFalNanoBananaEditGenerator:
             # Create mock fal_client module
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(return_value=fake_uploaded_url)  # type: ignore[attr-defined]
 
             sys.modules["fal_client"] = mock_fal_client
 
@@ -316,7 +318,8 @@ class TestFalNanoBananaEditGenerator:
                 board_id = "test_board"
 
                 async def resolve_artifact(self, artifact):
-                    return ""
+                    # Return a fake local file path
+                    return "/tmp/fake_image.png"
 
                 async def store_image_result(self, **kwargs):
                     return mock_artifact
@@ -343,12 +346,15 @@ class TestFalNanoBananaEditGenerator:
             assert len(result.outputs) == 1
             assert result.outputs[0] == mock_artifact
 
-            # Verify API calls
+            # Verify file upload was called
+            mock_fal_client.upload_file_async.assert_called_once_with("/tmp/fake_image.png")
+
+            # Verify API calls with uploaded URL
             mock_fal_client.submit_async.assert_called_once_with(
                 "fal-ai/nano-banana/edit",
                 arguments={
                     "prompt": "make the sky more dramatic",
-                    "image_urls": ["https://example.com/input.png"],
+                    "image_urls": [fake_uploaded_url],  # Should use uploaded URL, not original
                     "num_images": 1,
                     "output_format": "jpeg",
                     "sync_mode": False,
@@ -386,6 +392,10 @@ class TestFalNanoBananaEditGenerator:
             "https://storage.googleapis.com/falserverless/output1.png",
             "https://storage.googleapis.com/falserverless/output2.png",
         ]
+        fake_uploaded_urls = [
+            "https://fal.media/files/uploaded-input1.png",
+            "https://fal.media/files/uploaded-input2.png",
+        ]
 
         with patch.dict(os.environ, {"FAL_KEY": "fake-key"}):
             import sys
@@ -409,8 +419,18 @@ class TestFalNanoBananaEditGenerator:
                 }
             )
 
+            # Mock file uploads to return different URLs for each file
+            upload_call_count = 0
+
+            async def mock_upload(file_path):
+                nonlocal upload_call_count
+                url = fake_uploaded_urls[upload_call_count]
+                upload_call_count += 1
+                return url
+
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(side_effect=mock_upload)  # type: ignore[attr-defined]
             sys.modules["fal_client"] = mock_fal_client
 
             # Mock storage results
@@ -426,6 +446,7 @@ class TestFalNanoBananaEditGenerator:
             ]
 
             artifact_idx = 0
+            resolve_call_count = 0
 
             class DummyCtx(GeneratorExecutionContext):
                 generation_id = "test_gen"
@@ -434,7 +455,11 @@ class TestFalNanoBananaEditGenerator:
                 board_id = "test_board"
 
                 async def resolve_artifact(self, artifact):
-                    return ""
+                    nonlocal resolve_call_count
+                    # Return different fake paths for each artifact
+                    path = f"/tmp/fake_image_{resolve_call_count}.png"
+                    resolve_call_count += 1
+                    return path
 
                 async def store_image_result(self, **kwargs):
                     nonlocal artifact_idx
@@ -463,9 +488,13 @@ class TestFalNanoBananaEditGenerator:
             assert isinstance(result, GeneratorResult)
             assert len(result.outputs) == 2
 
-            # Verify API call included aspect_ratio
+            # Verify file uploads were called for both images
+            assert mock_fal_client.upload_file_async.call_count == 2
+
+            # Verify API call included aspect_ratio and uploaded URLs
             call_args = mock_fal_client.submit_async.call_args
             assert call_args[1]["arguments"]["aspect_ratio"] == "16:9"
+            assert call_args[1]["arguments"]["image_urls"] == fake_uploaded_urls
 
     @pytest.mark.asyncio
     async def test_generate_no_images_returned(self):
@@ -498,6 +527,7 @@ class TestFalNanoBananaEditGenerator:
 
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(return_value="https://fal.media/files/uploaded.png")  # type: ignore[attr-defined]
             sys.modules["fal_client"] = mock_fal_client
 
             class DummyCtx(GeneratorExecutionContext):
@@ -507,7 +537,7 @@ class TestFalNanoBananaEditGenerator:
                 board_id = "test_board"
 
                 async def resolve_artifact(self, artifact):
-                    return ""
+                    return "/tmp/fake_image.png"
 
                 async def store_image_result(self, **kwargs):
                     raise NotImplementedError

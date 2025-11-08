@@ -97,10 +97,14 @@ class FalNanoBananaEditGenerator(BaseGenerator):
                 "Install with: pip install weirdfingers-boards[generators-fal]"
             ) from e
 
-        # Resolve image artifacts to URLs via context
-        # The context.resolve_artifact returns a file path, but fal.ai needs URLs
-        # We'll use the storage_url directly from the artifacts
-        image_urls = [artifact.storage_url for artifact in inputs.image_sources]
+        # Upload image artifacts to Fal's public storage
+        # Fal API requires publicly accessible URLs, but our storage_url might be:
+        # - Localhost URLs (not publicly accessible)
+        # - Private S3 buckets (not publicly accessible)
+        # So we upload to Fal's temporary storage first
+        from ..utils import upload_artifacts_to_fal
+
+        image_urls = await upload_artifacts_to_fal(inputs.image_sources, context)
 
         # Prepare arguments for fal.ai API
         arguments = {
