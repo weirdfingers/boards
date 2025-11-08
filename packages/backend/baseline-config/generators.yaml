@@ -20,6 +20,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.nano_banana.FalNanoBananaGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.nano_banana_edit.FalNanoBananaEditGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
