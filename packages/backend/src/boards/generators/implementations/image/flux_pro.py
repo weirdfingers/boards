@@ -50,7 +50,10 @@ class FluxProGenerator(BaseGenerator):
             import replicate
             from replicate.helpers import FileOutput
         except ImportError as e:
-            raise ValueError("Required dependencies not available") from e
+            raise ImportError(
+                "Replicate SDK is required for FluxProGenerator. "
+                "Install with: pip install weirdfingers-boards[generators-replicate]"
+            ) from e
 
         # Use Replicate SDK directly
         prediction: FileOutput | AsyncIterator[FileOutput] = await replicate.async_run(

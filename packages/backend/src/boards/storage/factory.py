@@ -47,7 +47,10 @@ try:
 except ImportError:
     SupabaseStorageProvider = None
     _supabase_available = False
-    logger.warning("Supabase storage not available - install supabase-py to enable")
+    logger.warning(
+        "Supabase storage not available. "
+        "Install with: pip install weirdfingers-boards[storage-supabase]"
+    )
 
 try:
     from .implementations.s3 import S3StorageProvider
@@ -56,7 +59,9 @@ try:
 except ImportError:
     S3StorageProvider = None
     _s3_available = False
-    logger.warning("S3 storage not available - install boto3 and aioboto3 to enable")
+    logger.warning(
+        "S3 storage not available. " "Install with: pip install weirdfingers-boards[storage-s3]"
+    )
 
 try:
     from .implementations.gcs import GCSStorageProvider
@@ -65,7 +70,9 @@ try:
 except ImportError:
     GCSStorageProvider = None
     _gcs_available = False
-    logger.warning("GCS storage not available - install google-cloud-storage to enable")
+    logger.warning(
+        "GCS storage not available. " "Install with: pip install weirdfingers-boards[storage-gcs]"
+    )
 
 
 def create_storage_provider(provider_type: str, config: dict[str, Any]) -> StorageProvider:
@@ -88,19 +95,22 @@ def create_storage_provider(provider_type: str, config: dict[str, Any]) -> Stora
     elif provider_type == "supabase":
         if not _supabase_available:
             raise ImportError(
-                "Supabase storage requires supabase-py. Install with: pip install supabase"
+                "Supabase storage requires additional dependencies. "
+                "Install with: pip install weirdfingers-boards[storage-supabase]"
             )
         return _create_supabase_provider(config)
     elif provider_type == "s3":
         if not _s3_available:
             raise ImportError(
-                "S3 storage requires boto3 and aioboto3. Install with: pip install boto3 aioboto3"
+                "S3 storage requires additional dependencies. "
+                "Install with: pip install weirdfingers-boards[storage-s3]"
             )
         return _create_s3_provider(config)
     elif provider_type == "gcs":
         if not _gcs_available:
             raise ImportError(
-                "GCS storage package required. Install with: pip install google-cloud-storage"
+                "GCS storage requires additional dependencies. "
+                "Install with: pip install weirdfingers-boards[storage-gcs]"
             )
         return _create_gcs_provider(config)
     else:

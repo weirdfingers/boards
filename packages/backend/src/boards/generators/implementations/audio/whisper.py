@@ -35,7 +35,10 @@ class WhisperGenerator(BaseGenerator):
         try:
             from openai import AsyncOpenAI
         except ImportError as e:
-            raise ValueError("Required dependencies not available") from e
+            raise ImportError(
+                "OpenAI SDK is required for WhisperGenerator. "
+                "Install with: pip install weirdfingers-boards[generators-openai]"
+            ) from e
 
         client = AsyncOpenAI()
 

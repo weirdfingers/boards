@@ -46,7 +46,10 @@ class DallE3Generator(BaseGenerator):
         try:
             from openai import AsyncOpenAI
         except ImportError as e:
-            raise ValueError("Required dependencies not available") from e
+            raise ImportError(
+                "OpenAI SDK is required for DallE3Generator. "
+                "Install with: pip install weirdfingers-boards[generators-openai]"
+            ) from e
 
         client = AsyncOpenAI()
 

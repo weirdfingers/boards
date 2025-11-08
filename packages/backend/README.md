@@ -15,21 +15,72 @@ Backend for the Boards open-source creative toolkit for AI-generated content.
 
 ## Installation
 
-```bash
-# Install from PyPI (includes core dependencies: Redis, PyJWT)
-pip install boards-backend
+### Minimal Install
 
-# Or with optional provider/storage dependencies
-pip install boards-backend[providers,storage-s3,storage-gcs]
+The minimal installation includes core functionality with local filesystem storage only:
+
+```bash
+pip install weirdfingers-boards
+```
+
+### Install with Specific Generators
+
+Install only the generator providers you need:
+
+```bash
+# OpenAI generators (DALL-E 3, Whisper)
+pip install weirdfingers-boards[generators-openai]
+
+# Replicate generators (Flux Pro, Lipsync)
+pip install weirdfingers-boards[generators-replicate]
+
+# fal.ai generators (nano-banana)
+pip install weirdfingers-boards[generators-fal]
+
+# Multiple generators
+pip install weirdfingers-boards[generators-openai,generators-replicate]
+
+# All generators
+pip install weirdfingers-boards[generators-all]
+```
+
+### Install with Storage Backends
+
+Add cloud storage providers as needed:
+
+```bash
+# S3 storage (AWS, MinIO, DigitalOcean Spaces)
+pip install weirdfingers-boards[storage-s3]
+
+# Supabase storage
+pip install weirdfingers-boards[storage-supabase]
+
+# Google Cloud Storage
+pip install weirdfingers-boards[storage-gcs]
+
+# All storage backends
+pip install weirdfingers-boards[storage-all]
+```
+
+### Full Installation
+
+Install everything (all generators and storage backends):
+
+```bash
+pip install weirdfingers-boards[all]
 ```
 
 ### Development Installation
 
+For local development with all providers for type checking and testing:
+
 ```bash
-# Clone the repository and install (includes all extras for typecheck)
+# Clone the repository
 git clone https://github.com/weirdfingers/boards.git
 cd boards/packages/backend
-uv sync  # Automatically installs dev dependencies including all providers/storage
+
+# Install with dev dependencies (includes all providers)
+uv sync
 ```
 
 ## Configuration

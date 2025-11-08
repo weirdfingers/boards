@@ -85,7 +85,10 @@ class NanoBananaGenerator(BaseGenerator):
         try:
             import fal_client
         except ImportError as e:
-            raise ValueError("Required dependencies not available. Install fal-client.") from e
+            raise ImportError(
+                "fal.ai SDK is required for NanoBananaGenerator. "
+                "Install with: pip install weirdfingers-boards[generators-fal]"
+            ) from e
 
         # Prepare arguments for fal.ai API
         arguments = {
