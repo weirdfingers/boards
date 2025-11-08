@@ -187,9 +187,9 @@ class FalNanoBananaEditGenerator(BaseGenerator):
                 raise ValueError(f"Image {idx} missing URL in fal.ai response")
 
             # Store with appropriate output_index
-            # Note: The Gemini description from the API response is available in the
-            # 'description' variable but is not currently stored with the artifact.
-            # Consider extending ImageArtifact to support metadata in the future.
+            # Note: The Gemini description from the API response (result.get("description"))
+            # is not currently stored with the artifact. Consider extending ImageArtifact
+            # to support metadata in the future.
             artifact = await context.store_image_result(
                 storage_url=image_url,
                 format=inputs.output_format,

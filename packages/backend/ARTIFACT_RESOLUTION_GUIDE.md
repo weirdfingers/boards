@@ -57,7 +57,7 @@ The system:
 4. **Converts** generation records to typed artifact objects
 5. **Validates** the input with Pydantic
 
-All of this happens automatically in [actors.py](src/boards/workers/actors.py:92-112).
+All of this happens automatically in [actors.py](src/boards/workers/actors.py).
 
 ## Supported Patterns
 
@@ -141,8 +141,8 @@ class VideoAudioMixInput(BaseModel):
 
 The automatic detection is handled by:
 
-- [`extract_artifact_fields()`](src/boards/generators/artifact_resolution.py:62-90) - Introspects schema to find artifact fields
-- [`resolve_input_artifacts()`](src/boards/generators/artifact_resolution.py:252-344) - Resolves generation IDs to artifacts
-- [`resolve_generation_ids_to_artifacts()`](src/boards/generators/artifact_resolution.py:150-249) - Database queries and validation
+- [`extract_artifact_fields()`](src/boards/generators/artifact_resolution.py) - Introspects schema to find artifact fields
+- [`resolve_input_artifacts()`](src/boards/generators/artifact_resolution.py) - Resolves generation IDs to artifacts
+- [`resolve_generation_ids_to_artifacts()`](src/boards/generators/artifact_resolution.py) - Database queries and validation
 
 See [artifact_resolution.py](src/boards/generators/artifact_resolution.py) for the full implementation.

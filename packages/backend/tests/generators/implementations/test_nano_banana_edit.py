@@ -170,6 +170,12 @@ class TestNanoBananaEditInput:
             assert input_data.aspect_ratio == ratio
 
 
+async def _empty_async_event_iterator():
+    """Helper to create an empty async iterator for mock event streams."""
+    if False:
+        yield  # Makes this an async generator
+
+
 class TestFalNanoBananaEditGenerator:
     """Tests for FalNanoBananaEditGenerator."""
 
@@ -273,12 +279,7 @@ class TestFalNanoBananaEditGenerator:
             mock_handler.request_id = "test-request-123"
 
             # Create async iterator that yields nothing (no events)
-            async def async_event_iterator():
-                # Yield no events for simplicity
-                return
-                yield  # Make it a generator
-
-            mock_handler.iter_events = MagicMock(return_value=async_event_iterator())
+            mock_handler.iter_events = MagicMock(return_value=_empty_async_event_iterator())
 
             # Mock the get() method to return result
             mock_handler.get = AsyncMock(
@@ -404,11 +405,7 @@ class TestFalNanoBananaEditGenerator:
             mock_handler = MagicMock()
             mock_handler.request_id = "test-request-456"
 
-            async def async_event_iterator():
-                return
-                yield
-
-            mock_handler.iter_events = MagicMock(return_value=async_event_iterator())
+            mock_handler.iter_events = MagicMock(return_value=_empty_async_event_iterator())
             mock_handler.get = AsyncMock(
                 return_value={
                     "images": [
@@ -518,11 +515,7 @@ class TestFalNanoBananaEditGenerator:
             mock_handler = MagicMock()
             mock_handler.request_id = "test-request-789"
 
-            async def async_event_iterator():
-                return
-                yield
-
-            mock_handler.iter_events = MagicMock(return_value=async_event_iterator())
+            mock_handler.iter_events = MagicMock(return_value=_empty_async_event_iterator())
             mock_handler.get = AsyncMock(return_value={"images": [], "description": ""})
 
             fake_uploaded_url = "https://fal.media/files/uploaded.png"
