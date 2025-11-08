@@ -90,9 +90,22 @@ async def process_generation(generation_id: str) -> None:
             raise RuntimeError(f"Unknown generator: {generator_name}")
 
         # Build and validate typed inputs
+        # First resolve any artifact fields (generation IDs -> artifact objects)
+        # This happens automatically via type introspection
         try:
             input_schema = generator.get_input_schema()
-            typed_inputs = input_schema.model_validate(input_params)
+
+            # Automatically resolve generation IDs to artifacts before validation
+            from ..generators.artifact_resolution import resolve_input_artifacts
+
+            async with get_async_session() as session:
+                resolved_params = await resolve_input_artifacts(
+                    input_params,
+                    input_schema,  # Schema is introspected to find artifact fields
+                    session,
+                    tenant_id,
+                )
+            typed_inputs = input_schema.model_validate(resolved_params)
         except Exception as e:
             error_msg = "Invalid input parameters"
             logger.error(error_msg, generation_id=generation_id, error=str(e))

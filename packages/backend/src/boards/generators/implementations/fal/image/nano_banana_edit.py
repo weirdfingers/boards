@@ -15,7 +15,11 @@ from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class NanoBananaEditInput(BaseModel):
-    """Input schema for nano-banana image editing."""
+    """Input schema for nano-banana image editing.
+
+    Artifact fields (like image_sources) are automatically detected via type
+    introspection and resolved from generation IDs to ImageArtifact objects.
+    """
 
     prompt: str = Field(description="The prompt for image editing")
     image_sources: list[ImageArtifact] = Field(
