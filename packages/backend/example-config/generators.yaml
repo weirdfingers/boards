@@ -10,13 +10,13 @@ allow_unlisted: false
 
 generators:
   # Import-based (back-compat): triggers module-level registry.register on import
-  - import: "boards.generators.implementations.audio.whisper"
+  - import: "boards.generators.implementations.openai.audio.whisper"
     enabled: true
 
   # Class-based (preferred): instantiate with options and register
-  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
     enabled: true
-    name: "flux-pro"
+    name: "replicate-flux-pro"
     options:
       aspect_ratio: "1:1"
       safety_tolerance: 2

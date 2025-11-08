@@ -8,7 +8,7 @@ import os
 
 from pydantic import BaseModel, Field
 
-from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class DallE3Input(BaseModel):
@@ -24,12 +24,12 @@ class DallE3Input(BaseModel):
     style: str = Field(default="vivid", description="Image style", pattern="^(vivid|natural)$")
 
 
-class DallE3Generator(BaseGenerator):
+class OpenAIDallE3Generator(BaseGenerator):
     """DALL-E 3 image generator using OpenAI API."""
 
-    name = "dall-e-3"
+    name = "openai-dall-e-3"
     artifact_type = "image"
-    description = "OpenAI's DALL-E 3 - advanced text-to-image generation"
+    description = "OpenAI: DALL-E 3 - advanced text-to-image generation"
 
     def get_input_schema(self) -> type[DallE3Input]:
         return DallE3Input

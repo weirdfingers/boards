@@ -10,8 +10,8 @@ from pydantic import ValidationError
 
 from boards.generators.artifacts import ImageArtifact
 from boards.generators.base import GeneratorExecutionContext, GeneratorResult
-from boards.generators.implementations.image.flux_pro import (
-    FluxProGenerator,
+from boards.generators.implementations.replicate.image.flux_pro import (
+    ReplicateFluxProGenerator,
     FluxProInput,
 )
 
@@ -55,11 +55,11 @@ class TestFluxProGenerator:
 
     def setup_method(self):
         """Set up generator for testing."""
-        self.generator = FluxProGenerator()
+        self.generator = ReplicateFluxProGenerator()
 
     def test_generator_metadata(self):
         """Test generator metadata."""
-        assert self.generator.name == "flux-pro"
+        assert self.generator.name == "replicate-flux-pro"
         assert self.generator.artifact_type == "image"
         assert "FLUX.1.1" in self.generator.description
 

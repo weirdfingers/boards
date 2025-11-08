@@ -9,20 +9,20 @@ strict_mode: true
 allow_unlisted: false
 
 generators:
-  # Image generators
-  - class: "boards.generators.implementations.image.flux_pro.FluxProGenerator"
+  # Replicate generators
+  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
     enabled: true
 
-  - class: "boards.generators.implementations.image.dalle3.DallE3Generator"
+  - class: "boards.generators.implementations.replicate.video.lipsync.ReplicateLipsyncGenerator"
     enabled: true
 
-  - class: "boards.generators.implementations.image.nano_banana.NanoBananaGenerator"
+  # Fal.ai generators
+  - class: "boards.generators.implementations.fal.image.nano_banana.FalNanoBananaGenerator"
     enabled: true
 
-  # Audio generators
-  - class: "boards.generators.implementations.audio.whisper.WhisperGenerator"
+  # OpenAI generators
+  - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
 
-  # Video generators
-  - class: "boards.generators.implementations.video.lipsync.LipsyncGenerator"
+  - class: "boards.generators.implementations.openai.audio.whisper.OpenAIWhisperGenerator"
     enabled: true

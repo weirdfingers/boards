@@ -12,7 +12,7 @@ from collections.abc import AsyncIterator
 
 from pydantic import BaseModel, Field
 
-from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class FluxProInput(BaseModel):
@@ -27,12 +27,12 @@ class FluxProInput(BaseModel):
     safety_tolerance: int = Field(default=2, ge=1, le=5, description="Safety tolerance level (1-5)")
 
 
-class FluxProGenerator(BaseGenerator):
+class ReplicateFluxProGenerator(BaseGenerator):
     """FLUX.1.1 Pro image generator using Replicate."""
 
-    name = "flux-pro"
+    name = "replicate-flux-pro"
     artifact_type = "image"
-    description = "FLUX.1.1 [pro] by Black Forest Labs - high-quality image generation"
+    description = "Replicate: FLUX.1.1 [pro] by Black Forest Labs - high-quality image generation"
 
     def get_input_schema(self) -> type[FluxProInput]:
         return FluxProInput

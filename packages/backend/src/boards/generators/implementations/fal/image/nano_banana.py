@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from ...base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
 
 class NanoBananaInput(BaseModel):
@@ -63,12 +63,12 @@ class NanoBananaInput(BaseModel):
     )
 
 
-class NanoBananaGenerator(BaseGenerator):
+class FalNanoBananaGenerator(BaseGenerator):
     """nano-banana image generator using fal.ai."""
 
-    name = "nano-banana"
+    name = "fal-nano-banana"
     artifact_type = "image"
-    description = "fal.ai nano-banana - fast text-to-image generation with batch support"
+    description = "Fal: nano-banana - fast text-to-image generation with batch support"
 
     def get_input_schema(self) -> type[NanoBananaInput]:
         return NanoBananaInput
@@ -116,7 +116,7 @@ class NanoBananaGenerator(BaseGenerator):
         await context.set_external_job_id(handler.request_id)
 
         # Stream progress updates (sample every 3rd event to avoid spam)
-        from ....progress.models import ProgressUpdate
+        from .....progress.models import ProgressUpdate
 
         event_count = 0
         async for event in handler.iter_events(with_logs=True):
