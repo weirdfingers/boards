@@ -15,6 +15,9 @@ Or using direct environment variable:
 
 Or run all Fal live tests:
     pytest -m live_fal -v
+
+Note: This directory has a pytest.ini that configures session-scoped event loops
+to prevent "Event loop is closed" errors from HTTP client connection pooling in fal_client.
 """
 
 import pytest
