@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_minimax_speech_2_6_turbo_live.py -v
+    pytest tests/generators/implementations/test_minimax_speech_2_6_turbo_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_minimax_speech_2_6_turbo_live.py -v
+    pytest tests/generators/implementations/test_minimax_speech_2_6_turbo_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -178,7 +178,7 @@ class TestMinimaxSpeech26TurboGeneratorLive:
         # Use short text to minimize cost
         inputs = MinimaxSpeech26TurboInput(
             prompt="Hello world.",
-            language_boost="en-US",
+            language_boost="English",
         )
 
         # Log estimated cost
