@@ -182,20 +182,30 @@ Running a full test suite for one generator typically costs **$0.10 - $0.30**.
 
 ## Verifying Tests Are Excluded
 
-Ensure live tests are not run by default:
+Live tests are **automatically excluded by default** thanks to `pytest.ini` configuration:
 
 ```bash
-# Should NOT run live tests
+# All of these commands exclude live tests by default:
 make test-backend
-
-# Should show "Excluding live API tests" message
-cd packages/backend && uv run pytest tests/ -m "not live_api"
+cd packages/backend && uv run pytest
+cd packages/backend && uv run pytest tests/
 ```
 
-Check pytest markers:
+You should see output like:
+```
+337/350 tests collected (13 deselected)
+```
+
+The 13 deselected tests are the live API tests.
+
+Check pytest markers to see which tests would run:
 ```bash
-# List all live API tests (should not run them)
+# List all live API tests (without running them)
 pytest --collect-only -m live_api
+
+# Verify default behavior excludes live tests
+pytest --collect-only -q | tail -1
+# Should show: "337/350 tests collected (13 deselected)"
 ```
 
 ## Troubleshooting
