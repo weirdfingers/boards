@@ -26,6 +26,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.flux_pro_ultra.FalFluxProUltraGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.imagen4_preview.FalImagen4PreviewGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.imagen4_preview_fast.FalImagen4PreviewFastGenerator"
     enabled: true
 
