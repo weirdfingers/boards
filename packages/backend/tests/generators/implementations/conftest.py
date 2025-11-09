@@ -78,16 +78,16 @@ class DummyGeneratorContext(GeneratorExecutionContext):
 
     async def store_image_result(
         self,
-        url: str,
+        storage_url: str,
+        format: str,
         width: int,
         height: int,
-        format: str,
-        mime_type: str | None = None,
+        output_index: int = 0,
     ) -> ImageArtifact:
         """Store image result and return artifact."""
         return ImageArtifact(
             generation_id=self.generation_id,
-            storage_url=url,
+            storage_url=storage_url,
             width=width,
             height=height,
             format=format,
@@ -95,39 +95,42 @@ class DummyGeneratorContext(GeneratorExecutionContext):
 
     async def store_video_result(
         self,
-        url: str,
+        storage_url: str,
+        format: str,
         width: int,
         height: int,
-        duration: float,
-        format: str,
-        mime_type: str | None = None,
+        duration: float | None = None,
+        fps: float | None = None,
+        output_index: int = 0,
     ) -> VideoArtifact:
         """Store video result and return artifact."""
         return VideoArtifact(
             generation_id=self.generation_id,
-            storage_url=url,
+            storage_url=storage_url,
             width=width,
             height=height,
-            duration=duration,
+            duration=duration or 0.0,
             format=format,
-            fps=None,
+            fps=fps,
         )
 
     async def store_audio_result(
         self,
-        url: str,
-        duration: float,
+        storage_url: str,
         format: str,
-        mime_type: str | None = None,
+        duration: float | None = None,
+        sample_rate: int | None = None,
+        channels: int | None = None,
+        output_index: int = 0,
     ) -> AudioArtifact:
         """Store audio result and return artifact."""
         return AudioArtifact(
             generation_id=self.generation_id,
-            storage_url=url,
-            duration=duration,
+            storage_url=storage_url,
+            duration=duration or 0.0,
             format=format,
-            sample_rate=None,
-            channels=None,
+            sample_rate=sample_rate,
+            channels=channels,
         )
 
     async def store_text_result(
