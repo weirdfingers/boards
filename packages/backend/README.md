@@ -178,6 +178,15 @@ packages/backend/
 └── tests/
 ```
 
+## Community & Social
+
+Join the Weirdfingers community:
+
+- **TikTok**: [https://www.tiktok.com/@weirdfingers](https://www.tiktok.com/@weirdfingers)
+- **X (Twitter)**: [https://x.com/_Weirdfingers_](https://x.com/_Weirdfingers_)
+- **YouTube**: [https://www.youtube.com/@Weirdfingers](https://www.youtube.com/@Weirdfingers)
+- **Discord**: [https://discord.gg/rvVuHyuPEx](https://discord.gg/rvVuHyuPEx)
+- **Instagram**: [https://www.instagram.com/_weirdfingers_/](https://www.instagram.com/_weirdfingers_/)
 ## Testing
 
 Boards uses pytest for testing with both unit tests (mocked) and optional live API tests.
