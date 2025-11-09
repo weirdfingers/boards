@@ -6,7 +6,10 @@ from .image import (
     FalNanoBananaEditGenerator,
     FalNanoBananaGenerator,
 )
-from .video import FalVeo31FirstLastFrameToVideoGenerator
+from .video import (
+    FalKlingVideoV25TurboProTextToVideoGenerator,
+    FalVeo31FirstLastFrameToVideoGenerator,
+)
 
 __all__ = [
     # Image generators
@@ -15,4 +18,8 @@ __all__ = [
     "FalNanoBananaEditGenerator",
     # Video generators
     "FalVeo31FirstLastFrameToVideoGenerator",
+    "FalNanoBananaEditGenerator",
+    "FalNanoBananaGenerator",
+    # Video generators
+    "FalKlingVideoV25TurboProTextToVideoGenerator",
 ]
