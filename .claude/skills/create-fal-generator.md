@@ -257,9 +257,9 @@ class Fal{GeneratorName}Generator(BaseGenerator[{GeneratorName}Input]):
         return {cost_per_generation} * inputs.{number_of_outputs}
 ```
 
-### Step 5: Create Test File
+### Step 5: Create Unit Test File
 
-Create comprehensive tests at:
+Create comprehensive unit tests at:
 `packages/backend/tests/generators/implementations/test_{generator_name}.py`
 
 **Test Generation Strategy:**
@@ -288,7 +288,113 @@ Create comprehensive tests at:
 
 Use `test_nano_banana_edit.py` as a reference template.
 
-### Step 6: Update Module Exports
+### Step 6: Create Live API Test File
+
+Create live API tests at:
+`packages/backend/tests/generators/implementations/test_{generator_name}_live.py`
+
+**Live Test Strategy:**
+
+Live tests make real API calls to Fal.ai and consume credits. They are opt-in only and never run by default.
+
+```python
+"""
+Live API tests for Fal{GeneratorName}Generator.
+
+These tests make actual API calls to the Fal.ai service and consume API credits.
+They are marked with @pytest.mark.live_api and @pytest.mark.live_fal to
+ensure they are never run by default.
+
+To run these tests:
+    export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
+    pytest tests/generators/implementations/test_{generator_name}_live.py -v
+
+Or using direct environment variable:
+    export FAL_KEY="..."
+    pytest tests/generators/implementations/test_{generator_name}_live.py -v
+"""
+
+import pytest
+
+from boards.config import initialize_generator_api_keys
+from boards.generators.implementations.fal.{artifact_type}.{generator_name} import (
+    Fal{GeneratorName}Generator,
+    {GeneratorName}Input,
+)
+
+pytestmark = [pytest.mark.live_api, pytest.mark.live_fal]
+
+
+class Test{GeneratorName}GeneratorLive:
+    """Live API tests for Fal{GeneratorName}Generator using real Fal.ai API."""
+
+    def setup_method(self):
+        """Set up generator and ensure API keys are synced to environment."""
+        self.generator = Fal{GeneratorName}Generator()
+        # Sync API keys from settings to os.environ for third-party SDKs
+        initialize_generator_api_keys()
+
+    @pytest.mark.asyncio
+    async def test_generate_basic(self, skip_if_no_fal_key, dummy_context, cost_logger):
+        """
+        Test basic generation with minimal parameters.
+
+        This test makes a real API call to Fal.ai and will consume credits.
+        Uses minimal/cheap settings to reduce cost.
+        """
+        # Log estimated cost
+        estimated_cost = await self.generator.estimate_cost(
+            {GeneratorName}Input(prompt="test")  # Adjust based on required fields
+        )
+        cost_logger(self.generator.name, estimated_cost)
+
+        # Create minimal input to reduce cost
+        inputs = {GeneratorName}Input(
+            prompt="Simple test prompt",
+            # Add other required fields with minimal values
+            # Use smallest size, lowest quality, single output, etc.
+        )
+
+        # Execute generation
+        result = await self.generator.generate(inputs, dummy_context)
+
+        # Verify result structure
+        assert result.outputs is not None
+        assert len(result.outputs) >= 1
+
+        # Verify artifact properties
+        artifact = result.outputs[0]
+        assert artifact.storage_url is not None
+        assert artifact.storage_url.startswith("https://")
+        # Add artifact-specific assertions (width, height for images, etc.)
+
+    @pytest.mark.asyncio
+    async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):
+        """
+        Test that cost estimation is reasonable.
+
+        This doesn't make an API call, just verifies the cost estimate logic.
+        """
+        inputs = {GeneratorName}Input(prompt="test")  # Adjust based on required fields
+        estimated_cost = await self.generator.estimate_cost(inputs)
+
+        # Verify estimate is in reasonable range based on pricing from llms.txt
+        assert estimated_cost > 0.0
+        assert estimated_cost < 1.0  # Sanity check - adjust based on actual pricing
+```
+
+**Live Test Best Practices:**
+- Use minimal inputs to reduce costs (small sizes, low quality, single outputs)
+- Log estimated costs using the `cost_logger` fixture
+- Use `skip_if_no_fal_key` fixture to auto-skip when API key missing
+- Use `dummy_context` fixture from conftest.py
+- Test only basic functionality - unit tests cover edge cases
+- Keep tests simple (1-2 tests per generator is sufficient)
+- See [TESTING_LIVE_APIS.md](../../packages/backend/docs/TESTING_LIVE_APIS.md) for complete guide
+
+Use `test_nano_banana_live.py` as a reference template.
+
+### Step 7: Update Module Exports
 
 Add the generator to:
 `packages/backend/src/boards/generators/implementations/fal/{artifact_type}/__init__.py`
@@ -299,7 +405,7 @@ from .{generator_name} import Fal{GeneratorName}Generator
 __all__ = [..., "Fal{GeneratorName}Generator"]
 ```
 
-### Step 7: Update Configuration
+### Step 8: Update Configuration
 
 Add the generator to:
 `packages/backend/baseline-config/generators.yaml`
@@ -309,7 +415,7 @@ Add the generator to:
   enabled: true
 ```
 
-### Step 8: Verify Implementation
+### Step 9: Verify Implementation
 
 Run the following checks:
 
@@ -320,11 +426,17 @@ uv run pyright
 # Linting
 uv run ruff check src/ tests/
 
-# Tests
+# Unit tests (mocked, always run)
 uv run pytest tests/generators/implementations/test_{generator_name}.py -v
+
+# Live API tests (optional, requires FAL_KEY)
+export FAL_KEY="..."
+uv run pytest tests/generators/implementations/test_{generator_name}_live.py -v
 ```
 
 All checks must pass with 0 errors.
+
+**Note:** Live tests are optional for verification but should be run at least once to ensure real API connectivity works.
 
 ## Notes
 
@@ -468,11 +580,18 @@ Creating video generator with optional image input...
 - [ ] Cost estimation formula matches pricing documentation
 - [ ] File upload logic added if generator accepts artifacts
 - [ ] Generator implementation created with proper structure
-- [ ] Comprehensive test suite generated
+- [ ] Comprehensive unit test suite generated
   - [ ] Tests use OpenAPI examples
   - [ ] All validation constraints tested
-- [ ] All tests pass
+  - [ ] Mocking properly configured
+- [ ] Live API test suite generated
+  - [ ] Marked with `@pytest.mark.live_api` and `@pytest.mark.live_fal`
+  - [ ] Uses `skip_if_no_fal_key`, `dummy_context`, and `cost_logger` fixtures
+  - [ ] Tests use minimal/cheap parameters
+  - [ ] Cost estimation test included
+- [ ] All unit tests pass
 - [ ] Type checking passes (0 errors)
 - [ ] Linting passes
 - [ ] Generator appears in module exports
 - [ ] Generator enabled in configuration
+- [ ] (Optional) Live API test verified with real FAL_KEY
