@@ -35,6 +35,9 @@ generators:
   - class: "boards.generators.implementations.fal.audio.minimax_speech_2_6_turbo.FalMinimaxSpeech26TurboGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
