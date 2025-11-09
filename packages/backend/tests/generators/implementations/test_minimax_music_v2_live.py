@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_minimax_music_v2_live.py -v
+    pytest tests/generators/implementations/test_minimax_music_v2_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_minimax_music_v2_live.py -v
+    pytest tests/generators/implementations/test_minimax_music_v2_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -21,7 +21,6 @@ import pytest
 
 from boards.config import initialize_generator_api_keys
 from boards.generators.implementations.fal.audio.minimax_music_v2 import (
-    AudioSetting,
     FalMinimaxMusicV2Generator,
     MinimaxMusicV2Input,
 )
@@ -46,25 +45,19 @@ class TestMinimaxMusicV2GeneratorLive:
         This test makes a real API call to Fal.ai and will consume credits.
         Uses minimal settings to reduce cost.
         """
-        # Log estimated cost
-        estimated_cost = await self.generator.estimate_cost(
-            MinimaxMusicV2Input(
-                prompt="Simple test music",
-                lyrics_prompt="Test lyrics for music generation",
-            )
-        )
-        cost_logger(self.generator.name, estimated_cost)
-
         # Create minimal input to reduce cost
+        # Note: Music generation requires proper song structure in lyrics_prompt
         inputs = MinimaxMusicV2Input(
             prompt="Simple upbeat pop music with electronic beats",
-            lyrics_prompt="[Verse]\nTest song lyrics\n[Chorus]\nSimple melody",
-            audio_setting=AudioSetting(
-                format="mp3",  # Standard format
-                sample_rate=22050,  # Lower sample rate to reduce file size/cost
-                bitrate=128000,  # Lower bitrate to reduce cost
+            lyrics_prompt=(
+                "[Verse]\nThis is a test song for verification\n"
+                "[Chorus]\nSimple melody with rhythm"
             ),
         )
+
+        # Log estimated cost
+        estimated_cost = await self.generator.estimate_cost(inputs)
+        cost_logger(self.generator.name, estimated_cost)
 
         # Execute generation
         result = await self.generator.generate(inputs, dummy_context)
@@ -81,7 +74,8 @@ class TestMinimaxMusicV2GeneratorLive:
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
         assert artifact.format == "mp3"
-        assert artifact.sample_rate == 22050
+        # Default sample rate is 44100 when audio_setting is not provided
+        assert artifact.sample_rate == 44100
 
     @pytest.mark.asyncio
     async def test_generate_with_default_settings(
