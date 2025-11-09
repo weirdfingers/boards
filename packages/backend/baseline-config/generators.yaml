@@ -38,6 +38,9 @@ generators:
   - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
