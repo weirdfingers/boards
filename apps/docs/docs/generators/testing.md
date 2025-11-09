@@ -975,7 +975,7 @@ For detailed information on live API testing, including:
 - Troubleshooting common issues
 - CI/CD integration (optional)
 
-See the [Live API Testing Guide](../../packages/backend/docs/TESTING_LIVE_APIS.md).
+See the [Live API Testing Guide](./live-api-testing.md).
 
 ---
 
