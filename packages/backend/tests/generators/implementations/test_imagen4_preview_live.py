@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_imagen4_preview_live.py -v
+    pytest tests/generators/implementations/test_imagen4_preview_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_imagen4_preview_live.py -v
+    pytest tests/generators/implementations/test_imagen4_preview_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -51,7 +51,7 @@ class TestImagen4PreviewGeneratorLive:
 
         # Create minimal input to reduce cost
         inputs = Imagen4PreviewInput(
-            prompt="A simple red circle on white background",
+            prompt="Simple geometric shapes",
             aspect_ratio="1:1",  # Square format
             resolution="1K",  # Lower resolution
             num_images=1,  # Single image
