@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_imagen4_preview_fast_live.py -v
+    pytest tests/generators/implementations/test_imagen4_preview_fast_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_imagen4_preview_fast_live.py -v
+    pytest tests/generators/implementations/test_imagen4_preview_fast_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -46,9 +46,7 @@ class TestImagen4PreviewFastGeneratorLive:
         Uses minimal/cheap settings to reduce cost.
         """
         # Log estimated cost
-        estimated_cost = await self.generator.estimate_cost(
-            Imagen4PreviewFastInput(prompt="test")
-        )
+        estimated_cost = await self.generator.estimate_cost(Imagen4PreviewFastInput(prompt="test"))
         cost_logger(self.generator.name, estimated_cost)
 
         # Create minimal input to reduce cost
@@ -77,9 +75,7 @@ class TestImagen4PreviewFastGeneratorLive:
         assert artifact.format == "png"
 
     @pytest.mark.asyncio
-    async def test_generate_with_aspect_ratio(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_aspect_ratio(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test image generation with non-square aspect ratio.
 
@@ -124,9 +120,7 @@ class TestImagen4PreviewFastGeneratorLive:
         Verifies that negative_prompt parameter works correctly.
         """
         # Log estimated cost
-        estimated_cost = await self.generator.estimate_cost(
-            Imagen4PreviewFastInput(prompt="test")
-        )
+        estimated_cost = await self.generator.estimate_cost(Imagen4PreviewFastInput(prompt="test"))
         cost_logger(self.generator.name, estimated_cost)
 
         # Create input with negative prompt
@@ -158,9 +152,7 @@ class TestImagen4PreviewFastGeneratorLive:
         Verifies that seed parameter produces consistent results.
         """
         # Log estimated cost (will run twice, so double the cost)
-        estimated_cost = await self.generator.estimate_cost(
-            Imagen4PreviewFastInput(prompt="test")
-        )
+        estimated_cost = await self.generator.estimate_cost(Imagen4PreviewFastInput(prompt="test"))
         cost_logger(self.generator.name, estimated_cost * 2)
 
         # Create input with seed

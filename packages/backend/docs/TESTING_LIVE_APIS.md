@@ -76,7 +76,7 @@ This is the **most common workflow** when developing generators:
 ```bash
 # After modifying flux_pro.py
 export REPLICATE_API_TOKEN="r8_..."
-pytest tests/generators/implementations/test_flux_pro_live.py -v
+pytest tests/generators/implementations/test_flux_pro_live.py -v -m live_api
 ```
 
 Example output:
@@ -123,10 +123,10 @@ pytest -m live_api -v
 
 ```bash
 # Show detailed output including print statements and logs
-pytest tests/generators/implementations/test_flux_pro_live.py -v -s
+pytest tests/generators/implementations/test_flux_pro_live.py -v -s -m live_api
 
 # Show full error tracebacks
-pytest tests/generators/implementations/test_flux_pro_live.py -v --tb=long
+pytest tests/generators/implementations/test_flux_pro_live.py -v --tb=long -m live_api
 ```
 
 ## Cost Management
@@ -269,7 +269,7 @@ touch tests/generators/implementations/test_my_generator_live.py
 """
 Live API tests for MyGenerator.
 
-To run: pytest tests/generators/implementations/test_my_generator_live.py -v
+To run: pytest tests/generators/implementations/test_my_generator_live.py -v -m live_api
 """
 import pytest
 from boards.config import initialize_generator_api_keys
@@ -338,11 +338,11 @@ markers =
 
 ```bash
 # Without API key - should skip
-pytest tests/generators/implementations/test_my_generator_live.py -v
+pytest tests/generators/implementations/test_my_generator_live.py -v -m live_api
 
 # With API key - should run
 export MY_PROVIDER_API_KEY="..."
-pytest tests/generators/implementations/test_my_generator_live.py -v
+pytest tests/generators/implementations/test_my_generator_live.py -v -m live_api
 ```
 
 ## Best Practices
@@ -409,7 +409,7 @@ jobs:
 - Live API tests verify real connectivity to provider APIs
 - They are **opt-in only** and never run by default
 - Set up API keys via environment variables or Boards config
-- Run individual tests after modifying generators: `pytest test_flux_pro_live.py -v`
+- Run individual tests after modifying generators: `pytest test_flux_pro_live.py -v -m live_api`
 - Monitor costs using cost logger output
 - Use minimal inputs to reduce expenses
 - Follow the template when adding tests for new generators
