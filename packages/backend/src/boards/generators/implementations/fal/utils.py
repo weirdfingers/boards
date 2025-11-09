@@ -6,16 +6,16 @@ Provides helper functions for common operations across Fal generators.
 
 import asyncio
 
-from ...artifacts import ImageArtifact
+from ...artifacts import AudioArtifact, DigitalArtifact, ImageArtifact, VideoArtifact
 from ...base import GeneratorExecutionContext
 
 
-async def upload_artifacts_to_fal(
-    artifacts: list[ImageArtifact],
+async def upload_artifacts_to_fal[T: DigitalArtifact](
+    artifacts: list[ImageArtifact] | list[VideoArtifact] | list[AudioArtifact] | list[T],
     context: GeneratorExecutionContext,
 ) -> list[str]:
     """
-    Upload image artifacts to Fal's temporary storage for use in API requests.
+    Upload artifacts to Fal's temporary storage for use in API requests.
 
     Fal API endpoints require publicly accessible URLs for file inputs. Since our
     storage URLs might be local or private (localhost, private S3 buckets, etc.),
@@ -25,7 +25,7 @@ async def upload_artifacts_to_fal(
     3. Get back publicly accessible URLs
 
     Args:
-        artifacts: List of image artifacts to upload
+        artifacts: List of artifacts (image, video, or audio) to upload
         context: Generator execution context for artifact resolution
 
     Returns:
@@ -44,7 +44,7 @@ async def upload_artifacts_to_fal(
             "Install with: pip install weirdfingers-boards[generators-fal]"
         ) from e
 
-    async def upload_single_artifact(artifact: ImageArtifact) -> str:
+    async def upload_single_artifact(artifact: DigitalArtifact) -> str:
         """Upload a single artifact and return its public URL."""
         # Resolve artifact to local file path (downloads if needed)
         file_path_str = await context.resolve_artifact(artifact)

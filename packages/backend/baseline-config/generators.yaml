@@ -47,6 +47,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_text_to_video.FalKlingVideoV25TurboProTextToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.sync_lipsync_v2.FalSyncLipsyncV2Generator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
