@@ -27,17 +27,20 @@ class FluxProKontextInput(BaseModel):
     image_url: ImageArtifact = Field(
         description="Reference image for transformation (from previous generation)",
     )
-    aspect_ratio: Literal[
-        "21:9",
-        "16:9",
-        "4:3",
-        "3:2",
-        "1:1",
-        "2:3",
-        "3:4",
-        "9:16",
-        "9:21",
-    ] | None = Field(
+    aspect_ratio: (
+        Literal[
+            "21:9",
+            "16:9",
+            "4:3",
+            "3:2",
+            "1:1",
+            "2:3",
+            "3:4",
+            "9:16",
+            "9:21",
+        ]
+        | None
+    ) = Field(
         default=None,
         description="Image aspect ratio (optional)",
     )
