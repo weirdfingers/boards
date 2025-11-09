@@ -32,6 +32,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.imagen4_preview_fast.FalImagen4PreviewFastGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.audio.minimax_speech_2_6_turbo.FalMinimaxSpeech26TurboGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
