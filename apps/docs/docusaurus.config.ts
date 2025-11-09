@@ -105,6 +105,31 @@ const config: Config = {
               label: 'GitHub Discussions',
               href: 'https://github.com/weirdfingers/boards/discussions',
             },
+            {
+              label: 'Discord',
+              href: 'https://discord.gg/rvVuHyuPEx',
+            },
+          ],
+        },
+        {
+          title: 'Social Media',
+          items: [
+            {
+              label: 'TikTok',
+              href: 'https://www.tiktok.com/@weirdfingers',
+            },
+            {
+              label: 'X (Twitter)',
+              href: 'https://x.com/_Weirdfingers_',
+            },
+            {
+              label: 'YouTube',
+              href: 'https://www.youtube.com/@Weirdfingers',
+            },
+            {
+              label: 'Instagram',
+              href: 'https://www.instagram.com/_weirdfingers_/',
+            },
           ],
         },
         {

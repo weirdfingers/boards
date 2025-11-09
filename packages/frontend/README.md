@@ -662,7 +662,16 @@ MIT License - see [LICENSE](https://github.com/weirdfingers/boards/blob/main/LIC
 
 - **GitHub Issues**: [github.com/weirdfingers/boards/issues](https://github.com/weirdfingers/boards/issues)
 - **Documentation**: [docs.weirdfingers.com](https://docs.weirdfingers.com)
-- **Discord**: [Join our community](https://discord.gg/weirdfingers) *(coming soon)*
+- **Discord**: [discord.gg/rvVuHyuPEx](https://discord.gg/rvVuHyuPEx)
+
+## Community & Social
+
+Join the Weirdfingers community:
+
+- **TikTok**: [https://www.tiktok.com/@weirdfingers](https://www.tiktok.com/@weirdfingers)
+- **X (Twitter)**: [https://x.com/_Weirdfingers_](https://x.com/_Weirdfingers_)
+- **YouTube**: [https://www.youtube.com/@Weirdfingers](https://www.youtube.com/@Weirdfingers)
+- **Instagram**: [https://www.instagram.com/_weirdfingers_/](https://www.instagram.com/_weirdfingers_/)
 
 ---
 

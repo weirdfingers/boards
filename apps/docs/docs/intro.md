@@ -64,3 +64,13 @@ This will start:
 - 🏗️ **[Backend SDK](./backend/getting-started)** - Python backend development
 - ⚛️ **[Frontend Hooks](./frontend/getting-started)** - React integration
 - 🎨 **[Auth Providers](./auth/overview)** - Authentication system
+
+## Community & Social
+
+Join the Weirdfingers community:
+
+- 🎥 **[TikTok](https://www.tiktok.com/@weirdfingers)** - Creative content and demos
+- 🐦 **[X (Twitter)](https://x.com/_Weirdfingers_)** - Updates and announcements
+- 📺 **[YouTube](https://www.youtube.com/@Weirdfingers)** - Tutorials and showcases
+- 💬 **[Discord](https://discord.gg/rvVuHyuPEx)** - Community discussions
+- 📸 **[Instagram](https://www.instagram.com/_weirdfingers_/)** - Visual updates

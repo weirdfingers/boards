@@ -186,6 +186,16 @@ Templates are copied during build time via `scripts/prepare-templates.js`.
 
 When users run `baseboards up`, templates are copied to their machine and Docker Compose orchestrates the services.
 
+## Community & Social
+
+Join the Weirdfingers community:
+
+- **TikTok**: [https://www.tiktok.com/@weirdfingers](https://www.tiktok.com/@weirdfingers)
+- **X (Twitter)**: [https://x.com/_Weirdfingers_](https://x.com/_Weirdfingers_)
+- **YouTube**: [https://www.youtube.com/@Weirdfingers](https://www.youtube.com/@Weirdfingers)
+- **Discord**: [https://discord.gg/rvVuHyuPEx](https://discord.gg/rvVuHyuPEx)
+- **Instagram**: [https://www.instagram.com/_weirdfingers_/](https://www.instagram.com/_weirdfingers_/)
+
 ## License
 
 MIT
