@@ -151,9 +151,7 @@ class FalMinimaxMusicV2Generator(BaseGenerator):
 
         # Determine format from audio_setting or content_type
         audio_format = (
-            inputs.audio_setting.format
-            if inputs.audio_setting
-            else "mp3"  # Default format
+            inputs.audio_setting.format if inputs.audio_setting else "mp3"  # Default format
         )
 
         # Store audio result
