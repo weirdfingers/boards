@@ -307,11 +307,14 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_{generator_name}_live.py -v
+    pytest tests/generators/implementations/test_{generator_name}_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_{generator_name}_live.py -v
+    pytest tests/generators/implementations/test_{generator_name}_live.py -v -m live_fal
+
+Or run all Fal live tests:
+    pytest -m live_fal -v
 """
 
 import pytest
@@ -431,7 +434,7 @@ uv run pytest tests/generators/implementations/test_{generator_name}.py -v
 
 # Live API tests (optional, requires FAL_KEY)
 export FAL_KEY="..."
-uv run pytest tests/generators/implementations/test_{generator_name}_live.py -v
+uv run pytest tests/generators/implementations/test_{generator_name}_live.py -v -m live_fal
 ```
 
 All checks must pass with 0 errors.

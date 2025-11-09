@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"REPLICATE_API_TOKEN": "r8_..."}'
-    pytest tests/generators/implementations/test_flux_pro_live.py -v
+    pytest tests/generators/implementations/test_flux_pro_live.py -v -m live_api
 
 Or using direct environment variable:
     export REPLICATE_API_TOKEN="r8_..."
-    pytest tests/generators/implementations/test_flux_pro_live.py -v
+    pytest tests/generators/implementations/test_flux_pro_live.py -v -m live_replicate
 
 Or run all Replicate live tests:
     pytest -m live_replicate -v

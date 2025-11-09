@@ -27,6 +27,7 @@ generators:
     enabled: true
 
   - class: "boards.generators.implementations.fal.image.imagen4_preview.FalImagen4PreviewGenerator"
+  - class: "boards.generators.implementations.fal.image.imagen4_preview_fast.FalImagen4PreviewFastGenerator"
     enabled: true
 
   # OpenAI generators
