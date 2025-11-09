@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_nano_banana_live.py -v
+    pytest tests/generators/implementations/test_nano_banana_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_nano_banana_live.py -v
+    pytest tests/generators/implementations/test_nano_banana_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v

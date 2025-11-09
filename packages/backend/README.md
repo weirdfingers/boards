@@ -222,7 +222,7 @@ Live tests verify real connectivity with provider APIs but cost money. They are 
 export BOARDS_GENERATOR_API_KEYS='{"REPLICATE_API_TOKEN": "r8_..."}'
 
 # Run a specific generator's live test
-uv run pytest tests/generators/implementations/test_flux_pro_live.py -v
+uv run pytest tests/generators/implementations/test_flux_pro_live.py -v -m live_api
 
 # Run all live tests for one provider
 uv run pytest -m live_replicate -v

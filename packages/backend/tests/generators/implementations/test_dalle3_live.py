@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"OPENAI_API_KEY": "sk-..."}'
-    pytest tests/generators/implementations/test_dalle3_live.py -v
+    pytest tests/generators/implementations/test_dalle3_live.py -v -m live_api
 
 Or using direct environment variable:
     export OPENAI_API_KEY="sk-..."
-    pytest tests/generators/implementations/test_dalle3_live.py -v
+    pytest tests/generators/implementations/test_dalle3_live.py -v -m live_openai
 
 Or run all OpenAI live tests:
     pytest -m live_openai -v
