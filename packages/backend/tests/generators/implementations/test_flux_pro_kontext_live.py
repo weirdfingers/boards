@@ -17,107 +17,16 @@ Or run all Fal live tests:
     pytest -m live_fal -v
 """
 
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from boards.config import initialize_generator_api_keys
 from boards.generators.artifacts import ImageArtifact
-from boards.generators.base import GeneratorExecutionContext, ProgressUpdate
 from boards.generators.implementations.fal.image.flux_pro_kontext import (
     FalFluxProKontextGenerator,
     FluxProKontextInput,
 )
-from boards.logging import get_logger
-
-logger = get_logger(__name__)
 
 pytestmark = [pytest.mark.live_api, pytest.mark.live_fal]
-
-
-class ImageResolvingContext(GeneratorExecutionContext):
-    """
-    Context that can resolve image artifacts by downloading them.
-
-    This is needed for image-to-image generators that require input images.
-    """
-
-    generation_id: str = "test_generation_id"
-    provider_correlation_id: str = "test_correlation_id"
-    tenant_id: str = "test_tenant_id"
-    board_id: str = "test_board_id"
-
-    async def resolve_artifact(self, artifact: ImageArtifact) -> str:
-        """Download the artifact to a temporary file and return the path."""
-        import aiohttp
-
-        # Download the image to a temporary file
-        temp_dir = Path(tempfile.gettempdir())
-        temp_path = temp_dir / f"test_image_{artifact.generation_id}.{artifact.format}"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(artifact.storage_url) as response:
-                if response.status != 200:
-                    raise ValueError(f"Failed to download image: {response.status}")
-
-                content = await response.read()
-                temp_path.write_bytes(content)
-
-        return str(temp_path)
-
-    async def store_image_result(
-        self,
-        storage_url: str,
-        format: str,
-        width: int,
-        height: int,
-        output_index: int = 0,
-    ) -> ImageArtifact:
-        """Store image result and return artifact."""
-        return ImageArtifact(
-            generation_id=self.generation_id,
-            storage_url=storage_url,
-            width=width,
-            height=height,
-            format=format,
-        )
-
-    async def store_video_result(self, *args, **kwargs):
-        """Not needed for image generator."""
-        raise NotImplementedError
-
-    async def store_audio_result(self, *args, **kwargs):
-        """Not needed for image generator."""
-        raise NotImplementedError
-
-    async def store_text_result(self, *args, **kwargs):
-        """Not needed for image generator."""
-        raise NotImplementedError
-
-    async def publish_progress(self, update: ProgressUpdate) -> None:
-        """Log progress updates."""
-        logger.info(
-            "progress_update",
-            generation_id=self.generation_id,
-            status=update.status,
-            message=update.message,
-            progress=update.progress,
-        )
-
-    async def set_external_job_id(self, external_id: str) -> None:
-        """Log external job ID."""
-        logger.info(
-            "external_job_id_set",
-            generation_id=self.generation_id,
-            external_id=external_id,
-        )
-
-
-@pytest.fixture
-def image_resolving_context() -> ImageResolvingContext:
-    """Provide a context that can download and resolve image artifacts."""
-    return ImageResolvingContext()
 
 
 class TestFluxProKontextGeneratorLive:

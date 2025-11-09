@@ -260,6 +260,7 @@ class TestFalVeo31FirstLastFrameToVideoGenerator:
                         height=1,
                         duration=1,
                         format="mp4",
+                        fps=None,
                     )
 
                 async def store_audio_result(self, *args, **kwargs):
@@ -354,6 +355,7 @@ class TestFalVeo31FirstLastFrameToVideoGenerator:
                 height=720,
                 duration=8,
                 format="mp4",
+                fps=None,
             )
 
             resolve_call_count = 0
@@ -482,6 +484,7 @@ class TestFalVeo31FirstLastFrameToVideoGenerator:
                 height=1080,
                 duration=8,
                 format="mp4",
+                fps=None,
             )
 
             resolve_call_count = 0

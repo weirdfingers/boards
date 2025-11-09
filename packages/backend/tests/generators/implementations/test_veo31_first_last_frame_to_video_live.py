@@ -8,10 +8,12 @@ ensure they are never run by default.
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
     pytest tests/generators/implementations/test_veo31_first_last_frame_to_video_live.py -v
+        -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
     pytest tests/generators/implementations/test_veo31_first_last_frame_to_video_live.py -v
+        -m live_api
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -23,12 +25,38 @@ These tests use minimal settings to reduce costs.
 import pytest
 
 from boards.config import initialize_generator_api_keys
+from boards.generators.artifacts import ImageArtifact
 from boards.generators.implementations.fal.video.veo31_first_last_frame_to_video import (
     FalVeo31FirstLastFrameToVideoGenerator,
     Veo31FirstLastFrameToVideoInput,
 )
 
 pytestmark = [pytest.mark.live_api, pytest.mark.live_fal]
+
+
+@pytest.fixture
+def test_image_artifacts():
+    """Provide sample image artifacts for video generation testing."""
+    # Use small publicly accessible test images from placehold.co
+    # First frame: red square
+    first_frame = ImageArtifact(
+        generation_id="test_first_frame",
+        storage_url="https://placehold.co/256x256/ff0000/ff0000.png",
+        format="png",
+        width=256,
+        height=256,
+    )
+
+    # Last frame: blue square (different from first for transition testing)
+    last_frame = ImageArtifact(
+        generation_id="test_last_frame",
+        storage_url="https://placehold.co/256x256/0000ff/0000ff.png",
+        format="png",
+        width=256,
+        height=256,
+    )
+
+    return [first_frame, last_frame]
 
 
 class TestVeo31FirstLastFrameToVideoGeneratorLive:
@@ -42,7 +70,11 @@ class TestVeo31FirstLastFrameToVideoGeneratorLive:
 
     @pytest.mark.asyncio
     async def test_generate_basic_720p(
-        self, skip_if_no_fal_key, dummy_context, cost_logger, test_image_artifacts
+        self,
+        skip_if_no_fal_key,
+        image_resolving_context,
+        cost_logger,
+        test_image_artifacts,
     ):
         """
         Test basic video generation with minimal parameters (720p, no audio).
@@ -71,7 +103,7 @@ class TestVeo31FirstLastFrameToVideoGeneratorLive:
         cost_logger(self.generator.name, estimated_cost)
 
         # Execute generation
-        result = await self.generator.generate(inputs, dummy_context)
+        result = await self.generator.generate(inputs, image_resolving_context)
 
         # Verify result structure
         assert result.outputs is not None
@@ -86,7 +118,7 @@ class TestVeo31FirstLastFrameToVideoGeneratorLive:
         assert artifact.storage_url.startswith("https://")
         assert artifact.width > 0
         assert artifact.height > 0
-        assert artifact.duration > 0
+        assert artifact.duration is not None and artifact.duration > 0
         assert artifact.format == "mp4"
 
         # Verify expected dimensions for 720p

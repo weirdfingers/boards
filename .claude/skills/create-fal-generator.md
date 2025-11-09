@@ -395,7 +395,61 @@ class Test{GeneratorName}GeneratorLive:
 - Keep tests simple (1-2 tests per generator is sufficient)
 - See [TESTING_LIVE_APIS.md](../../packages/backend/docs/TESTING_LIVE_APIS.md) for complete guide
 
-Use `test_nano_banana_live.py` as a reference template.
+**Using Shared Fixtures for Artifact Resolution:**
+
+If your generator requires input artifacts (images, videos, etc.) that need to be downloaded and provided as local file paths to the API:
+
+- Use the `image_resolving_context` fixture from `conftest.py` instead of `dummy_context`
+- This fixture provides an `ImageResolvingContext` that can download remote images to temporary files
+- It's shared across all generator tests and handles artifact resolution automatically
+
+Example for image-to-image or image-to-video generators:
+
+```python
+@pytest.mark.asyncio
+async def test_generate_with_image_input(
+    self, skip_if_no_fal_key, image_resolving_context, cost_logger
+):
+    """Test generation with input image."""
+    # Create test image artifact
+    test_image = ImageArtifact(
+        generation_id="test_input",
+        storage_url="https://placehold.co/256x256/ff0000/ff0000.png",
+        format="png",
+        width=256,
+        height=256,
+    )
+
+    inputs = YourGeneratorInput(
+        prompt="Edit this image",
+        image_url=test_image,  # Artifact will be downloaded by context
+    )
+
+    # Use image_resolving_context instead of dummy_context
+    result = await self.generator.generate(inputs, image_resolving_context)
+
+    assert result.outputs is not None
+```
+
+For tests that need sample image artifacts, create a test fixture:
+
+```python
+@pytest.fixture
+def test_image_artifacts():
+    """Provide sample image artifacts for testing."""
+    return [
+        ImageArtifact(
+            generation_id="test_image_1",
+            storage_url="https://placehold.co/256x256/ff0000/ff0000.png",
+            format="png",
+            width=256,
+            height=256,
+        ),
+        # Add more test images as needed
+    ]
+```
+
+Use `test_flux_pro_kontext_live.py` or `test_veo31_first_last_frame_to_video_live.py` as reference templates for generators with artifact inputs.
 
 ### Step 7: Update Module Exports
 
