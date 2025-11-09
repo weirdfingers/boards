@@ -24,15 +24,9 @@ class Veo31FirstLastFrameToVideoInput(BaseModel):
     introspection and resolved from generation IDs to ImageArtifact objects.
     """
 
-    first_frame: ImageArtifact = Field(
-        description="The first frame of the video (input image)"
-    )
-    last_frame: ImageArtifact = Field(
-        description="The last frame of the video (input image)"
-    )
-    prompt: str = Field(
-        description="Text prompt describing the desired video content and motion"
-    )
+    first_frame: ImageArtifact = Field(description="The first frame of the video (input image)")
+    last_frame: ImageArtifact = Field(description="The last frame of the video (input image)")
+    prompt: str = Field(description="Text prompt describing the desired video content and motion")
     duration: Literal["8s"] = Field(
         default="8s",
         description="Duration of the generated video in seconds (currently only 8s is supported)",
@@ -40,8 +34,7 @@ class Veo31FirstLastFrameToVideoInput(BaseModel):
     aspect_ratio: Literal["auto", "9:16", "16:9", "1:1"] = Field(
         default="auto",
         description=(
-            "Aspect ratio of the generated video. "
-            "'auto' uses the aspect ratio from input images"
+            "Aspect ratio of the generated video. " "'auto' uses the aspect ratio from input images"
         ),
     )
     resolution: Literal["720p", "1080p"] = Field(
