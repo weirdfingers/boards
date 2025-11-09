@@ -852,4 +852,131 @@ jobs:
         run: pytest tests/generators/ -m integration
 ```
 
+## Live API Testing (Optional)
+
+In addition to unit tests with mocked providers, Boards supports **live API tests** that make actual calls to provider APIs (Replicate, Fal.ai, OpenAI, etc.). These tests verify real connectivity and API response formats.
+
+:::warning Cost Warning
+Live API tests consume real API credits and should **never run by default**. They are opt-in only and must be explicitly invoked.
+:::
+
+### When to Use Live Tests
+
+Run live API tests when:
+
+- ✅ You've modified a generator implementation
+- ✅ You've updated a provider SDK dependency
+- ✅ You want to verify real API connectivity
+- ✅ You're debugging unexpected production behavior
+- ✅ Before releasing a generator to production
+
+**Don't use for:**
+
+- ❌ Regular development (use unit tests instead)
+- ❌ Pre-commit hooks or standard CI runs
+- ❌ Load/performance testing
+
+### Running Live Tests
+
+Live tests are marked with `@pytest.mark.live_api` and provider-specific markers (`live_replicate`, `live_fal`, `live_openai`). They are **excluded from default test runs**.
+
+```bash
+# Run a single generator's live test (most common)
+export REPLICATE_API_TOKEN="r8_..."
+pytest tests/generators/implementations/test_flux_pro_live.py -v
+
+# Or using Boards configuration
+export BOARDS_GENERATOR_API_KEYS='{"REPLICATE_API_TOKEN": "r8_..."}'
+pytest tests/generators/implementations/test_flux_pro_live.py -v
+
+# Run all live tests for one provider
+pytest -m live_replicate -v
+
+# Verify live tests are excluded from default runs
+make test-backend  # Should NOT run live tests
+```
+
+### Live Test Structure
+
+Live tests follow a similar structure to unit tests but make real API calls:
+
+```python
+"""
+Live API tests for MyGenerator.
+
+To run: pytest tests/generators/implementations/test_my_generator_live.py -v
+"""
+import pytest
+from boards.config import initialize_generator_api_keys
+from boards.generators.implementations.provider.type.my_generator import (
+    MyGenerator,
+    MyInput,
+)
+
+pytestmark = [pytest.mark.live_api, pytest.mark.live_provider]
+
+
+class TestMyGeneratorLive:
+    """Live API tests for MyGenerator."""
+
+    def setup_method(self):
+        """Set up generator and sync API keys."""
+        self.generator = MyGenerator()
+        initialize_generator_api_keys()
+
+    @pytest.mark.asyncio
+    async def test_generate_basic(
+        self, skip_if_no_provider_key, dummy_context, cost_logger
+    ):
+        """Test basic generation with minimal parameters."""
+        # Log estimated cost
+        estimated_cost = await self.generator.estimate_cost(
+            MyInput(prompt="test")
+        )
+        cost_logger(self.generator.name, estimated_cost)
+
+        # Use minimal inputs to reduce cost
+        inputs = MyInput(prompt="Simple test prompt")
+
+        # Execute actual API call
+        result = await self.generator.generate(inputs, dummy_context)
+
+        # Verify real response structure
+        assert result.outputs is not None
+        assert len(result.outputs) > 0
+        assert result.outputs[0].storage_url.startswith("https://")
+```
+
+### Cost Management
+
+Live tests log estimated costs before running:
+
+```python
+# Tests automatically log costs
+@pytest.mark.asyncio
+async def test_generate_basic(self, cost_logger):
+    cost_logger("replicate-flux-pro", 0.055)
+    # ... test implementation
+```
+
+Best practices:
+
+- Use minimal/cheap parameters (low quality, small sizes, single outputs)
+- Test one generator at a time
+- Review cost estimates in logs before running
+- Typical cost per test: $0.10 - $0.30
+
+### Complete Documentation
+
+For detailed information on live API testing, including:
+
+- Setting up API keys
+- Adding tests for new generators
+- Troubleshooting common issues
+- CI/CD integration (optional)
+
+See the [Live API Testing Guide](./live-api-testing.md).
+
+---
+
 This comprehensive testing approach ensures your generators are reliable, handle errors gracefully, and work correctly with the Boards system!

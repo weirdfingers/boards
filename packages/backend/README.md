@@ -187,6 +187,77 @@ Join the Weirdfingers community:
 - **YouTube**: [https://www.youtube.com/@Weirdfingers](https://www.youtube.com/@Weirdfingers)
 - **Discord**: [https://discord.gg/rvVuHyuPEx](https://discord.gg/rvVuHyuPEx)
 - **Instagram**: [https://www.instagram.com/_weirdfingers_/](https://www.instagram.com/_weirdfingers_/)
+## Testing
+
+Boards uses pytest for testing with both unit tests (mocked) and optional live API tests.
+
+### Running Tests
+
+```bash
+# Run all unit tests (excludes live API tests)
+make test-backend
+
+# Or using pytest directly
+cd packages/backend
+uv run pytest tests/
+
+# Run with coverage
+uv run pytest tests/ --cov=src/boards --cov-report=html
+
+# Run specific test file
+uv run pytest tests/generators/implementations/test_flux_pro.py -v
+```
+
+### Unit Tests vs Live API Tests
+
+**Unit tests** (default):
+- Use mocked provider SDKs
+- Fast and free
+- Run automatically in CI/CD
+- Located: `tests/**/test_*.py`
+
+**Live API tests** (opt-in only):
+- Make real API calls to providers
+- Consume API credits
+- **Never run by default**
+- Located: `tests/**/test_*_live.py`
+
+### Running Live API Tests
+
+Live tests verify real connectivity with provider APIs but cost money. They are **excluded from default test runs**.
+
+```bash
+# Set up API key
+export BOARDS_GENERATOR_API_KEYS='{"REPLICATE_API_TOKEN": "r8_..."}'
+
+# Run a specific generator's live test
+uv run pytest tests/generators/implementations/test_flux_pro_live.py -v -m live_api
+
+# Run all live tests for one provider
+uv run pytest -m live_replicate -v
+
+# Run all live tests (not recommended - expensive!)
+uv run pytest -m live_api -v
+```
+
+For detailed information on live API testing, see:
+- [Live API Testing Guide](docs/TESTING_LIVE_APIS.md)
+- [Generator Testing Documentation](../../apps/docs/docs/generators/testing.md)
+
+### Test Organization
+
+```
+tests/
+├── conftest.py                              # Shared fixtures (database, etc.)
+├── generators/
+│   └── implementations/
+│       ├── conftest.py                      # Generator-specific fixtures
+│       ├── test_flux_pro.py                 # Unit tests (mocked)
+│       ├── test_flux_pro_live.py           # Live API tests (opt-in)
+│       └── ...
+├── graphql/                                 # GraphQL API tests
+└── storage/                                 # Storage backend tests
+```
 
 ## License
 

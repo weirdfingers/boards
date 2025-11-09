@@ -23,6 +23,12 @@ generators:
   - class: "boards.generators.implementations.fal.image.nano_banana_edit.FalNanoBananaEditGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.flux_pro_ultra.FalFluxProUltraGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.imagen4_preview_fast.FalImagen4PreviewFastGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
