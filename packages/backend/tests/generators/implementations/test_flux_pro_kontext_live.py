@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_flux_pro_kontext_live.py -v
+    pytest tests/generators/implementations/test_flux_pro_kontext_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_flux_pro_kontext_live.py -v
+    pytest tests/generators/implementations/test_flux_pro_kontext_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -130,9 +130,7 @@ class TestFluxProKontextGeneratorLive:
         initialize_generator_api_keys()
 
     @pytest.mark.asyncio
-    async def test_generate_basic(
-        self, skip_if_no_fal_key, image_resolving_context, cost_logger
-    ):
+    async def test_generate_basic(self, skip_if_no_fal_key, image_resolving_context, cost_logger):
         """
         Test basic image-to-image generation with minimal parameters.
 
@@ -141,7 +139,7 @@ class TestFluxProKontextGeneratorLive:
         """
         # Use a small publicly accessible test image (256x256 solid color from placeholder services)
         # This is a simple red square image that's small and cheap to process
-        test_image_url = "https://via.placeholder.com/256/ff0000/ff0000.png"
+        test_image_url = "https://placehold.co/256x256/ff0000/ff0000.png"
 
         # Create test image artifact
         test_artifact = ImageArtifact(
@@ -190,7 +188,7 @@ class TestFluxProKontextGeneratorLive:
         Verifies that aspect_ratio parameter is correctly processed.
         """
         # Use small test image
-        test_image_url = "https://via.placeholder.com/256/00ff00/00ff00.png"
+        test_image_url = "https://placehold.co/256x256/00ff00/00ff00.png"
 
         test_artifact = ImageArtifact(
             generation_id="test_input2",
@@ -272,7 +270,7 @@ class TestFluxProKontextGeneratorLive:
         reproducibility (would require 2 API calls).
         """
         # Use small test image
-        test_image_url = "https://via.placeholder.com/256/0000ff/0000ff.png"
+        test_image_url = "https://placehold.co/256x256/0000ff/0000ff.png"
 
         test_artifact = ImageArtifact(
             generation_id="test_input3",
