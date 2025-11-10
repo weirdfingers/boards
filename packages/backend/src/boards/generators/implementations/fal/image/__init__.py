@@ -1,5 +1,6 @@
 """Fal.ai image generators."""
 
+from .clarity_upscaler import FalClarityUpscalerGenerator
 from .flux_pro_kontext import FalFluxProKontextGenerator
 from .flux_pro_ultra import FalFluxProUltraGenerator
 from .gemini_25_flash_image import FalGemini25FlashImageGenerator
@@ -13,6 +14,7 @@ from .nano_banana_pro import FalNanoBananaProGenerator
 from .qwen_image import FalQwenImageGenerator
 
 __all__ = [
+    "FalClarityUpscalerGenerator",
     "FalFluxProKontextGenerator",
     "FalFluxProUltraGenerator",
     "FalGemini25FlashImageGenerator",
