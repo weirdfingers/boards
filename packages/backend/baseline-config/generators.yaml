@@ -50,6 +50,9 @@ generators:
   - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.audio.fal_minimax_speech_26_hd.FalMinimaxSpeech26HdGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.audio.minimax_speech_2_6_turbo.FalMinimaxSpeech26TurboGenerator"
     enabled: true
 
