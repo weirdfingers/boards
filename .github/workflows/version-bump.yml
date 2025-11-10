@@ -163,3 +163,38 @@ jobs:
         run: |
           cd packages/cli-launcher
           pnpm publish --access public --no-git-checks
+
+  publish-docs:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build documentation
+        run: |
+          cd apps/docs
+          pnpm build
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: weirdfingers-boards-docs
+          directory: apps/docs/build
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
