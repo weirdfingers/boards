@@ -22,6 +22,7 @@ from .kling_video_v2_5_turbo_pro_text_to_video import (
 from .minimax_hailuo_2_3_pro_image_to_video import (
     FalMinimaxHailuo23ProImageToVideoGenerator,
 )
+from .sora2_image_to_video import FalSora2ImageToVideoGenerator
 from .sora_2_image_to_video_pro import FalSora2ImageToVideoProGenerator
 from .sora_2_text_to_video_pro import FalSora2TextToVideoProGenerator
 from .sync_lipsync_v2 import FalSyncLipsyncV2Generator
@@ -45,6 +46,7 @@ __all__ = [
     "FalSora2TextToVideoGenerator",
     "FalMinimaxHailuo02StandardTextToVideoGenerator",
     "FalMinimaxHailuo23ProImageToVideoGenerator",
+    "FalSora2ImageToVideoGenerator",
     "FalSora2ImageToVideoProGenerator",
     "FalSyncLipsyncV2Generator",
     "FalVeedLipsyncGenerator",
