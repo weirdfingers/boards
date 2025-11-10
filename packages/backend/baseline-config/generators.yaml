@@ -17,6 +17,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.flux_pro_ultra.FalFluxProUltraGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.ideogram_character_edit.FalIdeogramCharacterEditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.imagen4_preview_fast.FalImagen4PreviewFastGenerator"
     enabled: true
 
