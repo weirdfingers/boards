@@ -44,6 +44,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.veo31_first_last_frame_to_video.FalVeo31FirstLastFrameToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.veo31_image_to_video.FalVeo31ImageToVideoGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
