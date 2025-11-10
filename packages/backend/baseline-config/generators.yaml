@@ -20,6 +20,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.clarity_upscaler.FalClarityUpscalerGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.crystal_upscaler.FalCrystalUpscalerGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.creatify_lipsync.FalCreatifyLipsyncGenerator"
     enabled: true
 
