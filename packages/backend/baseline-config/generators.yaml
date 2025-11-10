@@ -35,6 +35,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_text_to_video.FalKlingVideoV25TurboProTextToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.fal_minimax_hailuo_02_standard_text_to_video.FalMinimaxHailuo02StandardTextToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
     enabled: true
 
