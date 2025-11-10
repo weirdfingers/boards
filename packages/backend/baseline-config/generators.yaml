@@ -26,6 +26,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.creatify_lipsync.FalCreatifyLipsyncGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.fal_bytedance_seedance_v1_pro_image_to_video.FalBytedanceSeedanceV1ProImageToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.bytedance_seedance_v1_pro_text_to_video.FalBytedanceSeedanceV1ProTextToVideoGenerator"
     enabled: true
 
@@ -65,6 +68,7 @@ generators:
   - class: "boards.generators.implementations.fal.image.imagen4_preview.FalImagen4PreviewGenerator"
     enabled: true
 
+<<<<<<< HEAD
   - class: "boards.generators.implementations.fal.audio.elevenlabs_sound_effects_v2.FalElevenlabsSoundEffectsV2Generator"
     enabled: true
 
@@ -72,6 +76,9 @@ generators:
     enabled: true
 
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_image_to_video.FalKlingVideoV25TurboProImageToVideoGenerator"
+=======
+  - class: "boards.generators.implementations.fal.video.fal_bytedance_seedance_v1_pro_image_to_video.FalBytedanceSeedanceV1ProImageToVideoGenerator"
+>>>>>>> d9aeb71 (Add ByteDance SeedDance v1 Pro image-to-video generator)
     enabled: true
 
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_text_to_video.FalKlingVideoV25TurboProTextToVideoGenerator"
