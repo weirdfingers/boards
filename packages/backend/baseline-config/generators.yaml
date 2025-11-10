@@ -89,6 +89,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.fal_pixverse_lipsync.FalPixverseLipsyncGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.qwen_image_edit.FalQwenImageEditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.qwen_image.FalQwenImageGenerator"
     enabled: true
 
