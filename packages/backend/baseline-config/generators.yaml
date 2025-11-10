@@ -53,6 +53,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.veed_lipsync.FalVeedLipsyncGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.sync_lipsync_v2_pro.FalSyncLipsyncV2ProGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.veo31_first_last_frame_to_video.FalVeo31FirstLastFrameToVideoGenerator"
     enabled: true
 
