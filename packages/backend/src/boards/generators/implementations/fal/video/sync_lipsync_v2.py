@@ -54,9 +54,7 @@ class FalSyncLipsyncV2Generator(BaseGenerator):
         """Generate lip-synced video using fal.ai sync-lipsync/v2."""
         # Check for API key
         if not os.getenv("FAL_KEY"):
-            raise ValueError(
-                "API configuration invalid. Missing FAL_KEY environment variable"
-            )
+            raise ValueError("API configuration invalid. Missing FAL_KEY environment variable")
 
         # Import fal_client
         try:
