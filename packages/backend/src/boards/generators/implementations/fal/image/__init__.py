@@ -2,6 +2,7 @@
 
 from .clarity_upscaler import FalClarityUpscalerGenerator
 from .crystal_upscaler import FalCrystalUpscalerGenerator
+from .fal_ideogram_character import FalIdeogramCharacterGenerator
 from .flux_pro_kontext import FalFluxProKontextGenerator
 from .flux_pro_ultra import FalFluxProUltraGenerator
 from .gemini_25_flash_image import FalGemini25FlashImageGenerator
@@ -23,6 +24,7 @@ __all__ = [
     "FalFluxProUltraGenerator",
     "FalGemini25FlashImageGenerator",
     "FalGptImage1MiniGenerator",
+    "FalIdeogramCharacterGenerator",
     "FalIdeogramCharacterEditGenerator",
     "FalIdeogramV2Generator",
     "FalImagen4PreviewGenerator",
