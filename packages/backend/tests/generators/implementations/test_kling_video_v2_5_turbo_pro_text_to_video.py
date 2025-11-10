@@ -187,6 +187,8 @@ class TestFalKlingVideoV25TurboProTextToVideoGenerator:
                         width=1,
                         height=1,
                         format="mp4",
+                        duration=5.0,
+                        fps=30,
                     )
 
                 async def store_audio_result(self, *args, **kwargs):
@@ -250,6 +252,7 @@ class TestFalKlingVideoV25TurboProTextToVideoGenerator:
                 height=1080,
                 format="mp4",
                 duration=5.0,
+                fps=30,
             )
 
             # Execute generation
@@ -338,6 +341,7 @@ class TestFalKlingVideoV25TurboProTextToVideoGenerator:
                 height=1920,
                 format="mp4",
                 duration=10.0,
+                fps=30,
             )
 
             class DummyCtx(GeneratorExecutionContext):
@@ -410,6 +414,7 @@ class TestFalKlingVideoV25TurboProTextToVideoGenerator:
                 height=1080,
                 format="mp4",
                 duration=5.0,
+                fps=30,
             )
 
             class DummyCtx(GeneratorExecutionContext):
