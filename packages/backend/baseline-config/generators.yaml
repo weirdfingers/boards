@@ -8,46 +8,40 @@
 strict_mode: true
 allow_unlisted: false
 
+# NOTE: Please keep generators in alphabetical order by class name for easier maintenance
 generators:
-  # Replicate generators
-  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
-    enabled: true
-
-  - class: "boards.generators.implementations.replicate.video.lipsync.ReplicateLipsyncGenerator"
-    enabled: true
-
   # Fal.ai generators
-  - class: "boards.generators.implementations.fal.image.nano_banana.FalNanoBananaGenerator"
-    enabled: true
-
-  - class: "boards.generators.implementations.fal.image.nano_banana_edit.FalNanoBananaEditGenerator"
+  - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
     enabled: true
 
   - class: "boards.generators.implementations.fal.image.flux_pro_ultra.FalFluxProUltraGenerator"
     enabled: true
 
-  - class: "boards.generators.implementations.fal.image.imagen4_preview.FalImagen4PreviewGenerator"
-    enabled: true
-
   - class: "boards.generators.implementations.fal.image.imagen4_preview_fast.FalImagen4PreviewFastGenerator"
     enabled: true
 
-  - class: "boards.generators.implementations.fal.audio.minimax_speech_2_6_turbo.FalMinimaxSpeech26TurboGenerator"
-    enabled: true
-
-  - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
-    enabled: true
-
-  - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
-    enabled: true
-
-  - class: "boards.generators.implementations.fal.video.veo31_first_last_frame_to_video.FalVeo31FirstLastFrameToVideoGenerator"
+  - class: "boards.generators.implementations.fal.image.imagen4_preview.FalImagen4PreviewGenerator"
     enabled: true
 
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_text_to_video.FalKlingVideoV25TurboProTextToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.audio.minimax_speech_2_6_turbo.FalMinimaxSpeech26TurboGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.nano_banana_edit.FalNanoBananaEditGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.nano_banana.FalNanoBananaGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.sync_lipsync_v2.FalSyncLipsyncV2Generator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.video.veo31_first_last_frame_to_video.FalVeo31FirstLastFrameToVideoGenerator"
     enabled: true
 
   # OpenAI generators
@@ -55,4 +49,11 @@ generators:
     enabled: true
 
   - class: "boards.generators.implementations.openai.audio.whisper.OpenAIWhisperGenerator"
+    enabled: true
+
+  # Replicate generators
+  - class: "boards.generators.implementations.replicate.image.flux_pro.ReplicateFluxProGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.replicate.video.lipsync.ReplicateLipsyncGenerator"
     enabled: true
