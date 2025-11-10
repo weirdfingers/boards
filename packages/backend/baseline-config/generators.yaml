@@ -14,6 +14,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.creatify_lipsync.FalCreatifyLipsyncGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.bytedance_seedance_v1_pro_text_to_video.FalBytedanceSeedanceV1ProTextToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
     enabled: true
 

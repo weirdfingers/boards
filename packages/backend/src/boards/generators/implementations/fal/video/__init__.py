@@ -1,5 +1,8 @@
 """Fal.ai video generators."""
 
+from .bytedance_seedance_v1_pro_text_to_video import (
+    FalBytedanceSeedanceV1ProTextToVideoGenerator,
+)
 from .creatify_lipsync import FalCreatifyLipsyncGenerator
 from .fal_pixverse_lipsync import FalPixverseLipsyncGenerator
 from .fal_sora_2_text_to_video import FalSora2TextToVideoGenerator
@@ -18,6 +21,7 @@ from .veo31_reference_to_video import FalVeo31ReferenceToVideoGenerator
 __all__ = [
     "FalInfinitalkGenerator",
     "FalCreatifyLipsyncGenerator",
+    "FalBytedanceSeedanceV1ProTextToVideoGenerator",
     "FalKlingVideoV25TurboProTextToVideoGenerator",
     "FalPixverseLipsyncGenerator",
     "FalSora2TextToVideoProGenerator",
