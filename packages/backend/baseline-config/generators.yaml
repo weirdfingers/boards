@@ -80,6 +80,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.fal_minimax_hailuo_02_standard_text_to_video.FalMinimaxHailuo02StandardTextToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.minimax_hailuo_2_3_pro_image_to_video.FalMinimaxHailuo23ProImageToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.audio.minimax_music_v2.FalMinimaxMusicV2Generator"
     enabled: true
 
