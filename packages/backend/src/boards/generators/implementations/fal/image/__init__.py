@@ -2,6 +2,7 @@
 
 from .flux_pro_kontext import FalFluxProKontextGenerator
 from .flux_pro_ultra import FalFluxProUltraGenerator
+from .gemini_25_flash_image import FalGemini25FlashImageGenerator
 from .gpt_image_1_mini import FalGptImage1MiniGenerator
 from .ideogram_v2 import FalIdeogramV2Generator
 from .imagen4_preview import FalImagen4PreviewGenerator
@@ -13,6 +14,7 @@ from .nano_banana_pro import FalNanoBananaProGenerator
 __all__ = [
     "FalFluxProKontextGenerator",
     "FalFluxProUltraGenerator",
+    "FalGemini25FlashImageGenerator",
     "FalGptImage1MiniGenerator",
     "FalIdeogramV2Generator",
     "FalImagen4PreviewGenerator",
