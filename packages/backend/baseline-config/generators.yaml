@@ -11,6 +11,9 @@ allow_unlisted: false
 # NOTE: Please keep generators in alphabetical order by class name for easier maintenance
 generators:
   # Fal.ai generators
+  - class: "boards.generators.implementations.fal.audio.beatoven_music_generation.FalBeatovenMusicGenerationGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.audio.beatoven_sound_effect_generation.FalBeatovenSoundEffectGenerationGenerator"
     enabled: true
 

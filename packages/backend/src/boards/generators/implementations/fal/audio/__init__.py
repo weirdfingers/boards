@@ -1,3 +1,4 @@
+from .beatoven_music_generation import FalBeatovenMusicGenerationGenerator
 from .beatoven_sound_effect_generation import FalBeatovenSoundEffectGenerationGenerator
 from .elevenlabs_sound_effects_v2 import FalElevenlabsSoundEffectsV2Generator
 from .elevenlabs_tts_eleven_v3 import FalElevenlabsTtsElevenV3Generator
@@ -7,6 +8,7 @@ from .minimax_music_v2 import FalMinimaxMusicV2Generator
 from .minimax_speech_2_6_turbo import FalMinimaxSpeech26TurboGenerator
 
 __all__ = [
+    "FalBeatovenMusicGenerationGenerator",
     "FalBeatovenSoundEffectGenerationGenerator",
     "FalElevenlabsSoundEffectsV2Generator",
     "FalElevenlabsTtsElevenV3Generator",
