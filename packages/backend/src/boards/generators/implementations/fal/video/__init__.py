@@ -1,5 +1,8 @@
 """Fal.ai video generators."""
 
+from .fal_minimax_hailuo_02_standard_text_to_video import (
+    FalMinimaxHailuo02StandardTextToVideoGenerator,
+)
 from .kling_video_v2_5_turbo_pro_text_to_video import (
     FalKlingVideoV25TurboProTextToVideoGenerator,
 )
@@ -8,6 +11,7 @@ from .veo31_first_last_frame_to_video import FalVeo31FirstLastFrameToVideoGenera
 
 __all__ = [
     "FalKlingVideoV25TurboProTextToVideoGenerator",
+    "FalMinimaxHailuo02StandardTextToVideoGenerator",
     "FalSyncLipsyncV2Generator",
     "FalVeo31FirstLastFrameToVideoGenerator",
 ]
