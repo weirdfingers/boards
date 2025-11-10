@@ -6,6 +6,7 @@ from .fal_ideogram_character import FalIdeogramCharacterGenerator
 from .flux_pro_kontext import FalFluxProKontextGenerator
 from .flux_pro_ultra import FalFluxProUltraGenerator
 from .gemini_25_flash_image import FalGemini25FlashImageGenerator
+from .gpt_image_1_edit_image import FalGptImage1EditImageGenerator
 from .gpt_image_1_mini import FalGptImage1MiniGenerator
 from .ideogram_character_edit import FalIdeogramCharacterEditGenerator
 from .ideogram_v2 import FalIdeogramV2Generator
@@ -23,6 +24,7 @@ __all__ = [
     "FalFluxProKontextGenerator",
     "FalFluxProUltraGenerator",
     "FalGemini25FlashImageGenerator",
+    "FalGptImage1EditImageGenerator",
     "FalGptImage1MiniGenerator",
     "FalIdeogramCharacterGenerator",
     "FalIdeogramCharacterEditGenerator",
