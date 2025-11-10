@@ -7,11 +7,11 @@ ensure they are never run by default.
 
 To run these tests:
     export BOARDS_GENERATOR_API_KEYS='{"FAL_KEY": "..."}'
-    pytest tests/generators/implementations/test_sync_lipsync_v2_live.py -v
+    pytest tests/generators/implementations/test_sync_lipsync_v2_live.py -v -m live_api
 
 Or using direct environment variable:
     export FAL_KEY="..."
-    pytest tests/generators/implementations/test_sync_lipsync_v2_live.py -v
+    pytest tests/generators/implementations/test_sync_lipsync_v2_live.py -v -m live_fal
 
 Or run all Fal live tests:
     pytest -m live_fal -v
@@ -42,7 +42,7 @@ class TestSyncLipsyncV2GeneratorLive:
         initialize_generator_api_keys()
 
     @pytest.mark.asyncio
-    async def test_generate_basic(self, skip_if_no_fal_key, dummy_context, cost_logger):
+    async def test_generate_basic(self, skip_if_no_fal_key, image_resolving_context, cost_logger):
         """
         Test basic lip-sync generation with base model.
 
@@ -85,7 +85,7 @@ class TestSyncLipsyncV2GeneratorLive:
         cost_logger(self.generator.name, estimated_cost)
 
         # Execute generation
-        result = await self.generator.generate(inputs, dummy_context)
+        result = await self.generator.generate(inputs, image_resolving_context)
 
         # Verify result structure
         assert result.outputs is not None
@@ -102,7 +102,7 @@ class TestSyncLipsyncV2GeneratorLive:
 
     @pytest.mark.asyncio
     async def test_generate_with_loop_sync_mode(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
+        self, skip_if_no_fal_key, image_resolving_context, cost_logger
     ):
         """
         Test lip-sync generation with loop sync mode.
@@ -142,7 +142,7 @@ class TestSyncLipsyncV2GeneratorLive:
         cost_logger(self.generator.name, estimated_cost)
 
         # Execute generation
-        result = await self.generator.generate(inputs, dummy_context)
+        result = await self.generator.generate(inputs, image_resolving_context)
 
         # Verify result
         assert result.outputs is not None
@@ -168,11 +168,16 @@ class TestSyncLipsyncV2GeneratorLive:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="test",
             storage_url="https://example.com/test.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         # Test base model cost

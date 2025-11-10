@@ -60,11 +60,16 @@ class TestSyncLipsyncV2Input:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         input_data = SyncLipsyncV2Input(
@@ -83,11 +88,16 @@ class TestSyncLipsyncV2Input:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         with pytest.raises(ValidationError):
@@ -105,11 +115,16 @@ class TestSyncLipsyncV2Input:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         with pytest.raises(ValidationError):
@@ -127,11 +142,16 @@ class TestSyncLipsyncV2Input:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         valid_models = ["lipsync-2", "lipsync-2-pro"]
@@ -152,11 +172,16 @@ class TestSyncLipsyncV2Input:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         valid_sync_modes = ["cut_off", "loop", "bounce", "silence", "remap"]
@@ -204,11 +229,16 @@ class TestFalSyncLipsyncV2Generator:
                 format="mp4",
                 width=1920,
                 height=1080,
+                duration=None,
+                fps=None,
             )
             audio_artifact = AudioArtifact(
                 generation_id="gen2",
                 storage_url="https://example.com/audio.wav",
                 format="wav",
+                duration=None,
+                sample_rate=None,
+                channels=None,
             )
 
             input_data = SyncLipsyncV2Input(
@@ -235,6 +265,8 @@ class TestFalSyncLipsyncV2Generator:
                         width=1,
                         height=1,
                         format="mp4",
+                        duration=None,
+                        fps=None,
                     )
 
                 async def store_audio_result(self, *args, **kwargs):
@@ -311,11 +343,7 @@ class TestFalSyncLipsyncV2Generator:
 
             async def mock_upload(file_path):
                 nonlocal upload_call_count
-                url = (
-                    fake_uploaded_video_url
-                    if upload_call_count == 0
-                    else fake_uploaded_audio_url
-                )
+                url = fake_uploaded_video_url if upload_call_count == 0 else fake_uploaded_audio_url
                 upload_call_count += 1
                 return url
 
@@ -444,11 +472,7 @@ class TestFalSyncLipsyncV2Generator:
 
             async def mock_upload(file_path):
                 nonlocal upload_call_count
-                url = (
-                    fake_uploaded_video_url
-                    if upload_call_count == 0
-                    else fake_uploaded_audio_url
-                )
+                url = fake_uploaded_video_url if upload_call_count == 0 else fake_uploaded_audio_url
                 upload_call_count += 1
                 return url
 
@@ -519,11 +543,16 @@ class TestFalSyncLipsyncV2Generator:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen_input_audio",
             storage_url="https://example.com/input-audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         input_data = SyncLipsyncV2Input(
@@ -546,11 +575,7 @@ class TestFalSyncLipsyncV2Generator:
 
             async def mock_upload(file_path):
                 nonlocal upload_call_count
-                url = (
-                    fake_uploaded_video_url
-                    if upload_call_count == 0
-                    else fake_uploaded_audio_url
-                )
+                url = fake_uploaded_video_url if upload_call_count == 0 else fake_uploaded_audio_url
                 upload_call_count += 1
                 return url
 
@@ -602,11 +627,16 @@ class TestFalSyncLipsyncV2Generator:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         input_data = SyncLipsyncV2Input(
@@ -630,11 +660,16 @@ class TestFalSyncLipsyncV2Generator:
             format="mp4",
             width=1920,
             height=1080,
+            duration=None,
+            fps=None,
         )
         audio_artifact = AudioArtifact(
             generation_id="gen2",
             storage_url="https://example.com/audio.wav",
             format="wav",
+            duration=None,
+            sample_rate=None,
+            channels=None,
         )
 
         input_data = SyncLipsyncV2Input(
