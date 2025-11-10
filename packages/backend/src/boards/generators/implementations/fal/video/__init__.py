@@ -10,6 +10,9 @@ from .fal_minimax_hailuo_02_standard_text_to_video import (
 from .fal_pixverse_lipsync import FalPixverseLipsyncGenerator
 from .fal_sora_2_text_to_video import FalSora2TextToVideoGenerator
 from .infinitalk import FalInfinitalkGenerator
+from .kling_video_v2_5_turbo_pro_image_to_video import (
+    FalKlingVideoV25TurboProImageToVideoGenerator,
+)
 from .kling_video_v2_5_turbo_pro_text_to_video import (
     FalKlingVideoV25TurboProTextToVideoGenerator,
 )
@@ -28,6 +31,7 @@ __all__ = [
     "FalInfinitalkGenerator",
     "FalCreatifyLipsyncGenerator",
     "FalBytedanceSeedanceV1ProTextToVideoGenerator",
+    "FalKlingVideoV25TurboProImageToVideoGenerator",
     "FalKlingVideoV25TurboProTextToVideoGenerator",
     "FalPixverseLipsyncGenerator",
     "FalSora2TextToVideoProGenerator",
