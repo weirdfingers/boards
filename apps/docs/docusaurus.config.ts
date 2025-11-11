@@ -1,13 +1,13 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
+import { themes as prismThemes } from "prism-react-renderer";
+import type { Config } from "@docusaurus/types";
+import type * as Preset from "@docusaurus/preset-classic";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Boards',
-  tagline: 'Open-source creative toolkit for AI-generated content',
-  favicon: 'img/favicon.ico',
+  title: "Boards",
+  tagline: "Open-source creative toolkit for AI-generated content",
+  favicon: "img/favicon.ico",
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -15,41 +15,41 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://weirdfingers.github.io',
+  url: "https://weirdfingers.github.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/boards/',
+  baseUrl: "/",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'weirdfingers', // Usually your GitHub org/user name.
-  projectName: 'boards', // Usually your repo name.
+  organizationName: "weirdfingers", // Usually your GitHub org/user name.
+  projectName: "boards", // Usually your repo name.
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
   },
 
   presets: [
     [
-      'classic',
+      "classic",
       {
         docs: {
-          sidebarPath: './sidebars.ts',
+          sidebarPath: "./sidebars.ts",
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/weirdfingers/boards/tree/main/apps/docs/',
+            "https://github.com/weirdfingers/boards/tree/main/apps/docs/",
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: "./src/css/custom.css",
         },
       } satisfies Preset.Options,
     ],
@@ -57,87 +57,87 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card (1200x675px recommended)
-    image: 'img/logo120.png',
+    image: "img/logo120.png",
     navbar: {
-      title: 'Boards',
+      title: "Boards",
       logo: {
-        alt: 'Boards Logo',
-        src: 'img/logo120.png',
+        alt: "Boards Logo",
+        src: "img/logo120.png",
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Documentation',
+          type: "docSidebar",
+          sidebarId: "tutorialSidebar",
+          position: "left",
+          label: "Documentation",
         },
         {
-          href: 'https://github.com/weirdfingers/boards',
-          label: 'GitHub',
-          position: 'right',
+          href: "https://github.com/weirdfingers/boards",
+          label: "GitHub",
+          position: "right",
         },
       ],
     },
     footer: {
-      style: 'dark',
+      style: "dark",
       links: [
         {
-          title: 'Docs',
+          title: "Docs",
           items: [
             {
-              label: 'Getting Started',
-              to: '/docs/intro',
+              label: "Getting Started",
+              to: "/docs/intro",
             },
             {
-              label: 'Installation',
-              to: '/docs/installation',
+              label: "Installation",
+              to: "/docs/installation",
             },
           ],
         },
         {
-          title: 'Community',
+          title: "Community",
           items: [
             {
-              label: 'GitHub Issues',
-              href: 'https://github.com/weirdfingers/boards/issues',
+              label: "GitHub Issues",
+              href: "https://github.com/weirdfingers/boards/issues",
             },
             {
-              label: 'GitHub Discussions',
-              href: 'https://github.com/weirdfingers/boards/discussions',
+              label: "GitHub Discussions",
+              href: "https://github.com/weirdfingers/boards/discussions",
             },
             {
-              label: 'Discord',
-              href: 'https://discord.gg/rvVuHyuPEx',
+              label: "Discord",
+              href: "https://discord.gg/rvVuHyuPEx",
             },
           ],
         },
         {
-          title: 'Social Media',
+          title: "Social Media",
           items: [
             {
-              label: 'TikTok',
-              href: 'https://www.tiktok.com/@weirdfingers',
+              label: "TikTok",
+              href: "https://www.tiktok.com/@weirdfingers",
             },
             {
-              label: 'X (Twitter)',
-              href: 'https://x.com/_Weirdfingers_',
+              label: "X (Twitter)",
+              href: "https://x.com/_Weirdfingers_",
             },
             {
-              label: 'YouTube',
-              href: 'https://www.youtube.com/@Weirdfingers',
+              label: "YouTube",
+              href: "https://www.youtube.com/@Weirdfingers",
             },
             {
-              label: 'Instagram',
-              href: 'https://www.instagram.com/_weirdfingers_/',
+              label: "Instagram",
+              href: "https://www.instagram.com/_weirdfingers_/",
             },
           ],
         },
         {
-          title: 'More',
+          title: "More",
           items: [
             {
-              label: 'GitHub',
-              href: 'https://github.com/weirdfingers/boards',
+              label: "GitHub",
+              href: "https://github.com/weirdfingers/boards",
             },
           ],
         },
