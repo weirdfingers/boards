@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Settings, ArrowUp, X } from "lucide-react";
 import Image from "next/image";
 import {
@@ -43,6 +43,7 @@ export function GenerationInput({
   >(new Map());
   const [attachedImage, setAttachedImage] = useState<Generation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<Record<string, unknown>>({});
 
   // Parse input schema using the toolkit's schema parser
   const parsedSchema = useMemo((): ParsedGeneratorSchema => {
@@ -62,6 +63,22 @@ export function GenerationInput({
 
   const needsArtifactInputs = artifactSlots.length > 0;
 
+  // Initialize settings with defaults when generator changes
+  const defaultSettings = useMemo(() => {
+    const defaults: Record<string, unknown> = {};
+    parsedSchema.settingsFields.forEach((field) => {
+      if (field.default !== undefined) {
+        defaults[field.fieldName] = field.default;
+      }
+    });
+    return defaults;
+  }, [parsedSchema.settingsFields]);
+
+  // Reset settings when generator changes or defaultSettings change
+  useEffect(() => {
+    setSettings(defaultSettings);
+  }, [selectedGenerator, defaultSettings]);
+
   const handleSubmit = () => {
     if (!selectedGenerator || !prompt.trim()) return;
 
@@ -69,13 +86,14 @@ export function GenerationInput({
       generatorName: selectedGenerator.name,
       prompt: prompt.trim(),
       artifacts: selectedArtifacts,
-      settings: {},
+      settings,
     });
 
     // Reset form
     setPrompt("");
     setSelectedArtifacts(new Map());
     setAttachedImage(null);
+    setSettings(defaultSettings);
   };
 
   const handleSelectArtifact = (
@@ -211,9 +229,123 @@ export function GenerationInput({
       {/* Settings panel (collapsed by default) */}
       {showSettings && (
         <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
-          <p className="text-sm text-gray-600">
-            Generator-specific settings will appear here
-          </p>
+          {parsedSchema.settingsFields.length === 0 ? (
+            <p className="text-sm text-gray-600">
+              No additional settings available for this generator
+            </p>
+          ) : (
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 mb-4">
+                Generator Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {parsedSchema.settingsFields.map((field) => (
+                <div key={field.fieldName} className="space-y-1.5">
+                  <label
+                    htmlFor={field.fieldName}
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    {field.title}
+                  </label>
+                  {field.description && (
+                    <p className="text-xs text-gray-500">{field.description}</p>
+                  )}
+
+                  {/* Slider control */}
+                  {field.type === "slider" && (
+                    <div className="space-y-1">
+                      <input
+                        id={field.fieldName}
+                        type="range"
+                        min={field.min}
+                        max={field.max}
+                        step={field.step || (field.isInteger ? 1 : 0.01)}
+                        value={
+                          (settings[field.fieldName] as number) ?? field.default
+                        }
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            [field.fieldName]: field.isInteger
+                              ? parseInt(e.target.value)
+                              : parseFloat(e.target.value),
+                          })
+                        }
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                      />
+                      <div className="flex justify-between text-xs text-gray-600">
+                        <span>{field.min}</span>
+                        <span className="font-medium">
+                          {String(settings[field.fieldName] ?? field.default ?? field.min)}
+                        </span>
+                        <span>{field.max}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dropdown control */}
+                  {field.type === "dropdown" && (
+                    <select
+                      id={field.fieldName}
+                      value={(settings[field.fieldName] as string) ?? field.default}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          [field.fieldName]: e.target.value,
+                        })
+                      }
+                      className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      {field.options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Number input control */}
+                  {field.type === "number" && (
+                    <input
+                      id={field.fieldName}
+                      type="number"
+                      min={field.min}
+                      max={field.max}
+                      step={field.isInteger ? 1 : "any"}
+                      value={(settings[field.fieldName] as number) ?? field.default}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          [field.fieldName]: field.isInteger
+                            ? parseInt(e.target.value)
+                            : parseFloat(e.target.value),
+                        })
+                      }
+                      className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  )}
+
+                  {/* Text input control */}
+                  {field.type === "text" && (
+                    <input
+                      id={field.fieldName}
+                      type="text"
+                      value={(settings[field.fieldName] as string) ?? field.default ?? ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          [field.fieldName]: e.target.value,
+                        })
+                      }
+                      pattern={field.pattern}
+                      className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  )}
+                </div>
+              ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
