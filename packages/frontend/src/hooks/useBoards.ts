@@ -75,9 +75,11 @@ export function useBoards(options: UseBoardsOptions = {}): BoardsHook {
       if (!result.data?.createBoard) {
         throw new Error("Failed to create board");
       }
+      // Refetch boards to update the UI with the new board
+      reexecuteQuery({ requestPolicy: "network-only" });
       return result.data.createBoard;
     },
-    [createBoardMutation]
+    [createBoardMutation, reexecuteQuery]
   );
 
   const deleteBoard = useCallback(
