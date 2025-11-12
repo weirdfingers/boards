@@ -94,8 +94,8 @@ class GeneratorExecutionContext(Protocol):
         self,
         storage_url: str,
         format: str,
-        width: int,
-        height: int,
+        width: int | None = None,
+        height: int | None = None,
         output_index: int = 0,
     ) -> ImageArtifact:
         """Store an image result to permanent storage."""
@@ -105,8 +105,8 @@ class GeneratorExecutionContext(Protocol):
         self,
         storage_url: str,
         format: str,
-        width: int,
-        height: int,
+        width: int | None = None,
+        height: int | None = None,
         duration: float | None = None,
         fps: float | None = None,
         output_index: int = 0,

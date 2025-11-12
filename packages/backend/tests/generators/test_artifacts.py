@@ -74,18 +74,16 @@ class TestVideoArtifact:
         assert artifact.format == "mp4"
         assert artifact.fps == 30.0
 
-    def test_video_artifact_required_fields(self):
-        """Test video artifact with only required fields."""
+    def test_video_artifact_minimal(self):
+        """Test video artifact with only required fields (dimensions optional)."""
         artifact = VideoArtifact(  # type: ignore
             generation_id="gen_456",
             storage_url="https://example.com/video.mp4",
-            width=1920,
-            height=1080,
             format="mp4",
         )
 
-        assert artifact.width == 1920
-        assert artifact.height == 1080
+        assert artifact.width is None
+        assert artifact.height is None
         assert artifact.format == "mp4"
         assert artifact.duration is None
         assert artifact.fps is None
@@ -108,6 +106,20 @@ class TestImageArtifact:
         assert artifact.storage_url == "https://example.com/image.png"
         assert artifact.width == 1024
         assert artifact.height == 1024
+        assert artifact.format == "png"
+
+    def test_image_artifact_minimal(self):
+        """Test creating image artifact with only required fields (dimensions optional)."""
+        artifact = ImageArtifact(  # type: ignore
+            generation_id="gen_789",
+            storage_url="https://example.com/image.png",
+            format="png",
+        )
+
+        assert artifact.generation_id == "gen_789"
+        assert artifact.storage_url == "https://example.com/image.png"
+        assert artifact.width is None
+        assert artifact.height is None
         assert artifact.format == "png"
 
 
@@ -201,10 +213,11 @@ class TestArtifactValidation:
         assert "height" in schema["properties"]
         assert "format" in schema["properties"]
 
-        # Check required fields
+        # Check required fields (width/height are now optional)
         required_fields = schema["required"]
         assert "generation_id" in required_fields
         assert "storage_url" in required_fields
-        assert "width" in required_fields
-        assert "height" in required_fields
         assert "format" in required_fields
+        # width and height are optional
+        assert "width" not in required_fields
+        assert "height" not in required_fields

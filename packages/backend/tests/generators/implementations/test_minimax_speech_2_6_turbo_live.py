@@ -68,7 +68,6 @@ class TestMinimaxSpeech26TurboGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, AudioArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
         assert artifact.format == "mp3"
 
     @pytest.mark.asyncio
@@ -106,7 +105,7 @@ class TestMinimaxSpeech26TurboGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, AudioArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
         assert artifact.format == "mp3"
 
     @pytest.mark.asyncio
@@ -138,7 +137,7 @@ class TestMinimaxSpeech26TurboGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, AudioArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
 
     @pytest.mark.asyncio
     async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):
@@ -196,4 +195,4 @@ class TestMinimaxSpeech26TurboGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, AudioArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None

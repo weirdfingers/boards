@@ -309,7 +309,7 @@ class TestMyGeneratorLive:
         # Verify
         assert result.outputs is not None
         assert len(result.outputs) > 0
-        assert result.outputs[0].storage_url.startswith("https://")
+        assert result.outputs[0].storage_url is not None
 ```
 
 ### 3. Add Provider-Specific Skip Fixture (If New Provider)

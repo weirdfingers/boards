@@ -136,10 +136,6 @@ def _generation_to_artifact[T: (ImageArtifact, VideoArtifact, AudioArtifact, Tex
     if artifact_class == ImageArtifact:
         width = metadata.get("width")
         height = metadata.get("height")
-        if width is None or height is None:
-            raise ValueError(
-                f"Generation {generation.id} missing image dimensions in output_metadata"
-            )
         return ImageArtifact(
             generation_id=str(generation.id),
             storage_url=generation.storage_url,
@@ -151,10 +147,6 @@ def _generation_to_artifact[T: (ImageArtifact, VideoArtifact, AudioArtifact, Tex
     elif artifact_class == VideoArtifact:
         width = metadata.get("width")
         height = metadata.get("height")
-        if width is None or height is None:
-            raise ValueError(
-                f"Generation {generation.id} missing video dimensions in output_metadata"
-            )
         return VideoArtifact(
             generation_id=str(generation.id),
             storage_url=generation.storage_url,

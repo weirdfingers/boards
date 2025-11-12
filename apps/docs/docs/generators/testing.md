@@ -704,7 +704,7 @@ async def test_full_generation_flow(self):
     # Verify result structure
     assert isinstance(result, MyOutput)
     assert isinstance(result.image, ImageArtifact)
-    assert result.image.storage_url.startswith("https://")
+    assert result.image.storage_url is not None
     assert result.image.width > 0
     assert result.image.height > 0
     
@@ -944,7 +944,7 @@ class TestMyGeneratorLive:
         # Verify real response structure
         assert result.outputs is not None
         assert len(result.outputs) > 0
-        assert result.outputs[0].storage_url.startswith("https://")
+        assert result.outputs[0].storage_url is not None
 ```
 
 ### Cost Management

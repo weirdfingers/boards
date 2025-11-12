@@ -72,7 +72,6 @@ class TestMinimaxMusicV2GeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, AudioArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
         assert artifact.format == "mp3"
         # Default sample rate is 44100 when audio_setting is not provided
         assert artifact.sample_rate == 44100
@@ -112,7 +111,7 @@ class TestMinimaxMusicV2GeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, AudioArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
         # Should use default format (mp3) when not specified
         assert artifact.format == "mp3"
 

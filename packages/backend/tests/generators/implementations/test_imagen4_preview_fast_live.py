@@ -72,9 +72,11 @@ class TestImagen4PreviewFastGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        # Dimensions are optional, but if present should be valid
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format == "png"
 
     @pytest.mark.asyncio
@@ -108,9 +110,12 @@ class TestImagen4PreviewFastGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
-        assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.storage_url is not None
+        # Dimensions are optional, but if present should be valid
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format == "png"
 
     @pytest.mark.asyncio
@@ -145,7 +150,7 @@ class TestImagen4PreviewFastGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
 
     @pytest.mark.asyncio
     async def test_generate_with_seed(self, skip_if_no_fal_key, dummy_context, cost_logger):
@@ -185,8 +190,8 @@ class TestImagen4PreviewFastGeneratorLive:
         artifact2 = result2.outputs[0]
         assert isinstance(artifact1, ImageArtifact)
         assert isinstance(artifact2, ImageArtifact)
-        assert artifact1.storage_url.startswith("https://")
-        assert artifact2.storage_url.startswith("https://")
+        assert artifact1.storage_url is not None
+        assert artifact2.storage_url is not None
 
     @pytest.mark.asyncio
     async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):
@@ -242,7 +247,9 @@ class TestImagen4PreviewFastGeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url is not None
-            assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            # Dimensions are optional, but if present should be valid
+            if artifact.width is not None:
+                assert artifact.width > 0
+            if artifact.height is not None:
+                assert artifact.height > 0
             assert artifact.format == "png"

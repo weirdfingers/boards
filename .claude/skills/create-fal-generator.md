@@ -368,7 +368,7 @@ class Test{GeneratorName}GeneratorLive:
         # Verify artifact properties
         artifact = result.outputs[0]
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
+        # Storage URLs can be HTTPS URLs or other formats (data:, etc.)
         # Add artifact-specific assertions (width, height for images, etc.)
 
     @pytest.mark.asyncio
