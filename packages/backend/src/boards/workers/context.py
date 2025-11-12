@@ -62,8 +62,8 @@ class GeneratorExecutionContext:
         self,
         storage_url: str,
         format: str,
-        width: int,
-        height: int,
+        width: int | None = None,
+        height: int | None = None,
         output_index: int = 0,
     ) -> ImageArtifact:
         """Store image generation result.
@@ -71,8 +71,8 @@ class GeneratorExecutionContext:
         Args:
             storage_url: URL to download the image from
             format: Image format (png, jpg, etc.)
-            width: Image width in pixels
-            height: Image height in pixels
+            width: Image width in pixels (optional)
+            height: Image height in pixels (optional)
             output_index: Index of this output in a batch (0 for primary, 1+ for additional)
 
         Returns:
@@ -111,8 +111,8 @@ class GeneratorExecutionContext:
         self,
         storage_url: str,
         format: str,
-        width: int,
-        height: int,
+        width: int | None = None,
+        height: int | None = None,
         duration: float | None = None,
         fps: float | None = None,
         output_index: int = 0,
@@ -122,8 +122,8 @@ class GeneratorExecutionContext:
         Args:
             storage_url: URL to download the video from
             format: Video format (mp4, webm, etc.)
-            width: Video width in pixels
-            height: Video height in pixels
+            width: Video width in pixels (optional)
+            height: Video height in pixels (optional)
             duration: Video duration in seconds (optional)
             fps: Frames per second (optional)
             output_index: Index of this output in a batch (0 for primary, 1+ for additional)

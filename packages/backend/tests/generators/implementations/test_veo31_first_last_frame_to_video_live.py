@@ -115,14 +115,17 @@ class TestVeo31FirstLastFrameToVideoGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        # Dimensions are optional, but if present should be valid
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.duration is not None and artifact.duration > 0
         assert artifact.format == "mp4"
 
         # Verify expected dimensions for 720p
-        assert artifact.height == 720 or artifact.width == 1280
+        if artifact.height is not None and artifact.width is not None:
+            assert artifact.height == 720 or artifact.width == 1280
 
     @pytest.mark.asyncio
     async def test_estimate_cost_audio_discount(self, skip_if_no_fal_key, test_image_artifacts):

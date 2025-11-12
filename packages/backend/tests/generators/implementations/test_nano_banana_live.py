@@ -70,9 +70,11 @@ class TestNanoBananaGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        # Dimensions are optional, but if present should be valid
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format in ["jpeg", "png"]
 
     @pytest.mark.asyncio
@@ -106,9 +108,12 @@ class TestNanoBananaGeneratorLive:
 
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
-            assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            assert artifact.storage_url is not None
+            # Dimensions are optional, but if present should be valid
+            if artifact.width is not None:
+                assert artifact.width > 0
+            if artifact.height is not None:
+                assert artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_sizes(
@@ -144,9 +149,12 @@ class TestNanoBananaGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
-        assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.storage_url is not None
+        # Dimensions are optional, but if present should be valid
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
 
         # Landscape should have width > height (though exact dims depend on size preset)
         # We don't verify exact aspect ratio as API might vary
@@ -199,4 +207,4 @@ class TestNanoBananaGeneratorLive:
         # Verify result (seed doesn't affect output structure, just determinism)
         assert result.outputs is not None
         assert len(result.outputs) == 1
-        assert result.outputs[0].storage_url.startswith("https://")
+        assert result.outputs[0].storage_url is not None

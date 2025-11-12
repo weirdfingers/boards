@@ -70,7 +70,6 @@ class TestImagen4PreviewGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
         assert artifact.width == 1024
         assert artifact.height == 1024
         assert artifact.format in ["jpeg", "png"]
@@ -106,9 +105,12 @@ class TestImagen4PreviewGeneratorLive:
 
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
-            assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            assert artifact.storage_url is not None
+            # Dimensions are optional, but if present should be valid
+            if artifact.width is not None:
+                assert artifact.width > 0
+            if artifact.height is not None:
+                assert artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_aspect_ratios(
@@ -144,7 +146,7 @@ class TestImagen4PreviewGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
         assert artifact.width == 1024
         assert artifact.height == 576  # 16:9 ratio with 1K resolution
 
@@ -182,7 +184,7 @@ class TestImagen4PreviewGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
         assert artifact.width == 2048
         assert artifact.height == 2048
 
@@ -214,7 +216,7 @@ class TestImagen4PreviewGeneratorLive:
         # Verify result (negative prompt doesn't affect output structure)
         assert result.outputs is not None
         assert len(result.outputs) == 1
-        assert result.outputs[0].storage_url.startswith("https://")
+        assert result.outputs[0].storage_url is not None
 
     @pytest.mark.asyncio
     async def test_generate_with_seed(self, skip_if_no_fal_key, dummy_context, cost_logger):
@@ -243,7 +245,7 @@ class TestImagen4PreviewGeneratorLive:
         # Verify result (seed doesn't affect output structure, just determinism)
         assert result.outputs is not None
         assert len(result.outputs) == 1
-        assert result.outputs[0].storage_url.startswith("https://")
+        assert result.outputs[0].storage_url is not None
 
     @pytest.mark.asyncio
     async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):

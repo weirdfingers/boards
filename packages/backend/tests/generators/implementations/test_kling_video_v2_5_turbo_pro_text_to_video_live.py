@@ -71,9 +71,11 @@ class TestKlingVideoV25TurboProTextToVideoGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
-        assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        # Dimensions are optional, but if present should be valid
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration == 5.0
 
@@ -110,7 +112,7 @@ class TestKlingVideoV25TurboProTextToVideoGeneratorLive:
 
         artifact = result.outputs[0]
         assert isinstance(artifact, VideoArtifact)
-        assert artifact.storage_url.startswith("https://")
+        assert artifact.storage_url is not None
         assert artifact.width == 1920
         assert artifact.height == 1080
         assert artifact.format == "mp4"

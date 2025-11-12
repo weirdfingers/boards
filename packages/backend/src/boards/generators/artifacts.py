@@ -28,16 +28,16 @@ class VideoArtifact(DigitalArtifact):
     """Represents a video file artifact from a generation."""
 
     duration: float | None = Field(None, description="Duration in seconds")
-    width: int = Field(description="Video width in pixels")
-    height: int = Field(description="Video height in pixels")
+    width: int | None = Field(None, description="Video width in pixels")
+    height: int | None = Field(None, description="Video height in pixels")
     fps: float | None = Field(None, description="Frames per second")
 
 
 class ImageArtifact(DigitalArtifact):
     """Represents an image file artifact from a generation."""
 
-    width: int = Field(description="Image width in pixels")
-    height: int = Field(description="Image height in pixels")
+    width: int | None = Field(None, description="Image width in pixels")
+    height: int | None = Field(None, description="Image height in pixels")
 
 
 class TextArtifact(DigitalArtifact):

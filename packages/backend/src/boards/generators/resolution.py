@@ -304,8 +304,8 @@ async def store_image_result(
     board_id: str,
     storage_url: str,
     format: str,
-    width: int,
-    height: int,
+    width: int | None = None,
+    height: int | None = None,
 ) -> ImageArtifact:
     """
     Store an image result by downloading from provider URL and uploading to storage.
@@ -317,8 +317,8 @@ async def store_image_result(
         board_id: Board ID for organization
         storage_url: Provider's temporary URL to download from
         format: Image format (png, jpg, etc.)
-        width: Image width in pixels
-        height: Image height in pixels
+        width: Image width in pixels (optional)
+        height: Image height in pixels (optional)
 
     Returns:
         ImageArtifact with permanent storage URL
@@ -374,8 +374,8 @@ async def store_video_result(
     board_id: str,
     storage_url: str,
     format: str,
-    width: int,
-    height: int,
+    width: int | None = None,
+    height: int | None = None,
     duration: float | None = None,
     fps: float | None = None,
 ) -> VideoArtifact:
@@ -389,8 +389,8 @@ async def store_video_result(
         board_id: Board ID for organization
         storage_url: Provider's temporary URL to download from
         format: Video format (mp4, webm, etc.)
-        width: Video width in pixels
-        height: Video height in pixels
+        width: Video width in pixels (optional)
+        height: Video height in pixels (optional)
         duration: Video duration in seconds (optional)
         fps: Frames per second (optional)
 
