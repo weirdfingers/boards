@@ -175,7 +175,7 @@ export function generateSecret(length = 32): string {
  */
 export function generatePassword(length = 24): string {
   const charset =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#%^&*";
   let password = "";
   const bytes = crypto.randomBytes(length);
 

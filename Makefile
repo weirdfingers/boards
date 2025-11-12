@@ -157,3 +157,11 @@ build-docs: ## Build documentation for production
 serve-docs: ## Serve built documentation
 	@echo "Serving documentation..."
 	cd apps/docs && pnpm serve
+
+build-cli-launcher: ## Build CLI launcher (Node) only
+	@echo "Building CLI launcher..."
+	cd packages/cli-launcher && pnpm build
+
+run-cli-launcher: ## Run CLI launcher (Node) only
+	@echo "Running CLI launcher..."
+	cd packages/cli-launcher && node dist/index.js up ../../ungitable/test-project
