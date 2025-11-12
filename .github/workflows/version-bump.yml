@@ -52,6 +52,7 @@ jobs:
         with:
           tag_name: "v${{ steps.bump.outputs.version }}"
           name: "v${{ steps.bump.outputs.version }}"
+          generate_release_notes: true
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
