@@ -30,7 +30,7 @@ export interface ProjectContext {
 export interface UpOptions {
   dev?: boolean;
   prod?: boolean;
-  detached?: boolean;
+  attach?: boolean;
   ports?: string;
 }
 

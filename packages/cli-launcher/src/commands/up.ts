@@ -131,10 +131,10 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   await runMigrations(ctx);
 
   // Step 10: Print success message
-  printSuccessMessage(ctx, options.detached || false, missingKeys.length > 0);
+  printSuccessMessage(ctx, !options.attach, missingKeys.length > 0);
 
-  // Step 11: Attach to logs if not detached
-  if (!options.detached) {
+  // Step 11: Attach to logs if --attach flag is provided
+  if (options.attach) {
     try {
       await attachToLogs(ctx);
     } catch (error: any) {

@@ -46,7 +46,7 @@ program
   .argument("[directory]", "Project directory", ".")
   .option("--dev", "Development mode with hot reload (default)", true)
   .option("--prod", "Production mode with prebuilt images")
-  .option("--detached", "Run in detached mode (background)")
+  .option("--attach", "Attach to logs (runs in foreground)")
   .option("--ports <ports>", "Custom ports (e.g., web=3300 api=8800)")
   .action(up);
 

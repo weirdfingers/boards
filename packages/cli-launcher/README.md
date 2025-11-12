@@ -19,13 +19,13 @@ open http://localhost:3300
 
 ### `up [directory]`
 
-Scaffold and start Baseboards. If the directory doesn't exist, creates a new project from templates.
+Scaffold and start Baseboards. If the directory doesn't exist, creates a new project from templates. Runs in detached mode (background) by default.
 
 ```bash
-baseboards up                    # Current directory
-baseboards up my-app             # New directory
+baseboards up                    # Current directory (detached)
+baseboards up my-app             # New directory (detached)
 baseboards up --prod             # Production mode
-baseboards up --detached         # Background mode
+baseboards up --attach           # Attach to logs (foreground)
 baseboards up --ports web=3300   # Custom ports
 ```
 
