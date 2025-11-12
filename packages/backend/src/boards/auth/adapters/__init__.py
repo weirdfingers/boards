@@ -6,15 +6,22 @@ from .clerk import ClerkAuthAdapter
 from .jwt import JWTAuthAdapter
 from .none import NoAuthAdapter
 from .oidc import OIDCAdapter
-from .supabase import SupabaseAuthAdapter
 
+# Always available adapters
 __all__ = [
     "AuthAdapter",
     "Principal",
-    "SupabaseAuthAdapter",
     "JWTAuthAdapter",
     "NoAuthAdapter",
     "ClerkAuthAdapter",
     "Auth0OIDCAdapter",
     "OIDCAdapter",
 ]
+
+# Optional auth providers - imported conditionally to avoid import errors
+try:
+    from .supabase import SupabaseAuthAdapter
+
+    __all__.append("SupabaseAuthAdapter")
+except ImportError:
+    pass

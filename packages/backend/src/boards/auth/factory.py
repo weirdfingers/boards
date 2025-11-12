@@ -11,7 +11,15 @@ from .adapters.clerk import ClerkAuthAdapter
 from .adapters.jwt import JWTAuthAdapter
 from .adapters.none import NoAuthAdapter
 from .adapters.oidc import OIDCAdapter
-from .adapters.supabase import SupabaseAuthAdapter
+
+# Optional Supabase adapter - imported conditionally
+try:
+    from .adapters.supabase import SupabaseAuthAdapter
+
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+    SupabaseAuthAdapter = None  # type: ignore
 
 
 def get_auth_adapter() -> AuthAdapter:
@@ -46,6 +54,12 @@ def get_auth_adapter() -> AuthAdapter:
         )
 
     elif provider == "supabase":
+        if not SUPABASE_AVAILABLE:
+            raise ValueError(
+                "Supabase auth provider is not available. "
+                "Install the supabase package: pip install 'weirdfingers-boards[auth-supabase]'"
+            )
+
         url = config.get("url") or os.getenv("SUPABASE_URL")
         service_role_key = config.get("service_role_key") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -55,7 +69,7 @@ def get_auth_adapter() -> AuthAdapter:
                 "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY or provide in config."
             )
 
-        return SupabaseAuthAdapter(url=url, service_role_key=service_role_key)
+        return SupabaseAuthAdapter(url=url, service_role_key=service_role_key)  # type: ignore
 
     elif provider == "clerk":
         secret_key = config.get("secret_key") or os.getenv("CLERK_SECRET_KEY")

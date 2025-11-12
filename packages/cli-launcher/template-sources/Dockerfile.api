@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir uv
 # Copy application code first (needed for version detection in pyproject.toml)
 COPY . .
 
-# Install Python dependencies with provider support
-RUN uv pip install --system --no-cache-dir .[providers]
+# Install Python dependencies with all generator providers
+RUN uv pip install --system --no-cache-dir .[generators-all]
 
 # Create non-root user
 RUN useradd -m -u 1001 apiuser && chown -R apiuser:apiuser /app
