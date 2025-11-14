@@ -58,6 +58,11 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card (1200x675px recommended)
     image: "img/logo120.png",
+    colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
+    },
     navbar: {
       title: "Boards",
       logo: {
