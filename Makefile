@@ -141,6 +141,13 @@ docker-up: ## Start Docker services (databases, etc.)
 docker-down: ## Stop Docker services
 	docker-compose down
 
+docker-clean:
+	docker-compose down -v
+	docker-compose rm -f
+	docker-compose pull
+	docker-compose build
+	docker-compose up -d
+
 docker-logs: ## Show Docker logs
 	docker-compose logs -f
 
