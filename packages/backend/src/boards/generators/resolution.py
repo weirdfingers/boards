@@ -24,6 +24,55 @@ from .artifacts import (
 logger = get_logger(__name__)
 
 
+def _rewrite_storage_url(storage_url: str) -> str:
+    """
+    Rewrite storage URL for Docker internal networking.
+
+    Similar to the Next.js imageLoader, this rewrites public API URLs
+    to internal Docker network URLs when running in containers.
+
+    Args:
+        storage_url: The original storage URL
+
+    Returns:
+        str: Rewritten URL if internal_api_url is configured, otherwise original URL
+    """
+    from ..config import settings
+
+    logger.debug(
+        "Checking URL rewriting configuration",
+        internal_api_url=settings.internal_api_url,
+        storage_url=storage_url[:100] if storage_url else None,
+    )
+
+    if not settings.internal_api_url:
+        logger.debug("No internal_api_url configured, skipping URL rewrite")
+        return storage_url
+
+    # Common patterns to replace (localhost and 127.0.0.1 with various ports)
+    # In Docker, the public URL is typically http://localhost:8800 or http://localhost:8088
+    # We need to replace it with the internal URL (http://api:8800)
+    replacements = [
+        ("http://localhost:8800", settings.internal_api_url),
+        ("http://127.0.0.1:8800", settings.internal_api_url),
+        ("http://localhost:8088", settings.internal_api_url),
+        ("http://127.0.0.1:8088", settings.internal_api_url),
+    ]
+
+    rewritten_url = storage_url
+    for public_pattern, internal_url in replacements:
+        if public_pattern in storage_url:
+            rewritten_url = storage_url.replace(public_pattern, internal_url)
+            logger.info(
+                "Rewrote storage URL for internal Docker networking",
+                original_url=storage_url,
+                rewritten_url=rewritten_url,
+            )
+            break
+
+    return rewritten_url
+
+
 async def resolve_artifact(
     artifact: AudioArtifact | VideoArtifact | ImageArtifact | LoRArtifact,
 ) -> str:
@@ -97,9 +146,17 @@ async def download_artifact_to_temp(
     os.chmod(temp_path, 0o600)
 
     try:
+        # Rewrite URL for Docker internal networking
+        download_url = _rewrite_storage_url(artifact.storage_url)
+
         # Stream the download to avoid loading large files into memory
         async with httpx.AsyncClient(timeout=300.0) as client:
-            async with client.stream("GET", artifact.storage_url) as response:
+            logger.info(
+                "Attempting to download artifact",
+                original_url=artifact.storage_url,
+                download_url=download_url,
+            )
+            async with client.stream("GET", download_url) as response:
                 response.raise_for_status()
 
                 # Close the file descriptor returned by mkstemp and use aiofiles

@@ -34,6 +34,8 @@ services:
     env_file:
       - docker/.env
       - api/.env
+    volumes:
+      - ./data/storage:/app/data/storage
     depends_on:
       db:
         condition: service_healthy
@@ -67,6 +69,10 @@ services:
     env_file:
       - docker/.env
       - api/.env
+    volumes:
+      - ./data/storage:/app/data/storage
+    environment:
+      - BOARDS_INTERNAL_API_URL=http://api:8800
     depends_on:
       db:
         condition: service_healthy

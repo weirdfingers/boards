@@ -79,7 +79,7 @@ export const GET_BOARD = gql`
   ${BOARD_FRAGMENT}
   ${USER_FRAGMENT}
   ${GENERATION_FRAGMENT}
-  query GetBoard($id: UUID!) {
+  query GetBoard($id: UUID!, $limit: Int, $offset: Int) {
     board(id: $id) {
       ...BoardFragment
       owner {
@@ -99,7 +99,7 @@ export const GET_BOARD = gql`
           ...UserFragment
         }
       }
-      generations(limit: 10) {
+      generations(limit: $limit, offset: $offset) {
         ...GenerationFragment
       }
     }

@@ -74,12 +74,15 @@ class TestAuthFactory:
             "SUPABASE_SERVICE_ROLE_KEY": "test-key",
         },
     )
-    def test_supabase_adapter(self):
+    @patch("boards.auth.adapters.supabase.create_client")
+    def test_supabase_adapter(self, mock_create_client):
         """Test creating Supabase adapter."""
         from boards.auth.adapters.supabase import SupabaseAuthAdapter
 
         adapter = get_auth_adapter()
         assert isinstance(adapter, SupabaseAuthAdapter)
+        # Verify create_client was called with correct args
+        mock_create_client.assert_called_once_with("https://test.supabase.co", "test-key")
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "supabase"})
     def test_supabase_adapter_missing_config(self):

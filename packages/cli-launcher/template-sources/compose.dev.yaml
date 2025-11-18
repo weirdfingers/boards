@@ -5,7 +5,6 @@ services:
   api:
     volumes:
       - ./api:/app
-      - ./data/storage:/app/data/storage
     environment:
       - PYTHONUNBUFFERED=1
     command:
@@ -24,9 +23,9 @@ services:
   worker:
     volumes:
       - ./api:/app
-      - ./data/storage:/app/data/storage
     environment:
       - PYTHONUNBUFFERED=1
+      - BOARDS_INTERNAL_API_URL=http://api:8800
 
   web:
     command: sh -c "pnpm install && pnpm dev"

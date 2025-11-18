@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     # Frontend Integration
     frontend_base_url: str | None = None
 
+    # Internal API URL (for Docker environments where worker needs to reach API)
+    # This allows workers to reach the API using Docker internal networking
+    internal_api_url: str | None = None
+
     # Job Queue Settings
     job_queue_name: str = "boards-jobs"
     job_timeout: int = 3600  # 1 hour default timeout
@@ -92,6 +96,17 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+# Debug: Log settings initialization (only in debug mode)
+if settings.debug:
+    from .logging import get_logger
+
+    _logger = get_logger(__name__)
+    _logger.debug(
+        "Settings initialized",
+        internal_api_url=settings.internal_api_url,
+        environment=settings.environment,
+    )
 
 
 def initialize_generator_api_keys() -> None:
