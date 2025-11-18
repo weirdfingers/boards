@@ -118,13 +118,20 @@ interface BoardHook {
   revokeShareLink: (linkId: string) => Promise<void>;
 }
 
-export function useBoard(boardId: string): BoardHook {
+export function useBoard(
+  boardId: string,
+  options?: { limit?: number; offset?: number }
+): BoardHook {
   const { user } = useAuth();
 
   // Query for board data
   const [{ data, fetching, error }, reexecuteQuery] = useQuery({
     query: GET_BOARD,
-    variables: { id: boardId },
+    variables: {
+      id: boardId,
+      limit: options?.limit ?? 100, // Default to 100 generations
+      offset: options?.offset ?? 0,
+    },
     pause: !boardId,
     requestPolicy: "cache-and-network", // Always fetch fresh data while showing cached data
   });

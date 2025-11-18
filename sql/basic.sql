@@ -26,3 +26,12 @@ set storage_url = replace(
     )
 where storage_url is not null
     and storage_url like 'http://localhost:8000/storage/%';
+---
+select b.title,
+    b.is_public,
+    g.generator_name,
+    g.artifact_type,
+    g.storage_url,
+    g.input_params
+from generations g
+    left join boards b on g.board_id = b.id;
