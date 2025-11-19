@@ -18,6 +18,24 @@ const sidebars: SidebarsConfig = {
     "installation",
     {
       type: "category",
+      label: "Installation Guides",
+      collapsed: false,
+      items: [
+        "installation/installing-baseboards",
+        "installation/cloning-repository",
+        "installation/custom-application",
+      ],
+    },
+    {
+      type: "category",
+      label: "Baseboards",
+      collapsed: false,
+      items: [
+        "baseboards/overview",
+      ],
+    },
+    {
+      type: "category",
       label: "Backend Development",
       collapsed: false,
       items: [

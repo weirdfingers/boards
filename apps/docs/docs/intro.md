@@ -28,42 +28,70 @@ Boards is built as a **monorepo** with both Python and TypeScript components:
 
 ## Getting Started
 
-### Prerequisites
+Choose your path based on what you want to do with Boards:
 
-- **Node.js** 18+ 
-- **Python** 3.12+
-- **Docker** and **Docker Compose** (for local development)
-- **pnpm** package manager
+| Path | Best For | Time to Start | Prerequisites |
+|------|----------|---------------|---------------|
+| **[Install Baseboards](#-quickest-start-install-baseboards)** ⚡ | Using Boards immediately | ~5 minutes | Docker, Node.js 20+ |
+| **[Clone Repository](#-contribute-to-boards)** | Contributing to Boards | ~10 minutes | Docker, Node.js 18+, Python 3.12+, pnpm |
+| **[Custom Application](#-build-a-custom-app)** | Building your own app | Coming soon | Docker, Node.js 18+, Python 3.12+ |
 
-### Quick Setup
+### ⚡ Quickest Start: Install Baseboards
+
+Baseboards is a production-ready Boards instance you can deploy with one command:
 
 ```bash
-# Clone the repository
+# Create and start Baseboards
+npx @weirdfingers/baseboards up my-boards-app
+
+# Access at http://localhost:3300
+```
+
+**Requirements:**
+- Docker Desktop (macOS/Windows) or Docker Engine (Linux)
+- Node.js 20+
+
+**Next steps:**
+- 📖 **[Baseboards Installation Guide](./installation/installing-baseboards)** - Complete setup and configuration
+- 📘 **[Baseboards Documentation](./baseboards/overview)** - Learn more about Baseboards
+
+### 🛠️ Contribute to Boards
+
+Clone the repository to contribute or customize the toolkit:
+
+```bash
 git clone https://github.com/weirdfingers/boards.git
 cd boards
-
-# Install all dependencies
 make install
-
-# Start database and Redis services  
 make docker-up
-
-# Start development servers
 make dev
 ```
 
-This will start:
-- Backend API server at `http://localhost:8088`
-- Frontend example at `http://localhost:3033`
-- Documentation at `http://localhost:4500`
-- GraphQL playground at `http://localhost:8088/graphql`
+**Requirements:**
+- Docker and Docker Compose
+- Node.js 18+
+- Python 3.12+
+- pnpm package manager
 
-## Next Steps
+**Next steps:**
+- 📖 **[Repository Setup Guide](./installation/cloning-repository)** - Detailed installation
+- 🤝 **[Contributing Guide](./guides/contributing)** - How to contribute
 
-- 📖 **[Installation Guide](./installation)** - Detailed setup instructions
+### 🚧 Build a Custom App
+
+Create your own application using the Boards backend and frontend packages.
+
+**Status:** 🚧 Under construction
+
+**Requirements:**
+- Docker and Docker Compose
+- Node.js 18+
+- Python 3.12+
+
+**Next steps:**
+- 📖 **[Custom Application Guide](./installation/custom-application)** - Coming soon
 - 🏗️ **[Backend SDK](./backend/getting-started)** - Python backend development
 - ⚛️ **[Frontend Hooks](./frontend/getting-started)** - React integration
-- 🎨 **[Auth Providers](./auth/overview)** - Authentication system
 
 ## Community & Social
 
