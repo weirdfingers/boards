@@ -508,6 +508,418 @@ export function GeneratorInput() {
 }
 ```
 
+## Generator Selection Context
+
+The `GeneratorSelectionProvider` is a React context that manages generator selection state across your application. This eliminates prop drilling and provides helpful utilities for checking artifact compatibility.
+
+### Why Use Generator Selection Context?
+
+When building complex UIs with multiple components that need to know about the currently selected generator (e.g., artifact grids, input forms, validation), passing props through every component becomes unwieldy. The context provides:
+
+1. **Shared state** - Selected generator accessible anywhere in the tree
+2. **Parsed schema** - Automatically parses the generator's input schema
+3. **Compatibility helpers** - Check if artifacts can be used with the selected generator
+4. **No prop drilling** - Access generator state without passing props through intermediate components
+
+### Setting Up the Provider
+
+Wrap your application (or a section of it) with the `GeneratorSelectionProvider`:
+
+```typescript
+import { GeneratorSelectionProvider } from "@weirdfingers/boards";
+
+export default function BoardPage() {
+  return (
+    <GeneratorSelectionProvider>
+      <GeneratorSelector />
+      <ArtifactGrid />
+      <GenerationInput />
+    </GeneratorSelectionProvider>
+  );
+}
+```
+
+### Using the Hook
+
+Access the generator selection context with the `useGeneratorSelection()` hook:
+
+```typescript
+import { useGeneratorSelection } from "@weirdfingers/boards";
+
+function MyComponent() {
+  const {
+    selectedGenerator,
+    setSelectedGenerator,
+    parsedSchema,
+    artifactSlots,
+    canArtifactBeAdded,
+  } = useGeneratorSelection();
+
+  if (!selectedGenerator) {
+    return <div>No generator selected</div>;
+  }
+
+  return (
+    <div>
+      <h2>{selectedGenerator.name}</h2>
+      <p>Requires {artifactSlots.length} artifact inputs</p>
+    </div>
+  );
+}
+```
+
+### Context API Reference
+
+#### `selectedGenerator`
+
+The currently selected generator, or `null` if none is selected.
+
+```typescript
+selectedGenerator: GeneratorInfo | null
+```
+
+#### `setSelectedGenerator`
+
+Function to update the selected generator.
+
+```typescript
+setSelectedGenerator: (generator: GeneratorInfo | null) => void
+
+// Example usage:
+const handleSelect = (generator: GeneratorInfo) => {
+  setSelectedGenerator(generator);
+};
+```
+
+#### `parsedSchema`
+
+The parsed input schema of the selected generator, or `null` if no generator is selected.
+
+```typescript
+parsedSchema: ParsedGeneratorSchema | null
+
+// Access artifact slots, prompt field, and settings:
+if (parsedSchema) {
+  console.log(parsedSchema.artifactSlots);
+  console.log(parsedSchema.promptField);
+  console.log(parsedSchema.settingsFields);
+}
+```
+
+#### `artifactSlots`
+
+Convenient access to just the artifact slots from the parsed schema.
+
+```typescript
+artifactSlots: ArtifactSlotInfo[]
+
+// Each slot contains:
+interface ArtifactSlotInfo {
+  fieldName: string;
+  artifactType: string;
+  required: boolean;
+}
+```
+
+#### `canArtifactBeAdded`
+
+Helper function to check if an artifact type can be added to any **available (empty)** slot in the selected generator's inputs. Returns `false` if all compatible slots are already filled.
+
+```typescript
+canArtifactBeAdded: (artifactType: string) => boolean
+
+// Example usage:
+const imageArtifact = { artifactType: "image", /* ... */ };
+const canAdd = canArtifactBeAdded(imageArtifact.artifactType);
+
+if (canAdd) {
+  console.log("This artifact can be added to an empty slot");
+} else {
+  console.log("No compatible slots available or all slots are full");
+}
+```
+
+This method checks both:
+- Whether the generator has slots accepting this artifact type
+- Whether at least one compatible slot is empty (not already filled)
+
+#### `selectedArtifacts`
+
+Map of currently selected artifacts for the generator's input slots. Keys are slot field names, values are `Artifact` objects.
+
+```typescript
+selectedArtifacts: Map<string, Artifact>
+
+// Artifact interface:
+interface Artifact {
+  id: string;
+  artifactType: string;
+  storageUrl?: string | null;
+  thumbnailUrl?: string | null;
+}
+
+// Example usage:
+const videoSlotArtifact = selectedArtifacts.get("video");
+if (videoSlotArtifact) {
+  console.log("Video artifact selected:", videoSlotArtifact.id);
+}
+```
+
+#### `setSelectedArtifacts`
+
+Function to update the entire artifacts map. Useful for bulk updates or clearing selections.
+
+```typescript
+setSelectedArtifacts: (artifacts: Map<string, Artifact>) => void
+
+// Example usage:
+const newArtifacts = new Map(selectedArtifacts);
+newArtifacts.set("audio", audioArtifact);
+setSelectedArtifacts(newArtifacts);
+```
+
+#### `addArtifactToSlot`
+
+Automatically adds an artifact to the first compatible empty slot. Returns `true` if successful, `false` if no compatible slot was found.
+
+```typescript
+addArtifactToSlot: (artifact: Artifact) => boolean
+
+// Example usage:
+const artifact = {
+  id: "123",
+  artifactType: "IMAGE",
+  storageUrl: "https://...",
+  thumbnailUrl: "https://...",
+};
+
+const success = addArtifactToSlot(artifact);
+if (success) {
+  console.log("Artifact added to compatible slot");
+} else {
+  console.log("No compatible slots available");
+}
+```
+
+This method:
+- Finds the first empty slot that accepts the artifact's type
+- Case-insensitive type matching (e.g., "IMAGE" matches "image")
+- Returns `false` if all compatible slots are full or no compatible slots exist
+
+#### `removeArtifactFromSlot`
+
+Removes an artifact from a specific slot by field name.
+
+```typescript
+removeArtifactFromSlot: (slotName: string) => void
+
+// Example usage:
+removeArtifactFromSlot("video"); // Removes artifact from "video" slot
+```
+
+#### `clearAllArtifacts`
+
+Clears all selected artifacts from all slots.
+
+```typescript
+clearAllArtifacts: () => void
+
+// Example usage:
+clearAllArtifacts(); // Removes all artifact selections
+```
+
+**Note:** Artifacts are automatically cleared when the selected generator changes to prevent invalid state.
+
+### Complete Integration Example
+
+Here's how to integrate the context across multiple components:
+
+#### Generator Selector Component
+
+```typescript
+import { useGeneratorSelection } from "@weirdfingers/boards";
+
+function GeneratorSelector({ generators }: { generators: GeneratorInfo[] }) {
+  const { selectedGenerator, setSelectedGenerator } = useGeneratorSelection();
+
+  return (
+    <select
+      value={selectedGenerator?.name || ""}
+      onChange={(e) => {
+        const generator = generators.find((g) => g.name === e.target.value);
+        setSelectedGenerator(generator || null);
+      }}
+    >
+      <option value="">Select a generator...</option>
+      {generators.map((gen) => (
+        <option key={gen.name} value={gen.name}>
+          {gen.description}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+#### Artifact Grid with Compatibility Checking
+
+```typescript
+import { useGeneratorSelection } from "@weirdfingers/boards";
+
+function ArtifactGrid({ artifacts }: { artifacts: Artifact[] }) {
+  const { canArtifactBeAdded, addArtifactToSlot } = useGeneratorSelection();
+
+  const handleAddArtifact = (artifact: Artifact) => {
+    const success = addArtifactToSlot(artifact);
+    if (success) {
+      // Optionally scroll to the generation input to show the user
+      const inputElement = document.querySelector('.generation-input');
+      inputElement?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      alert("No compatible slots available");
+    }
+  };
+
+  return (
+    <div className="grid">
+      {artifacts.map((artifact) => {
+        const isCompatible = canArtifactBeAdded(artifact.artifactType);
+
+        return (
+          <div
+            key={artifact.id}
+            className={isCompatible ? "compatible" : "incompatible"}
+          >
+            <img src={artifact.thumbnailUrl} alt="" />
+            {isCompatible && (
+              <button onClick={() => handleAddArtifact(artifact)}>
+                Add to generator inputs
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+#### Generation Input Form
+
+```typescript
+import { useGeneratorSelection } from "@weirdfingers/boards";
+
+function GenerationInputForm() {
+  const {
+    selectedGenerator,
+    parsedSchema,
+    artifactSlots,
+    selectedArtifacts,
+    setSelectedArtifacts,
+    removeArtifactFromSlot,
+  } = useGeneratorSelection();
+
+  if (!selectedGenerator || !parsedSchema) {
+    return <div>Select a generator to begin</div>;
+  }
+
+  const handleSelectArtifact = (slotName: string, artifact: Artifact | null) => {
+    const newArtifacts = new Map(selectedArtifacts);
+    if (artifact) {
+      newArtifacts.set(slotName, artifact);
+    } else {
+      newArtifacts.delete(slotName);
+    }
+    setSelectedArtifacts(newArtifacts);
+  };
+
+  return (
+    <form>
+      {/* Render artifact input slots */}
+      {artifactSlots.map((slot) => {
+        const artifact = selectedArtifacts.get(slot.fieldName);
+
+        return (
+          <div key={slot.fieldName}>
+            <label>
+              {slot.fieldName} ({slot.artifactType})
+              {slot.required && <span>*</span>}
+            </label>
+
+            {artifact ? (
+              <div>
+                <img src={artifact.thumbnailUrl || artifact.storageUrl} alt="" />
+                <button
+                  type="button"
+                  onClick={() => removeArtifactFromSlot(slot.fieldName)}
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div>No {slot.artifactType.toLowerCase()} selected</div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Render prompt field */}
+      {parsedSchema.promptField && (
+        <textarea
+          placeholder={parsedSchema.promptField.description}
+          required={parsedSchema.promptField.required}
+        />
+      )}
+
+      {/* Render settings */}
+      {parsedSchema.settingsFields.map((field) => (
+        <div key={field.fieldName}>
+          {/* Render field based on type */}
+        </div>
+      ))}
+
+      <button type="submit">Generate {selectedGenerator.artifactType}</button>
+    </form>
+  );
+}
+```
+
+### Benefits in Complex UIs
+
+The context is especially valuable when building:
+
+- **Multi-section layouts** - Generator selector in header, inputs in sidebar, artifacts in main area
+- **Drag-and-drop interfaces** - Check compatibility when dragging artifacts to input slots
+- **Dynamic form validation** - Validate based on currently selected generator's requirements
+- **Conditional UI elements** - Show/hide features based on generator capabilities
+
+### TypeScript Support
+
+All context types are fully typed:
+
+```typescript
+import type {
+  GeneratorInfo,
+  GeneratorSelectionContextValue,
+  ArtifactSlotInfo,
+  Artifact,
+} from "@weirdfingers/boards";
+
+// Context value type:
+interface GeneratorSelectionContextValue {
+  selectedGenerator: GeneratorInfo | null;
+  setSelectedGenerator: (generator: GeneratorInfo | null) => void;
+  parsedSchema: ParsedGeneratorSchema | null;
+  artifactSlots: ArtifactSlotInfo[];
+  canArtifactBeAdded: (artifactType: string) => boolean;
+  selectedArtifacts: Map<string, Artifact>;
+  setSelectedArtifacts: (artifacts: Map<string, Artifact>) => void;
+  addArtifactToSlot: (artifact: Artifact) => boolean;
+  removeArtifactFromSlot: (slotName: string) => void;
+  clearAllArtifacts: () => void;
+}
+```
+
 ## Form Validation
 
 Use the schema information to validate form inputs:

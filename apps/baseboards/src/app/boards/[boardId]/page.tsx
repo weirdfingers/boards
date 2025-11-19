@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import { useBoard, useGenerators, useGeneration } from "@weirdfingers/boards";
+import { useBoard, useGenerators, useGeneration, GeneratorSelectionProvider } from "@weirdfingers/boards";
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
 import { GenerationInput } from "@/components/boards/GenerationInput";
 
@@ -186,47 +186,49 @@ export default function BoardPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">{board.title}</h1>
-          {board.description && (
-            <p className="text-gray-600 mt-2">{board.description}</p>
-          )}
-        </div>
+    <GeneratorSelectionProvider>
+      <main className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-6 max-w-7xl">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">{board.title}</h1>
+            {board.description && (
+              <p className="text-gray-600 mt-2">{board.description}</p>
+            )}
+          </div>
 
-        {/* Generation Grid */}
-        <div className="mb-8">
-          <GenerationGrid
-            generations={generations}
-            onGenerationClick={(gen) => {
-              console.log("Clicked generation:", gen);
-              // TODO: Open generation detail modal
-            }}
-          />
-        </div>
-
-        {/* Generation Input */}
-        <div className="sticky bottom-6 z-10">
-          {generatorsLoading ? (
-            <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-              <p className="text-gray-500">Loading generators...</p>
-            </div>
-          ) : generators.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-              <p className="text-gray-500">No generators available</p>
-            </div>
-          ) : (
-            <GenerationInput
-              generators={generators}
-              availableArtifacts={availableArtifacts}
-              onSubmit={handleGenerationSubmit}
-              isGenerating={isGenerating}
+          {/* Generation Grid */}
+          <div className="mb-8">
+            <GenerationGrid
+              generations={generations}
+              onGenerationClick={(gen) => {
+                console.log("Clicked generation:", gen);
+                // TODO: Open generation detail modal
+              }}
             />
-          )}
+          </div>
+
+          {/* Generation Input */}
+          <div className="sticky bottom-6 z-10">
+            {generatorsLoading ? (
+              <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+                <p className="text-gray-500">Loading generators...</p>
+              </div>
+            ) : generators.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+                <p className="text-gray-500">No generators available</p>
+              </div>
+            ) : (
+              <GenerationInput
+                generators={generators}
+                availableArtifacts={availableArtifacts}
+                onSubmit={handleGenerationSubmit}
+                isGenerating={isGenerating}
+              />
+            )}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </GeneratorSelectionProvider>
   );
 }

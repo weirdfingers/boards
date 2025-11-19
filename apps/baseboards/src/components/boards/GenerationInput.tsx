@@ -4,8 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Settings, ArrowUp, X } from "lucide-react";
 import Image from "next/image";
 import {
-  ParsedGeneratorSchema,
-  parseGeneratorSchema,
+  useGeneratorSelection,
 } from "@weirdfingers/boards";
 import { GeneratorSelector, GeneratorInfo } from "./GeneratorSelector";
 import { ArtifactInputSlots } from "./ArtifactInputSlots";
@@ -35,44 +34,49 @@ export function GenerationInput({
   onSubmit,
   isGenerating = false,
 }: GenerationInputProps) {
-  const [selectedGenerator, setSelectedGenerator] =
-    useState<GeneratorInfo | null>(generators[0] || null);
+  const {
+    selectedGenerator,
+    setSelectedGenerator,
+    parsedSchema,
+    selectedArtifacts,
+    setSelectedArtifacts
+  } = useGeneratorSelection();
+
   const [prompt, setPrompt] = useState("");
-  const [selectedArtifacts, setSelectedArtifacts] = useState<
-    Map<string, Generation>
-  >(new Map());
   const [attachedImage, setAttachedImage] = useState<Generation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<Record<string, unknown>>({});
 
-  // Parse input schema using the toolkit's schema parser
-  const parsedSchema = useMemo((): ParsedGeneratorSchema => {
-    if (!selectedGenerator) {
-      return { artifactSlots: [], promptField: null, settingsFields: [] };
+  // Initialize selected generator if not set
+  useEffect(() => {
+    if (!selectedGenerator && generators.length > 0) {
+      setSelectedGenerator(generators[0]);
     }
-    return parseGeneratorSchema(selectedGenerator.inputSchema);
-  }, [selectedGenerator]);
+  }, [generators, selectedGenerator, setSelectedGenerator]);
 
   const artifactSlots = useMemo(() => {
+    if (!parsedSchema) return [];
     return parsedSchema.artifactSlots.map((slot) => ({
       name: slot.fieldName,
       type: slot.artifactType,
       required: slot.required,
     }));
-  }, [parsedSchema.artifactSlots]);
+  }, [parsedSchema]);
 
   const needsArtifactInputs = artifactSlots.length > 0;
 
   // Initialize settings with defaults when generator changes
   const defaultSettings = useMemo(() => {
     const defaults: Record<string, unknown> = {};
-    parsedSchema.settingsFields.forEach((field) => {
-      if (field.default !== undefined) {
-        defaults[field.fieldName] = field.default;
-      }
-    });
+    if (parsedSchema) {
+      parsedSchema.settingsFields.forEach((field) => {
+        if (field.default !== undefined) {
+          defaults[field.fieldName] = field.default;
+        }
+      });
+    }
     return defaults;
-  }, [parsedSchema.settingsFields]);
+  }, [parsedSchema]);
 
   // Reset settings when generator changes or defaultSettings change
   useEffect(() => {
@@ -89,9 +93,8 @@ export function GenerationInput({
       settings,
     });
 
-    // Reset form
+    // Reset form (but keep selected artifacts and generator)
     setPrompt("");
-    setSelectedArtifacts(new Map());
     setAttachedImage(null);
     setSettings(defaultSettings);
   };
@@ -229,7 +232,7 @@ export function GenerationInput({
       {/* Settings panel (collapsed by default) */}
       {showSettings && (
         <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
-          {parsedSchema.settingsFields.length === 0 ? (
+          {!parsedSchema || parsedSchema.settingsFields.length === 0 ? (
             <p className="text-sm text-gray-600">
               No additional settings available for this generator
             </p>
