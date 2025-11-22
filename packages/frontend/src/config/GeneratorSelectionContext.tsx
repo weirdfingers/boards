@@ -58,7 +58,12 @@ export function GeneratorSelectionProvider({
     if (!selectedGenerator) {
       return null;
     }
-    return parseGeneratorSchema(selectedGenerator.inputSchema);
+    try {
+      return parseGeneratorSchema(selectedGenerator.inputSchema);
+    } catch (error) {
+      console.error('Failed to parse generator schema:', error);
+      return null;
+    }
   }, [selectedGenerator]);
 
   // Extract artifact slots from the parsed schema

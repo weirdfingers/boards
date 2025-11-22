@@ -9,25 +9,20 @@ import { GenerationInput } from "@/components/boards/GenerationInput";
 export default function BoardPage() {
   const params = useParams();
   const boardId = params.boardId as string;
-  console.log("[BoardPage] Rendering with boardId:", boardId);
 
-  const boardHookResult = useBoard(boardId);
-  console.log("[BoardPage] useBoard result:", boardHookResult);
   const {
     board,
     loading: boardLoading,
     error: boardError,
     refresh: refreshBoard,
-  } = boardHookResult;
+  } = useBoard(boardId);
 
   // Fetch available generators
-  const generatorsHookResult = useGenerators();
-  console.log("[BoardPage] useGenerators result:", generatorsHookResult);
   const {
     generators,
     loading: generatorsLoading,
     error: generatorsError,
-  } = generatorsHookResult;
+  } = useGenerators();
 
   // Use generation hook for submitting generations and real-time progress
   const {
@@ -38,10 +33,6 @@ export default function BoardPage() {
     result,
   } = useGeneration();
 
-  console.log("[BoardPage] board:", board);
-  console.log("[BoardPage] boardError:", boardError);
-  console.log("[BoardPage] board is null/undefined?", !board);
-
   // Refresh board when a generation completes or fails
   // MUST be before conditional returns to satisfy Rules of Hooks
   React.useEffect(() => {
@@ -49,10 +40,6 @@ export default function BoardPage() {
       progress &&
       (progress.status === "completed" || progress.status === "failed")
     ) {
-      console.log(
-        "[BoardPage] Generation finished, refreshing board:",
-        progress.status
-      );
       refreshBoard();
     }
   }, [progress, refreshBoard]);
@@ -121,20 +108,12 @@ export default function BoardPage() {
 
   // Handle loading state
   if (boardLoading || !board) {
-    console.log(
-      "[BoardPage] Showing loading spinner - boardLoading:",
-      boardLoading,
-      "board:",
-      board
-    );
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
-
-  console.log("[BoardPage] Board loaded successfully:", board);
 
   // Filter completed generations that can be used as inputs
   const availableArtifacts = generations.filter(
@@ -201,15 +180,14 @@ export default function BoardPage() {
           <div className="mb-8">
             <GenerationGrid
               generations={generations}
-              onGenerationClick={(gen) => {
-                console.log("Clicked generation:", gen);
+              onGenerationClick={() => {
                 // TODO: Open generation detail modal
               }}
             />
           </div>
 
           {/* Generation Input */}
-          <div className="sticky bottom-6 z-10">
+          <div id="generation-input" className="sticky bottom-6 z-10">
             {generatorsLoading ? (
               <div className="bg-white rounded-lg shadow-lg p-6 text-center">
                 <p className="text-gray-500">Loading generators...</p>

@@ -51,7 +51,7 @@ export function GenerationGrid({
 
     if (success) {
       // Scroll to the generation input to show the user where the artifact was added
-      const generationInput = document.querySelector('.sticky.bottom-6');
+      const generationInput = document.getElementById('generation-input');
       if (generationInput) {
         generationInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
