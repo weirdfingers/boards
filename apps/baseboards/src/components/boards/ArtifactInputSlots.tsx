@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { FileVideo, Volume2, X } from "lucide-react";
 import Image from "next/image";
 
@@ -29,6 +30,8 @@ export function ArtifactInputSlots({
   availableArtifacts,
   onSelectArtifact,
 }: ArtifactInputSlotsProps) {
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+
   const getIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case "video":
@@ -45,6 +48,56 @@ export function ArtifactInputSlots({
       (artifact) =>
         artifact.artifactType.toLowerCase() === slotType.toLowerCase()
     );
+  };
+
+  const handleDragOver = (
+    e: React.DragEvent,
+    slotType: string,
+    slotName: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Check if the dragged artifact type matches the slot type
+    try {
+      const data = e.dataTransfer.types.includes("application/json");
+      if (data) {
+        e.dataTransfer.dropEffect = "copy";
+        setDragOverSlot(slotName);
+      }
+    } catch (err) {
+      // Ignore errors during drag over
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverSlot(null);
+  };
+
+  const handleDrop = (
+    e: React.DragEvent,
+    slotType: string,
+    slotName: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverSlot(null);
+
+    try {
+      const jsonData = e.dataTransfer.getData("application/json");
+      if (jsonData) {
+        const artifact = JSON.parse(jsonData) as Generation;
+
+        // Check if artifact type matches slot type
+        if (artifact.artifactType.toLowerCase() === slotType.toLowerCase()) {
+          onSelectArtifact(slotName, artifact);
+        }
+      }
+    } catch (err) {
+      console.error("Error handling drop:", err);
+    }
   };
 
   return (
@@ -100,11 +153,22 @@ export function ArtifactInputSlots({
               </div>
             ) : (
               // Show slot placeholder
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 transition-all ${
+                  dragOverSlot === slot.name
+                    ? "border-orange-500 bg-orange-50"
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
+                onDragOver={(e) => handleDragOver(e, slot.type, slot.name)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, slot.type, slot.name)}
+              >
                 <div className="flex flex-col items-center justify-center text-center">
                   <div className="mb-2">{getIcon(slot.type)}</div>
                   <p className="text-sm font-medium text-gray-700 mb-1">
-                    Add a {slot.type}
+                    {dragOverSlot === slot.name
+                      ? `Drop ${slot.type} here`
+                      : `Add a ${slot.type}`}
                   </p>
                   {matchingArtifacts.length > 0 ? (
                     <select
@@ -128,7 +192,7 @@ export function ArtifactInputSlots({
                     </select>
                   ) : (
                     <p className="text-xs text-gray-500 mt-1">
-                      No {slot.type} artifacts in this board yet
+                      No {slot.type} artifacts in this board yet.
                     </p>
                   )}
                 </div>

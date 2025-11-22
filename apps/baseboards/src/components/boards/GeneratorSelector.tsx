@@ -2,6 +2,7 @@
 
 import { Zap, Check } from "lucide-react";
 import type { JSONSchema7 } from "@weirdfingers/boards";
+import { useGeneratorSelection } from "@weirdfingers/boards";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,9 +28,17 @@ export function GeneratorSelector({
   selectedGenerator,
   onSelect,
 }: GeneratorSelectorProps) {
+  const { setSelectedGenerator } = useGeneratorSelection();
+
   const getGeneratorIcon = (name: string) => {
     // You can customize icons per generator here
     return <Zap className="w-4 h-4" />;
+  };
+
+  const handleSelect = (generator: GeneratorInfo) => {
+    // Update both local state and context
+    setSelectedGenerator(generator);
+    onSelect(generator);
   };
 
   return (
@@ -57,7 +66,7 @@ export function GeneratorSelector({
         {generators.map((generator) => (
           <DropdownMenuItem
             key={generator.name}
-            onClick={() => onSelect(generator)}
+            onClick={() => handleSelect(generator)}
             className="px-4 py-3 flex items-start gap-3 cursor-pointer"
           >
             <div className="flex-shrink-0 mt-0.5">

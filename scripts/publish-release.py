@@ -44,7 +44,7 @@ def trigger_workflow(bump_type: str) -> None:
 
     try:
         # Trigger the workflow
-        result = subprocess.run(
+        subprocess.run(
             [
                 "gh",
                 "workflow",

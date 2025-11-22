@@ -11,6 +11,10 @@ export { NoAuthProvider } from "./auth/providers/none"; // Only no-auth included
 export { useApiConfig } from "./config/ApiConfigContext";
 export type { ApiConfig } from "./config/ApiConfigContext";
 
+// Generator selection context
+export { GeneratorSelectionProvider, useGeneratorSelection } from "./config/GeneratorSelectionContext";
+export type { GeneratorInfo, GeneratorSelectionContextValue, ArtifactSlotInfo, Artifact } from "./config/GeneratorSelectionContext";
+
 // GraphQL exports
 export { createGraphQLClient } from "./graphql/client";
 export * from "./graphql/operations";
