@@ -6,7 +6,12 @@ from uuid import UUID, uuid4
 
 from ..database.connection import get_async_session
 from ..generators import resolution
-from ..generators.artifacts import AudioArtifact, ImageArtifact, TextArtifact, VideoArtifact
+from ..generators.artifacts import (
+    AudioArtifact,
+    ImageArtifact,
+    TextArtifact,
+    VideoArtifact,
+)
 from ..jobs import repository as jobs_repo
 from ..logging import get_logger
 from ..progress.models import ProgressUpdate
@@ -319,7 +324,7 @@ class GeneratorExecutionContext:
 
         # Create new batch generation record
         async with get_async_session() as session:
-            batch_gen = await jobs_repo.create_batch_generation(
+            batch_gen_id = await jobs_repo.create_batch_generation(
                 session,
                 tenant_id=UUID(self.tenant_id),
                 board_id=UUID(self.board_id),
@@ -331,7 +336,6 @@ class GeneratorExecutionContext:
                 batch_index=output_index,
             )
             await session.commit()
-            batch_gen_id = str(batch_gen.id)
 
         self._batch_generations.append(batch_gen_id)
         logger.info(
