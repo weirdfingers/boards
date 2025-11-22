@@ -368,8 +368,9 @@ async def test_batch_generation_context(tmp_path: Path):
     created_generations = []
 
     async def fake_create_batch_generation(_session, **kwargs):
+        gen_id = str(uuid4())
         gen = SimpleNamespace(
-            id=uuid4(),
+            id=gen_id,
             tenant_id=kwargs["tenant_id"],
             board_id=kwargs["board_id"],
             user_id=kwargs["user_id"],
@@ -379,7 +380,7 @@ async def test_batch_generation_context(tmp_path: Path):
             output_metadata=kwargs.get("output_metadata", {}),
         )
         created_generations.append(gen)
-        return gen
+        return gen_id  # Return string ID directly, matching repository signature
 
     # Mock the async session and repository
     with patch("boards.workers.context.get_async_session") as mock_session:
