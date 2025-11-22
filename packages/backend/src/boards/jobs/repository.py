@@ -133,7 +133,7 @@ async def create_batch_generation(
         batch_index: Index of this output in the batch
 
     Returns:
-        Created generation record
+        ID of the created generation record
     """
     gen = Generations()
     gen.tenant_id = tenant_id
