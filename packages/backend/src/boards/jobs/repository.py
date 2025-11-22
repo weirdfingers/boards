@@ -115,7 +115,7 @@ async def create_batch_generation(
     input_params: dict,
     batch_id: str,
     batch_index: int,
-) -> Generations:
+) -> str:
     """Create a batch generation record for multi-output generators.
 
     This creates a new generation record that is part of a batch, with
@@ -150,4 +150,4 @@ async def create_batch_generation(
     }
     session.add(gen)
     await session.flush()
-    return gen
+    return str(gen.id)

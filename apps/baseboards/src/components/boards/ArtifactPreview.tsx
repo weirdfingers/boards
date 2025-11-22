@@ -158,7 +158,10 @@ export function ArtifactPreview({
         }
       }}
     >
-      <div className={onClick ? "cursor-pointer" : ""} onClick={onClick}>
+      <div
+        className={onClick ? "cursor-pointer aspect-square" : "aspect-square"}
+        onClick={onClick}
+      >
         {renderContent()}
       </div>
 
