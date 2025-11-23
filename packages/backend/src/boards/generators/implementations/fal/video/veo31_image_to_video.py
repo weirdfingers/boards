@@ -24,9 +24,7 @@ class Veo31ImageToVideoInput(BaseModel):
     and resolved from generation IDs to ImageArtifact objects.
     """
 
-    prompt: str = Field(
-        description="Text prompt describing the desired video content and motion"
-    )
+    prompt: str = Field(description="Text prompt describing the desired video content and motion")
     image: ImageArtifact = Field(
         description="Input image to animate. Should be 720p or higher in 16:9 or 9:16 aspect ratio"
     )
