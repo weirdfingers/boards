@@ -46,9 +46,7 @@ class TestNanoBananaProGeneratorLive:
         Uses minimal/cheap settings to reduce cost.
         """
         # Log estimated cost
-        estimated_cost = await self.generator.estimate_cost(
-            NanoBananaProInput(prompt="test")
-        )
+        estimated_cost = await self.generator.estimate_cost(NanoBananaProInput(prompt="test"))
         cost_logger(self.generator.name, estimated_cost)
 
         # Create minimal input to reduce cost
