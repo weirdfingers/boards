@@ -4,7 +4,7 @@ Configuration management for Boards backend
 
 import os
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -85,13 +85,13 @@ class Settings(BaseSettings):
         ".json",  # Text
     ]
 
-    class Config:
-        env_file = ".env"
-        env_prefix = "BOARDS_"
-        case_sensitive = False
-
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="BOARDS_",
+        case_sensitive=False,
         # Allow extra fields for provider-specific configs
-        extra = "allow"
+        extra="allow",
+    )
 
 
 # Global settings instance
