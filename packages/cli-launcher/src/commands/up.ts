@@ -369,6 +369,7 @@ async function startDockerCompose(
     ...composeFiles.flatMap((f) => ["-f", f]),
     "up",
     "-d",
+    "--build",
     "--remove-orphans",
   ];
 
