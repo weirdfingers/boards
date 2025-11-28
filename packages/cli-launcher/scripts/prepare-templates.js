@@ -9,12 +9,13 @@
  * Flow:
  * 1. Clean existing templates directory
  * 2. Copy apps/baseboards → templates/web (excluding build artifacts)
- * 3. Copy packages/backend → templates/api (excluding Python artifacts)
- * 4. Copy baseline-config → templates/api/config
- * 5. Copy template-sources/ files → templates/
- * 6. Transform workspace:* dependencies to published versions
- * 7. Update storage_config.yaml paths to be project-relative
- * 8. Update next.config.js for standalone builds
+ * 3. Update next.config.js for standalone builds
+ * 4. Update tsconfig.json to remove monorepo-specific path mappings
+ * 5. Copy packages/backend → templates/api (excluding Python artifacts)
+ * 6. Copy baseline-config → templates/api/config
+ * 7. Copy template-sources/ files → templates/
+ * 8. Transform workspace:* dependencies to published versions
+ * 9. Update storage_config.yaml paths to be project-relative
  */
 
 import fs from "fs-extra";
@@ -171,6 +172,30 @@ if (fs.existsSync(nextConfigPath)) {
     );
     fs.writeFileSync(nextConfigPath, nextConfig);
     console.log("   ✅ Added unoptimized images for Docker compatibility");
+  }
+}
+
+// Update tsconfig.json to remove monorepo-specific path mappings
+const tsconfigPath = path.join(webDest, "tsconfig.json");
+if (fs.existsSync(tsconfigPath)) {
+  const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, "utf8"));
+
+  // Remove monorepo-specific path mappings for @weirdfingers/boards
+  // These packages will be installed from npm, so TypeScript should resolve them normally
+  if (tsconfig.compilerOptions?.paths) {
+    delete tsconfig.compilerOptions.paths["@weirdfingers/boards"];
+    delete tsconfig.compilerOptions.paths["@weirdfingers/boards/*"];
+
+    // If no paths remain after removal, remove the paths property entirely
+    const remainingPaths = Object.keys(tsconfig.compilerOptions.paths);
+    if (remainingPaths.length === 0) {
+      delete tsconfig.compilerOptions.paths;
+    }
+
+    fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + "\n");
+    console.log(
+      "   ✅ Removed monorepo-specific path mappings from tsconfig.json"
+    );
   }
 }
 
