@@ -4,6 +4,14 @@ sidebar_position: 2
 
 # Supabase Setup Guide
 
+:::caution Under Construction
+
+This documentation has not yet been fully tested with an actual Supabase project. Some steps may be incomplete or require adjustments. We welcome community contributions to validate and improve this guide.
+
+**[Help us test this guide →](https://github.com/weirdfingers/boards/issues/152)**
+
+:::
+
 Learn how to configure Boards to use Supabase as your database, storage, and authentication provider instead of the default local PostgreSQL setup.
 
 ## Why Use Supabase?
