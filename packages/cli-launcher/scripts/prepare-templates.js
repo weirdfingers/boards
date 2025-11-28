@@ -193,7 +193,9 @@ if (fs.existsSync(tsconfigPath)) {
     }
 
     fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + "\n");
-    console.log("   ✅ Removed monorepo-specific path mappings from tsconfig.json");
+    console.log(
+      "   ✅ Removed monorepo-specific path mappings from tsconfig.json"
+    );
   }
 }
 
