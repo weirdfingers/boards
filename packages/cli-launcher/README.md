@@ -27,7 +27,10 @@ baseboards up my-app             # New directory (detached)
 baseboards up --prod             # Production mode
 baseboards up --attach           # Attach to logs (foreground)
 baseboards up --ports web=3300   # Custom ports
+baseboards up --fresh            # Clean up existing volumes before starting
 ```
+
+**Note:** The `--fresh` flag removes existing Docker volumes before starting, which is useful if you encounter database password mismatch errors.
 
 ### `down [directory]`
 
