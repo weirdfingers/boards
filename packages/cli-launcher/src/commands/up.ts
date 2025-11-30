@@ -63,7 +63,68 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   // Track if this is a fresh scaffold to prompt for API keys later
   const isFreshScaffold = !ctx.isScaffolded;
 
-  // Step 3: Scaffold if needed
+  // Step 3: Handle existing volumes if needed
+  // If user wants fresh start OR if scaffolding fresh but volumes exist
+  if (options.fresh || !ctx.isScaffolded) {
+    const hasExistingVolumes = await checkForExistingVolumes();
+
+    if (hasExistingVolumes) {
+      if (options.fresh) {
+        // --fresh flag provided, clean up without prompting
+        await cleanupDockerVolumes(ctx);
+      } else if (!ctx.isScaffolded) {
+        // Scaffolding fresh but volumes exist - prompt user
+        console.log(
+          chalk.yellow(
+            "\n⚠️  Existing Docker volumes detected from a previous installation"
+          )
+        );
+        console.log(
+          chalk.gray(
+            "   To avoid password mismatch errors, you can start fresh or cancel."
+          )
+        );
+        console.log(
+          chalk.gray(
+            "   Starting fresh will delete all data in the existing database."
+          )
+        );
+
+        const response = await prompts({
+          type: "confirm",
+          name: "cleanVolumes",
+          message: "Delete existing volumes and start fresh?",
+          initial: true,
+        });
+
+        if (response.cleanVolumes === undefined) {
+          // User cancelled (Ctrl+C)
+          console.log(chalk.yellow("\n⚠️  Cancelled by user"));
+          process.exit(0);
+        }
+
+        if (response.cleanVolumes) {
+          await cleanupDockerVolumes(ctx);
+        } else {
+          console.log(
+            chalk.yellow(
+              "\n⚠️  Proceeding without cleaning volumes. If you encounter password errors:"
+            )
+          );
+          console.log(
+            chalk.cyan("   baseboards up --fresh") +
+              chalk.gray(" (start fresh)")
+          );
+          console.log(
+            chalk.cyan("   baseboards down --volumes && baseboards up") +
+              chalk.gray(" (manual cleanup)")
+          );
+        }
+      }
+    }
+  }
+
+  // Step 4: Scaffold if needed
   if (!ctx.isScaffolded) {
     console.log(
       chalk.cyan(`\n📦 Scaffolding new project: ${chalk.bold(name)}`)
@@ -281,19 +342,19 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
 
   const response = await prompts([
     {
-      type: "text",
+      type: "password",
       name: "REPLICATE_API_TOKEN",
       message: "Replicate API Key (https://replicate.com/account/api-tokens):",
       initial: "",
     },
     {
-      type: "text",
+      type: "password",
       name: "FAL_KEY",
       message: "Fal AI API Key (https://fal.ai/dashboard/keys):",
       initial: "",
     },
     {
-      type: "text",
+      type: "password",
       name: "OPENAI_API_KEY",
       message: "OpenAI API Key (https://platform.openai.com/api-keys):",
       initial: "",
@@ -493,13 +554,49 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
     spinner.succeed("Database migrations complete");
   } catch (error) {
     spinner.fail("Database migrations failed");
-    console.log(
-      chalk.yellow(
-        "\n⚠️  Database migrations failed. You may need to run them manually:"
-      )
-    );
-    console.log(error);
-    console.log(chalk.cyan("   docker compose exec api alembic upgrade head"));
+
+    // Check if this is a password authentication error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isPasswordError =
+      errorMessage.includes("password authentication failed") ||
+      errorMessage.includes("InvalidPasswordError");
+
+    if (isPasswordError) {
+      console.log(
+        chalk.red(
+          "\n❌ Database password mismatch - cannot connect to existing database"
+        )
+      );
+      console.log(
+        chalk.yellow(
+          "   Existing database volumes have a different password than the current configuration."
+        )
+      );
+      console.log(chalk.yellow("\n   To fix this, choose one of:"));
+      console.log(
+        chalk.cyan("   1. Start fresh (deletes data):") +
+          chalk.gray(" baseboards down --volumes && baseboards up")
+      );
+      console.log(
+        chalk.cyan("   2. Start fresh automatically:") +
+          chalk.gray(" baseboards up --fresh")
+      );
+      console.log(
+        chalk.gray(
+          "\n   This usually happens when project files were deleted but Docker volumes remain."
+        )
+      );
+    } else {
+      console.log(
+        chalk.yellow(
+          "\n⚠️  Database migrations failed. You may need to run them manually:"
+        )
+      );
+      console.log(chalk.cyan("   docker compose exec api alembic upgrade head"));
+      console.log(chalk.gray("\n   Error details:"));
+      console.log(chalk.gray("   " + errorMessage));
+    }
+
     // Don't throw - app can still start
   }
 }
@@ -540,4 +637,67 @@ function printSuccessMessage(
   console.log(chalk.gray("   Logs:"), chalk.cyan("baseboards logs"));
   console.log(chalk.gray("   Status:"), chalk.cyan("baseboards status"));
   console.log();
+}
+
+/**
+ * Check if Docker volumes exist for this project
+ */
+async function checkForExistingVolumes(): Promise<boolean> {
+  try {
+    const { stdout } = await execa("docker", ["volume", "ls", "--format", "{{.Name}}"]);
+    const volumes = stdout.split("\n").filter(Boolean);
+
+    // Check for the project-specific database volume
+    // Volume name format: baseboards_db-data (Docker Compose uses "baseboards" as default project name)
+    const projectVolumeName = "baseboards_db-data";
+    return volumes.includes(projectVolumeName);
+  } catch {
+    // If docker command fails, assume no volumes exist
+    return false;
+  }
+}
+
+/**
+ * Clean up Docker volumes for this project
+ */
+async function cleanupDockerVolumes(ctx: ProjectContext): Promise<void> {
+  const spinner = ora("Cleaning up Docker volumes...").start();
+
+  try {
+    // If compose files exist, use docker compose down -v
+    if (ctx.isScaffolded) {
+      await execa(
+        "docker",
+        ["compose", "down", "-v"],
+        {
+          cwd: ctx.dir,
+        }
+      );
+    } else {
+      // If no compose files yet, manually remove the volume by name
+      // This handles the case where project was deleted but volumes remain
+      const volumeName = "baseboards_db-data";
+      try {
+        await execa("docker", ["volume", "rm", volumeName]);
+      } catch {
+        // Volume might not exist, that's okay
+      }
+      // Also try to remove the storage volume
+      try {
+        await execa("docker", ["volume", "rm", "baseboards_api-storage"]);
+      } catch {
+        // Volume might not exist, that's okay
+      }
+    }
+    spinner.succeed("Docker volumes cleaned up");
+  } catch (error) {
+    spinner.fail("Failed to clean up volumes");
+    console.log(
+      chalk.yellow(
+        "\n⚠️  Could not clean up volumes automatically. Try manually:"
+      )
+    );
+    console.log(chalk.cyan("   docker volume rm baseboards_db-data"));
+    throw error;
+  }
 }
