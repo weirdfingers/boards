@@ -65,7 +65,7 @@ This documentation provides an introduction to the boards toolkit built for gene
 **Future Plans** [9:36](https://loom.com/share/8fca2571cf104e128b1d3acb19d1cd46?t=576)
 
 - The project aims to add more models and features based on user requests.
-- Improved support for coding, especially for five coding, is planned.
+- Improved support for coding, especially for vibe coding, is planned.
 - Community involvement is encouraged through Discord and social media channels.
 
 ### Link to Loom
