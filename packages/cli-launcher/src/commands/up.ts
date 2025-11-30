@@ -86,7 +86,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
         );
         console.log(
           chalk.gray(
-            "   Starting fresh will delete all data in the existing database."
+            "   Starting fresh will delete ALL existing data (boards, generated images, users)."
           )
         );
 
@@ -648,7 +648,11 @@ async function checkForExistingVolumes(): Promise<boolean> {
     const volumes = stdout.split("\n").filter(Boolean);
 
     // Check for the project-specific database volume
-    // Volume name format: baseboards_db-data (Docker Compose uses "baseboards" as default project name)
+    // Volume name format: baseboards_db-data
+    // NOTE: We use "baseboards" (not ctx.name) because the compose.yaml template
+    // sets `name: ${PROJECT_NAME:-baseboards}` and the PROJECT_NAME env var is only
+    // read from docker/.env for service env vars, not for the compose project name itself.
+    // So all Baseboards installations use the same "baseboards" project name.
     const projectVolumeName = "baseboards_db-data";
     return volumes.includes(projectVolumeName);
   } catch {
@@ -676,17 +680,16 @@ async function cleanupDockerVolumes(ctx: ProjectContext): Promise<void> {
     } else {
       // If no compose files yet, manually remove the volume by name
       // This handles the case where project was deleted but volumes remain
-      const volumeName = "baseboards_db-data";
-      try {
-        await execa("docker", ["volume", "rm", volumeName]);
-      } catch {
-        // Volume might not exist, that's okay
-      }
-      // Also try to remove the storage volume
-      try {
-        await execa("docker", ["volume", "rm", "baseboards_api-storage"]);
-      } catch {
-        // Volume might not exist, that's okay
+      const volumesToRemove = ["baseboards_db-data", "baseboards_api-storage"];
+
+      for (const volumeName of volumesToRemove) {
+        try {
+          await execa("docker", ["volume", "rm", volumeName]);
+          spinner.text = `Removing volume ${volumeName}...`;
+        } catch {
+          // Volume might not exist, that's okay - it may have been manually removed
+          // or never created in the first place
+        }
       }
     }
     spinner.succeed("Docker volumes cleaned up");

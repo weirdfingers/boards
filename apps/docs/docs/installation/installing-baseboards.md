@@ -356,7 +356,7 @@ baseboards up
 **Options:**
 
 1. **Delete volumes and start fresh** (recommended if you don't need the old data)
-   - Removes all existing data
+   - Removes ALL existing data (boards, generated images, users)
    - Prevents password mismatch errors
    - Creates new database with current password
 
