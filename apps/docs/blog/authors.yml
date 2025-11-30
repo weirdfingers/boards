@@ -6,24 +6,3 @@ cdiddy77:
   page: true
   socials:
     github: cdiddy77
-
-weirdfingers:
-  name: WeirdFingers Team
-  title: Boards Development Team
-  url: https://github.com/weirdfingers
-  image_url: https://github.com/weirdfingers.png
-  page: true
-  socials:
-    github: weirdfingers
-
-slorber:
-  name: Sébastien Lorber
-  title: Docusaurus Maintainer
-  url: https://github.com/slorber
-  image_url: https://github.com/slorber.png
-
-yangshun:
-  name: Yangshun Tay
-  title: Docusaurus Maintainer
-  url: https://github.com/yangshun
-  image_url: https://github.com/yangshun.png

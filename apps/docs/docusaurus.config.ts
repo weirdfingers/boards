@@ -47,7 +47,15 @@ const config: Config = {
           editUrl:
             "https://github.com/weirdfingers/boards/tree/main/apps/docs/",
         },
-        blog: false,
+        blog: {
+          showReadingTime: true,
+          readingTime: ({ content, frontMatter, defaultReadingTime, locale }) =>
+            defaultReadingTime({
+              content,
+              locale,
+              options: { wordsPerMinute: 200 },
+            }),
+        },
         theme: {
           customCss: "./src/css/custom.css",
         },
@@ -59,7 +67,7 @@ const config: Config = {
     // Replace with your project's social card (1200x675px recommended)
     image: "img/logo120.png",
     colorMode: {
-      defaultMode: 'dark',
+      defaultMode: "dark",
       disableSwitch: false,
       respectPrefersColorScheme: true,
     },
@@ -75,6 +83,11 @@ const config: Config = {
           sidebarId: "tutorialSidebar",
           position: "left",
           label: "Documentation",
+        },
+        {
+          to: "/blog",
+          label: "Articles",
+          position: "left",
         },
         {
           href: "https://github.com/weirdfingers/boards",
