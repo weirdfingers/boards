@@ -32,6 +32,7 @@ export interface UpOptions {
   prod?: boolean;
   attach?: boolean;
   ports?: string;
+  fresh?: boolean;
 }
 
 export interface DownOptions {

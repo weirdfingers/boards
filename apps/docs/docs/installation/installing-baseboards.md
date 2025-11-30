@@ -347,15 +347,40 @@ baseboards down
 baseboards up
 ```
 
+### Existing Volumes Detected
+
+**Prompt:** "Existing Docker volumes detected from a previous installation"
+
+**What it means:** You previously ran Baseboards, but the project files were deleted while Docker volumes (containing your database) still exist.
+
+**Options:**
+
+1. **Delete volumes and start fresh** (recommended if you don't need the old data)
+   - Removes ALL existing data (boards, generated images, users)
+   - Prevents password mismatch errors
+   - Creates new database with current password
+
+2. **Keep volumes and proceed**
+   - Attempts to use existing database
+   - May cause password mismatch errors if the password changed
+   - Useful only if you need to recover data
+
+**To skip the prompt:** Use `baseboards up --fresh` to automatically clean volumes without asking.
+
 ### Database Connection Errors
 
-**Solution:** Reset database
+**Symptoms:** Password authentication failures, connection refused errors
+
+**Common Cause:** This usually happens when project files were deleted but Docker volumes remain with an old password.
+
+**Solution:** Start fresh with clean volumes
 
 ```bash
-# Stop services and remove volumes
-baseboards down --volumes
+# Option 1: Use the --fresh flag (recommended)
+baseboards up --fresh
 
-# Start fresh
+# Option 2: Manually clean and restart
+baseboards down --volumes
 baseboards up
 ```
 
