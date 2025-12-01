@@ -111,7 +111,7 @@ When the model is generating, you can:
 (inside the project directory)
 
 ```bash
-npx @eweirdfingers/baseboards logs -f
+npx @weirdfingers/baseboards logs -f
 ```
 
 You’ll see the worker pick up the job, send it to Nano Banana Pro, receive the output, and push it back through the API.
