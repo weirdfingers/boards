@@ -17,9 +17,15 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+# Schema name for all Boards tables
+SCHEMA = "boards"
+
 
 def upgrade() -> None:
-    # Required extension for uuid_generate_v4
+    # Create the boards schema
+    op.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA};")
+
+    # Required extension for uuid_generate_v4 (in public schema, accessible everywhere)
     op.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
 
     # tenants
@@ -49,6 +55,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name="tenants_pkey"),
         sa.UniqueConstraint("slug", name="tenants_slug_key"),
+        schema=SCHEMA,
     )
 
     # provider_configs
@@ -76,7 +83,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name="provider_configs_pkey"),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
-            ["tenants.id"],
+            [f"{SCHEMA}.tenants.id"],
             ondelete="CASCADE",
             name="provider_configs_tenant_id_fkey",
         ),
@@ -85,6 +92,7 @@ def upgrade() -> None:
             "provider_name",
             name="provider_configs_tenant_id_provider_name_key",
         ),
+        schema=SCHEMA,
     )
 
     # users
@@ -119,7 +127,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name="users_pkey"),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
-            ["tenants.id"],
+            [f"{SCHEMA}.tenants.id"],
             ondelete="CASCADE",
             name="users_tenant_id_fkey",
         ),
@@ -129,11 +137,16 @@ def upgrade() -> None:
             "auth_subject",
             name="users_tenant_id_auth_provider_auth_subject_key",
         ),
+        schema=SCHEMA,
     )
     op.create_index(
-        "idx_users_auth", "users", ["auth_provider", "auth_subject"], unique=False
+        "idx_users_auth",
+        "users",
+        ["auth_provider", "auth_subject"],
+        unique=False,
+        schema=SCHEMA,
     )
-    op.create_index("idx_users_tenant", "users", ["tenant_id"], unique=False)
+    op.create_index("idx_users_tenant", "users", ["tenant_id"], unique=False, schema=SCHEMA)
 
     # boards
     op.create_table(
@@ -170,17 +183,21 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name="boards_pkey"),
         sa.ForeignKeyConstraint(
-            ["owner_id"], ["users.id"], ondelete="CASCADE", name="boards_owner_id_fkey"
+            ["owner_id"],
+            [f"{SCHEMA}.users.id"],
+            ondelete="CASCADE",
+            name="boards_owner_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
-            ["tenants.id"],
+            [f"{SCHEMA}.tenants.id"],
             ondelete="CASCADE",
             name="boards_tenant_id_fkey",
         ),
+        schema=SCHEMA,
     )
-    op.create_index("idx_boards_owner", "boards", ["owner_id"], unique=False)
-    op.create_index("idx_boards_tenant", "boards", ["tenant_id"], unique=False)
+    op.create_index("idx_boards_owner", "boards", ["owner_id"], unique=False, schema=SCHEMA)
+    op.create_index("idx_boards_tenant", "boards", ["tenant_id"], unique=False, schema=SCHEMA)
 
     # lora_models
     op.create_table(
@@ -216,16 +233,17 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name="lora_models_pkey"),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
-            ["tenants.id"],
+            [f"{SCHEMA}.tenants.id"],
             ondelete="CASCADE",
             name="lora_models_tenant_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["users.id"],
+            [f"{SCHEMA}.users.id"],
             ondelete="CASCADE",
             name="lora_models_user_id_fkey",
         ),
+        schema=SCHEMA,
     )
 
     # board_members
@@ -256,25 +274,36 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ["board_id"],
-            ["boards.id"],
+            [f"{SCHEMA}.boards.id"],
             ondelete="CASCADE",
             name="board_members_board_id_fkey",
         ),
         sa.ForeignKeyConstraint(
-            ["invited_by"], ["users.id"], name="board_members_invited_by_fkey"
+            ["invited_by"],
+            [f"{SCHEMA}.users.id"],
+            name="board_members_invited_by_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["users.id"],
+            [f"{SCHEMA}.users.id"],
             ondelete="CASCADE",
             name="board_members_user_id_fkey",
         ),
+        schema=SCHEMA,
     )
     op.create_index(
-        "idx_board_members_board", "board_members", ["board_id"], unique=False
+        "idx_board_members_board",
+        "board_members",
+        ["board_id"],
+        unique=False,
+        schema=SCHEMA,
     )
     op.create_index(
-        "idx_board_members_user", "board_members", ["user_id"], unique=False
+        "idx_board_members_user",
+        "board_members",
+        ["user_id"],
+        unique=False,
+        schema=SCHEMA,
     )
 
     # generations
@@ -336,37 +365,48 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name="generations_pkey"),
         sa.ForeignKeyConstraint(
             ["board_id"],
-            ["boards.id"],
+            [f"{SCHEMA}.boards.id"],
             ondelete="CASCADE",
             name="generations_board_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["parent_generation_id"],
-            ["generations.id"],
+            [f"{SCHEMA}.generations.id"],
             name="generations_parent_generation_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
-            ["tenants.id"],
+            [f"{SCHEMA}.tenants.id"],
             ondelete="CASCADE",
             name="generations_tenant_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["users.id"],
+            [f"{SCHEMA}.users.id"],
             ondelete="CASCADE",
             name="generations_user_id_fkey",
         ),
+        schema=SCHEMA,
     )
-    op.create_index("idx_generations_board", "generations", ["board_id"], unique=False)
     op.create_index(
-        "idx_generations_lineage", "generations", ["parent_generation_id"], unique=False
+        "idx_generations_board", "generations", ["board_id"], unique=False, schema=SCHEMA
     )
-    op.create_index("idx_generations_status", "generations", ["status"], unique=False)
     op.create_index(
-        "idx_generations_tenant", "generations", ["tenant_id"], unique=False
+        "idx_generations_lineage",
+        "generations",
+        ["parent_generation_id"],
+        unique=False,
+        schema=SCHEMA,
     )
-    op.create_index("idx_generations_user", "generations", ["user_id"], unique=False)
+    op.create_index(
+        "idx_generations_status", "generations", ["status"], unique=False, schema=SCHEMA
+    )
+    op.create_index(
+        "idx_generations_tenant", "generations", ["tenant_id"], unique=False, schema=SCHEMA
+    )
+    op.create_index(
+        "idx_generations_user", "generations", ["user_id"], unique=False, schema=SCHEMA
+    )
 
     # credit_transactions
     op.create_table(
@@ -396,53 +436,70 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name="credit_transactions_pkey"),
         sa.ForeignKeyConstraint(
             ["generation_id"],
-            ["generations.id"],
+            [f"{SCHEMA}.generations.id"],
             name="credit_transactions_generation_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
-            ["tenants.id"],
+            [f"{SCHEMA}.tenants.id"],
             ondelete="CASCADE",
             name="credit_transactions_tenant_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
-            ["users.id"],
+            [f"{SCHEMA}.users.id"],
             ondelete="CASCADE",
             name="credit_transactions_user_id_fkey",
         ),
+        sa.CheckConstraint(
+            "transaction_type::text = ANY (ARRAY["
+            "'reserve'::character varying, 'finalize'::character varying, "
+            "'refund'::character varying, 'purchase'::character varying, "
+            "'grant'::character varying]::text[])",
+            name="credit_transactions_transaction_type_check",
+        ),
+        schema=SCHEMA,
     )
     op.create_index(
-        "idx_credit_transactions_user", "credit_transactions", ["user_id"], unique=False
+        "idx_credit_transactions_user",
+        "credit_transactions",
+        ["user_id"],
+        unique=False,
+        schema=SCHEMA,
     )
 
 
 def downgrade() -> None:
     # drop in reverse dependency order
-    op.drop_index("idx_credit_transactions_user", table_name="credit_transactions")
-    op.drop_table("credit_transactions")
+    op.drop_index(
+        "idx_credit_transactions_user", table_name="credit_transactions", schema=SCHEMA
+    )
+    op.drop_table("credit_transactions", schema=SCHEMA)
 
-    op.drop_index("idx_generations_user", table_name="generations")
-    op.drop_index("idx_generations_tenant", table_name="generations")
-    op.drop_index("idx_generations_status", table_name="generations")
-    op.drop_index("idx_generations_lineage", table_name="generations")
-    op.drop_index("idx_generations_board", table_name="generations")
-    op.drop_table("generations")
+    op.drop_index("idx_generations_user", table_name="generations", schema=SCHEMA)
+    op.drop_index("idx_generations_tenant", table_name="generations", schema=SCHEMA)
+    op.drop_index("idx_generations_status", table_name="generations", schema=SCHEMA)
+    op.drop_index("idx_generations_lineage", table_name="generations", schema=SCHEMA)
+    op.drop_index("idx_generations_board", table_name="generations", schema=SCHEMA)
+    op.drop_table("generations", schema=SCHEMA)
 
-    op.drop_index("idx_board_members_user", table_name="board_members")
-    op.drop_index("idx_board_members_board", table_name="board_members")
-    op.drop_table("board_members")
+    op.drop_index("idx_board_members_user", table_name="board_members", schema=SCHEMA)
+    op.drop_index("idx_board_members_board", table_name="board_members", schema=SCHEMA)
+    op.drop_table("board_members", schema=SCHEMA)
 
-    op.drop_table("lora_models")
+    op.drop_table("lora_models", schema=SCHEMA)
 
-    op.drop_index("idx_boards_tenant", table_name="boards")
-    op.drop_index("idx_boards_owner", table_name="boards")
-    op.drop_table("boards")
+    op.drop_index("idx_boards_tenant", table_name="boards", schema=SCHEMA)
+    op.drop_index("idx_boards_owner", table_name="boards", schema=SCHEMA)
+    op.drop_table("boards", schema=SCHEMA)
 
-    op.drop_index("idx_users_tenant", table_name="users")
-    op.drop_index("idx_users_auth", table_name="users")
-    op.drop_table("users")
+    op.drop_index("idx_users_tenant", table_name="users", schema=SCHEMA)
+    op.drop_index("idx_users_auth", table_name="users", schema=SCHEMA)
+    op.drop_table("users", schema=SCHEMA)
 
-    op.drop_table("provider_configs")
+    op.drop_table("provider_configs", schema=SCHEMA)
 
-    op.drop_table("tenants")
+    op.drop_table("tenants", schema=SCHEMA)
+
+    # Drop the schema (will fail if non-Boards objects exist, which is intentional)
+    op.execute(f"DROP SCHEMA IF EXISTS {SCHEMA};")
