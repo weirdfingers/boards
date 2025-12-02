@@ -24,6 +24,9 @@ down_revision: str | Sequence[str] | None = '20250101_000000_initial_schema'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+# Schema name for all Boards tables
+SCHEMA = "boards"
+
 
 def upgrade() -> None:
     """Upgrade schema and seed default tenant."""
@@ -37,16 +40,16 @@ def upgrade() -> None:
 
     # Check if tenant already exists
     existing_tenant = connection.execute(
-        sa.text("SELECT id FROM tenants WHERE slug = :slug"),
+        sa.text(f"SELECT id FROM {SCHEMA}.tenants WHERE slug = :slug"),
         {"slug": tenant_slug}
     ).fetchone()
 
     if not existing_tenant:
         # Insert the default tenant
         connection.execute(
-            sa.text("""
-                INSERT INTO tenants (name, slug, settings, created_at, updated_at)
-                VALUES (:name, :slug, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            sa.text(f"""
+                INSERT INTO {SCHEMA}.tenants (name, slug, settings, created_at, updated_at)
+                VALUES (:name, :slug, '{{}}'::jsonb, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """),
             {
                 "name": tenant_name,
@@ -68,7 +71,7 @@ def downgrade() -> None:
     connection = op.get_bind()
 
     result = connection.execute(
-        sa.text("DELETE FROM tenants WHERE slug = :slug"),
+        sa.text(f"DELETE FROM {SCHEMA}.tenants WHERE slug = :slug"),
         {"slug": tenant_slug}
     )
 
