@@ -268,6 +268,16 @@ class AncestryNode:
 
 
 @strawberry.type
+class DescendantNode:
+    """Represents a node in the descendants tree."""
+
+    generation: Generation
+    depth: int  # Distance from query origin (0 = self, 1 = child, 2 = grandchild, ...)
+    role: str | None  # Role this artifact played in its parent (None for query origin)
+    children: list["DescendantNode"]  # Recursive descendants
+
+
+@strawberry.type
 class Generation:
     # ... existing fields ...
 
@@ -293,16 +303,16 @@ class Generation:
         from ..resolvers.generation import resolve_ancestry
         return await resolve_ancestry(self, info, max_depth)
 
-    # NEW - find all descendants
+    # NEW - recursive descendants query (tree structure)
     @strawberry.field
     async def descendants(
         self,
         info: strawberry.Info,
         max_depth: int = 25
-    ) -> list[Generation]:
-        """Get all artifacts derived from this one."""
-        from ..resolvers.generation import resolve_all_descendants
-        return await resolve_all_descendants(self, info, max_depth)
+    ) -> DescendantNode:
+        """Get complete descendants tree up to max_depth levels."""
+        from ..resolvers.generation import resolve_descendants
+        return await resolve_descendants(self, info, max_depth)
 
     # EXISTING - direct children (keep for backwards compatibility)
     @strawberry.field
@@ -398,43 +408,79 @@ async def resolve_ancestry(
         return await build_node(generation.id, depth=0)
 
 
-async def resolve_all_descendants(
+async def resolve_descendants(
     generation: Generation,
     info: strawberry.Info,
     max_depth: int = 25
-) -> list[Generation]:
-    """Find all descendants recursively."""
+) -> DescendantNode:
+    """Build recursive descendants tree."""
     auth_context = await get_auth_context_from_info(info)
 
     async with get_async_session() as session:
-        descendants = []
-        visited = set()
+        async def build_node(
+            gen_id: UUID,
+            depth: int,
+            role: str | None = None
+        ) -> DescendantNode | None:
+            """Recursively build descendants tree."""
+            if depth > max_depth:
+                return None
 
-        async def find_children(gen_id: UUID, depth: int):
-            """Recursively find all descendants."""
-            if depth > max_depth or gen_id in visited:
-                return
+            # Query generation
+            stmt = select(Generations).where(Generations.id == gen_id)
+            result = await session.execute(stmt)
+            gen = result.scalar_one_or_none()
 
-            visited.add(gen_id)
+            if not gen:
+                return None
 
-            # Query for generations that have this one as an input
-            # Use JSONB containment operator
+            # Check access
+            if gen.tenant_id != auth_context.tenant_id:
+                return None
+
+            # Convert to GraphQL Generation
+            gen_graphql = convert_to_graphql_generation(gen)
+
+            # Find all children (generations that use this one as input)
             stmt = select(Generations).where(
                 Generations.input_artifacts.op('@>')(
                     sa.text(f"'[{{"generation_id": "{gen_id}"}}]'::jsonb")
                 )
             )
             result = await session.execute(stmt)
-            children = result.scalars().all()
+            children_gens = result.scalars().all()
 
-            for child in children:
+            # Recursively build child nodes
+            child_nodes = []
+            for child_gen in children_gens:
                 # Check access
-                if child.tenant_id == auth_context.tenant_id:
-                    descendants.append(convert_to_graphql_generation(child))
-                    await find_children(child.id, depth + 1)
+                if child_gen.tenant_id != auth_context.tenant_id:
+                    continue
 
-        await find_children(generation.id, 0)
-        return descendants
+                # Find the role this generation played in the child
+                child_role = None
+                if child_gen.input_artifacts:
+                    for artifact_data in child_gen.input_artifacts:
+                        if UUID(artifact_data["generation_id"]) == gen_id:
+                            child_role = artifact_data["role"]
+                            break
+
+                child_node = await build_node(
+                    child_gen.id,
+                    depth + 1,
+                    child_role
+                )
+                if child_node:
+                    child_nodes.append(child_node)
+
+            return DescendantNode(
+                generation=gen_graphql,
+                depth=depth,
+                role=role,
+                children=child_nodes
+            )
+
+        return await build_node(generation.id, depth=0)
 ```
 
 ### 4. Backend Changes for Automatic Lineage Tracking
@@ -556,6 +602,25 @@ export const AncestryNodeFragment = gql`
   }
 `;
 
+// Fragment for descendant node
+export const DescendantNodeFragment = gql`
+  fragment DescendantNodeFragment on DescendantNode {
+    depth
+    role
+    generation {
+      ...GenerationFragment
+    }
+    children {
+      depth
+      role
+      generation {
+        ...GenerationFragment
+      }
+      # Limit recursion depth to prevent huge queries
+    }
+  }
+`;
+
 // Update Generation fragment to include new fields
 export const GenerationFragment = gql`
   fragment GenerationFragment on Generation {
@@ -580,12 +645,12 @@ export const GetAncestryQuery = gql`
   }
 `;
 
-// Query for descendants
+// Query for descendants tree
 export const GetDescendantsQuery = gql`
   query GetDescendants($id: UUID!, $maxDepth: Int = 25) {
     generation(id: $id) {
       descendants(maxDepth: $maxDepth) {
-        ...GenerationFragment
+        ...DescendantNodeFragment
       }
     }
   }
@@ -609,6 +674,13 @@ export interface AncestryNode {
   depth: number;
   role?: string;
   parents: AncestryNode[];
+}
+
+export interface DescendantNode {
+  generation: Generation;
+  depth: number;
+  role?: string;
+  children: DescendantNode[];
 }
 
 export function useArtifactLineage(generationId: string) {
@@ -644,7 +716,7 @@ export function useDescendants(generationId: string, maxDepth: number = 25) {
   });
 
   return {
-    descendants: result.data?.generation?.descendants ?? [],
+    descendants: result.data?.generation?.descendants,
     loading: result.fetching,
     error: result.error,
   };
@@ -683,13 +755,13 @@ export function useDescendants(generationId: string, maxDepth: number = 25) {
 ### Database Indexes
 
 ```sql
--- GIN index for JSONB containment queries (finding descendants)
+-- GIN index for JSONB containment queries
+-- This supports all our query patterns:
+-- - Finding descendants: WHERE input_artifacts @> '[{"generation_id": "X"}]'::jsonb
+-- - Role-specific queries: WHERE input_artifacts @> '[{"generation_id": "X", "role": "first_frame"}]'::jsonb
+-- - Type-specific queries: WHERE input_artifacts @> '[{"artifact_type": "image"}]'::jsonb
 CREATE INDEX idx_generations_input_artifacts_gin
 ON generations USING GIN (input_artifacts);
-
--- B-tree index for specific generation_id lookups
-CREATE INDEX idx_generations_input_artifacts_generation_id
-ON generations USING btree ((input_artifacts->>'generation_id'));
 ```
 
 ### Query Optimization
@@ -783,11 +855,50 @@ async def test_ancestry_query_recursive():
 This design provides:
 
 ✅ **Role-based lineage tracking** - Know what role each parent played
-✅ **Recursive ancestry queries** - Complete lineage tree with depth tracking
-✅ **Descendant queries** - Find all artifacts derived from a source
+✅ **Symmetric tree structures** - Both `ancestry()` and `descendants()` return tree structures (`AncestryNode` and `DescendantNode`)
+✅ **Preserves full provenance** - Diamond patterns show the same node multiple times with different roles
+✅ **Recursive queries** - Complete lineage trees with depth tracking in both directions
 ✅ **Zero generator changes** - Automatic capture via existing introspection
 ✅ **Backwards compatible** - Phased migration with no breaking changes
 ✅ **Performant** - JSONB with GIN indexes for efficient queries
 ✅ **GraphQL-first** - Clean API with hooks for frontend consumption
+
+### Key Design Decisions
+
+**Tree structures over flat lists**: Both ancestry and descendants return tree structures that preserve the full relationship graph, including cases where the same artifact appears in multiple paths (diamond pattern). This ensures that:
+- All derivation paths are visible
+- Role information is preserved for each path
+- True provenance can be reconstructed
+
+**Example - Diamond Pattern**:
+```
+    [Image A]
+   /         \
+  (source)  (reference)
+  /           \
+[Video B]   [Video C]
+  \           /
+   (first)  (last)
+      \     /
+    [Video D]
+```
+
+Querying `D.ancestry()` returns:
+```
+D (depth: 0)
+├─ B (depth: 1, role: "first")
+│  └─ A (depth: 2, role: "source")
+└─ C (depth: 1, role: "last")
+   └─ A (depth: 2, role: "reference")  ← A appears twice with different roles!
+```
+
+Querying `A.descendants()` returns:
+```
+A (depth: 0)
+├─ B (depth: 1, role: "source")
+│  └─ D (depth: 2, role: "first")
+└─ C (depth: 1, role: "reference")
+   └─ D (depth: 2, role: "last")  ← D appears twice with different roles!
+```
 
 The key innovation is leveraging the existing `extract_artifact_fields()` introspection to automatically capture lineage metadata (including role names) during artifact resolution, eliminating the need for generators to declare lineage explicitly.
