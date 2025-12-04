@@ -51,6 +51,51 @@ export const GENERATION_FRAGMENT = gql`
   }
 `;
 
+// Lineage fragments
+export const ARTIFACT_LINEAGE_FRAGMENT = gql`
+  fragment ArtifactLineageFragment on ArtifactLineage {
+    generationId
+    role
+    artifactType
+  }
+`;
+
+export const ANCESTRY_NODE_FRAGMENT = gql`
+  ${GENERATION_FRAGMENT}
+  fragment AncestryNodeFragment on AncestryNode {
+    depth
+    role
+    generation {
+      ...GenerationFragment
+    }
+    parents {
+      depth
+      role
+      generation {
+        ...GenerationFragment
+      }
+    }
+  }
+`;
+
+export const DESCENDANT_NODE_FRAGMENT = gql`
+  ${GENERATION_FRAGMENT}
+  fragment DescendantNodeFragment on DescendantNode {
+    depth
+    role
+    generation {
+      ...GenerationFragment
+    }
+    children {
+      depth
+      role
+      generation {
+        ...GenerationFragment
+      }
+    }
+  }
+`;
+
 // Auth queries
 export const GET_CURRENT_USER = gql`
   ${USER_FRAGMENT}
@@ -145,6 +190,40 @@ export const GET_GENERATION = gql`
       }
       user {
         ...UserFragment
+      }
+    }
+  }
+`;
+
+// Lineage queries
+export const GET_ANCESTRY = gql`
+  ${ANCESTRY_NODE_FRAGMENT}
+  query GetAncestry($id: UUID!, $maxDepth: Int = 25) {
+    generation(id: $id) {
+      ancestry(maxDepth: $maxDepth) {
+        ...AncestryNodeFragment
+      }
+    }
+  }
+`;
+
+export const GET_DESCENDANTS = gql`
+  ${DESCENDANT_NODE_FRAGMENT}
+  query GetDescendants($id: UUID!, $maxDepth: Int = 25) {
+    generation(id: $id) {
+      descendants(maxDepth: $maxDepth) {
+        ...DescendantNodeFragment
+      }
+    }
+  }
+`;
+
+export const GET_INPUT_ARTIFACTS = gql`
+  ${ARTIFACT_LINEAGE_FRAGMENT}
+  query GetInputArtifacts($id: UUID!) {
+    generation(id: $id) {
+      inputArtifacts {
+        ...ArtifactLineageFragment
       }
     }
   }

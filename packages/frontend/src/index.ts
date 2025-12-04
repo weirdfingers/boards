@@ -25,6 +25,17 @@ export { useBoard } from "./hooks/useBoard";
 export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
 export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
+export {
+  useAncestry,
+  useDescendants,
+  useInputArtifacts,
+  useLineage,
+} from "./hooks/useLineage";
+export type {
+  ArtifactLineage,
+  AncestryNode,
+  DescendantNode,
+} from "./hooks/useLineage";
 
 // Generator schema utilities
 export * from "./types/generatorSchema";

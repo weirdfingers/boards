@@ -11,7 +11,6 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
-    ARRAY,
     Boolean,
     CheckConstraint,
     Column,
@@ -323,11 +322,6 @@ class Generations(Base):
             name="generations_board_id_fkey",
         ),
         ForeignKeyConstraint(
-            ["parent_generation_id"],
-            ["generations.id"],
-            name="generations_parent_generation_id_fkey",
-        ),
-        ForeignKeyConstraint(
             ["tenant_id"],
             ["tenants.id"],
             ondelete="CASCADE",
@@ -341,10 +335,14 @@ class Generations(Base):
         ),
         PrimaryKeyConstraint("id", name="generations_pkey"),
         Index("idx_generations_board", "board_id"),
-        Index("idx_generations_lineage", "parent_generation_id"),
         Index("idx_generations_status", "status"),
         Index("idx_generations_tenant", "tenant_id"),
         Index("idx_generations_user", "user_id"),
+        Index(
+            "idx_generations_input_artifacts_gin",
+            "input_artifacts",
+            postgresql_using="gin",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid, server_default=text("uuid_generate_v4()"))
@@ -363,9 +361,8 @@ class Generations(Base):
     output_metadata: Mapped[dict[str, Any]] = mapped_column(
         JSONB, server_default=text("'{}'::jsonb")
     )
-    parent_generation_id: Mapped[UUID | None] = mapped_column(Uuid)
-    input_generation_ids: Mapped[list[UUID]] = mapped_column(
-        ARRAY(Uuid()), server_default=text("'{}'::uuid[]")
+    input_artifacts: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, server_default=text("'[]'::jsonb")
     )
     external_job_id: Mapped[str | None] = mapped_column(String(255))
     progress: Mapped[Decimal] = mapped_column(Numeric(5, 2), server_default=text("0.0"))
@@ -380,17 +377,6 @@ class Generations(Base):
     )
 
     board: Mapped["Boards"] = relationship("Boards", back_populates="generations")
-    parent_generation: Mapped["Generations | None"] = relationship(
-        "Generations",
-        remote_side="Generations.id",
-        back_populates="parent_generation_reverse",
-    )
-    parent_generation_reverse: Mapped[list["Generations"]] = relationship(
-        "Generations",
-        uselist=True,
-        remote_side="Generations.parent_generation_id",
-        back_populates="parent_generation",
-    )
     tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="generations")
     user: Mapped["Users"] = relationship("Users", back_populates="generations")
     credit_transactions: Mapped[list["CreditTransactions"]] = relationship(

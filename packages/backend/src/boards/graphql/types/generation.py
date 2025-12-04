@@ -47,6 +47,44 @@ class AdditionalFile:
 
 
 @strawberry.type
+class ArtifactLineage:
+    """Represents a single input artifact relationship with role metadata."""
+
+    generation_id: UUID
+    role: str
+    artifact_type: ArtifactType
+
+    @strawberry.field
+    async def generation(
+        self, info: strawberry.Info
+    ) -> Annotated["Generation", strawberry.lazy(".generation")] | None:
+        """Resolve the full generation object for this input."""
+        from ..resolvers.lineage import resolve_generation_by_id
+
+        return await resolve_generation_by_id(info, self.generation_id)
+
+
+@strawberry.type
+class AncestryNode:
+    """Represents a node in the ancestry tree."""
+
+    generation: Annotated["Generation", strawberry.lazy(".generation")]
+    depth: int
+    role: str | None
+    parents: list["AncestryNode"]
+
+
+@strawberry.type
+class DescendantNode:
+    """Represents a node in the descendants tree."""
+
+    generation: Annotated["Generation", strawberry.lazy(".generation")]
+    depth: int
+    role: str | None
+    children: list["DescendantNode"]
+
+
+@strawberry.type
 class Generation:
     """Generation type for GraphQL API."""
 
@@ -67,10 +105,6 @@ class Generation:
     # Parameters and metadata
     input_params: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
     output_metadata: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
-
-    # Lineage
-    parent_generation_id: UUID | None
-    input_generation_ids: list[UUID]
 
     # Job tracking
     external_job_id: str | None
@@ -99,32 +133,22 @@ class Generation:
         return await resolve_generation_user(self, info)
 
     @strawberry.field
-    async def parent(
-        self, info: strawberry.Info
-    ) -> Annotated["Generation", strawberry.lazy(".generation")] | None:  # noqa: E501
-        """Get the parent generation if any."""
-        if not self.parent_generation_id:
-            return None
-        from ..resolvers.generation import resolve_generation_parent
+    async def input_artifacts(self, info: strawberry.Info) -> list[ArtifactLineage]:
+        """Get input artifacts with role metadata."""
+        from ..resolvers.lineage import resolve_input_artifacts
 
-        return await resolve_generation_parent(self, info)
+        return await resolve_input_artifacts(self, info)
 
     @strawberry.field
-    async def inputs(
-        self, info: strawberry.Info
-    ) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
-        """Get input generations used for this generation."""
-        if not self.input_generation_ids:
-            return []
-        from ..resolvers.generation import resolve_generation_inputs
+    async def ancestry(self, info: strawberry.Info, max_depth: int = 25) -> AncestryNode:
+        """Get complete ancestry tree up to max_depth levels."""
+        from ..resolvers.lineage import resolve_ancestry
 
-        return await resolve_generation_inputs(self, info)
+        return await resolve_ancestry(self, info, max_depth)
 
     @strawberry.field
-    async def children(
-        self, info: strawberry.Info
-    ) -> list[Annotated["Generation", strawberry.lazy(".generation")]]:  # noqa: E501
-        """Get child generations derived from this one."""
-        from ..resolvers.generation import resolve_generation_children
+    async def descendants(self, info: strawberry.Info, max_depth: int = 25) -> DescendantNode:
+        """Get complete descendants tree up to max_depth levels."""
+        from ..resolvers.lineage import resolve_descendants
 
-        return await resolve_generation_children(self, info)
+        return await resolve_descendants(self, info, max_depth)
