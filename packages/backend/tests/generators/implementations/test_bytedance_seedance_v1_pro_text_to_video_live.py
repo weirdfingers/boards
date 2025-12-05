@@ -49,9 +49,7 @@ class TestBytedanceSeedanceV1ProTextToVideoGeneratorLive:
         """
         # Log estimated cost
         estimated_cost = await self.generator.estimate_cost(
-            BytedanceSeedanceV1ProTextToVideoInput(
-                prompt="test", resolution="480p", duration="2"
-            )
+            BytedanceSeedanceV1ProTextToVideoInput(prompt="test", resolution="480p", duration="2")
         )
         cost_logger(self.generator.name, estimated_cost)
 
@@ -79,8 +77,8 @@ class TestBytedanceSeedanceV1ProTextToVideoGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration == 2.0
 
@@ -128,9 +126,7 @@ class TestBytedanceSeedanceV1ProTextToVideoGeneratorLive:
         assert artifact.duration == 3.0
 
     @pytest.mark.asyncio
-    async def test_generate_portrait_video(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_portrait_video(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test video generation with portrait (9:16) aspect ratio.
 
@@ -161,7 +157,11 @@ class TestBytedanceSeedanceV1ProTextToVideoGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url.startswith("https://")
         # Portrait should have height > width
-        assert artifact.height > artifact.width
+        assert (
+            artifact.height is not None
+            and artifact.width is not None
+            and artifact.height > artifact.width
+        )
         # Expected dimensions: 9:16 at 480p = 270x480
         assert artifact.width == 270
         assert artifact.height == 480
