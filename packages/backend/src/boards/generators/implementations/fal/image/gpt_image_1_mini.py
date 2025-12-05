@@ -138,8 +138,9 @@ class FalGptImage1MiniGenerator(BaseGenerator):
         for idx, image_data in enumerate(images):
             image_url = image_data.get("url")
             # Extract dimensions if available, otherwise use sensible defaults
-            width = image_data.get("width", 1024)
-            height = image_data.get("height", 1024)
+            # Use 'or' to handle explicit None values from API
+            width = image_data.get("width") or 1024
+            height = image_data.get("height") or 1024
 
             if not image_url:
                 raise ValueError(f"Image {idx} missing URL in fal.ai response")

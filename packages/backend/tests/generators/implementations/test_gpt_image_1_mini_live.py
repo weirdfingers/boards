@@ -70,8 +70,8 @@ class TestGptImage1MiniGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format in ["jpeg", "png", "webp"]
 
     @pytest.mark.asyncio
@@ -105,8 +105,8 @@ class TestGptImage1MiniGeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            assert artifact.width is not None and artifact.width > 0
+            assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_formats(
@@ -142,8 +142,8 @@ class TestGptImage1MiniGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "png"
 
     @pytest.mark.asyncio
