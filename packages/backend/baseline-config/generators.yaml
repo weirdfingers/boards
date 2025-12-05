@@ -11,6 +11,9 @@ allow_unlisted: false
 # NOTE: Please keep generators in alphabetical order by class name for easier maintenance
 generators:
   # Fal.ai generators
+  - class: "boards.generators.implementations.fal.video.creatify_lipsync.FalCreatifyLipsyncGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
     enabled: true
 
