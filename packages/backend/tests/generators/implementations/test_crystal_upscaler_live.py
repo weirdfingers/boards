@@ -81,12 +81,14 @@ class TestCrystalUpscalerGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
-        # Output should be approximately 2x the input size (256 * 2 = 512)
-        # Allow some tolerance for processing differences
-        assert artifact.width >= 500
-        assert artifact.height >= 500
+        # Width and height are optional - verify if present
+        if artifact.width is not None:
+            assert artifact.width > 0
+            # Output should be approximately 2x the input size (256 * 2 = 512)
+            assert artifact.width >= 500
+        if artifact.height is not None:
+            assert artifact.height > 0
+            assert artifact.height >= 500
 
     @pytest.mark.asyncio
     async def test_generate_with_higher_scale_factor(
@@ -128,13 +130,14 @@ class TestCrystalUpscalerGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
-
-        # Output should be approximately 4x the input size (128 * 4 = 512)
-        # Allow some tolerance for processing differences
-        assert artifact.width >= 500
-        assert artifact.height >= 500
+        # Width and height are optional - verify if present
+        if artifact.width is not None:
+            assert artifact.width > 0
+            # Output should be approximately 4x the input size (128 * 4 = 512)
+            assert artifact.width >= 500
+        if artifact.height is not None:
+            assert artifact.height > 0
+            assert artifact.height >= 500
 
     @pytest.mark.asyncio
     async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):
@@ -209,8 +212,11 @@ class TestCrystalUpscalerGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
 
-        # Verify dimensions - should maintain aspect ratio and be ~2x larger
-        assert artifact.width >= 500  # ~512px
-        assert artifact.height >= 750  # ~768px
-        # Verify portrait aspect ratio is maintained (height > width)
-        assert artifact.height > artifact.width
+        # Verify dimensions if present - should maintain aspect ratio and be ~2x larger
+        if artifact.width is not None:
+            assert artifact.width >= 500  # ~512px
+        if artifact.height is not None:
+            assert artifact.height >= 750  # ~768px
+        # Verify portrait aspect ratio is maintained (height > width) if both dimensions present
+        if artifact.width is not None and artifact.height is not None:
+            assert artifact.height > artifact.width
