@@ -138,9 +138,7 @@ class FalMinimaxHailuo02StandardTextToVideoGenerator(BaseGenerator):
 
         return GeneratorResult(outputs=[artifact])
 
-    async def estimate_cost(
-        self, inputs: FalMinimaxHailuo02StandardTextToVideoInput
-    ) -> float:
+    async def estimate_cost(self, inputs: FalMinimaxHailuo02StandardTextToVideoInput) -> float:
         """Estimate cost for MiniMax Hailuo 02 Standard generation.
 
         Pricing information not provided in official documentation.
