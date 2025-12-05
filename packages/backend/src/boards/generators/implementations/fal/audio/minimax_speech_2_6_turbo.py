@@ -73,7 +73,7 @@ class MinimaxSpeech26TurboInput(BaseModel):
 
     prompt: str = Field(
         description=(
-            "Text to convert to speech " "(supports pause markers <#x#> with 0.01-99.99 seconds)"
+            "Text to convert to speech (supports pause markers <#x#> with 0.01-99.99 seconds)"
         ),
         min_length=1,
         max_length=10000,

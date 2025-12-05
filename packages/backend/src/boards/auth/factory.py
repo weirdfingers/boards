@@ -75,7 +75,7 @@ def get_auth_adapter() -> AuthAdapter:
         secret_key = config.get("secret_key") or os.getenv("CLERK_SECRET_KEY")
         if not secret_key:
             raise ValueError(
-                "Clerk secret key is required. " "Set CLERK_SECRET_KEY or provide in config."
+                "Clerk secret key is required. Set CLERK_SECRET_KEY or provide in config."
             )
 
         return ClerkAuthAdapter(

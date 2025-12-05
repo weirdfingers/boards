@@ -69,7 +69,7 @@ class TenantRegistrationRequest(BaseModel):
         if v is not None:
             valid_sizes = {"small", "medium", "large", "enterprise"}
             if v.lower() not in valid_sizes:
-                raise ValueError(f'Organization size must be one of: {", ".join(valid_sizes)}')
+                raise ValueError(f"Organization size must be one of: {', '.join(valid_sizes)}")
         return v.lower() if v else None
 
 

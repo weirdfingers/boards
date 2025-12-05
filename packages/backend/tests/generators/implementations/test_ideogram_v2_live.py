@@ -70,14 +70,12 @@ class TestIdeogramV2GeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format in ["jpeg", "png"]
 
     @pytest.mark.asyncio
-    async def test_generate_with_typography(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_typography(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test generation with text in prompt (Ideogram V2's specialty).
 
@@ -108,8 +106,8 @@ class TestIdeogramV2GeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_aspect_ratios(
@@ -145,8 +143,8 @@ class TestIdeogramV2GeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_styles(

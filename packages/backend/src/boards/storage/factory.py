@@ -60,7 +60,7 @@ except ImportError:
     S3StorageProvider = None
     _s3_available = False
     logger.warning(
-        "S3 storage not available. " "Install with: pip install weirdfingers-boards[storage-s3]"
+        "S3 storage not available. Install with: pip install weirdfingers-boards[storage-s3]"
     )
 
 try:
@@ -71,7 +71,7 @@ except ImportError:
     GCSStorageProvider = None
     _gcs_available = False
     logger.warning(
-        "GCS storage not available. " "Install with: pip install weirdfingers-boards[storage-gcs]"
+        "GCS storage not available. Install with: pip install weirdfingers-boards[storage-gcs]"
     )
 
 
