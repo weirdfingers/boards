@@ -1,6 +1,6 @@
 # @weirdfingers/baseboards
 
-One-command launcher for the Boards image generation platform.
+One-command launcher for Boards, an AI-powered creative toolkit for generating, storing, and sharing images, video, audio, and text.
 
 ## Quick Start
 
