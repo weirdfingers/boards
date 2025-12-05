@@ -693,7 +693,9 @@ class TestFalIdeogramCharacterEditGenerator:
 
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
-            mock_fal_client.upload_file_async = AsyncMock(return_value="https://fal.media/files/uploaded.png")  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(  # type: ignore[attr-defined]
+                return_value="https://fal.media/files/uploaded.png"
+            )
             sys.modules["fal_client"] = mock_fal_client
 
             # Mock storage results
@@ -793,7 +795,9 @@ class TestFalIdeogramCharacterEditGenerator:
 
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
-            mock_fal_client.upload_file_async = AsyncMock(return_value="https://fal.media/files/uploaded.png")  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(  # type: ignore[attr-defined]
+                return_value="https://fal.media/files/uploaded.png"
+            )
             sys.modules["fal_client"] = mock_fal_client
 
             class DummyCtx(GeneratorExecutionContext):

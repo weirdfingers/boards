@@ -72,14 +72,12 @@ class IdeogramCharacterEditInput(BaseModel):
     prompt: str = Field(description="The prompt to fill the masked part of the image")
     image_url: ImageArtifact = Field(
         description=(
-            "The image to generate from. "
-            "MUST have the exact same dimensions as the mask image"
+            "The image to generate from. MUST have the exact same dimensions as the mask image"
         )
     )
     mask_url: ImageArtifact = Field(
         description=(
-            "The mask to inpaint the image. "
-            "MUST have the exact same dimensions as the input image"
+            "The mask to inpaint the image. MUST have the exact same dimensions as the input image"
         )
     )
     reference_image_urls: list[ImageArtifact] = Field(
