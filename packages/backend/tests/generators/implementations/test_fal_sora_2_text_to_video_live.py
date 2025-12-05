@@ -46,9 +46,7 @@ class TestSora2TextToVideoGeneratorLive:
         Uses minimal/cheap settings (4-second duration) to reduce cost.
         """
         # Log estimated cost
-        estimated_cost = await self.generator.estimate_cost(
-            Sora2TextToVideoInput(prompt="test")
-        )
+        estimated_cost = await self.generator.estimate_cost(Sora2TextToVideoInput(prompt="test"))
         cost_logger(self.generator.name, estimated_cost)
 
         # Create minimal input to reduce cost
@@ -73,8 +71,8 @@ class TestSora2TextToVideoGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration is not None
         assert artifact.duration >= 4.0  # Should be at least 4 seconds
@@ -113,8 +111,8 @@ class TestSora2TextToVideoGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url.startswith("https://")
         # For 9:16 portrait at 720p, expect 720x1280
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration is not None
         assert artifact.duration >= 8.0  # Should be at least 8 seconds
