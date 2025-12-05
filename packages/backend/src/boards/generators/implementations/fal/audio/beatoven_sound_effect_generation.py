@@ -22,9 +22,7 @@ class BeatovenSoundEffectGenerationInput(BaseModel):
     and resolved from generation IDs to artifact objects.
     """
 
-    prompt: str = Field(
-        description="Describe the sound effect you want to generate"
-    )
+    prompt: str = Field(description="Describe the sound effect you want to generate")
     duration: float = Field(
         default=5,
         ge=1,
