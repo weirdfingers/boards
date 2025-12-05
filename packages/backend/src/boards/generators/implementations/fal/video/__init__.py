@@ -17,6 +17,7 @@ from .sora_2_text_to_video_pro import FalSora2TextToVideoProGenerator
 from .sync_lipsync_v2 import FalSyncLipsyncV2Generator
 from .sync_lipsync_v2_pro import FalSyncLipsyncV2ProGenerator
 from .veed_lipsync import FalVeedLipsyncGenerator
+from .veo3 import FalVeo3Generator
 from .veo31_first_last_frame_to_video import FalVeo31FirstLastFrameToVideoGenerator
 from .veo31_image_to_video import FalVeo31ImageToVideoGenerator
 from .veo31_reference_to_video import FalVeo31ReferenceToVideoGenerator
@@ -33,6 +34,7 @@ __all__ = [
     "FalSyncLipsyncV2Generator",
     "FalVeedLipsyncGenerator",
     "FalSyncLipsyncV2ProGenerator",
+    "FalVeo3Generator",
     "FalVeo31FirstLastFrameToVideoGenerator",
     "FalVeo31ImageToVideoGenerator",
     "FalVeo31ReferenceToVideoGenerator",
