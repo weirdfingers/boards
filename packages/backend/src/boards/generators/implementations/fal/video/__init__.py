@@ -2,6 +2,7 @@
 
 from .creatify_lipsync import FalCreatifyLipsyncGenerator
 from .fal_pixverse_lipsync import FalPixverseLipsyncGenerator
+from .fal_sora_2_text_to_video import FalSora2TextToVideoGenerator
 from .infinitalk import FalInfinitalkGenerator
 from .kling_video_v2_5_turbo_pro_text_to_video import (
     FalKlingVideoV25TurboProTextToVideoGenerator,
@@ -20,6 +21,7 @@ __all__ = [
     "FalKlingVideoV25TurboProTextToVideoGenerator",
     "FalPixverseLipsyncGenerator",
     "FalSora2TextToVideoProGenerator",
+    "FalSora2TextToVideoGenerator",
     "FalSyncLipsyncV2Generator",
     "FalVeedLipsyncGenerator",
     "FalSyncLipsyncV2ProGenerator",
