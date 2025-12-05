@@ -1,5 +1,13 @@
 # Supabase Authentication
 
+:::caution Under Construction
+
+This documentation has not yet been fully tested with an actual Supabase project. Some steps may be incomplete or require adjustments. We welcome community contributions to validate and improve this guide.
+
+**[Help us test this guide →](https://github.com/weirdfingers/boards/issues/152)**
+
+:::
+
 Use Supabase Auth for managed authentication with social providers, email/password, and more.
 
 ## Backend Setup
