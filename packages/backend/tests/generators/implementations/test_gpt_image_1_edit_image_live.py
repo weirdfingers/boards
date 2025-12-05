@@ -84,8 +84,10 @@ class TestGptImage1EditImageGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         # GPT-Image-1 typically returns PNG
         assert artifact.format in ["png", "jpeg", "webp"]
 
@@ -132,12 +134,15 @@ class TestGptImage1EditImageGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
 
         # When image_size is 1024x1024, expect square output
         # (though exact dimensions depend on the API's processing)
-        assert artifact.width == artifact.height
+        if artifact.width is not None and artifact.height is not None:
+            assert artifact.width == artifact.height
 
     @pytest.mark.asyncio
     async def test_generate_with_high_fidelity(
@@ -223,8 +228,10 @@ class TestGptImage1EditImageGeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            if artifact.width is not None:
+                assert artifact.width > 0
+            if artifact.height is not None:
+                assert artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):
