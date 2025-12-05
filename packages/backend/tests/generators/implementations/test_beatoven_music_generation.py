@@ -227,9 +227,7 @@ class TestFalBeatovenMusicGenerationGenerator:
     async def test_generate_missing_api_key(self):
         """Test generation fails when API key is missing."""
         with patch.dict(os.environ, {}, clear=True):
-            input_data = BeatovenMusicGenerationInput(
-                prompt="Test music prompt"
-            )
+            input_data = BeatovenMusicGenerationInput(prompt="Test music prompt")
 
             class DummyCtx(GeneratorExecutionContext):
                 generation_id = "test_gen"
@@ -450,9 +448,7 @@ class TestFalBeatovenMusicGenerationGenerator:
     @pytest.mark.asyncio
     async def test_generate_no_audio_returned(self):
         """Test generation fails when API returns no audio."""
-        input_data = BeatovenMusicGenerationInput(
-            prompt="Test music prompt"
-        )
+        input_data = BeatovenMusicGenerationInput(prompt="Test music prompt")
 
         with patch.dict(os.environ, {"FAL_KEY": "fake-key"}):
             import sys
@@ -499,9 +495,7 @@ class TestFalBeatovenMusicGenerationGenerator:
     @pytest.mark.asyncio
     async def test_generate_audio_missing_url(self):
         """Test generation fails when audio object is missing URL."""
-        input_data = BeatovenMusicGenerationInput(
-            prompt="Test music prompt"
-        )
+        input_data = BeatovenMusicGenerationInput(prompt="Test music prompt")
 
         with patch.dict(os.environ, {"FAL_KEY": "fake-key"}):
             import sys
@@ -556,9 +550,7 @@ class TestFalBeatovenMusicGenerationGenerator:
     @pytest.mark.asyncio
     async def test_estimate_cost(self):
         """Test cost estimation."""
-        input_data = BeatovenMusicGenerationInput(
-            prompt="Test music prompt"
-        )
+        input_data = BeatovenMusicGenerationInput(prompt="Test music prompt")
 
         cost = await self.generator.estimate_cost(input_data)
 
