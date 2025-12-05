@@ -23,7 +23,7 @@ since the generator requires artifact inputs.
 import pytest
 
 from boards.config import initialize_generator_api_keys
-from boards.generators.artifacts import AudioArtifact, ImageArtifact
+from boards.generators.artifacts import AudioArtifact, ImageArtifact, VideoArtifact
 from boards.generators.implementations.fal.video.infinitalk import (
     FalInfinitalkGenerator,
     InfinitalkInput,
@@ -52,11 +52,12 @@ class TestInfinitalkGeneratorLive:
         Note: Uses example image and audio from publicly accessible sources.
         """
         # Create artifacts using example URLs
-        # Using a sample portrait image
+        # Using a sample portrait image of a person for realistic testing
+        # This is a publicly accessible portrait that works well with face animation
         image_artifact = ImageArtifact(
             generation_id="example_image",
-            storage_url="https://placehold.co/512x512/ffcccc/333333.png",
-            format="png",
+            storage_url="https://picsum.photos/id/64/512/512",  # Portrait from Lorem Picsum
+            format="jpg",
             width=512,
             height=512,
         )
@@ -95,6 +96,7 @@ class TestInfinitalkGeneratorLive:
 
         # Verify artifact properties
         artifact = result.outputs[0]
+        assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
         assert artifact.format == "mp4"
@@ -116,10 +118,11 @@ class TestInfinitalkGeneratorLive:
         Note: This will cost more due to higher resolution.
         """
         # Create artifacts using example URLs
+        # Using a different portrait for variety in testing
         image_artifact = ImageArtifact(
             generation_id="example_image",
-            storage_url="https://placehold.co/512x512/ccffcc/333333.png",
-            format="png",
+            storage_url="https://picsum.photos/id/65/512/512",  # Different portrait from Lorem
+            format="jpg",
             width=512,
             height=512,
         )
@@ -156,6 +159,7 @@ class TestInfinitalkGeneratorLive:
         assert len(result.outputs) == 1
 
         artifact = result.outputs[0]
+        assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url.startswith("https://")
         assert artifact.format == "mp4"
         assert artifact.width == 1280  # 720p width
