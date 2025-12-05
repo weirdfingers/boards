@@ -42,9 +42,7 @@ class FalSora2TextToVideoProGenerator(BaseGenerator):
     """Generator for text-to-video using Sora 2 Pro."""
 
     name = "fal-sora-2-text-to-video-pro"
-    description = (
-        "Fal: Sora 2 Pro - OpenAI's state-of-the-art text-to-video model with audio"
-    )
+    description = "Fal: Sora 2 Pro - OpenAI's state-of-the-art text-to-video model with audio"
     artifact_type = "video"
 
     def get_input_schema(self) -> type[Sora2TextToVideoProInput]:
