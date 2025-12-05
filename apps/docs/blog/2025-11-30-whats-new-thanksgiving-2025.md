@@ -128,7 +128,7 @@ Baseboards’ logs are human-readable, which is a refreshing change from certain
 
 When the worker finishes, the artifact appears directly on your board.
 
-![Architecture Diagram](/img/blog/251130/arch-diagram.png)
+![Architecture Diagram](/img/blog/251130/arch-diag1.png)
 
 The generated infographic:
 
