@@ -278,6 +278,7 @@ class TestQwenImageEditInput:
         )
 
         assert input_data.image_size == custom_size
+        assert isinstance(input_data.image_size, ImageSize)
         assert input_data.image_size.width == 1920
         assert input_data.image_size.height == 1080
 

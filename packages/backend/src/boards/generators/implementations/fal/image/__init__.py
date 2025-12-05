@@ -12,8 +12,8 @@ from .imagen4_preview_fast import FalImagen4PreviewFastGenerator
 from .nano_banana import FalNanoBananaGenerator
 from .nano_banana_edit import FalNanoBananaEditGenerator
 from .nano_banana_pro import FalNanoBananaProGenerator
-from .qwen_image_edit import FalQwenImageEditGenerator
 from .qwen_image import FalQwenImageGenerator
+from .qwen_image_edit import FalQwenImageEditGenerator
 
 __all__ = [
     "FalClarityUpscalerGenerator",

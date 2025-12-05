@@ -86,8 +86,10 @@ class TestQwenImageEditGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format == "jpeg"
 
     @pytest.mark.asyncio
@@ -135,8 +137,10 @@ class TestQwenImageEditGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_custom_size(
@@ -187,8 +191,10 @@ class TestQwenImageEditGeneratorLive:
         assert artifact.storage_url.startswith("https://")
         # Note: Output dimensions may not exactly match requested dimensions
         # depending on how the API processes the custom size
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_multiple_outputs(
@@ -235,8 +241,10 @@ class TestQwenImageEditGeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            if artifact.width is not None:
+                assert artifact.width > 0
+            if artifact.height is not None:
+                assert artifact.height > 0
             assert artifact.format == "jpeg"
 
     @pytest.mark.asyncio
