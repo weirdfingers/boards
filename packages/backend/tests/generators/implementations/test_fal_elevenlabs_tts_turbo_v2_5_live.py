@@ -141,9 +141,7 @@ class TestFalElevenlabsTtsTurboV25GeneratorLive:
         assert artifact.storage_url.startswith("https://")
 
     @pytest.mark.asyncio
-    async def test_generate_with_context(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_context(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test speech generation with previous and next text context.
 

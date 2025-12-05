@@ -30,8 +30,7 @@ class FalElevenlabsTtsTurboV25Input(BaseModel):
     voice: str = Field(
         default="Rachel",
         description=(
-            "Voice selection from predefined options "
-            "(Aria, Roger, Sarah, Laura, Rachel, etc.)"
+            "Voice selection from predefined options (Aria, Roger, Sarah, Laura, Rachel, etc.)"
         ),
     )
 

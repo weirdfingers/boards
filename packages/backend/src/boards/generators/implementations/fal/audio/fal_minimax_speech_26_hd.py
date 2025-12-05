@@ -103,8 +103,7 @@ class FalMinimaxSpeech26HdInput(BaseModel):
 
     prompt: str = Field(
         description=(
-            "Text to convert to speech. "
-            "Paragraph breaks should be marked with newline characters."
+            "Text to convert to speech. Paragraph breaks should be marked with newline characters."
         ),
         min_length=1,
         max_length=10000,
@@ -122,8 +121,7 @@ class FalMinimaxSpeech26HdInput(BaseModel):
     output_format: Literal["hex", "url"] = Field(
         default="url",
         description=(
-            "Output format for audio data "
-            "(url returns a downloadable link, hex returns raw data)"
+            "Output format for audio data (url returns a downloadable link, hex returns raw data)"
         ),
     )
     voice_setting: VoiceSetting = Field(
