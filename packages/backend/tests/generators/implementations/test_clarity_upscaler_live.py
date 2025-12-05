@@ -82,12 +82,13 @@ class TestClarityUpscalerGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "png"
 
         # Verify upscaling happened (output should be ~2x larger)
         # Allow some tolerance for API processing
+        assert test_artifact.width is not None and test_artifact.height is not None
         expected_width = test_artifact.width * inputs.upscale_factor
         expected_height = test_artifact.height * inputs.upscale_factor
         assert abs(artifact.width - expected_width) < 50
@@ -136,8 +137,8 @@ class TestClarityUpscalerGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_estimate_cost_matches_pricing(self, skip_if_no_fal_key):
@@ -242,9 +243,12 @@ class TestClarityUpscalerGeneratorLive:
         assert len(result.outputs) == 1
 
         artifact = result.outputs[0]
+        assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
 
         # Verify upscaling to 4x (128 * 4 = 512)
+        assert test_artifact.width is not None and test_artifact.height is not None
+        assert artifact.width is not None and artifact.height is not None
         expected_width = test_artifact.width * 4
         expected_height = test_artifact.height * 4
         assert abs(artifact.width - expected_width) < 50
