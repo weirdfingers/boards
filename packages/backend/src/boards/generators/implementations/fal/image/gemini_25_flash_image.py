@@ -147,17 +147,12 @@ class FalGemini25FlashImageGenerator(BaseGenerator):
         artifacts = []
         for idx, image_data in enumerate(images):
             image_url = image_data.get("url")
-            width = image_data.get("width")
-            height = image_data.get("height")
+            # Use 'or' to handle explicit None values from API
+            width = image_data.get("width") or 1024
+            height = image_data.get("height") or 1024
 
             if not image_url:
                 raise ValueError(f"Image {idx} missing URL in fal.ai response")
-
-            # Use default dimensions if not provided
-            if width is None or height is None:
-                # Default dimensions based on aspect ratio (approximate)
-                width = 1024
-                height = 1024
 
             # Store with appropriate output_index
             artifact = await context.store_image_result(

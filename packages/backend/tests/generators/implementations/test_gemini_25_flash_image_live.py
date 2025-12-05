@@ -71,8 +71,8 @@ class TestGemini25FlashImageGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "jpeg"
 
     @pytest.mark.asyncio
@@ -107,8 +107,8 @@ class TestGemini25FlashImageGeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            assert artifact.width is not None and artifact.width > 0
+            assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_aspect_ratios(
@@ -146,12 +146,11 @@ class TestGemini25FlashImageGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
         # Width should be greater than height for 16:9 landscape
+        assert artifact.width is not None and artifact.height is not None
         assert artifact.width > artifact.height
 
     @pytest.mark.asyncio
-    async def test_generate_with_webp_format(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_webp_format(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test generation with WebP output format.
 
