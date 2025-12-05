@@ -140,7 +140,9 @@ class TestPixverseLipsyncInput:
 
         for voice in valid_voices:
             input_data = PixverseLipsyncInput(
-                video_url=video_artifact, text="Test", voice_id=voice  # type: ignore[arg-type]
+                video_url=video_artifact,
+                text="Test",
+                voice_id=voice,  # type: ignore[arg-type]
             )
             assert input_data.voice_id == voice
 
