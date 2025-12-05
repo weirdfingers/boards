@@ -402,9 +402,7 @@ class TestFalBytedanceSeedanceV1ProTextToVideoGenerator:
             mock_handler = MagicMock()
             mock_handler.request_id = "test-request-portrait"
             mock_handler.iter_events = MagicMock(return_value=_empty_async_event_iterator())
-            mock_handler.get = AsyncMock(
-                return_value={"video": {"url": fake_video_url}, "seed": 1}
-            )
+            mock_handler.get = AsyncMock(return_value={"video": {"url": fake_video_url}, "seed": 1})
 
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
@@ -471,9 +469,7 @@ class TestFalBytedanceSeedanceV1ProTextToVideoGenerator:
             mock_handler = MagicMock()
             mock_handler.request_id = "test-request-square"
             mock_handler.iter_events = MagicMock(return_value=_empty_async_event_iterator())
-            mock_handler.get = AsyncMock(
-                return_value={"video": {"url": fake_video_url}, "seed": 1}
-            )
+            mock_handler.get = AsyncMock(return_value={"video": {"url": fake_video_url}, "seed": 1})
 
             mock_fal_client = ModuleType("fal_client")
             mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
