@@ -71,9 +71,7 @@ class TestElevenlabsTtsElevenV3GeneratorLive:
         assert artifact.format in ["mp3", "wav", "ogg"]
 
     @pytest.mark.asyncio
-    async def test_generate_with_custom_voice(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_custom_voice(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test speech generation with custom voice.
 
@@ -150,7 +148,7 @@ class TestElevenlabsTtsElevenV3GeneratorLive:
         estimated_cost = await self.generator.estimate_cost(inputs)
 
         # Should be $0.10 for 1000 characters
-        assert estimated_cost == 0.10
+        assert estimated_cost == pytest.approx(0.10)
         assert estimated_cost > 0.0
         assert estimated_cost < 1.0  # Sanity check
 
@@ -158,5 +156,5 @@ class TestElevenlabsTtsElevenV3GeneratorLive:
         inputs_short = ElevenlabsTtsElevenV3Input(text="a" * 100)
         estimated_cost_short = await self.generator.estimate_cost(inputs_short)
 
-        assert estimated_cost_short == 0.01
+        assert estimated_cost_short == pytest.approx(0.01)
         assert estimated_cost_short < estimated_cost
