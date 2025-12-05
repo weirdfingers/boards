@@ -30,9 +30,7 @@ class Sora2ImageToVideoProInput(BaseModel):
         min_length=1,
         max_length=5000,
     )
-    image_url: ImageArtifact = Field(
-        description="The image to use as the first frame of the video"
-    )
+    image_url: ImageArtifact = Field(description="The image to use as the first frame of the video")
     resolution: Literal["auto", "720p", "1080p"] = Field(
         default="auto",
         description="Resolution of the generated video. 'auto' selects optimal resolution",
