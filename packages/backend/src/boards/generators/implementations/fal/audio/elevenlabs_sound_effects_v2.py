@@ -69,8 +69,7 @@ class ElevenlabsSoundEffectsV2Input(BaseModel):
     ] = Field(
         default="mp3_44100_128",
         description=(
-            "Output format of the generated audio. "
-            "Formatted as codec_sample_rate_bitrate."
+            "Output format of the generated audio. Formatted as codec_sample_rate_bitrate."
         ),
     )
     loop: bool = Field(
