@@ -23,6 +23,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.flux_pro_ultra.FalFluxProUltraGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.gpt_image_1_mini.FalGptImage1MiniGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.ideogram_v2.FalIdeogramV2Generator"
     enabled: true
 
