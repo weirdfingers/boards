@@ -137,9 +137,7 @@ class TestKlingVideoV25TurboProImageToVideoInput:
         # This should fail (over limit)
         too_long_prompt = "a" * 2501
         with pytest.raises(ValidationError):
-            KlingVideoV25TurboProImageToVideoInput(
-                prompt=too_long_prompt, image_url=image_artifact
-            )
+            KlingVideoV25TurboProImageToVideoInput(prompt=too_long_prompt, image_url=image_artifact)
 
     def test_negative_prompt_max_length(self):
         """Test negative_prompt max length validation."""

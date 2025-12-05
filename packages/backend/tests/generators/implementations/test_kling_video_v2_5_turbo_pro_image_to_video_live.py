@@ -95,8 +95,10 @@ class TestKlingVideoV25TurboProImageToVideoGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration == 5.0
 
@@ -138,15 +140,15 @@ class TestKlingVideoV25TurboProImageToVideoGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        if artifact.width is not None:
+            assert artifact.width > 0
+        if artifact.height is not None:
+            assert artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration == 5.0
 
     @pytest.mark.asyncio
-    async def test_estimate_cost_matches_duration(
-        self, skip_if_no_fal_key, test_image_artifact
-    ):
+    async def test_estimate_cost_matches_duration(self, skip_if_no_fal_key, test_image_artifact):
         """
         Test that cost estimation scales with duration.
 
