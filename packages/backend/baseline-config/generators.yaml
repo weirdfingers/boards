@@ -71,6 +71,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.infinitalk.FalInfinitalkGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_image_to_video.FalKlingVideoV25TurboProImageToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_text_to_video.FalKlingVideoV25TurboProTextToVideoGenerator"
     enabled: true
 
