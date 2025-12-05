@@ -12,6 +12,7 @@ Creates a complete Fal AI generator following the established patterns from the 
 - Configuration in generators.yaml
 
 The skill uses Fal AI's structured API information to automatically extract:
+
 - Input/output schemas from OpenAPI spec
 - Model description and pricing from LLM-optimized docs
 - Parameter validation and types
@@ -37,6 +38,7 @@ Use the Fal model name to gather comprehensive information from Fal's structured
 URL: `https://fal.ai/api/openapi/queue/openapi.json?endpoint_id={fal_model_name}`
 
 Extract:
+
 - Input schema (parameters, types, validation, required fields)
 - Output schema (response structure)
 - Example values
@@ -46,6 +48,7 @@ Extract:
 URL: `https://fal.ai/models/{fal_model_name}/llms.txt`
 
 Extract:
+
 - Model description (user-facing)
 - Pricing information (cost per generation)
 - Usage examples
@@ -55,12 +58,14 @@ Extract:
 **2c. Analyze the Information:**
 
 From the OpenAPI schema, determine:
+
 - Which parameters accept file URLs (image_url, image_urls, audio_url, etc.)
 - Whether artifacts need to be uploaded to Fal's storage
 - Parameter validation constraints (min/max values, allowed options)
 - Default values
 
 From the llms.txt documentation:
+
 - Artifact type (image/video/audio/text) based on output description
 - Cost per generation in USD
 - User-facing description for the generator
@@ -71,22 +76,26 @@ From the llms.txt documentation:
 Based on the gathered information, determine:
 
 1. **Generator Name** (kebab-case): Convert the Fal model name
+
    - Example: `fal-ai/flux-pro` → `fal-flux-pro`
    - Example: `fal-ai/nano-banana/edit` → `fal-nano-banana-edit`
 
 2. **Python Class Name** (PascalCase):
+
    - Example: `fal-flux-pro` → `FalFluxProGenerator`
    - Example: `fal-nano-banana-edit` → `FalNanoBananaEditGenerator`
 
 3. **Artifact Type**: From the output schema or llms.txt (image/video/audio/text)
 
 4. **Input Fields**: Map OpenAPI schema properties to Pydantic fields
+
    - Detect artifact inputs (any field ending in `_url` or `_urls`)
    - Convert types (string → str, number → float, integer → int, array → list)
    - Preserve validation (minimum, maximum, enum values)
    - Map required fields
 
 5. **Output Handling**: Based on response schema
+
    - Detect single vs multiple outputs
    - Extract dimensions, format, duration fields
    - Determine if batch processing is needed
@@ -103,6 +112,7 @@ Create the generator implementation file at:
 **Important Implementation Notes:**
 
 1. **Input Schema Mapping:**
+
    - Convert OpenAPI schema properties to Pydantic Field definitions
    - For file URL fields (`image_url`, `image_urls`, `video_url`, etc.):
      - Replace with artifact types: `ImageArtifact`, `VideoArtifact`, `AudioArtifact`
@@ -113,6 +123,7 @@ Create the generator implementation file at:
    - Use OpenAPI default values
 
 2. **File Upload Detection:**
+
    - If ANY input field is an artifact type (ImageArtifact, etc.)
    - Import and use: `from ..utils import upload_artifacts_to_fal`
    - Upload artifacts before submitting to Fal API
@@ -265,12 +276,14 @@ Create comprehensive unit tests at:
 **Test Generation Strategy:**
 
 1. **Use OpenAPI Schema for Test Data:**
+
    - Use example values from OpenAPI schema
    - Test enum validation with valid/invalid options
    - Test min/max constraints from schema
    - Test required vs optional fields
 
 2. **Mock Fal Client:**
+
    - Create helper: `_empty_async_event_iterator()` (async generator)
    - Mock `fal_client.submit_async()` to return handler
    - Mock `handler.get()` to return expected response from OpenAPI schema
@@ -387,6 +400,7 @@ class Test{GeneratorName}GeneratorLive:
 ```
 
 **Live Test Best Practices:**
+
 - Use minimal inputs to reduce costs (small sizes, low quality, single outputs)
 - Log estimated costs using the `cost_logger` fixture
 - Use `skip_if_no_fal_key` fixture to auto-skip when API key missing
@@ -542,7 +556,7 @@ I found:
 - Artifact type: image
 - Pricing: $0.055 per generation
 - Inputs: prompt (required), image_size (optional), num_inference_steps (optional)
-- Output: Single image with URL, width, height
+- Output: Single image with URL, and width, height if these are present
 
 Creating generator implementation...
 ```
@@ -581,7 +595,7 @@ I found:
 - Artifact type: video
 - Pricing: $0.12 per generation
 - Inputs: prompt (required), image_url (optional), duration (optional)
-- Output: Video file with URL, width, height, duration
+- Output: Video file with URL,and width, height, duration if these are present
 
 Creating video generator with optional image input...
 ```
@@ -589,11 +603,13 @@ Creating video generator with optional image input...
 ## Fal API Endpoints Reference
 
 ### OpenAPI Schema
+
 **URL Pattern**: `https://fal.ai/api/openapi/queue/openapi.json?endpoint_id={model_name}`
 
 **Example**: `https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=fal-ai/flux-pro`
 
 **Contains**:
+
 - Complete input/output JSON schemas
 - Parameter types, validation, defaults
 - Required vs optional fields
@@ -601,15 +617,18 @@ Creating video generator with optional image input...
 - Response structure
 
 **Key sections to extract**:
+
 - `paths['/'].post.requestBody.content['application/json'].schema` - Input schema
 - `paths['/'].post.responses['200'].content['application/json'].schema` - Output schema
 
 ### LLM-Optimized Documentation
+
 **URL Pattern**: `https://fal.ai/models/{model_name}/llms.txt`
 
 **Example**: `https://fal.ai/models/fal-ai/flux-pro/llms.txt`
 
 **Contains**:
+
 - Model description
 - Pricing information
 - Usage examples
@@ -617,6 +636,7 @@ Creating video generator with optional image input...
 - Capabilities
 
 **Key information to extract**:
+
 - Model description (first paragraph usually)
 - Cost per generation (look for "$" or "USD")
 - Artifact type (mentions "image", "video", "audio", or "text")
