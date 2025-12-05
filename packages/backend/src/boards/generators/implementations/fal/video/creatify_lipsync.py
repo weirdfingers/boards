@@ -127,8 +127,14 @@ class FalCreatifyLipsyncGenerator(BaseGenerator):
             raise ValueError("Video missing URL in fal.ai response")
 
         # Extract format from content_type (e.g., "video/mp4" -> "mp4")
+        # Creatify lipsync always produces MP4 videos, so default to mp4
         content_type = video_data.get("content_type", "video/mp4")
-        video_format = content_type.split("/")[-1] if "/" in content_type else "mp4"
+        if content_type.startswith("video/"):
+            video_format = content_type.split("/")[-1]
+        else:
+            # If content_type is not a video mime type (e.g., application/octet-stream),
+            # default to mp4 since creatify/lipsync only produces mp4 videos
+            video_format = "mp4"
 
         # Store the video result
         # Note: The API doesn't return width/height/duration/fps, so we use defaults

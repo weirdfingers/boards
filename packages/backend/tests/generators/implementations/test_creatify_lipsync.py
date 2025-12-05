@@ -497,6 +497,120 @@ class TestFalCreatifyLipsyncGenerator:
                 await self.generator.generate(input_data, DummyCtx())
 
     @pytest.mark.asyncio
+    async def test_generate_with_octet_stream_content_type(self):
+        """Test that application/octet-stream content type defaults to mp4 format."""
+        video_artifact = VideoArtifact(
+            generation_id="gen_input_video",
+            storage_url="https://example.com/input-video.mp4",
+            format="mp4",
+            width=1920,
+            height=1080,
+            duration=10.0,
+            fps=30.0,
+        )
+        audio_artifact = AudioArtifact(
+            generation_id="gen_input_audio",
+            storage_url="https://example.com/input-audio.wav",
+            format="wav",
+            duration=8.0,
+            sample_rate=44100,
+            channels=2,
+        )
+
+        input_data = CreatifyLipsyncInput(
+            video=video_artifact,
+            audio=audio_artifact,
+            loop=True,
+        )
+
+        fake_output_url = "https://v3.fal.media/files/koala/test_output.mp4"
+        fake_uploaded_video_url = "https://fal.media/files/uploaded-video.mp4"
+        fake_uploaded_audio_url = "https://fal.media/files/uploaded-audio.wav"
+
+        with patch.dict(os.environ, {"FAL_KEY": "fake-key"}):
+            import sys
+
+            mock_handler = MagicMock()
+            mock_handler.request_id = "test-request-octet"
+            mock_handler.iter_events = MagicMock(return_value=_empty_async_event_iterator())
+
+            # Return application/octet-stream instead of video/mp4
+            mock_handler.get = AsyncMock(
+                return_value={
+                    "video": {
+                        "url": fake_output_url,
+                        "content_type": "application/octet-stream",  # Non-video content type
+                        "file_name": "output.mp4",
+                        "file_size": 3000000,
+                    }
+                }
+            )
+
+            upload_call_count = 0
+
+            async def mock_upload(file_path):
+                nonlocal upload_call_count
+                url = fake_uploaded_video_url if upload_call_count == 0 else fake_uploaded_audio_url
+                upload_call_count += 1
+                return url
+
+            mock_fal_client = ModuleType("fal_client")
+            mock_fal_client.submit_async = AsyncMock(return_value=mock_handler)  # type: ignore[attr-defined]
+            mock_fal_client.upload_file_async = AsyncMock(side_effect=mock_upload)  # type: ignore[attr-defined]
+            sys.modules["fal_client"] = mock_fal_client
+
+            # Mock the returned artifact - should have format="mp4" despite octet-stream
+            mock_video_artifact = VideoArtifact(
+                generation_id="test_gen",
+                storage_url=fake_output_url,
+                width=1920,
+                height=1080,
+                format="mp4",  # Should be mp4, not octet-stream
+                duration=8.0,
+                fps=30.0,
+            )
+
+            class DummyCtx(GeneratorExecutionContext):
+                generation_id = "test_gen"
+                provider_correlation_id = "corr"
+                tenant_id = "test_tenant"
+                board_id = "test_board"
+
+                async def resolve_artifact(self, artifact):
+                    if isinstance(artifact, VideoArtifact):
+                        return "/tmp/fake_video.mp4"
+                    elif isinstance(artifact, AudioArtifact):
+                        return "/tmp/fake_audio.wav"
+                    return "/tmp/fake_file"
+
+                async def store_image_result(self, **kwargs):
+                    raise NotImplementedError
+
+                async def store_video_result(self, **kwargs):
+                    # Verify format is mp4, not octet-stream
+                    assert kwargs["format"] == "mp4"
+                    return mock_video_artifact
+
+                async def store_audio_result(self, *args, **kwargs):
+                    raise NotImplementedError
+
+                async def store_text_result(self, *args, **kwargs):
+                    raise NotImplementedError
+
+                async def publish_progress(self, update):
+                    return None
+
+                async def set_external_job_id(self, external_id: str) -> None:
+                    return None
+
+            result = await self.generator.generate(input_data, DummyCtx())
+
+            # Verify result
+            assert isinstance(result, GeneratorResult)
+            assert len(result.outputs) == 1
+            assert result.outputs[0].format == "mp4"  # Should be mp4, not octet-stream
+
+    @pytest.mark.asyncio
     async def test_estimate_cost(self):
         """Test cost estimation."""
         video_artifact = VideoArtifact(
