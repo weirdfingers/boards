@@ -7,7 +7,6 @@ Create Date: 2025-10-23 16:58:52.004927
 """
 
 from collections.abc import Sequence
-from typing import Union
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -20,6 +19,9 @@ down_revision: str | Sequence[str] | None = "d7c16af77c9e"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+# Schema name for all Boards tables
+SCHEMA = "boards"
+
 
 def upgrade() -> None:
     """Upgrade schema."""
@@ -30,6 +32,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -37,6 +40,7 @@ def upgrade() -> None:
         existing_type=sa.BOOLEAN(),
         nullable=False,
         existing_server_default=sa.text("false"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -44,6 +48,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -51,6 +56,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -58,6 +64,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -65,6 +72,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "credit_transactions",
@@ -72,6 +80,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "credit_transactions",
@@ -79,6 +88,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -86,6 +96,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'[]'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -93,6 +104,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -100,6 +112,7 @@ def upgrade() -> None:
         existing_type=postgresql.ARRAY(sa.UUID()),
         nullable=False,
         existing_server_default=sa.text("'{}'::uuid[]"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -107,6 +120,7 @@ def upgrade() -> None:
         existing_type=sa.NUMERIC(precision=5, scale=2),
         nullable=False,
         existing_server_default=sa.text("0.0"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -114,6 +128,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -121,6 +136,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -128,6 +144,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -135,6 +152,7 @@ def upgrade() -> None:
         existing_type=sa.BOOLEAN(),
         nullable=False,
         existing_server_default=sa.text("false"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -142,6 +160,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -149,6 +168,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "provider_configs",
@@ -156,6 +176,7 @@ def upgrade() -> None:
         existing_type=sa.BOOLEAN(),
         nullable=False,
         existing_server_default=sa.text("true"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "provider_configs",
@@ -163,6 +184,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "provider_configs",
@@ -170,6 +192,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "tenants",
@@ -177,6 +200,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "tenants",
@@ -184,6 +208,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "tenants",
@@ -191,6 +216,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "users",
@@ -198,6 +224,7 @@ def upgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=False,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "users",
@@ -205,6 +232,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "users",
@@ -212,6 +240,7 @@ def upgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=False,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     # ### end Alembic commands ###
 
@@ -225,6 +254,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "users",
@@ -232,6 +262,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "users",
@@ -239,6 +270,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "tenants",
@@ -246,6 +278,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "tenants",
@@ -253,6 +286,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "tenants",
@@ -260,6 +294,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "provider_configs",
@@ -267,6 +302,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "provider_configs",
@@ -274,6 +310,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "provider_configs",
@@ -281,6 +318,7 @@ def downgrade() -> None:
         existing_type=sa.BOOLEAN(),
         nullable=True,
         existing_server_default=sa.text("true"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -288,6 +326,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -295,6 +334,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -302,6 +342,7 @@ def downgrade() -> None:
         existing_type=sa.BOOLEAN(),
         nullable=True,
         existing_server_default=sa.text("false"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "lora_models",
@@ -309,6 +350,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -316,6 +358,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -323,6 +366,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -330,6 +374,7 @@ def downgrade() -> None:
         existing_type=sa.NUMERIC(precision=5, scale=2),
         nullable=True,
         existing_server_default=sa.text("0.0"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -337,6 +382,7 @@ def downgrade() -> None:
         existing_type=postgresql.ARRAY(sa.UUID()),
         nullable=True,
         existing_server_default=sa.text("'{}'::uuid[]"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -344,6 +390,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "generations",
@@ -351,6 +398,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'[]'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "credit_transactions",
@@ -358,6 +406,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "credit_transactions",
@@ -365,6 +414,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -372,6 +422,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -379,6 +430,7 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -386,6 +438,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -393,6 +446,7 @@ def downgrade() -> None:
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
         nullable=True,
         existing_server_default=sa.text("'{}'::jsonb"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "boards",
@@ -400,6 +454,7 @@ def downgrade() -> None:
         existing_type=sa.BOOLEAN(),
         nullable=True,
         existing_server_default=sa.text("false"),
+        schema=SCHEMA,
     )
     op.alter_column(
         "board_members",
@@ -407,5 +462,6 @@ def downgrade() -> None:
         existing_type=postgresql.TIMESTAMP(timezone=True),
         nullable=True,
         existing_server_default=sa.text("CURRENT_TIMESTAMP"),
+        schema=SCHEMA,
     )
     # ### end Alembic commands ###

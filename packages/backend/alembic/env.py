@@ -68,6 +68,8 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         compare_type=True,
         dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
+        version_table_schema="boards",
     )
 
     with context.begin_transaction():
@@ -80,6 +82,8 @@ def do_run_migrations(connection: Connection) -> None:
         target_metadata=target_metadata,
         compare_type=True,
         render_as_batch=False,
+        include_schemas=True,
+        version_table_schema="boards",
     )
 
     with context.begin_transaction():
