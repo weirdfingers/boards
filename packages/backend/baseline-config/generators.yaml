@@ -134,6 +134,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.veo31_reference_to_video.FalVeo31ReferenceToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.wan_pro_image_to_video.FalWanProImageToVideoGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
