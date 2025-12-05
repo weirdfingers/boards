@@ -260,7 +260,7 @@ class TenantRoutingMiddleware(BaseHTTPMiddleware):
                     content={
                         "error": "Missing X-Tenant header",
                         "detail": (
-                            "X-Tenant header is required in multi-tenant mode " "for this endpoint"
+                            "X-Tenant header is required in multi-tenant mode for this endpoint"
                         ),
                         "multi_tenant_mode": True,
                     },

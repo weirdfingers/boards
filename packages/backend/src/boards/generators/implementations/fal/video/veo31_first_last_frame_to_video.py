@@ -34,7 +34,7 @@ class Veo31FirstLastFrameToVideoInput(BaseModel):
     aspect_ratio: Literal["auto", "9:16", "16:9", "1:1"] = Field(
         default="auto",
         description=(
-            "Aspect ratio of the generated video. " "'auto' uses the aspect ratio from input images"
+            "Aspect ratio of the generated video. 'auto' uses the aspect ratio from input images"
         ),
     )
     resolution: Literal["720p", "1080p"] = Field(

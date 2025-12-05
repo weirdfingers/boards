@@ -50,8 +50,7 @@ class TestMinimaxMusicV2GeneratorLive:
         inputs = MinimaxMusicV2Input(
             prompt="Simple upbeat pop music with electronic beats",
             lyrics_prompt=(
-                "[Verse]\nThis is a test song for verification\n"
-                "[Chorus]\nSimple melody with rhythm"
+                "[Verse]\nThis is a test song for verification\n[Chorus]\nSimple melody with rhythm"
             ),
         )
 

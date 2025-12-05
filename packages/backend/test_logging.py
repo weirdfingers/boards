@@ -87,7 +87,7 @@ def test_request_id_generation():
     print("Generated request IDs:")
     for i in range(5):
         req_id = generate_request_id()
-        print(f"  {i+1}: {req_id} (length: {len(req_id)})")
+        print(f"  {i + 1}: {req_id} (length: {len(req_id)})")
         time.sleep(0.001)  # Small delay to show different timestamps
 
     print(f"Compare to UUID length: {len('550e8400-e29b-41d4-a716-446655440000')} chars")

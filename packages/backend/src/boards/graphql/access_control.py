@@ -129,7 +129,7 @@ def ensure_preloaded(obj, attr_name: str, error_msg: str | None = None) -> None:
     except Exception as e:
         if "was not loaded" in str(e) or "lazy loading" in str(e):
             msg = error_msg or (
-                f"Relationship '{attr_name}' was not preloaded. " "Use selectinload() in the query."
+                f"Relationship '{attr_name}' was not preloaded. Use selectinload() in the query."
             )
             raise RuntimeError(msg) from e
         # Re-raise other exceptions
