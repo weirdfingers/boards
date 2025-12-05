@@ -130,9 +130,7 @@ class FalIdeogramCharacterGenerator(BaseGenerator):
         # Upload artifact inputs to Fal's storage
         from ..utils import upload_artifacts_to_fal
 
-        reference_image_urls = await upload_artifacts_to_fal(
-            inputs.reference_image_urls, context
-        )
+        reference_image_urls = await upload_artifacts_to_fal(inputs.reference_image_urls, context)
 
         # Prepare arguments for fal.ai API
         arguments: dict = {

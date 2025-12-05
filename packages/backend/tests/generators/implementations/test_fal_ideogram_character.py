@@ -216,8 +216,7 @@ class TestIdeogramCharacterInput:
 
         assert len(input_data.reference_image_urls) == 1
         assert (
-            input_data.reference_mask_urls is not None
-            and len(input_data.reference_mask_urls) == 1
+            input_data.reference_mask_urls is not None and len(input_data.reference_mask_urls) == 1
         )
         assert input_data.image_urls is not None and len(input_data.image_urls) == 1
 
