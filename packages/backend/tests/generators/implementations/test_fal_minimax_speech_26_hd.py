@@ -163,9 +163,7 @@ class TestFalMinimaxSpeech26HdInput:
         # Test valid audio settings
         input_data = FalMinimaxSpeech26HdInput(
             prompt="Test",
-            audio_setting=AudioSetting(
-                format="flac", sample_rate=44100, channel=2, bitrate=256000
-            ),
+            audio_setting=AudioSetting(format="flac", sample_rate=44100, channel=2, bitrate=256000),
         )
         assert input_data.audio_setting.format == "flac"
         assert input_data.audio_setting.sample_rate == 44100

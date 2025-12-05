@@ -40,7 +40,9 @@ class VoiceSetting(BaseModel):
     )
     emotion: str | None = Field(
         default=None,
-        description="Emotion for speech (happy, sad, angry, fearful, disgusted, surprised, neutral)",
+        description=(
+            "Emotion for speech (happy, sad, angry, fearful, disgusted, surprised, neutral)"
+        ),
     )
     english_normalization: bool = Field(
         default=False,
@@ -100,22 +102,29 @@ class FalMinimaxSpeech26HdInput(BaseModel):
     """Input schema for Fal Minimax Speech 2.6-HD generator."""
 
     prompt: str = Field(
-        description="Text to convert to speech. Paragraph breaks should be marked with newline characters.",
+        description=(
+            "Text to convert to speech. "
+            "Paragraph breaks should be marked with newline characters."
+        ),
         min_length=1,
         max_length=10000,
     )
     language_boost: str | None = Field(
         default=None,
         description=(
-            "Language boost option. Supports: Chinese, English, Arabic, Russian, Spanish, French, "
-            "Portuguese, German, Turkish, Dutch, Ukrainian, Vietnamese, Indonesian, Japanese, Italian, "
-            "Korean, Thai, Polish, Romanian, Greek, Czech, Finnish, Hindi, Bulgarian, Danish, Hebrew, "
-            "Malay, Slovak, Swedish, Croatian, Hungarian, Norwegian, Slovenian, Catalan, Nynorsk, Afrikaans"
+            "Language boost option. Supports: Chinese, English, Arabic, Russian, Spanish, "
+            "French, Portuguese, German, Turkish, Dutch, Ukrainian, Vietnamese, Indonesian, "
+            "Japanese, Italian, Korean, Thai, Polish, Romanian, Greek, Czech, Finnish, Hindi, "
+            "Bulgarian, Danish, Hebrew, Malay, Slovak, Swedish, Croatian, Hungarian, "
+            "Norwegian, Slovenian, Catalan, Nynorsk, Afrikaans"
         ),
     )
     output_format: Literal["hex", "url"] = Field(
         default="url",
-        description="Output format for audio data (url returns a downloadable link, hex returns raw data)",
+        description=(
+            "Output format for audio data "
+            "(url returns a downloadable link, hex returns raw data)"
+        ),
     )
     voice_setting: VoiceSetting = Field(
         default_factory=VoiceSetting,
@@ -135,7 +144,9 @@ class FalMinimaxSpeech26HdGenerator(BaseGenerator):
     """Generator for text-to-speech using Minimax Speech 2.6-HD."""
 
     name = "fal-minimax-speech-26-hd"
-    description = "High-quality text-to-speech generation with extensive voice customization options"
+    description = (
+        "High-quality text-to-speech generation with extensive voice customization options"
+    )
     artifact_type = "audio"
 
     def get_input_schema(self) -> type[FalMinimaxSpeech26HdInput]:
@@ -148,9 +159,7 @@ class FalMinimaxSpeech26HdGenerator(BaseGenerator):
         """Generate audio using fal.ai minimax/speech-2.6-hd."""
         # Check for API key
         if not os.getenv("FAL_KEY"):
-            raise ValueError(
-                "API configuration invalid. Missing FAL_KEY environment variable"
-            )
+            raise ValueError("API configuration invalid. Missing FAL_KEY environment variable")
 
         # Import fal_client
         try:
@@ -187,7 +196,7 @@ class FalMinimaxSpeech26HdGenerator(BaseGenerator):
         from .....progress.models import ProgressUpdate
 
         event_count = 0
-        async for event in handler.iter_events(with_logs=True):
+        async for _event in handler.iter_events(with_logs=True):
             event_count += 1
             # Sample every 3rd event to avoid spam
             if event_count % 3 == 0:
