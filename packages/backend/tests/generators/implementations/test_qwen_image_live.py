@@ -72,8 +72,8 @@ class TestQwenImageGeneratorLive:
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format in ["jpeg", "png"]
 
     @pytest.mark.asyncio
@@ -110,8 +110,8 @@ class TestQwenImageGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_batch(self, skip_if_no_fal_key, dummy_context, cost_logger):
@@ -146,8 +146,8 @@ class TestQwenImageGeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url.startswith("https://")
-            assert artifact.width > 0
-            assert artifact.height > 0
+            assert artifact.width is not None and artifact.width > 0
+            assert artifact.height is not None and artifact.height > 0
 
     @pytest.mark.asyncio
     async def test_generate_with_different_sizes(
@@ -185,8 +185,8 @@ class TestQwenImageGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
 
         # Landscape should have width > height (though exact dims depend on size preset)
         # We don't verify exact aspect ratio as API might vary
@@ -284,9 +284,7 @@ class TestQwenImageGeneratorLive:
         assert artifact.storage_url.startswith("https://")
 
     @pytest.mark.asyncio
-    async def test_generate_with_acceleration(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_acceleration(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test generation with acceleration settings.
 
@@ -297,12 +295,13 @@ class TestQwenImageGeneratorLive:
         cost_logger(self.generator.name, estimated_cost)
 
         # Create input with high acceleration
+        # Note: acceleration and use_turbo are mutually exclusive, so we only test acceleration here
         inputs = QwenImageInput(
             prompt="Quick test image",
             image_size="square",
             num_inference_steps=2,
             acceleration="high",  # Test acceleration
-            use_turbo=True,
+            use_turbo=False,  # Disable turbo to test acceleration independently
         )
 
         # Execute generation

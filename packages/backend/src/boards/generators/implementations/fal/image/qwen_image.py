@@ -168,9 +168,7 @@ class FalQwenImageGenerator(BaseGenerator):
 
         # Add LoRAs if provided
         if inputs.loras:
-            arguments["loras"] = [
-                {"path": lora.path, "scale": lora.scale} for lora in inputs.loras
-            ]
+            arguments["loras"] = [{"path": lora.path, "scale": lora.scale} for lora in inputs.loras]
 
         # Submit async job and get handler
         handler = await fal_client.submit_async(
@@ -223,8 +221,9 @@ class FalQwenImageGenerator(BaseGenerator):
         artifacts = []
         for idx, image_data in enumerate(images):
             image_url = image_data.get("url")
-            width = image_data.get("width", 1024)
-            height = image_data.get("height", 1024)
+            # Optional width and height
+            width = image_data.get("width")
+            height = image_data.get("height")
 
             if not image_url:
                 raise ValueError(f"Image {idx} missing URL in fal.ai response")
