@@ -46,9 +46,7 @@ class TestSora2TextToVideoProGeneratorLive:
         Uses minimal/cheap settings (4-second duration, 720p) to reduce cost.
         """
         # Log estimated cost
-        estimated_cost = await self.generator.estimate_cost(
-            Sora2TextToVideoProInput(prompt="test")
-        )
+        estimated_cost = await self.generator.estimate_cost(Sora2TextToVideoProInput(prompt="test"))
         cost_logger(self.generator.name, estimated_cost)
 
         # Create minimal input to reduce cost
@@ -72,8 +70,8 @@ class TestSora2TextToVideoProGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "mp4"
         assert artifact.duration is not None
         assert artifact.duration >= 4.0  # At least 4 seconds
@@ -111,10 +109,10 @@ class TestSora2TextToVideoProGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         # Portrait mode should have height > width
-        assert artifact.height > artifact.width
+        assert artifact.height is not None and artifact.height > artifact.width
         assert artifact.format == "mp4"
         assert artifact.duration is not None
         assert artifact.duration >= 4.0
@@ -138,9 +136,7 @@ class TestSora2TextToVideoProGeneratorLive:
         assert cost_8s_720p == cost_4s_720p * 2
 
         # 4-second 1080p video
-        inputs_4s_1080p = Sora2TextToVideoProInput(
-            prompt="test", duration=4, resolution="1080p"
-        )
+        inputs_4s_1080p = Sora2TextToVideoProInput(prompt="test", duration=4, resolution="1080p")
         cost_4s_1080p = await self.generator.estimate_cost(inputs_4s_1080p)
 
         # 1080p should cost more than 720p
