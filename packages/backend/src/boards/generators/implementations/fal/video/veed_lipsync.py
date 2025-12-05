@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from ....artifacts import AudioArtifact, VideoArtifact
 from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ..utils import upload_artifacts_to_fal
 
 
 class VeedLipsyncInput(BaseModel):
@@ -57,8 +58,6 @@ class FalVeedLipsyncGenerator(BaseGenerator):
 
         # Upload video and audio artifacts to Fal's public storage
         # Fal API requires publicly accessible URLs
-        from ..utils import upload_artifacts_to_fal
-
         # Upload video and audio separately
         video_urls = await upload_artifacts_to_fal([inputs.video_url], context)
         audio_urls = await upload_artifacts_to_fal([inputs.audio_url], context)
@@ -84,7 +83,8 @@ class FalVeedLipsyncGenerator(BaseGenerator):
         event_count = 0
         async for event in handler.iter_events(with_logs=True):
             event_count += 1
-            # Sample every 3rd event to avoid spam
+            # Sample every 3rd event to avoid spamming progress updates
+            # This provides regular feedback without overwhelming the system
             if event_count % 3 == 0:
                 # Extract logs if available
                 logs = getattr(event, "logs", None)
@@ -100,7 +100,9 @@ class FalVeedLipsyncGenerator(BaseGenerator):
                             ProgressUpdate(
                                 job_id=handler.request_id,
                                 status="processing",
-                                progress=50.0,  # Approximate mid-point progress
+                                # Using fixed 50% since API doesn't provide granular progress
+                                # This indicates processing is underway without false precision
+                                progress=50.0,
                                 phase="processing",
                                 message=message,
                             )
@@ -114,15 +116,35 @@ class FalVeedLipsyncGenerator(BaseGenerator):
         video_data = result.get("video")
 
         if not video_data:
-            raise ValueError("No video returned from VEED API")
+            raise ValueError(
+                f"No video returned from VEED API. Response structure: {list(result.keys())}"
+            )
 
         video_url = video_data.get("url")
         if not video_url:
-            raise ValueError("Video missing URL in VEED response")
+            raise ValueError(
+                f"Video missing URL in VEED response. Video data keys: {list(video_data.keys())}"
+            )
 
-        # Extract format from content_type (e.g., "video/mp4" -> "mp4")
-        content_type = video_data.get("content_type", "video/mp4")
-        video_format = content_type.split("/")[-1] if "/" in content_type else "mp4"
+        # Determine video format with fallback strategy:
+        # 1. Try to extract from URL extension (most reliable)
+        # 2. Parse content_type only if it's a video/* MIME type
+        # 3. Default to mp4 (most common format for this API)
+        video_format = "mp4"  # Default
+
+        # Try extracting extension from URL
+        if video_url:
+            url_parts = video_url.split(".")
+            if len(url_parts) > 1:
+                ext = url_parts[-1].split("?")[0].lower()  # Remove query params
+                if ext in ["mp4", "webm", "mov", "avi"]:  # Common video formats
+                    video_format = ext
+
+        # If no valid extension found, try content_type (only if it's video/*)
+        if video_format == "mp4":  # Still using default
+            content_type = video_data.get("content_type", "")
+            if content_type.startswith("video/"):
+                video_format = content_type.split("/")[-1]
 
         # Store the video result
         # Note: The API doesn't return width/height/duration/fps in documentation
@@ -145,5 +167,8 @@ class FalVeedLipsyncGenerator(BaseGenerator):
         Pricing not specified in documentation, using estimate based on
         typical video lipsync processing costs.
         """
-        # Base cost estimate per generation
+        # Fixed cost estimate of $0.05 per generation
+        # Based on typical AI video processing costs (~$0.03-0.07 per minute)
+        # This is a conservative estimate and should be updated when official
+        # pricing information becomes available from VEED/FAL
         return 0.05

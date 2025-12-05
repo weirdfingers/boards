@@ -94,8 +94,8 @@ class TestVeedLipsyncGeneratorLive:
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.storage_url.startswith("https://")
-        assert artifact.width > 0
-        assert artifact.height > 0
+        assert artifact.width is not None and artifact.width > 0
+        assert artifact.height is not None and artifact.height > 0
         assert artifact.format == "mp4"
 
     @pytest.mark.asyncio
