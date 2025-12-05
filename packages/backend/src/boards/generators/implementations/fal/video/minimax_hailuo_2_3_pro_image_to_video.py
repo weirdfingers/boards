@@ -28,9 +28,7 @@ class MinimaxHailuo23ProImageToVideoInput(BaseModel):
         min_length=1,
         max_length=2000,
     )
-    image_url: ImageArtifact = Field(
-        description="URL of the image to use as the first frame"
-    )
+    image_url: ImageArtifact = Field(description="URL of the image to use as the first frame")
     prompt_optimizer: bool = Field(
         default=True,
         description="Whether to use the model's prompt optimizer",
