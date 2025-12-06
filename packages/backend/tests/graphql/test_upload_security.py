@@ -1,10 +1,13 @@
 """Unit tests for upload security validations."""
 
+import pytest
+
 from boards.graphql.resolvers.upload import (
     _is_safe_url,
     _sanitize_filename,
     _validate_mime_type,
 )
+from boards.graphql.types.generation import ArtifactType
 
 
 class TestURLSecurity:
@@ -88,7 +91,7 @@ class TestMIMETypeValidation:
             "image/webp",
         ]
         for mime_type in valid_types:
-            is_valid, error = _validate_mime_type(mime_type, "image", "test.jpg")
+            is_valid, error = _validate_mime_type(mime_type, ArtifactType.IMAGE, "test.jpg")
             assert is_valid is True
             assert error is None
 
@@ -100,7 +103,7 @@ class TestMIMETypeValidation:
             "video/webm",
         ]
         for mime_type in valid_types:
-            is_valid, error = _validate_mime_type(mime_type, "video", "test.mp4")
+            is_valid, error = _validate_mime_type(mime_type, ArtifactType.VIDEO, "test.mp4")
             assert is_valid is True
             assert error is None
 
@@ -112,7 +115,7 @@ class TestMIMETypeValidation:
             "audio/ogg",
         ]
         for mime_type in valid_types:
-            is_valid, error = _validate_mime_type(mime_type, "audio", "test.mp3")
+            is_valid, error = _validate_mime_type(mime_type, ArtifactType.AUDIO, "test.mp3")
             assert is_valid is True
             assert error is None
 
@@ -124,29 +127,31 @@ class TestMIMETypeValidation:
             "application/json",
         ]
         for mime_type in valid_types:
-            is_valid, error = _validate_mime_type(mime_type, "text", "test.txt")
+            is_valid, error = _validate_mime_type(mime_type, ArtifactType.TEXT, "test.txt")
             assert is_valid is True
             assert error is None
 
     def test_rejects_mismatched_mime_types(self):
         """MIME types not matching artifact type should be rejected."""
-        is_valid, error = _validate_mime_type("video/mp4", "image", "test.mp4")
+        is_valid, error = _validate_mime_type("video/mp4", ArtifactType.IMAGE, "test.mp4")
         assert is_valid is False
         assert error is not None
         assert "does not match" in error.lower()
 
     def test_handles_mime_type_with_charset(self):
         """MIME types with charset should be normalized."""
-        is_valid, error = _validate_mime_type("text/plain; charset=utf-8", "text", "test.txt")
+        is_valid, error = _validate_mime_type(
+            "text/plain; charset=utf-8", ArtifactType.TEXT, "test.txt"
+        )
         assert is_valid is True
         assert error is None
 
     def test_rejects_unsupported_artifact_type(self):
-        """Unsupported artifact types should be rejected."""
-        is_valid, error = _validate_mime_type("application/pdf", "unknown", "test.pdf")
-        assert is_valid is False
-        assert error is not None
-        assert "unsupported" in error.lower()
+        """Unsupported artifact types should be rejected at enum creation."""
+        # With strong typing, invalid artifact types are rejected when creating the enum
+        with pytest.raises(ValueError) as exc_info:
+            ArtifactType("unknown")
+        assert "unknown" in str(exc_info.value).lower()
 
 
 class TestFilenameSanitization:

@@ -20,6 +20,7 @@ from ...dbmodels import Boards, Generations
 from ...logging import get_logger
 from ...storage.factory import create_storage_manager
 from ..access_control import get_auth_context_from_info
+from ..types.generation import ArtifactType
 
 if TYPE_CHECKING:
     from ..types.generation import Generation as GenerationType
@@ -29,17 +30,22 @@ logger = get_logger(__name__)
 
 
 def _validate_mime_type(
-    content_type: str, artifact_type: str, filename: str | None
+    content_type: str, artifact_type: ArtifactType, filename: str | None
 ) -> tuple[bool, str | None]:
     """
     Validate that MIME type matches the expected artifact type.
+
+    Args:
+        content_type: The MIME type to validate (e.g., "image/jpeg")
+        artifact_type: The expected artifact type enum
+        filename: Optional filename for additional context
 
     Returns:
         Tuple of (is_valid, error_message)
     """
     # Define allowed MIME types for each artifact type
     allowed_mime_types = {
-        "image": [
+        ArtifactType.IMAGE: [
             "image/jpeg",
             "image/jpg",
             "image/png",
@@ -48,7 +54,7 @@ def _validate_mime_type(
             "image/bmp",
             "image/svg+xml",
         ],
-        "video": [
+        ArtifactType.VIDEO: [
             "video/mp4",
             "video/quicktime",
             "video/x-msvideo",
@@ -56,7 +62,7 @@ def _validate_mime_type(
             "video/mpeg",
             "video/x-matroska",
         ],
-        "audio": [
+        ArtifactType.AUDIO: [
             "audio/mpeg",
             "audio/mp3",
             "audio/wav",
@@ -65,7 +71,7 @@ def _validate_mime_type(
             "audio/x-m4a",
             "audio/mp4",
         ],
-        "text": [
+        ArtifactType.TEXT: [
             "text/plain",
             "text/markdown",
             "application/json",
@@ -79,16 +85,16 @@ def _validate_mime_type(
 
     # Check if artifact type is supported
     if artifact_type not in allowed_mime_types:
-        return False, f"Unsupported artifact type: {artifact_type}"
+        return False, f"Unsupported artifact type: {artifact_type.value}"
 
     # Check if MIME type is allowed for this artifact type
     if mime_type not in allowed_mime_types[artifact_type]:
         # Also check for generic types
         mime_category = mime_type.split("/")[0]
-        if mime_category != artifact_type:
+        if mime_category != artifact_type.value:
             return (
                 False,
-                f"MIME type '{mime_type}' does not match artifact type '{artifact_type}'",
+                f"MIME type '{mime_type}' does not match artifact type '{artifact_type.value}'",
             )
 
     return True, None
@@ -204,7 +210,7 @@ async def upload_artifact_from_url(
     return await _process_upload(
         auth_context=auth_context,
         board_id=input.board_id,
-        artifact_type=input.artifact_type.value,
+        artifact_type=input.artifact_type,
         file_content=content,
         filename=filename,
         content_type=content_type,
@@ -229,7 +235,7 @@ async def upload_artifact_from_file(
     return await _process_upload(
         auth_context=auth_context,
         board_id=board_id,
-        artifact_type=artifact_type,
+        artifact_type=ArtifactType(artifact_type),
         file_content=file_content,
         filename=filename or "uploaded_file",
         content_type=content_type or "application/octet-stream",
@@ -272,7 +278,7 @@ def _sanitize_filename(filename: str) -> str:
 async def _process_upload(
     auth_context: AuthContext,
     board_id: UUID,
-    artifact_type: str,
+    artifact_type: ArtifactType,
     file_content: bytes,
     filename: str,
     content_type: str,
@@ -281,10 +287,26 @@ async def _process_upload(
     upload_source: str,
     source_url: str | None,
 ) -> GenerationType:
-    """Common upload processing logic."""
+    """Common upload processing logic.
+
+    Args:
+        auth_context: Authentication context for the request
+        board_id: UUID of the board to upload to
+        artifact_type: Type of artifact being uploaded (enum)
+        file_content: Binary content of the file
+        filename: Original filename
+        content_type: MIME type of the file
+        user_description: Optional user-provided description
+        parent_generation_id: Optional parent generation UUID
+        upload_source: Source of upload ("file" or "url")
+        source_url: URL if uploaded from URL, None otherwise
+
+    Returns:
+        GenerationType object representing the uploaded artifact
+    """
     from ...config import settings
-    from ..types.generation import ArtifactType, GenerationStatus
     from ..types.generation import Generation as GenerationType
+    from ..types.generation import GenerationStatus
 
     # Sanitize filename to prevent path traversal
     filename = _sanitize_filename(filename)
@@ -295,7 +317,7 @@ async def _process_upload(
         logger.warning(
             "Invalid MIME type for artifact",
             mime_type=content_type,
-            artifact_type=artifact_type,
+            artifact_type=artifact_type.value,
             reason=error_msg,
         )
         raise RuntimeError(f"Invalid file type: {error_msg}")
@@ -337,8 +359,8 @@ async def _process_upload(
         gen.tenant_id = auth_context.tenant_id
         gen.board_id = board_id
         gen.user_id = auth_context.user_id
-        gen.generator_name = f"user-upload-{artifact_type}"
-        gen.artifact_type = artifact_type
+        gen.generator_name = f"user-upload-{artifact_type.value}"
+        gen.artifact_type = artifact_type.value
         gen.status = "pending"
         gen.progress = Decimal(0.0)
         gen.input_params = {
@@ -358,7 +380,7 @@ async def _process_upload(
                 {
                     "generation_id": str(parent_generation_id),
                     "role": "parent",
-                    "artifact_type": artifact_type,
+                    "artifact_type": artifact_type.value,
                 }
             ]
         else:
@@ -374,7 +396,7 @@ async def _process_upload(
             artifact_ref = await storage_manager.store_artifact(
                 artifact_id=str(gen.id),
                 content=file_content,
-                artifact_type=artifact_type,
+                artifact_type=artifact_type.value,
                 content_type=content_type,
                 tenant_id=str(auth_context.tenant_id),
                 board_id=str(board_id),

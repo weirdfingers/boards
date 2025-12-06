@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 
 from boards.auth.context import DEFAULT_TENANT_UUID, AuthContext
+from boards.graphql.types.generation import ArtifactType
 
 
 @pytest.fixture
@@ -72,7 +73,7 @@ class TestUploadArtifactFromFile:
                 result = await upload_artifact_from_file(
                     auth_context=auth_context,
                     board_id=board_id,
-                    artifact_type="image",
+                    artifact_type=ArtifactType.IMAGE.value,
                     file_content=file_content,
                     filename=filename,
                     content_type="image/jpeg",
@@ -97,7 +98,7 @@ class TestUploadArtifactFromFile:
             await upload_artifact_from_file(
                 auth_context=auth_context,
                 board_id=board_id,
-                artifact_type="image",  # Wrong type
+                artifact_type=ArtifactType.IMAGE.value,  # Wrong type
                 file_content=file_content,
                 filename="test.mp4",
                 content_type="video/mp4",  # Video MIME type
@@ -119,7 +120,7 @@ class TestUploadArtifactFromFile:
             await upload_artifact_from_file(
                 auth_context=auth_context,
                 board_id=board_id,
-                artifact_type="image",
+                artifact_type=ArtifactType.IMAGE.value,
                 file_content=file_content,
                 filename="large.jpg",
                 content_type="image/jpeg",
@@ -173,7 +174,7 @@ class TestUploadArtifactFromFile:
                 result = await upload_artifact_from_file(
                     auth_context=auth_context,
                     board_id=board_id,
-                    artifact_type="image",
+                    artifact_type=ArtifactType.IMAGE.value,
                     file_content=file_content,
                     filename=malicious_filename,
                     content_type="image/jpeg",
