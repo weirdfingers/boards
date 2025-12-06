@@ -142,13 +142,14 @@ def create_app() -> FastAPI:
             raise
 
     # REST API endpoints (for SSE, webhooks, etc.)
-    from .endpoints import jobs, setup, sse, storage, tenant_registration, webhooks
+    from .endpoints import jobs, setup, sse, storage, tenant_registration, uploads, webhooks
 
     app.include_router(sse.router, prefix="/api/sse", tags=["SSE"])
     app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
     app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
     app.include_router(storage.router, prefix="/api/storage", tags=["Storage"])
     app.include_router(setup.router, prefix="/api/setup", tags=["Setup"])
+    app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
     app.include_router(
         tenant_registration.router, prefix="/api/tenants", tags=["Tenant Registration"]
     )

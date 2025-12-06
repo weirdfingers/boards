@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useBoard, useGenerators, useGeneration, GeneratorSelectionProvider } from "@weirdfingers/boards";
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
 import { GenerationInput } from "@/components/boards/GenerationInput";
+import { UploadArtifact } from "@/components/boards/UploadArtifact";
 
 export default function BoardPage() {
   const params = useParams();
@@ -169,11 +170,19 @@ export default function BoardPage() {
       <main className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">{board.title}</h1>
-            {board.description && (
-              <p className="text-gray-600 mt-2">{board.description}</p>
-            )}
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{board.title}</h1>
+              {board.description && (
+                <p className="text-gray-600 mt-2">{board.description}</p>
+              )}
+            </div>
+            <UploadArtifact
+              boardId={boardId}
+              onUploadComplete={() => {
+                refreshBoard();
+              }}
+            />
           </div>
 
           {/* Generation Grid */}

@@ -7,7 +7,7 @@ from uuid import UUID
 import strawberry
 
 from ..types.board import Board, BoardRole
-from ..types.generation import ArtifactType, Generation
+from ..types.generation import ArtifactType, Generation, UploadArtifactInput
 
 
 # Input types for mutations
@@ -137,3 +137,12 @@ class Mutation:
         from ..resolvers.generation import regenerate
 
         return await regenerate(info, id)
+
+    @strawberry.mutation(name="uploadArtifact")
+    async def upload_artifact(
+        self, info: strawberry.Info, input: UploadArtifactInput
+    ) -> Generation:
+        """Upload an artifact from URL (synchronous)."""
+        from ..resolvers.upload import upload_artifact_from_url
+
+        return await upload_artifact_from_url(info, input)

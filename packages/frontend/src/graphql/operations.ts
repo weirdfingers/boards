@@ -322,6 +322,15 @@ export const RETRY_GENERATION = gql`
   }
 `;
 
+export const UPLOAD_ARTIFACT_FROM_URL = gql`
+  ${GENERATION_FRAGMENT}
+  mutation UploadArtifactFromUrl($input: UploadArtifactInput!) {
+    uploadArtifact(input: $input) {
+      ...GenerationFragment
+    }
+  }
+`;
+
 // Input types (these should match your backend GraphQL schema)
 export interface CreateBoardInput {
   title: string;
@@ -347,6 +356,15 @@ export interface CreateGenerationInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface UploadArtifactInput {
+  boardId: string;
+  artifactType: ArtifactType;
+  fileUrl?: string;
+  originalFilename?: string;
+  userDescription?: string;
+  parentGenerationId?: string;
+}
+
 // Enums (should match backend)
 export enum BoardRole {
   VIEWER = "VIEWER",
@@ -363,10 +381,10 @@ export enum GenerationStatus {
 }
 
 export enum ArtifactType {
-  IMAGE = "image",
-  VIDEO = "video",
-  AUDIO = "audio",
-  TEXT = "text",
-  LORA = "lora",
-  MODEL = "model",
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+  AUDIO = "AUDIO",
+  TEXT = "TEXT",
+  LORA = "LORA",
+  MODEL = "MODEL",
 }

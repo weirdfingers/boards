@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "frontend/getting-started",
         "frontend/configuration",
+        "frontend/uploading-artifacts",
         "frontend/ui-examples",
         "frontend/realtime",
         "frontend/testing",
