@@ -104,6 +104,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.nano_banana_pro.FalNanoBananaProGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.nano_banana_pro_edit.FalNanoBananaProEditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.fal_pixverse_lipsync.FalPixverseLipsyncGenerator"
     enabled: true
 
