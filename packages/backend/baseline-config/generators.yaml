@@ -167,6 +167,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.veo3.FalVeo3Generator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.veo31_fast_image_to_video.FalVeo31FastImageToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.veo31_first_last_frame_to_video.FalVeo31FirstLastFrameToVideoGenerator"
     enabled: true
 
