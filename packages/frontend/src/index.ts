@@ -12,8 +12,16 @@ export { useApiConfig } from "./config/ApiConfigContext";
 export type { ApiConfig } from "./config/ApiConfigContext";
 
 // Generator selection context
-export { GeneratorSelectionProvider, useGeneratorSelection } from "./config/GeneratorSelectionContext";
-export type { GeneratorInfo, GeneratorSelectionContextValue, ArtifactSlotInfo, Artifact } from "./config/GeneratorSelectionContext";
+export {
+  GeneratorSelectionProvider,
+  useGeneratorSelection,
+} from "./config/GeneratorSelectionContext";
+export type {
+  GeneratorInfo,
+  GeneratorSelectionContextValue,
+  ArtifactSlotInfo,
+  Artifact,
+} from "./config/GeneratorSelectionContext";
 
 // GraphQL exports
 export { createGraphQLClient } from "./graphql/client";
@@ -26,7 +34,6 @@ export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
 export { useUpload } from "./hooks/useUpload";
 export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
-<<<<<<< HEAD
 export {
   useAncestry,
   useDescendants,
@@ -38,9 +45,11 @@ export type {
   AncestryNode,
   DescendantNode,
 } from "./hooks/useLineage";
-=======
-export type { UploadRequest, UploadResult, UploadHook } from "./hooks/useUpload";
->>>>>>> 61bb691 (Add support for upload and copy/paste)
+export type {
+  UploadRequest,
+  UploadResult,
+  UploadHook,
+} from "./hooks/useUpload";
 
 // Generator schema utilities
 export * from "./types/generatorSchema";

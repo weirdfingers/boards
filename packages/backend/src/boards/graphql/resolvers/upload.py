@@ -163,7 +163,17 @@ async def _process_upload(
             "mime_type": content_type,
             "upload_timestamp": datetime.now(UTC).isoformat(),
         }
-        gen.parent_generation_id = parent_generation_id
+        # If parent_generation_id is provided, add it to input_artifacts
+        if parent_generation_id:
+            gen.input_artifacts = [
+                {
+                    "generation_id": str(parent_generation_id),
+                    "role": "parent",
+                    "artifact_type": artifact_type,
+                }
+            ]
+        else:
+            gen.input_artifacts = []
         gen.started_at = datetime.now(UTC)
 
         session.add(gen)
@@ -217,8 +227,6 @@ async def _process_upload(
                 additional_files=gen.additional_files or [],
                 input_params=gen.input_params or {},
                 output_metadata=gen.output_metadata or {},
-                parent_generation_id=gen.parent_generation_id,
-                input_generation_ids=gen.input_generation_ids or [],
                 external_job_id=gen.external_job_id,
                 status=GenerationStatus(gen.status),
                 progress=float(gen.progress),

@@ -381,10 +381,10 @@ export enum GenerationStatus {
 }
 
 export enum ArtifactType {
-  IMAGE = "image",
-  VIDEO = "video",
-  AUDIO = "audio",
-  TEXT = "text",
-  LORA = "lora",
-  MODEL = "model",
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+  AUDIO = "AUDIO",
+  TEXT = "TEXT",
+  LORA = "LORA",
+  MODEL = "MODEL",
 }
