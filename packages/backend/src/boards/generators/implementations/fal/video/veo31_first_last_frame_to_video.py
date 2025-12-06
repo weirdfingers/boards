@@ -27,9 +27,9 @@ class Veo31FirstLastFrameToVideoInput(BaseModel):
     first_frame: ImageArtifact = Field(description="The first frame of the video (input image)")
     last_frame: ImageArtifact = Field(description="The last frame of the video (input image)")
     prompt: str = Field(description="Text prompt describing the desired video content and motion")
-    duration: Literal["8s"] = Field(
+    duration: Literal["4s", "6s", "8s"] = Field(
         default="8s",
-        description="Duration of the generated video in seconds (currently only 8s is supported)",
+        description="Duration of the generated video in seconds",
     )
     aspect_ratio: Literal["auto", "9:16", "16:9", "1:1"] = Field(
         default="auto",
@@ -173,8 +173,15 @@ class FalVeo31FirstLastFrameToVideoGenerator(BaseGenerator):
         Using placeholder value that should be updated with actual pricing.
         """
         # TODO: Update with actual pricing from Fal when available
-        # Base cost, with 50% reduction if audio is disabled
-        base_cost = 0.15  # Placeholder estimate
+        # Parse duration from "8s" format
+        duration_seconds = int(inputs.duration.rstrip("s"))
+
+        # Base cost per 8 seconds, scaled by actual duration
+        base_cost_8s = 0.15  # Placeholder estimate for 8s
+        duration_multiplier = duration_seconds / 8.0
+        cost = base_cost_8s * duration_multiplier
+
+        # 50% reduction if audio is disabled
         if not inputs.generate_audio:
-            return base_cost * 0.5
-        return base_cost
+            return cost * 0.5
+        return cost
