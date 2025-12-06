@@ -188,6 +188,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.wan_25_preview_image_to_video.FalWan25PreviewImageToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.wan_25_preview_text_to_video.FalWan25PreviewTextToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.wan_pro_image_to_video.FalWanProImageToVideoGenerator"
     enabled: true
 
