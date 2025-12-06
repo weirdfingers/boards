@@ -189,6 +189,59 @@ class TestVeo31FirstLastFrameToVideoInput:
             )
             assert input_data.resolution == resolution
 
+    def test_duration_options(self):
+        """Test all valid duration options."""
+        first_frame = ImageArtifact(
+            generation_id="gen1",
+            storage_url="https://example.com/first.png",
+            format="png",
+            width=1024,
+            height=768,
+        )
+        last_frame = ImageArtifact(
+            generation_id="gen2",
+            storage_url="https://example.com/last.png",
+            format="png",
+            width=1024,
+            height=768,
+        )
+
+        valid_durations = ["4s", "6s", "8s"]
+
+        for duration in valid_durations:
+            input_data = Veo31FirstLastFrameToVideoInput(
+                first_frame=first_frame,
+                last_frame=last_frame,
+                prompt="Test",
+                duration=duration,  # type: ignore[arg-type]
+            )
+            assert input_data.duration == duration
+
+    def test_invalid_duration(self):
+        """Test validation fails for invalid duration."""
+        first_frame = ImageArtifact(
+            generation_id="gen1",
+            storage_url="https://example.com/first.png",
+            format="png",
+            width=1024,
+            height=768,
+        )
+        last_frame = ImageArtifact(
+            generation_id="gen2",
+            storage_url="https://example.com/last.png",
+            format="png",
+            width=1024,
+            height=768,
+        )
+
+        with pytest.raises(ValidationError):
+            Veo31FirstLastFrameToVideoInput(
+                first_frame=first_frame,
+                last_frame=last_frame,
+                prompt="Test",
+                duration="10s",  # type: ignore[arg-type]
+            )
+
 
 async def _empty_async_event_iterator():
     """Helper to create an empty async iterator for mock event streams."""
@@ -675,6 +728,57 @@ class TestFalVeo31FirstLastFrameToVideoGenerator:
         # 50% of base cost when audio disabled
         assert cost == 0.075
         assert isinstance(cost, float)
+
+    @pytest.mark.asyncio
+    async def test_estimate_cost_scales_with_duration(self):
+        """Test cost estimation scales with video duration."""
+        first_frame = ImageArtifact(
+            generation_id="gen1",
+            storage_url="https://example.com/first.png",
+            format="png",
+            width=1024,
+            height=768,
+        )
+        last_frame = ImageArtifact(
+            generation_id="gen2",
+            storage_url="https://example.com/last.png",
+            format="png",
+            width=1024,
+            height=768,
+        )
+
+        # Test 4s duration (half of 8s)
+        input_4s = Veo31FirstLastFrameToVideoInput(
+            first_frame=first_frame,
+            last_frame=last_frame,
+            prompt="Test prompt",
+            duration="4s",
+            generate_audio=True,
+        )
+        cost_4s = await self.generator.estimate_cost(input_4s)
+        assert cost_4s == 0.075  # 0.15 * (4/8)
+
+        # Test 6s duration (75% of 8s)
+        input_6s = Veo31FirstLastFrameToVideoInput(
+            first_frame=first_frame,
+            last_frame=last_frame,
+            prompt="Test prompt",
+            duration="6s",
+            generate_audio=True,
+        )
+        cost_6s = await self.generator.estimate_cost(input_6s)
+        assert cost_6s == pytest.approx(0.1125)  # 0.15 * (6/8)
+
+        # Test 8s duration (full cost)
+        input_8s = Veo31FirstLastFrameToVideoInput(
+            first_frame=first_frame,
+            last_frame=last_frame,
+            prompt="Test prompt",
+            duration="8s",
+            generate_audio=True,
+        )
+        cost_8s = await self.generator.estimate_cost(input_8s)
+        assert cost_8s == 0.15  # 0.15 * (8/8)
 
     def test_json_schema_generation(self):
         """Test that input schema can generate JSON schema for frontend."""
