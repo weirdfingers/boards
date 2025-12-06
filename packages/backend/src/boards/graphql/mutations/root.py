@@ -43,14 +43,17 @@ class AddBoardMemberInput:
 
 @strawberry.input
 class CreateGenerationInput:
-    """Input for creating a new generation."""
+    """Input for creating a new generation.
+
+    Note: Lineage is now captured automatically via artifact resolution.
+    Generator input parameters that reference other generations (as artifact types)
+    will be automatically resolved and lineage will be tracked.
+    """
 
     board_id: UUID
     generator_name: str
     artifact_type: ArtifactType
     input_params: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
-    parent_generation_id: UUID | None = None
-    input_generation_ids: list[UUID] | None = None
 
 
 @strawberry.type

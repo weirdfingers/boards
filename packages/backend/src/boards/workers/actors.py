@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import traceback
+from typing import Any
 
 import dramatiq
 from dramatiq import actor
@@ -92,6 +93,7 @@ async def process_generation(generation_id: str) -> None:
         # Build and validate typed inputs
         # First resolve any artifact fields (generation IDs -> artifact objects)
         # This happens automatically via type introspection
+        lineage_metadata: list[dict[str, Any]] = []
         try:
             input_schema = generator.get_input_schema()
 
@@ -99,12 +101,19 @@ async def process_generation(generation_id: str) -> None:
             from ..generators.artifact_resolution import resolve_input_artifacts
 
             async with get_async_session() as session:
-                resolved_params = await resolve_input_artifacts(
+                resolved_params, lineage_metadata = await resolve_input_artifacts(
                     input_params,
                     input_schema,  # Schema is introspected to find artifact fields
                     session,
                     tenant_id,
                 )
+
+                # Store lineage metadata in the generation
+                if lineage_metadata:
+                    generation = await jobs_repo.get_generation(session, generation_id)
+                    generation.input_artifacts = lineage_metadata
+                    await session.commit()
+
             typed_inputs = input_schema.model_validate(resolved_params)
         except Exception as e:
             error_msg = "Invalid input parameters"

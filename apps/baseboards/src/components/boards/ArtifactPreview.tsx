@@ -12,13 +12,16 @@ import {
   Play,
   Pause,
   RotateCcw,
+  GitBranch,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface ArtifactPreviewProps {
@@ -50,6 +53,7 @@ export function ArtifactPreview({
   artifactId,
   prompt,
 }: ArtifactPreviewProps) {
+  const router = useRouter();
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
@@ -349,7 +353,7 @@ export function ArtifactPreview({
               )}
 
               {/* More options menu - show for all artifacts */}
-              {(onPreview || onDownload) && (
+              {(onPreview || onDownload || artifactId) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -361,6 +365,21 @@ export function ArtifactPreview({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
+                    {artifactId && (
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/lineage/${artifactId}`);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <GitBranch className="w-4 h-4 mr-2" />
+                        View Lineage
+                      </DropdownMenuItem>
+                    )}
+                    {artifactId && (onPreview || onDownload) && (
+                      <DropdownMenuSeparator />
+                    )}
                     {onPreview && (
                       <DropdownMenuItem
                         onClick={(e) => {

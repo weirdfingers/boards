@@ -156,8 +156,6 @@ async def test_board_generations_integration(
             gen1.additional_files = []
             gen1.input_params = {"prompt": "A beautiful sunset", "steps": 50}
             gen1.output_metadata = {"resolution": "512x512", "format": "jpeg"}
-            gen1.parent_generation_id = None
-            gen1.input_generation_ids = []
             gen1.external_job_id = "job-123"
             gen1.status = "completed"
             gen1.progress = Decimal(1.0)
@@ -180,8 +178,6 @@ async def test_board_generations_integration(
             gen2.additional_files = []
             gen2.input_params = {"prompt": "A mountain landscape", "steps": 30}
             gen2.output_metadata = {"resolution": "768x768", "format": "png"}
-            gen2.parent_generation_id = None
-            gen2.input_generation_ids = []
             gen2.external_job_id = "job-456"
             gen2.status = "completed"
             gen2.progress = Decimal(1.0)
@@ -205,8 +201,6 @@ async def test_board_generations_integration(
             private_gen.additional_files = []
             private_gen.input_params = {"prompt": "Write a story", "max_tokens": 1000}
             private_gen.output_metadata = {"tokens_used": 500}
-            private_gen.parent_generation_id = None
-            private_gen.input_generation_ids = []
             private_gen.external_job_id = "job-789"
             private_gen.status = "processing"
             private_gen.progress = Decimal(0.5)

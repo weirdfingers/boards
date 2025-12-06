@@ -59,7 +59,9 @@ def _extract_artifact_type(annotation: Any) -> type[TArtifact] | None:
     return None
 
 
-def extract_artifact_fields(schema: type[BaseModel]) -> dict[str, tuple[type[TArtifact], bool]]:
+def extract_artifact_fields(
+    schema: type[BaseModel],
+) -> dict[str, tuple[type[TArtifact], bool]]:
     """Automatically extract artifact fields from a Pydantic schema.
 
     Inspects the schema's field annotations and returns a mapping of field names
@@ -93,7 +95,14 @@ def extract_artifact_fields(schema: type[BaseModel]) -> dict[str, tuple[type[TAr
     return artifact_fields
 
 
-def _get_artifact_type_name[T: (ImageArtifact, VideoArtifact, AudioArtifact, TextArtifact)](
+def _get_artifact_type_name[
+    T: (
+        ImageArtifact,
+        VideoArtifact,
+        AudioArtifact,
+        TextArtifact,
+    )
+](
     artifact_class: type[T],
 ) -> str:
     """Get the database artifact_type string for an artifact class."""
@@ -109,9 +118,14 @@ def _get_artifact_type_name[T: (ImageArtifact, VideoArtifact, AudioArtifact, Tex
     return artifact_type
 
 
-def _generation_to_artifact[T: (ImageArtifact, VideoArtifact, AudioArtifact, TextArtifact)](
-    generation: Generations, artifact_class: type[T]
-) -> T:
+def _generation_to_artifact[
+    T: (
+        ImageArtifact,
+        VideoArtifact,
+        AudioArtifact,
+        TextArtifact,
+    )
+](generation: Generations, artifact_class: type[T]) -> T:
     """Convert a Generations database record to an artifact object.
 
     Args:
@@ -183,7 +197,12 @@ def _generation_to_artifact[T: (ImageArtifact, VideoArtifact, AudioArtifact, Tex
 
 
 async def resolve_generation_ids_to_artifacts[
-    T: (ImageArtifact, VideoArtifact, AudioArtifact, TextArtifact)
+    T: (
+        ImageArtifact,
+        VideoArtifact,
+        AudioArtifact,
+        TextArtifact,
+    )
 ](
     generation_ids: list[str | UUID],
     artifact_class: type[T],
@@ -251,7 +270,7 @@ async def resolve_input_artifacts(
     schema: type[BaseModel],
     session: AsyncSession,
     tenant_id: UUID,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Resolve generation IDs to artifact objects in input parameters.
 
     This function automatically detects artifact fields from the Pydantic schema
@@ -271,7 +290,7 @@ async def resolve_input_artifacts(
 
     Usage in actors.py:
         # Artifacts are automatically detected and resolved
-        resolved_params = await resolve_input_artifacts(
+        resolved_params, lineage_metadata = await resolve_input_artifacts(
             input_params,
             MyGeneratorInput,  # Just pass the schema class
             session,
@@ -287,7 +306,9 @@ async def resolve_input_artifacts(
         tenant_id: Tenant ID for access validation
 
     Returns:
-        Updated input_params dictionary with generation IDs resolved to artifacts
+        Tuple of (resolved_params, lineage_metadata):
+        - resolved_params: Updated input_params dictionary with generation IDs resolved to artifacts
+        - lineage_metadata: List of dicts with generation_id, role, and artifact_type for lineage
 
     Raises:
         ValueError: If any generation ID cannot be resolved or validated
@@ -295,13 +316,14 @@ async def resolve_input_artifacts(
     # Automatically extract artifact fields from schema
     artifact_field_map = extract_artifact_fields(schema)
 
-    # If no artifact fields, just return original params
+    # If no artifact fields, just return original params with empty lineage
     if not artifact_field_map:
-        return input_params
+        return input_params, []
 
     # Create a new dict with resolved artifacts
     # Use dict constructor to avoid shallow copy issues
     resolved_params = dict(input_params)
+    lineage_metadata: list[dict[str, Any]] = []
 
     for field_name, (artifact_class, expects_list) in artifact_field_map.items():
         field_value = resolved_params.get(field_name)
@@ -343,6 +365,17 @@ async def resolve_input_artifacts(
         except ValueError as e:
             raise ValueError(f"Failed to resolve field '{field_name}': {e}") from e
 
+        # Capture lineage metadata for each artifact
+        artifact_type_name = _get_artifact_type_name(artifact_class)
+        for gen_id in generation_ids:
+            lineage_metadata.append(
+                {
+                    "generation_id": str(gen_id),
+                    "role": field_name,  # Field name IS the role!
+                    "artifact_type": artifact_type_name,
+                }
+            )
+
         # Update params with resolved artifacts
         # If field expects a single artifact (not a list), unwrap the first artifact
         # Otherwise, keep as a list (even if there's only one artifact)
@@ -369,4 +402,4 @@ async def resolve_input_artifacts(
 
         resolved_params[field_name] = resolved_value
 
-    return resolved_params
+    return resolved_params, lineage_metadata

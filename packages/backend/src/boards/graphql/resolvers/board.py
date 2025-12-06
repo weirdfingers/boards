@@ -442,8 +442,6 @@ async def resolve_board_generations(
                 additional_files=gen.additional_files or [],
                 input_params=gen.input_params or {},
                 output_metadata=gen.output_metadata or {},
-                parent_generation_id=gen.parent_generation_id,
-                input_generation_ids=gen.input_generation_ids or [],
                 external_job_id=gen.external_job_id,
                 status=GenerationStatus(gen.status),
                 progress=float(gen.progress or 0.0),
