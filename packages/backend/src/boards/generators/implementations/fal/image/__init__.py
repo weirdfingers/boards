@@ -24,6 +24,7 @@ from .nano_banana_pro import FalNanoBananaProGenerator
 from .nano_banana_pro_edit import FalNanoBananaProEditGenerator
 from .qwen_image import FalQwenImageGenerator
 from .qwen_image_edit import FalQwenImageEditGenerator
+from .reve_text_to_image import FalReveTextToImageGenerator
 from .seedream_v45_text_to_image import FalSeedreamV45TextToImageGenerator
 
 __all__ = [
@@ -51,5 +52,6 @@ __all__ = [
     "FalNanoBananaProEditGenerator",
     "FalQwenImageEditGenerator",
     "FalQwenImageGenerator",
+    "FalReveTextToImageGenerator",
     "FalSeedreamV45TextToImageGenerator",
 ]
