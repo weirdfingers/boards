@@ -17,6 +17,7 @@ from .nano_banana_edit import FalNanoBananaEditGenerator
 from .nano_banana_pro import FalNanoBananaProGenerator
 from .qwen_image import FalQwenImageGenerator
 from .qwen_image_edit import FalQwenImageEditGenerator
+from .reve_edit import FalReveEditGenerator
 
 __all__ = [
     "FalClarityUpscalerGenerator",
@@ -36,4 +37,5 @@ __all__ = [
     "FalNanoBananaProGenerator",
     "FalQwenImageEditGenerator",
     "FalQwenImageGenerator",
+    "FalReveEditGenerator",
 ]
