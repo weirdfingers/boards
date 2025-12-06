@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import ipaddress
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 from uuid import UUID
 
 import aiohttp
@@ -26,17 +28,145 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
+def _validate_mime_type(
+    content_type: str, artifact_type: str, filename: str | None
+) -> tuple[bool, str | None]:
+    """
+    Validate that MIME type matches the expected artifact type.
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Define allowed MIME types for each artifact type
+    allowed_mime_types = {
+        "image": [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "image/bmp",
+            "image/svg+xml",
+        ],
+        "video": [
+            "video/mp4",
+            "video/quicktime",
+            "video/x-msvideo",
+            "video/webm",
+            "video/mpeg",
+            "video/x-matroska",
+        ],
+        "audio": [
+            "audio/mpeg",
+            "audio/mp3",
+            "audio/wav",
+            "audio/ogg",
+            "audio/webm",
+            "audio/x-m4a",
+            "audio/mp4",
+        ],
+        "text": [
+            "text/plain",
+            "text/markdown",
+            "application/json",
+            "text/html",
+            "text/csv",
+        ],
+    }
+
+    # Normalize MIME type (remove charset, etc.)
+    mime_type = content_type.split(";")[0].strip().lower()
+
+    # Check if artifact type is supported
+    if artifact_type not in allowed_mime_types:
+        return False, f"Unsupported artifact type: {artifact_type}"
+
+    # Check if MIME type is allowed for this artifact type
+    if mime_type not in allowed_mime_types[artifact_type]:
+        # Also check for generic types
+        mime_category = mime_type.split("/")[0]
+        if mime_category != artifact_type:
+            return (
+                False,
+                f"MIME type '{mime_type}' does not match artifact type '{artifact_type}'",
+            )
+
+    return True, None
+
+
+def _is_safe_url(url: str) -> tuple[bool, str | None]:
+    """
+    Validate URL to prevent SSRF attacks.
+
+    Returns:
+        Tuple of (is_safe, error_message)
+    """
+    try:
+        parsed = urlparse(url)
+
+        # Only allow http and https
+        if parsed.scheme not in ("http", "https"):
+            return (
+                False,
+                f"URL scheme '{parsed.scheme}' not allowed. " "Only http and https are supported.",
+            )
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False, "Invalid URL: no hostname found"
+
+        # Block localhost
+        if hostname.lower() in ("localhost", "127.0.0.1", "::1"):
+            return False, "Access to localhost is not allowed"
+
+        # Try to resolve hostname to IP
+        try:
+            # Check if it's already an IP address
+            ip = ipaddress.ip_address(hostname)
+
+            # Block private IP ranges
+            if ip.is_private:
+                return False, f"Access to private IP address {ip} is not allowed"
+
+            # Block link-local addresses (including AWS metadata endpoint)
+            if ip.is_link_local:
+                return False, f"Access to link-local address {ip} is not allowed"
+
+            # Block loopback
+            if ip.is_loopback:
+                return False, f"Access to loopback address {ip} is not allowed"
+
+        except ValueError:
+            # Not an IP address, it's a hostname - this is OK
+            # In production, you might want to resolve the hostname and check the IP
+            # but that adds complexity and potential DNS rebinding issues
+            pass
+
+        return True, None
+
+    except Exception as e:
+        return False, f"Invalid URL: {e}"
+
+
 async def upload_artifact_from_url(
     info: strawberry.Info,
     input: UploadArtifactInput,
 ) -> GenerationType:
     """Upload artifact from URL (synchronous)."""
+    from ...config import settings
+
     auth_context = await get_auth_context_from_info(info)
     if not auth_context or not auth_context.is_authenticated:
         raise RuntimeError("Authentication required")
 
     if not input.file_url:
         raise RuntimeError("file_url is required")
+
+    # Validate URL to prevent SSRF attacks
+    is_safe, error_msg = _is_safe_url(input.file_url)
+    if not is_safe:
+        logger.warning("Unsafe URL blocked", url=input.file_url, reason=error_msg)
+        raise RuntimeError(f"URL not allowed: {error_msg}")
 
     # Download file from URL
     async with aiohttp.ClientSession() as http_session:
@@ -47,20 +177,28 @@ async def upload_artifact_from_url(
                 if resp.status != 200:
                     raise RuntimeError(f"Failed to download from URL: HTTP {resp.status}")
 
+                # Check Content-Length before downloading to prevent memory exhaustion
+                content_length = resp.headers.get("Content-Length")
+                if content_length:
+                    file_size = int(content_length)
+                    if file_size > settings.max_upload_size:
+                        raise RuntimeError(
+                            f"File size ({file_size} bytes) exceeds maximum allowed "
+                            f"size ({settings.max_upload_size} bytes)"
+                        )
+
                 content = await resp.read()
                 content_type = resp.headers.get("Content-Type", "application/octet-stream")
 
                 # Extract filename from URL if not provided
                 filename = input.original_filename
                 if not filename:
-                    from urllib.parse import urlparse
-
                     path = urlparse(input.file_url).path
                     filename = path.split("/")[-1] if path else "uploaded_file"
 
         except aiohttp.ClientError as e:
             logger.error("URL download failed", url=input.file_url, error=str(e))
-            raise RuntimeError(f"Failed to download file from URL: {e}") from e
+            raise RuntimeError("Failed to download file from URL") from e
 
     # Process upload
     return await _process_upload(
@@ -102,6 +240,35 @@ async def upload_artifact_from_file(
     )
 
 
+def _sanitize_filename(filename: str) -> str:
+    """
+    Sanitize filename to prevent path traversal and other security issues.
+
+    Returns:
+        Sanitized filename (basename only, no path components)
+    """
+    import os
+    import re
+
+    # Get basename only (remove any path components)
+    filename = os.path.basename(filename)
+
+    # Remove any null bytes
+    filename = filename.replace("\x00", "")
+
+    # Replace potentially dangerous characters (including backslash for Windows paths)
+    filename = re.sub(r'[<>:"|?*\\]', "_", filename)
+
+    # Remove leading/trailing whitespace and dots
+    filename = filename.strip(". ")
+
+    # If filename is empty after sanitization, use a default
+    if not filename:
+        filename = "uploaded_file"
+
+    return filename
+
+
 async def _process_upload(
     auth_context: AuthContext,
     board_id: UUID,
@@ -115,8 +282,30 @@ async def _process_upload(
     source_url: str | None,
 ) -> GenerationType:
     """Common upload processing logic."""
+    from ...config import settings
     from ..types.generation import ArtifactType, GenerationStatus
     from ..types.generation import Generation as GenerationType
+
+    # Sanitize filename to prevent path traversal
+    filename = _sanitize_filename(filename)
+
+    # Validate MIME type matches artifact type
+    is_valid, error_msg = _validate_mime_type(content_type, artifact_type, filename)
+    if not is_valid:
+        logger.warning(
+            "Invalid MIME type for artifact",
+            mime_type=content_type,
+            artifact_type=artifact_type,
+            reason=error_msg,
+        )
+        raise RuntimeError(f"Invalid file type: {error_msg}")
+
+    # Validate file size (double-check even after Content-Length check)
+    if len(file_content) > settings.max_upload_size:
+        raise RuntimeError(
+            f"File size ({len(file_content)} bytes) exceeds maximum allowed "
+            f"size ({settings.max_upload_size} bytes)"
+        )
 
     async with get_async_session() as session:
         # Validate board access

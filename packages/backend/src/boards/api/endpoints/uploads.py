@@ -63,10 +63,10 @@ async def upload_artifact_file(
     try:
         content = await file.read()
     except Exception as e:
-        logger.error("Failed to read uploaded file", error=str(e))
+        logger.error("Failed to read uploaded file", error=str(e), filename=file.filename)
         raise HTTPException(
             status_code=400,
-            detail=f"Failed to read uploaded file: {e}",
+            detail="Failed to read uploaded file",
         ) from e
 
     # Validate file size
@@ -96,9 +96,10 @@ async def upload_artifact_file(
         board_uuid = UUID(board_id)
         parent_uuid = UUID(parent_generation_id) if parent_generation_id else None
     except ValueError as e:
+        logger.warning("Invalid UUID provided", board_id=board_id, error=str(e))
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid UUID format: {e}",
+            detail="Invalid board_id or parent_generation_id format",
         ) from e
 
     # Call resolver
@@ -132,12 +133,18 @@ async def upload_artifact_file(
 
     except RuntimeError as e:
         # These are expected errors (permission denied, board not found, etc.)
+        # Pass through the message since these are safe, user-facing errors
         logger.warning("Upload failed", error=str(e))
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        # Unexpected errors
-        logger.error("Unexpected error during upload", error=str(e))
+        # Unexpected errors - don't expose internal details
+        logger.error(
+            "Unexpected error during upload",
+            error=str(e),
+            board_id=board_id,
+            artifact_type=artifact_type,
+        )
         raise HTTPException(
             status_code=500,
-            detail=f"Upload failed: {e}",
+            detail="An unexpected error occurred during upload",
         ) from e
