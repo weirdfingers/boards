@@ -27,6 +27,7 @@ from .sora_2_image_to_video_pro import FalSora2ImageToVideoProGenerator
 from .sora_2_text_to_video_pro import FalSora2TextToVideoProGenerator
 from .sync_lipsync_v2 import FalSyncLipsyncV2Generator
 from .sync_lipsync_v2_pro import FalSyncLipsyncV2ProGenerator
+from .veed_fabric_1_0 import FalVeedFabric10Generator
 from .veed_lipsync import FalVeedLipsyncGenerator
 from .veo3 import FalVeo3Generator
 from .veo31 import FalVeo31Generator
@@ -54,6 +55,7 @@ __all__ = [
     "FalSora2ImageToVideoGenerator",
     "FalSora2ImageToVideoProGenerator",
     "FalSyncLipsyncV2Generator",
+    "FalVeedFabric10Generator",
     "FalVeedLipsyncGenerator",
     "FalSyncLipsyncV2ProGenerator",
     "FalVeo3Generator",

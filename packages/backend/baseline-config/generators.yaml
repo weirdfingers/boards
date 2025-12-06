@@ -158,6 +158,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.sync_lipsync_v2.FalSyncLipsyncV2Generator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.veed_fabric_1_0.FalVeedFabric10Generator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.veed_lipsync.FalVeedLipsyncGenerator"
     enabled: true
 
