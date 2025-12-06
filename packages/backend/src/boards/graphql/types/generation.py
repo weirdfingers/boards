@@ -46,6 +46,18 @@ class AdditionalFile:
     metadata: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
 
 
+@strawberry.input
+class UploadArtifactInput:
+    """Input for uploading an artifact from URL."""
+
+    board_id: UUID
+    artifact_type: ArtifactType
+    file_url: str | None = None
+    original_filename: str | None = None
+    user_description: str | None = None
+    parent_generation_id: UUID | None = None
+
+
 @strawberry.type
 class ArtifactLineage:
     """Represents a single input artifact relationship with role metadata."""

@@ -322,6 +322,15 @@ export const RETRY_GENERATION = gql`
   }
 `;
 
+export const UPLOAD_ARTIFACT_FROM_URL = gql`
+  ${GENERATION_FRAGMENT}
+  mutation UploadArtifactFromUrl($input: UploadArtifactInput!) {
+    uploadArtifact(input: $input) {
+      ...GenerationFragment
+    }
+  }
+`;
+
 // Input types (these should match your backend GraphQL schema)
 export interface CreateBoardInput {
   title: string;
@@ -345,6 +354,15 @@ export interface CreateGenerationInput {
   artifactType: ArtifactType; // Allow string for flexibility with new types
   inputParams: Record<string, unknown>;
   metadata?: Record<string, unknown>;
+}
+
+export interface UploadArtifactInput {
+  boardId: string;
+  artifactType: ArtifactType;
+  fileUrl?: string;
+  originalFilename?: string;
+  userDescription?: string;
+  parentGenerationId?: string;
 }
 
 // Enums (should match backend)

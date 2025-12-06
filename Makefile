@@ -151,6 +151,10 @@ docker-clean:
 docker-logs: ## Show Docker logs
 	docker-compose logs -f
 
+upgrade-db: ## Run database migrations (alembic upgrade head)
+	@echo "Running database migrations..."
+	cd $(BACKEND_DIR) && uv run alembic upgrade head
+
 docs: dev-docs ## Start documentation development server (alias)
 
 dev-docs: ## Start documentation development server

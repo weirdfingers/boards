@@ -24,7 +24,9 @@ export { useBoards } from "./hooks/useBoards";
 export { useBoard } from "./hooks/useBoard";
 export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
+export { useUpload } from "./hooks/useUpload";
 export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
+<<<<<<< HEAD
 export {
   useAncestry,
   useDescendants,
@@ -36,6 +38,9 @@ export type {
   AncestryNode,
   DescendantNode,
 } from "./hooks/useLineage";
+=======
+export type { UploadRequest, UploadResult, UploadHook } from "./hooks/useUpload";
+>>>>>>> 61bb691 (Add support for upload and copy/paste)
 
 // Generator schema utilities
 export * from "./types/generatorSchema";
