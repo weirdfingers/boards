@@ -38,6 +38,9 @@ generators:
   - class: "boards.generators.implementations.fal.audio.fal_elevenlabs_tts_turbo_v2_5.FalElevenlabsTtsTurboV25Generator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.flux_2_edit.FalFlux2EditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
     enabled: true
 
