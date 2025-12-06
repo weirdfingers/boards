@@ -119,6 +119,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.fal_sora_2_text_to_video.FalSora2TextToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.sora2_image_to_video.FalSora2ImageToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.sora_2_image_to_video_pro.FalSora2ImageToVideoProGenerator"
     enabled: true
 
