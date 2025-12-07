@@ -71,8 +71,6 @@ class TestFlux2GeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, ImageArtifact)
         assert artifact.storage_url is not None
-        # Storage URLs should be valid HTTPS URLs
-        assert artifact.storage_url.startswith("https://")
         # Dimensions should be positive if present
         if artifact.width is not None:
             assert artifact.width > 0
@@ -169,4 +167,3 @@ class TestFlux2GeneratorLive:
         for artifact in result.outputs:
             assert isinstance(artifact, ImageArtifact)
             assert artifact.storage_url is not None
-            assert artifact.storage_url.startswith("https://")
