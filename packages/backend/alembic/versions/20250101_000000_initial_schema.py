@@ -501,5 +501,6 @@ def downgrade() -> None:
 
     op.drop_table("tenants", schema=SCHEMA)
 
-    # Drop the schema (will fail if non-Boards objects exist, which is intentional)
-    op.execute(f"DROP SCHEMA IF EXISTS {SCHEMA};")
+    # Drop the schema with CASCADE to remove alembic_version table too
+    # Will fail if non-Boards objects exist (beyond alembic_version), which is intentional
+    op.execute(f"DROP SCHEMA IF EXISTS {SCHEMA} CASCADE;")

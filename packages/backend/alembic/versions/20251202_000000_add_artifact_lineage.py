@@ -18,6 +18,9 @@ down_revision: Union[str, Sequence[str], None] = "cdad231052d5"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+# Schema name for all Boards tables
+SCHEMA = "boards"
+
 
 def upgrade() -> None:
     """Upgrade schema to use input_artifacts for lineage tracking."""
@@ -30,12 +33,13 @@ def upgrade() -> None:
             server_default=sa.text("'[]'::jsonb"),
             nullable=False,
         ),
+        schema=SCHEMA,
     )
 
     # Migrate existing data from input_generation_ids to input_artifacts
     # For backwards compatibility, use role="input" for legacy data
-    op.execute("""
-        UPDATE generations
+    op.execute(f"""
+        UPDATE {SCHEMA}.generations
         SET input_artifacts = (
             SELECT COALESCE(jsonb_agg(
                 jsonb_build_object(
@@ -45,7 +49,7 @@ def upgrade() -> None:
                 )
             ), '[]'::jsonb)
             FROM unnest(input_generation_ids) AS gen_id
-            LEFT JOIN generations g ON g.id = gen_id
+            LEFT JOIN {SCHEMA}.generations g ON g.id = gen_id
         )
         WHERE input_generation_ids IS NOT NULL
         AND array_length(input_generation_ids, 1) > 0
@@ -58,21 +62,23 @@ def upgrade() -> None:
         ["input_artifacts"],
         unique=False,
         postgresql_using="gin",
+        schema=SCHEMA,
     )
 
     # Drop old lineage index
-    op.drop_index("idx_generations_lineage", table_name="generations")
+    op.drop_index("idx_generations_lineage", table_name="generations", schema=SCHEMA)
 
     # Drop old foreign key constraint on parent_generation_id
     op.drop_constraint(
         "generations_parent_generation_id_fkey",
         "generations",
         type_="foreignkey",
+        schema=SCHEMA,
     )
 
     # Drop old columns
-    op.drop_column("generations", "parent_generation_id")
-    op.drop_column("generations", "input_generation_ids")
+    op.drop_column("generations", "parent_generation_id", schema=SCHEMA)
+    op.drop_column("generations", "input_generation_ids", schema=SCHEMA)
 
 
 def downgrade() -> None:
@@ -87,19 +93,21 @@ def downgrade() -> None:
             autoincrement=False,
             nullable=False,
         ),
+        schema=SCHEMA,
     )
     op.add_column(
         "generations",
         sa.Column("parent_generation_id", postgresql.UUID(), autoincrement=False, nullable=True),
+        schema=SCHEMA,
     )
 
     # Migrate data back from input_artifacts to input_generation_ids
-    op.execute("""
-        UPDATE generations
+    op.execute(f"""
+        UPDATE {SCHEMA}.generations
         SET input_generation_ids = (
             SELECT COALESCE(
                 array_agg((elem->>'generation_id')::uuid),
-                '{}'::uuid[]
+                '{{}}'::uuid[]
             )
             FROM jsonb_array_elements(input_artifacts) elem
         )
@@ -114,11 +122,13 @@ def downgrade() -> None:
         "generations",
         ["parent_generation_id"],
         ["id"],
+        source_schema=SCHEMA,
+        referent_schema=SCHEMA,
     )
 
     # Recreate old index
-    op.create_index("idx_generations_lineage", "generations", ["parent_generation_id"], unique=False)
+    op.create_index("idx_generations_lineage", "generations", ["parent_generation_id"], unique=False, schema=SCHEMA)
 
     # Drop new index and column
-    op.drop_index("idx_generations_input_artifacts_gin", table_name="generations")
-    op.drop_column("generations", "input_artifacts")
+    op.drop_index("idx_generations_input_artifacts_gin", table_name="generations", schema=SCHEMA)
+    op.drop_column("generations", "input_artifacts", schema=SCHEMA)
