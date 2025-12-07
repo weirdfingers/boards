@@ -214,8 +214,8 @@ class TenantIsolationValidator:
             stmt = text(
                 """
                 SELECT u.id as user_id, b.id as board_id, b.tenant_id as board_tenant_id
-                FROM users u
-                JOIN boards b ON u.id = b.owner_id
+                FROM boards.users u
+                JOIN boards.boards b ON u.id = b.owner_id
                 WHERE u.tenant_id = :tenant_id AND b.tenant_id != :tenant_id
             """
             )
@@ -240,8 +240,8 @@ class TenantIsolationValidator:
                     g.tenant_id,
                     g.board_id,
                     b.tenant_id as board_tenant_id
-                FROM generations g
-                JOIN boards b ON g.board_id = b.id
+                FROM boards.generations g
+                JOIN boards.boards b ON g.board_id = b.id
                 WHERE g.tenant_id = :tenant_id AND b.tenant_id != :tenant_id
             """
             )
@@ -275,9 +275,9 @@ class TenantIsolationValidator:
                     bm.user_id,
                     b.tenant_id as board_tenant_id,
                     u.tenant_id as user_tenant_id
-                FROM board_members bm
-                JOIN boards b ON bm.board_id = b.id
-                JOIN users u ON bm.user_id = u.id
+                FROM boards.board_members bm
+                JOIN boards.boards b ON bm.board_id = b.id
+                JOIN boards.users u ON bm.user_id = u.id
                 WHERE b.tenant_id = :tenant_id AND u.tenant_id != :tenant_id
             """
             )
@@ -325,8 +325,8 @@ class TenantIsolationValidator:
             stmt = text(
                 """
                 SELECT COUNT(*) as count
-                FROM board_members bm
-                JOIN boards b ON bm.board_id = b.id
+                FROM boards.board_members bm
+                JOIN boards.boards b ON bm.board_id = b.id
                 WHERE b.tenant_id = :tenant_id
             """
             )

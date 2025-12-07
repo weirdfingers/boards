@@ -5,7 +5,7 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -68,6 +68,8 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         compare_type=True,
         dialect_opts={"paramstyle": "named"},
+        include_schemas=True,
+        # Keep alembic_version in public schema for easier lifecycle management
     )
 
     with context.begin_transaction():
@@ -75,11 +77,17 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
+    # Ensure the boards schema exists before creating tables
+    connection.execute(text("CREATE SCHEMA IF NOT EXISTS boards"))
+    connection.commit()
+
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
         render_as_batch=False,
+        include_schemas=True,
+        # Keep alembic_version in public schema for easier lifecycle management
     )
 
     with context.begin_transaction():

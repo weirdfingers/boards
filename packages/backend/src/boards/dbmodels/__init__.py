@@ -42,7 +42,7 @@ naming_convention = {
 class Base(DeclarativeBase):
     """Base class for all database models with type checking support."""
 
-    metadata = MetaData(naming_convention=naming_convention)
+    metadata = MetaData(naming_convention=naming_convention, schema="boards")
 
 
 class Tenants(Base):
