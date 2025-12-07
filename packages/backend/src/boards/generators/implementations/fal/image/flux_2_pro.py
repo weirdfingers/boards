@@ -80,9 +80,7 @@ class FalFlux2ProGenerator(BaseGenerator):
 
     name = "fal-flux-2-pro"
     artifact_type = "image"
-    description = (
-        "Fal: FLUX.2 [pro] - production-optimized text-to-image with studio-grade quality"
-    )
+    description = "Fal: FLUX.2 [pro] - production-optimized text-to-image with studio-grade quality"
 
     def get_input_schema(self) -> type[Flux2ProInput]:
         return Flux2ProInput

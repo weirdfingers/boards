@@ -76,9 +76,7 @@ class TestFlux2ProGeneratorLive:
         assert artifact.format == "jpeg"
 
     @pytest.mark.asyncio
-    async def test_generate_with_size_preset(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_size_preset(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test image generation with specific size preset.
 
@@ -139,9 +137,7 @@ class TestFlux2ProGeneratorLive:
         assert cost_standard < 0.10  # Should be under $0.10 per image
 
     @pytest.mark.asyncio
-    async def test_generate_with_seed(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_with_seed(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test generation with fixed seed for reproducibility.
 
@@ -169,9 +165,7 @@ class TestFlux2ProGeneratorLive:
         assert result.outputs[0].storage_url is not None
 
     @pytest.mark.asyncio
-    async def test_generate_png_format(
-        self, skip_if_no_fal_key, dummy_context, cost_logger
-    ):
+    async def test_generate_png_format(self, skip_if_no_fal_key, dummy_context, cost_logger):
         """
         Test generation with PNG output format.
 
