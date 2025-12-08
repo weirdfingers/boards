@@ -125,6 +125,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.qwen_image.FalQwenImageGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.reve_edit.FalReveEditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.sora_2_text_to_video_pro.FalSora2TextToVideoProGenerator"
     enabled: true
 
