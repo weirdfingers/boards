@@ -41,7 +41,18 @@ const sidebars: SidebarsConfig = {
       items: [
         "backend/index",
         "backend/getting-started",
-        "backend/graphql-api",
+        {
+          type: "category",
+          label: "GraphQL API",
+          collapsed: true,
+          items: [
+            "backend/graphql-api",
+            "backend/graphql-api/types",
+            "backend/graphql-api/queries",
+            "backend/graphql-api/mutations",
+            "backend/graphql-api/access-control",
+          ],
+        },
         "backend/storage",
         "backend/migrations",
         "backend/testing",
