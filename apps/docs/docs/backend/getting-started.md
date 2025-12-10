@@ -26,12 +26,15 @@ packages/backend/
 ├── alembic.ini
 ├── src/boards/
 │   ├── api/                 # FastAPI application
+│   ├── auth/                # Authentication adapters
 │   ├── dbmodels/            # ORM models (authoritative)
 │   ├── database/            # Connection helpers + compatibility shim
+│   ├── generators/          # AI content generators
 │   ├── graphql/             # GraphQL schema and resolvers
-│   ├── providers/
-│   ├── generators/
-│   ├── storage/
+│   ├── jobs/                # Job queue integration
+│   ├── progress/            # Progress tracking for long-running jobs
+│   ├── storage/             # Storage backends
+│   ├── workers/             # Background worker implementations
 │   └── config.py
 └── tests/
 ```
@@ -44,7 +47,7 @@ packages/backend/
 cd packages/backend
 
 # Install dependencies (automatically creates venv and installs dev dependencies)
-# Dev dependencies include all providers (OpenAI, Anthropic, etc.) and storage backends for typecheck
+# Dev dependencies include all generators (fal.ai, Replicate, OpenAI, etc.) and storage backends for typecheck
 uv sync
 ```
 
@@ -170,40 +173,72 @@ class UserMutation:
         return update_user(id, input)
 ```
 
-## Provider System
+## Generator System
 
-### Creating a Provider
+Generators are responsible for creating AI-generated content (images, video, audio, text). Each generator wraps a specific AI model or API and provides a consistent interface.
 
-```python
-# src/boards/providers/my_provider.py
-from boards.providers.base import BaseProvider
-from typing import Dict, Any, AsyncGenerator
-
-class MyProvider(BaseProvider):
-    name = "my_provider"
-
-    async def generate_image(
-        self,
-        prompt: str,
-        params: Dict[str, Any]
-    ) -> AsyncGenerator[Dict[str, Any], None]:
-        # Implementation here
-        yield {"status": "processing", "progress": 50}
-        yield {"status": "completed", "output": {"url": "..."}}
-```
-
-### Registering Providers
+### Creating a Generator
 
 ```python
-# src/boards/providers/__init__.py
-from .replicate import ReplicateProvider
-from .my_provider import MyProvider
+# src/boards/generators/implementations/my_service/image/my_generator.py
+from pydantic import BaseModel, Field
+from boards.generators.base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
 
-PROVIDERS = {
-    "replicate": ReplicateProvider,
-    "my_provider": MyProvider,
-}
+
+class MyGeneratorInput(BaseModel):
+    """Input schema for MyGenerator."""
+    prompt: str = Field(description="The text prompt for image generation")
+    num_images: int = Field(default=1, ge=1, le=4, description="Number of images to generate")
+
+
+class MyGenerator(BaseGenerator):
+    """Custom image generator implementation."""
+
+    name = "my-generator"
+    artifact_type = "image"
+    description = "My custom image generator"
+
+    def get_input_schema(self) -> type[MyGeneratorInput]:
+        return MyGeneratorInput
+
+    async def generate(
+        self, inputs: MyGeneratorInput, context: GeneratorExecutionContext
+    ) -> GeneratorResult:
+        # Call your AI service here
+        # Use context.store_image_result() to store outputs
+        artifact = await context.store_image_result(
+            storage_url="https://example.com/image.png",
+            format="png",
+            width=1024,
+            height=1024,
+        )
+        return GeneratorResult(outputs=[artifact])
+
+    async def estimate_cost(self, inputs: MyGeneratorInput) -> float:
+        """Estimate cost in USD."""
+        return 0.05 * inputs.num_images
 ```
+
+### Registering Generators
+
+Generators are registered via the global registry:
+
+```python
+# src/boards/generators/implementations/my_service/__init__.py
+from boards.generators.registry import registry
+from .image.my_generator import MyGenerator
+
+# Register at module load time
+registry.register(MyGenerator())
+```
+
+### Generator Context
+
+The `GeneratorExecutionContext` provides utilities for:
+- `resolve_artifact()` - Resolve input artifacts to local file paths
+- `store_image_result()`, `store_video_result()`, `store_audio_result()`, `store_text_result()` - Store outputs
+- `publish_progress()` - Send progress updates for long-running jobs
+- `set_external_job_id()` - Track external API job IDs
 
 ## Code Quality
 
@@ -280,15 +315,18 @@ uv run pytest -v
 ### Writing Tests
 
 ```python
-# tests/test_providers.py
+# tests/test_generators.py
 import pytest
-from boards.providers.my_provider import MyProvider
+from boards.generators.implementations.my_service.image.my_generator import MyGenerator, MyGeneratorInput
+from unittest.mock import AsyncMock
 
 @pytest.mark.asyncio
-async def test_my_provider_generate_image():
-    provider = MyProvider()
-    async for result in provider.generate_image("test prompt", {}):
-        assert "status" in result
+async def test_my_generator_generate():
+    generator = MyGenerator()
+    inputs = MyGeneratorInput(prompt="test prompt")
+    context = AsyncMock()  # Mock the GeneratorExecutionContext
+    result = await generator.generate(inputs, context)
+    assert result.outputs is not None
 ```
 
 ## Debugging
