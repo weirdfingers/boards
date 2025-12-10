@@ -62,8 +62,8 @@ class Flux2ProEditInput(BaseModel):
             "data won't be available in the request history."
         ),
     )
-    safety_tolerance: Literal[1, 2, 3, 4, 5] = Field(
-        default=2,
+    safety_tolerance: Literal["1", "2", "3", "4", "5"] = Field(
+        default="2",
         description=(
             "The safety tolerance level for the generated image. "
             "1 is most strict, 5 is most permissive."

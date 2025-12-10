@@ -140,7 +140,7 @@ async def resolve_ancestry(
                     0 as depth,
                     NULL::text as role,
                     ARRAY[id] as path  -- cycle detection
-                FROM generations
+                FROM boards.generations
                 WHERE id = :gen_id AND tenant_id = :tenant_id
 
                 UNION ALL
@@ -172,7 +172,7 @@ async def resolve_ancestry(
                     at.path || g.id
                 FROM ancestry_tree at
                 CROSS JOIN LATERAL jsonb_array_elements(at.input_artifacts) AS artifact
-                JOIN generations g ON
+                JOIN boards.generations g ON
                     g.id = (artifact->>'generation_id')::uuid
                     AND NOT (g.id = ANY(at.path))  -- prevent cycles
                     AND at.depth < :max_depth
@@ -281,7 +281,7 @@ async def resolve_descendants(
                     NULL::text as role,
                     NULL::uuid as parent_id,
                     ARRAY[id] as path  -- cycle detection
-                FROM generations
+                FROM boards.generations
                 WHERE id = :gen_id AND tenant_id = :tenant_id
 
                 UNION ALL
@@ -312,7 +312,7 @@ async def resolve_descendants(
                     artifact->>'role' as role,
                     dt.id as parent_id,
                     dt.path || g.id
-                FROM generations g
+                FROM boards.generations g
                 CROSS JOIN LATERAL jsonb_array_elements(g.input_artifacts) AS artifact
                 JOIN descendants_tree dt ON
                     dt.id = (artifact->>'generation_id')::uuid
