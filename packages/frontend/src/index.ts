@@ -33,6 +33,7 @@ export { useBoard } from "./hooks/useBoard";
 export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
 export { useUpload } from "./hooks/useUpload";
+export { useMultiUpload } from "./hooks/useMultiUpload";
 export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
 export {
   useAncestry,
@@ -50,6 +51,13 @@ export type {
   UploadResult,
   UploadHook,
 } from "./hooks/useUpload";
+export type {
+  MultiUploadRequest,
+  MultiUploadResult,
+  MultiUploadHook,
+  UploadItem,
+  UploadStatus,
+} from "./hooks/useMultiUpload";
 
 // Generator schema utilities
 export * from "./types/generatorSchema";
