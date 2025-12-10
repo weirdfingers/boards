@@ -245,8 +245,8 @@ export const CREATE_BOARD = gql`
 
 export const UPDATE_BOARD = gql`
   ${BOARD_FRAGMENT}
-  mutation UpdateBoard($id: UUID!, $input: UpdateBoardInput!) {
-    updateBoard(id: $id, input: $input) {
+  mutation UpdateBoard($input: UpdateBoardInput!) {
+    updateBoard(input: $input) {
       ...BoardFragment
     }
   }
@@ -341,6 +341,7 @@ export interface CreateBoardInput {
 }
 
 export interface UpdateBoardInput {
+  id: string;
   title?: string;
   description?: string;
   isPublic?: boolean;

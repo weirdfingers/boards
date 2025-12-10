@@ -189,8 +189,10 @@ export function useBoard(
       }
 
       const result = await updateBoardMutation({
-        id: boardId,
-        input: updates,
+        input: {
+          id: boardId,
+          ...updates,
+        },
       });
 
       if (result.error) {
