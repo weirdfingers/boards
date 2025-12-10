@@ -67,7 +67,7 @@ class TestFlux2ProEditInput:
         assert input_data.image_size == "auto"
         assert input_data.output_format == "jpeg"
         assert input_data.sync_mode is False
-        assert input_data.safety_tolerance == 2
+        assert input_data.safety_tolerance == "2"
         assert input_data.enable_safety_checker is True
         assert input_data.seed is None
 
@@ -115,6 +115,22 @@ class TestFlux2ProEditInput:
             height=768,
         )
 
+        # Test invalid string values
+        with pytest.raises(ValidationError):
+            Flux2ProEditInput(
+                prompt="Test",
+                image_sources=[image_artifact],
+                safety_tolerance="0",  # type: ignore[arg-type]
+            )
+
+        with pytest.raises(ValidationError):
+            Flux2ProEditInput(
+                prompt="Test",
+                image_sources=[image_artifact],
+                safety_tolerance="6",  # type: ignore[arg-type]
+            )
+
+        # Test invalid integer values (should also fail since we expect strings)
         with pytest.raises(ValidationError):
             Flux2ProEditInput(
                 prompt="Test",
@@ -194,7 +210,7 @@ class TestFlux2ProEditInput:
             height=768,
         )
 
-        for tolerance in [1, 2, 3, 4, 5]:
+        for tolerance in ["1", "2", "3", "4", "5"]:
             input_data = Flux2ProEditInput(
                 prompt="Test",
                 image_sources=[image_artifact],
@@ -389,7 +405,7 @@ class TestFalFlux2ProEditGenerator:
                     "image_urls": [fake_uploaded_url],  # Should use uploaded URL, not original
                     "output_format": "jpeg",
                     "sync_mode": False,
-                    "safety_tolerance": 2,
+                    "safety_tolerance": "2",
                     "enable_safety_checker": True,
                     "image_size": "auto",
                 },
