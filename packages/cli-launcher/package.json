@@ -1,6 +1,6 @@
 {
   "name": "@weirdfingers/baseboards",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "One-command launcher for the Boards image generation application",
   "type": "module",
   "bin": {
