@@ -36,6 +36,16 @@ const config: Config = {
     locales: ["en"],
   },
 
+  headTags: [
+    {
+      tagName: "meta",
+      attributes: {
+        name: "algolia-site-verification",
+        content: "05E7E60133199195",
+      },
+    },
+  ],
+
   presets: [
     [
       "classic",
@@ -165,6 +175,14 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+    },
+    algolia: {
+      appId: "OF86ZYIFD7",
+      apiKey: "d20a7b33609459681f9287a594944160",
+      indexName: "Weirdfingers Boards Documentation",
+      contextualSearch: true,
+      // Optional: search page path (enabled by default at /search)
+      searchPagePath: "search",
     },
   } satisfies Preset.ThemeConfig,
 };
