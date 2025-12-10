@@ -47,6 +47,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.flux_2_pro.FalFlux2ProGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.flux_2_pro_edit.FalFlux2ProEditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.flux_pro_kontext.FalFluxProKontextGenerator"
     enabled: true
 
