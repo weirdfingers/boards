@@ -2,8 +2,10 @@
 
 🎨 Open-source creative toolkit for AI-generated content (images, video, audio, text).
 
+**[📚 Documentation](https://boards-docs.weirdfingers.com)** | **[💬 Discord](https://discord.gg/rvVuHyuPEx)**
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/docs-docusaurus-blue)](http://localhost:4500)
+[![Documentation](https://img.shields.io/badge/docs-docusaurus-blue)](https://boards-docs.weirdfingers.com)
 
 ## Overview
 
