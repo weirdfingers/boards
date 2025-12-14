@@ -32,6 +32,7 @@ from .veo3 import FalVeo3Generator
 from .veo31_first_last_frame_to_video import FalVeo31FirstLastFrameToVideoGenerator
 from .veo31_image_to_video import FalVeo31ImageToVideoGenerator
 from .veo31_reference_to_video import FalVeo31ReferenceToVideoGenerator
+from .wan_25_preview_text_to_video import FalWan25PreviewTextToVideoGenerator
 from .wan_pro_image_to_video import FalWanProImageToVideoGenerator
 
 __all__ = [
@@ -55,5 +56,6 @@ __all__ = [
     "FalVeo31FirstLastFrameToVideoGenerator",
     "FalVeo31ImageToVideoGenerator",
     "FalVeo31ReferenceToVideoGenerator",
+    "FalWan25PreviewTextToVideoGenerator",
     "FalWanProImageToVideoGenerator",
 ]
