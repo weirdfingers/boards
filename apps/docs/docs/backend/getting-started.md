@@ -315,7 +315,7 @@ uv run pytest -v
 ### Writing Tests
 
 ```python
-# tests/test_generators.py
+# tests/generators/test_my_service.py
 import pytest
 from boards.generators.implementations.my_service.image.my_generator import MyGenerator, MyGeneratorInput
 from unittest.mock import AsyncMock
