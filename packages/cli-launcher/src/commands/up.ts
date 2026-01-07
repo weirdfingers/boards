@@ -168,6 +168,10 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
         chalk.gray(" - https://fal.ai/dashboard/keys")
     );
     console.log(
+      chalk.cyan("   • KIE_API_KEY") +
+        chalk.gray(" - https://kie.ai/dashboard")
+    );
+    console.log(
       chalk.cyan("   • OPENAI_API_KEY") +
         chalk.gray(" - https://platform.openai.com/api-keys")
     );
@@ -355,6 +359,12 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
     },
     {
       type: "password",
+      name: "KIE_API_KEY",
+      message: "Kie AI API Key (https://kie.ai/dashboard):",
+      initial: "",
+    },
+    {
+      type: "password",
       name: "OPENAI_API_KEY",
       message: "OpenAI API Key (https://platform.openai.com/api-keys):",
       initial: "",
@@ -370,6 +380,10 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
 
   if (response.FAL_KEY && response.FAL_KEY.trim()) {
     apiKeys.FAL_KEY = response.FAL_KEY.trim();
+  }
+
+  if (response.KIE_API_KEY && response.KIE_API_KEY.trim()) {
+    apiKeys.KIE_API_KEY = response.KIE_API_KEY.trim();
   }
 
   if (response.OPENAI_API_KEY && response.OPENAI_API_KEY.trim()) {

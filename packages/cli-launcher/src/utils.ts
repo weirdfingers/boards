@@ -234,6 +234,7 @@ export function detectMissingProviderKeys(envPath: string): string[] {
   const providerKeys = [
     "REPLICATE_API_TOKEN",
     "FAL_KEY",
+    "KIE_API_KEY",
     "OPENAI_API_KEY",
     "GOOGLE_API_KEY",
   ];

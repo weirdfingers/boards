@@ -20,6 +20,9 @@ REPLICATE_API_TOKEN=
 # FAL - https://fal.ai/dashboard/keys
 FAL_KEY=
 
+# KIE - https://kie.ai/dashboard
+KIE_API_KEY=
+
 # OpenAI - https://platform.openai.com/api-keys
 OPENAI_API_KEY=
 
