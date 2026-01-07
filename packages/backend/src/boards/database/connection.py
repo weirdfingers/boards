@@ -132,18 +132,14 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             if not _sync_initialized or force_reinit:
                 sync_db_url = db_url
                 if db_url.startswith("postgresql://"):
-                    sync_db_url = db_url.replace(
-                        "postgresql://", "postgresql+psycopg://"
-                    )
+                    sync_db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
                 _engine = create_engine(
                     url=sync_db_url,
                     pool_size=settings.database_pool_size,
                     max_overflow=settings.database_max_overflow,
                     echo=settings.sql_echo,
                 )
-                _session_local = sessionmaker(
-                    autocommit=False, autoflush=False, bind=_engine
-                )
+                _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
                 _sync_initialized = True
                 logger.info("Sync database initialized", database_url=db_url)
 
@@ -166,9 +162,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                 autoflush=False,
             )
             _async_db_ctx.initialized = True
-            logger.info(
-                "Async database initialized for thread", thread_id=threading.get_ident()
-            )
+            logger.info("Async database initialized for thread", thread_id=threading.get_ident())
 
 
 def get_engine():
