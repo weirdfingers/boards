@@ -14,6 +14,9 @@ from .fal_pixverse_lipsync import FalPixverseLipsyncGenerator
 from .fal_sora_2_text_to_video import FalSora2TextToVideoGenerator
 from .infinitalk import FalInfinitalkGenerator
 from .kling_video_ai_avatar_v2_pro import FalKlingVideoAiAvatarV2ProGenerator
+from .kling_video_ai_avatar_v2_standard import (
+    FalKlingVideoAiAvatarV2StandardGenerator,
+)
 from .kling_video_v2_5_turbo_pro_image_to_video import (
     FalKlingVideoV25TurboProImageToVideoGenerator,
 )
@@ -47,6 +50,7 @@ __all__ = [
     "FalBytedanceSeedanceV1ProImageToVideoGenerator",
     "FalBytedanceSeedanceV1ProTextToVideoGenerator",
     "FalKlingVideoAiAvatarV2ProGenerator",
+    "FalKlingVideoAiAvatarV2StandardGenerator",
     "FalKlingVideoV25TurboProImageToVideoGenerator",
     "FalKlingVideoV25TurboProTextToVideoGenerator",
     "FalPixverseLipsyncGenerator",
