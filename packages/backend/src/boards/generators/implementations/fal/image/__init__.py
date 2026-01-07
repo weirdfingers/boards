@@ -15,6 +15,7 @@ from .gemini_25_flash_image_edit import FalGemini25FlashImageEditGenerator
 from .gpt_image_1_5 import FalGptImage15Generator
 from .gpt_image_1_edit_image import FalGptImage1EditImageGenerator
 from .gpt_image_1_mini import FalGptImage1MiniGenerator
+from .gpt_image_15_edit import FalGptImage15EditGenerator
 from .ideogram_character_edit import FalIdeogramCharacterEditGenerator
 from .ideogram_v2 import FalIdeogramV2Generator
 from .imagen4_preview import FalImagen4PreviewGenerator
@@ -41,6 +42,7 @@ __all__ = [
     "FalFluxProUltraGenerator",
     "FalGemini25FlashImageEditGenerator",
     "FalGemini25FlashImageGenerator",
+    "FalGptImage15EditGenerator",
     "FalGptImage15Generator",
     "FalGptImage1EditImageGenerator",
     "FalGptImage1MiniGenerator",
