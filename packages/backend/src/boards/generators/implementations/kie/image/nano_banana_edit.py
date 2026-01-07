@@ -160,9 +160,10 @@ class KieNanoBananaEditGenerator(BaseGenerator):
                 if status_result.get("code") != 200:
                     raise ValueError(f"Status check error: {status_result.get('msg')}")
 
-                # Parse Market API status
+                # Parse Market API response
                 task_data = status_result.get("data", {})
-                status = task_data.get("status")
+                # Market API uses 'state' field, not 'status'
+                state = task_data.get("state")
 
                 # Log every poll to help debug
                 from boards.logging import get_logger
@@ -172,24 +173,30 @@ class KieNanoBananaEditGenerator(BaseGenerator):
                     "Status poll response",
                     poll_count=poll_count,
                     task_id=task_id,
-                    status=status,
+                    state=state,
                     task_data_keys=list(task_data.keys()) if task_data else None,
                 )
 
-                if status == "SUCCESS":
-                    # Extract outputs
-                    result_data = task_data.get("result")
+                if state == "success":
+                    # Extract outputs from resultJson
+                    result_json = task_data.get("resultJson")
+                    if result_json:
+                        import json
+
+                        result_data = json.loads(result_json)
+                    else:
+                        result_data = task_data.get("result")
                     break
-                elif status == "FAILED":
-                    error_msg = task_data.get("error", "Unknown error")
+                elif state == "failed":
+                    error_msg = task_data.get("failMsg", "Unknown error")
                     raise ValueError(f"Generation failed: {error_msg}")
-                elif status not in ["PENDING", "PROCESSING", None]:
-                    # Unknown status - log and fail
+                elif state not in ["waiting", "pending", "processing", None]:
+                    # Unknown state - log and fail
                     raise ValueError(
-                        f"Unknown status '{status}' from Kie.ai API. "
+                        f"Unknown state '{state}' from Kie.ai API. "
                         f"Full response: {status_result}"
                     )
-                # Continue polling for PENDING/PROCESSING
+                # Continue polling for waiting/pending/processing
 
                 # Publish progress
                 progress = min(90, (poll_count / max_polls) * 100)
@@ -217,7 +224,10 @@ class KieNanoBananaEditGenerator(BaseGenerator):
             # Try to extract from common patterns
             if isinstance(result_data, dict):
                 # Check for common response patterns
-                if "image_urls" in result_data:
+                if "resultUrls" in result_data:
+                    # Market API returns resultUrls as array of strings
+                    images = [{"url": url} for url in result_data["resultUrls"]]
+                elif "image_urls" in result_data:
                     images = [{"url": url} for url in result_data["image_urls"]]
                 elif "url" in result_data:
                     images = [{"url": result_data["url"]}]

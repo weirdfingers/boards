@@ -20,7 +20,7 @@ Or run all Kie live tests:
 import pytest
 
 from boards.config import initialize_generator_api_keys
-from boards.generators.artifacts import ImageArtifact
+from boards.generators.artifacts import ImageArtifact, VideoArtifact
 from boards.generators.implementations.kie.video.veo3 import (
     KieVeo3Generator,
     KieVeo3Input,
@@ -68,6 +68,7 @@ class TestKieVeo3GeneratorLive:
 
         # Verify artifact properties
         artifact = result.outputs[0]
+        assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
         assert artifact.format == "mp4"
         assert artifact.width == 1920

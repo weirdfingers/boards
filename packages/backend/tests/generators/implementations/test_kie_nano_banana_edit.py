@@ -2,6 +2,7 @@
 Tests for KieNanoBananaEditGenerator.
 """
 
+import json
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -299,20 +300,13 @@ class TestKieNanoBananaEditGenerator:
                 # Mock status check response (return success immediately)
                 status_response = MagicMock()
                 status_response.status_code = 200
+                # Market API uses lowercase 'state' and 'resultJson' (JSON string)
                 status_response.json.return_value = {
                     "code": 200,
                     "data": {
                         "taskId": fake_task_id,
-                        "status": "SUCCESS",
-                        "result": {
-                            "images": [
-                                {
-                                    "url": fake_output_url,
-                                    "width": 1024,
-                                    "height": 768,
-                                }
-                            ],
-                        },
+                        "state": "success",
+                        "resultJson": json.dumps({"resultUrls": [fake_output_url]}),
                     },
                 }
 

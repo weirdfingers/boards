@@ -52,6 +52,7 @@ class TestKieVeo3Input:
         )
 
         assert input_data.prompt == "animate this image"
+        assert input_data.image_sources is not None
         assert len(input_data.image_sources) == 1
         assert input_data.aspect_ratio == "16:9"
         assert input_data.model == "veo3_fast"
@@ -172,6 +173,7 @@ class TestKieVeo3Generator:
                         height=1,
                         duration=1.0,
                         format="mp4",
+                        fps=30,
                     )
 
                 async def store_audio_result(self, *args, **kwargs):
@@ -245,6 +247,7 @@ class TestKieVeo3Generator:
                 height=1080,
                 duration=8.0,
                 format="mp4",
+                fps=30,
             )
 
             # Execute generation
@@ -368,6 +371,7 @@ class TestKieVeo3Generator:
                     height=1920,
                     duration=8.0,
                     format="mp4",
+                    fps=30,
                 )
 
                 # Execute generation
