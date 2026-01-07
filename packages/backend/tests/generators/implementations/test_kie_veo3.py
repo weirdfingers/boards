@@ -2,7 +2,6 @@
 Tests for KieVeo3Generator.
 """
 
-import json
 import os
 import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -211,21 +210,25 @@ class TestKieVeo3Generator:
             submit_response = MagicMock()
             submit_response.status_code = 200
             submit_response.json.return_value = {
-                "success": True,
+                "code": 200,
+                "msg": "success",
                 "data": {"taskId": fake_task_id},
             }
 
             # Mock status check response (return success immediately)
             status_response = MagicMock()
             status_response.status_code = 200
-            # resultUrls is a JSON string according to docs
-            result_urls_json = json.dumps([fake_video_url])
+            # Dedicated API nests resultUrls inside a 'response' object
             status_response.json.return_value = {
-                "success": True,
+                "code": 200,
+                "msg": "success",
                 "data": {
                     "taskId": fake_task_id,
                     "successFlag": 1,
-                    "resultUrls": result_urls_json,
+                    "response": {
+                        "taskId": fake_task_id,
+                        "resultUrls": [fake_video_url],
+                    },
                 },
             }
 
@@ -334,20 +337,25 @@ class TestKieVeo3Generator:
                 submit_response = MagicMock()
                 submit_response.status_code = 200
                 submit_response.json.return_value = {
-                    "success": True,
+                    "code": 200,
+                    "msg": "success",
                     "data": {"taskId": fake_task_id},
                 }
 
                 # Mock status check response
                 status_response = MagicMock()
                 status_response.status_code = 200
-                result_urls_json = json.dumps([fake_video_url])
+                # Dedicated API nests resultUrls inside a 'response' object
                 status_response.json.return_value = {
-                    "success": True,
+                    "code": 200,
+                    "msg": "success",
                     "data": {
                         "taskId": fake_task_id,
                         "successFlag": 1,
-                        "resultUrls": result_urls_json,
+                        "response": {
+                            "taskId": fake_task_id,
+                            "resultUrls": [fake_video_url],
+                        },
                     },
                 }
 
@@ -433,7 +441,7 @@ class TestKieVeo3Generator:
             submit_response = MagicMock()
             submit_response.status_code = 200
             submit_response.json.return_value = {
-                "success": False,
+                "code": 400,
                 "msg": "Validation error: prompt too short",
             }
 

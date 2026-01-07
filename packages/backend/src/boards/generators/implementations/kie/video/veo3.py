@@ -9,7 +9,6 @@ See: https://docs.kie.ai/veo3-api/generate-veo-3-video
 """
 
 import asyncio
-import json
 import os
 from typing import Any, Literal
 
@@ -108,16 +107,20 @@ class KieVeo3Generator(BaseGenerator):
             result = response.json()
 
             # Check for error response
-            if not result.get("success"):
+            # Dedicated API uses same structure as Market API: { code, msg, data }
+            if result.get("code") != 200:
                 error_msg = result.get("msg", "Unknown error")
                 raise ValueError(f"Kie.ai API error: {error_msg}")
 
             # Extract task ID from Dedicated API response
-            data = result.get("data", {})
-            task_id = data.get("taskId")
+            # Try direct taskId first, then nested under 'data'
+            task_id = result.get("taskId")
+            if not task_id:
+                data = result.get("data", {})
+                task_id = data.get("taskId")
 
             if not task_id:
-                raise ValueError("No taskId returned from Kie.ai API")
+                raise ValueError(f"No taskId returned from Kie.ai API. Response: {result}")
 
         # Store external job ID
         await context.set_external_job_id(task_id)
@@ -147,7 +150,7 @@ class KieVeo3Generator(BaseGenerator):
 
                 status_result = status_response.json()
 
-                if not status_result.get("success"):
+                if status_result.get("code") != 200:
                     raise ValueError(f"Status check error: {status_result.get('msg')}")
 
                 # Parse Dedicated API status response
@@ -180,19 +183,15 @@ class KieVeo3Generator(BaseGenerator):
         if not result_data:
             raise ValueError("No result data returned from Kie.ai API")
 
-        # Extract video URLs from resultUrls field (JSON string)
-        result_urls_json = result_data.get("resultUrls")
-        if not result_urls_json:
-            raise ValueError("No resultUrls field in response")
+        # Extract video URLs from response.resultUrls field
+        # Dedicated API nests the results inside a 'response' object
+        response_data = result_data.get("response")
+        if not response_data:
+            raise ValueError(f"No response field in result. Response: {result_data}")
 
-        # Parse JSON string to get video URLs
-        try:
-            result_urls = json.loads(result_urls_json)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse resultUrls JSON: {e}") from e
-
+        result_urls = response_data.get("resultUrls")
         if not result_urls or not isinstance(result_urls, list):
-            raise ValueError("resultUrls is not a valid list")
+            raise ValueError(f"No resultUrls in response. Response: {result_data}")
 
         # Determine video dimensions based on aspect ratio
         # Default to 1080p quality
