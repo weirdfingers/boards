@@ -8,16 +8,13 @@ Based on Kie.ai's google/nano-banana-edit model.
 See: https://docs.kie.ai/market/google/nano-banana-edit
 """
 
-import asyncio
-import os
 from typing import Literal
 
-import httpx
 from pydantic import BaseModel, Field
 
-from .....progress.models import ProgressUpdate
 from ....artifacts import ImageArtifact
-from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....base import GeneratorExecutionContext, GeneratorResult
+from ..base import KieMarketAPIGenerator
 
 
 class NanoBananaEditInput(BaseModel):
@@ -58,7 +55,7 @@ class NanoBananaEditInput(BaseModel):
     )
 
 
-class KieNanoBananaEditGenerator(BaseGenerator):
+class KieNanoBananaEditGenerator(KieMarketAPIGenerator):
     """nano-banana image editing generator using Kie.ai Market API."""
 
     name = "kie-nano-banana-edit"
@@ -66,7 +63,6 @@ class KieNanoBananaEditGenerator(BaseGenerator):
     description = "Kie.ai: Google nano-banana edit - AI-powered image editing with Gemini"
 
     # Market API configuration
-    api_pattern = "market"
     model_id = "google/nano-banana-edit"
 
     def get_input_schema(self) -> type[NanoBananaEditInput]:
@@ -76,10 +72,8 @@ class KieNanoBananaEditGenerator(BaseGenerator):
         self, inputs: NanoBananaEditInput, context: GeneratorExecutionContext
     ) -> GeneratorResult:
         """Edit images using Kie.ai google/nano-banana-edit model."""
-        # Check for API key
-        api_key = os.getenv("KIE_API_KEY")
-        if not api_key:
-            raise ValueError("API configuration invalid. Missing KIE_API_KEY environment variable")
+        # Get API key using base class method
+        api_key = self._get_api_key()
 
         # Upload image artifacts to Kie.ai's public storage
         # Kie.ai API requires publicly accessible URLs, but our storage_url might be:
@@ -101,115 +95,25 @@ class KieNanoBananaEditGenerator(BaseGenerator):
             },
         }
 
-        # Submit task
+        # Submit task using base class method
         submit_url = "https://api.kie.ai/api/v1/jobs/createTask"
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                submit_url,
-                json=body,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=30.0,
-            )
-
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Kie.ai API request failed: {response.status_code} {response.text}"
-                )
-
-            result = response.json()
-
-            if result.get("code") != 200:
-                raise ValueError(f"Kie.ai API error: {result.get('msg', 'Unknown error')}")
-
-            task_id = result["data"]["taskId"]
+        result = await self._make_request(submit_url, "POST", api_key, json=body)
+        task_id = result["data"]["taskId"]
 
         # Store external job ID
         await context.set_external_job_id(task_id)
 
-        # Poll for completion
-        status_url = f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}"
+        # Poll for completion using base class method
+        task_data = await self._poll_for_completion(task_id, api_key, context)
 
-        max_polls = 120  # Maximum number of polls (20 minutes at 10s intervals)
-        poll_interval = 10  # Seconds between polls
+        # Extract outputs from resultJson
+        result_json = task_data.get("resultJson")
+        if result_json:
+            import json
 
-        result_data = None
-
-        async with httpx.AsyncClient() as client:
-            for poll_count in range(max_polls):
-                # Don't sleep on first poll - check status immediately
-                if poll_count > 0:
-                    await asyncio.sleep(poll_interval)
-
-                status_response = await client.get(
-                    status_url,
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    timeout=30.0,
-                )
-
-                if status_response.status_code != 200:
-                    raise ValueError(
-                        f"Status check failed: {status_response.status_code} {status_response.text}"
-                    )
-
-                status_result = status_response.json()
-
-                if status_result.get("code") != 200:
-                    raise ValueError(f"Status check error: {status_result.get('msg')}")
-
-                # Parse Market API response
-                task_data = status_result.get("data", {})
-                # Market API uses 'state' field, not 'status'
-                state = task_data.get("state")
-
-                # Log every poll to help debug
-                from boards.logging import get_logger
-
-                logger = get_logger(__name__)
-                logger.info(
-                    "Status poll response",
-                    poll_count=poll_count,
-                    task_id=task_id,
-                    state=state,
-                    task_data_keys=list(task_data.keys()) if task_data else None,
-                )
-
-                if state == "success":
-                    # Extract outputs from resultJson
-                    result_json = task_data.get("resultJson")
-                    if result_json:
-                        import json
-
-                        result_data = json.loads(result_json)
-                    else:
-                        result_data = task_data.get("result")
-                    break
-                elif state == "failed":
-                    error_msg = task_data.get("failMsg", "Unknown error")
-                    raise ValueError(f"Generation failed: {error_msg}")
-                elif state not in ["waiting", "pending", "processing", None]:
-                    # Unknown state - log and fail
-                    raise ValueError(
-                        f"Unknown state '{state}' from Kie.ai API. "
-                        f"Full response: {status_result}"
-                    )
-                # Continue polling for waiting/pending/processing
-
-                # Publish progress
-                progress = min(90, (poll_count / max_polls) * 100)
-                await context.publish_progress(
-                    ProgressUpdate(
-                        job_id=task_id,
-                        status="processing",
-                        progress=progress,
-                        phase="processing",
-                    )
-                )
-            else:
-                raise ValueError("Generation timed out after 20 minutes")
+            result_data = json.loads(result_json)
+        else:
+            result_data = task_data.get("result")
 
         if not result_data:
             raise ValueError("No result data returned from Kie.ai API")

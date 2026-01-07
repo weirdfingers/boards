@@ -8,16 +8,13 @@ Based on Kie.ai's Veo 3.1 API.
 See: https://docs.kie.ai/veo3-api/generate-veo-3-video
 """
 
-import asyncio
-import os
 from typing import Any, Literal
 
-import httpx
 from pydantic import BaseModel, Field
 
-from .....progress.models import ProgressUpdate
 from ....artifacts import ImageArtifact
-from ....base import BaseGenerator, GeneratorExecutionContext, GeneratorResult
+from ....base import GeneratorExecutionContext, GeneratorResult
+from ..base import KieDedicatedAPIGenerator
 
 
 class KieVeo3Input(BaseModel):
@@ -48,7 +45,7 @@ class KieVeo3Input(BaseModel):
     )
 
 
-class KieVeo3Generator(BaseGenerator):
+class KieVeo3Generator(KieDedicatedAPIGenerator):
     """Veo 3.1 video generator using Kie.ai Dedicated API."""
 
     name = "kie-veo3"
@@ -56,20 +53,21 @@ class KieVeo3Generator(BaseGenerator):
     description = "Kie.ai: Google Veo 3.1 - High-quality AI video generation"
 
     # Dedicated API configuration
-    api_pattern = "dedicated"
     model_id = "veo3"
 
     def get_input_schema(self) -> type[KieVeo3Input]:
         return KieVeo3Input
 
+    def _get_status_url(self, task_id: str) -> str:
+        """Get the Veo3-specific status check URL."""
+        return f"https://api.kie.ai/api/v1/veo/record-info?taskId={task_id}"
+
     async def generate(
         self, inputs: KieVeo3Input, context: GeneratorExecutionContext
     ) -> GeneratorResult:
         """Generate video using Kie.ai Veo 3.1 model."""
-        # Check for API key
-        api_key = os.getenv("KIE_API_KEY")
-        if not api_key:
-            raise ValueError("API configuration invalid. Missing KIE_API_KEY environment variable")
+        # Get API key using base class method
+        api_key = self._get_api_key()
 
         # Prepare request body for Dedicated API
         body: dict[str, Any] = {
@@ -85,103 +83,25 @@ class KieVeo3Generator(BaseGenerator):
             image_urls = await upload_artifacts_to_kie(inputs.image_sources, context)
             body["imageUrls"] = image_urls
 
-        # Submit task to Dedicated API endpoint
+        # Submit task to Dedicated API endpoint using base class method
         submit_url = "https://api.kie.ai/api/v1/veo/generate"
+        result = await self._make_request(submit_url, "POST", api_key, json=body)
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                submit_url,
-                json=body,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=30.0,
-            )
+        # Extract task ID from Dedicated API response
+        # Try direct taskId first, then nested under 'data'
+        task_id = result.get("taskId")
+        if not task_id:
+            data = result.get("data", {})
+            task_id = data.get("taskId")
 
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Kie.ai API request failed: {response.status_code} {response.text}"
-                )
-
-            result = response.json()
-
-            # Check for error response
-            # Dedicated API uses same structure as Market API: { code, msg, data }
-            if result.get("code") != 200:
-                error_msg = result.get("msg", "Unknown error")
-                raise ValueError(f"Kie.ai API error: {error_msg}")
-
-            # Extract task ID from Dedicated API response
-            # Try direct taskId first, then nested under 'data'
-            task_id = result.get("taskId")
-            if not task_id:
-                data = result.get("data", {})
-                task_id = data.get("taskId")
-
-            if not task_id:
-                raise ValueError(f"No taskId returned from Kie.ai API. Response: {result}")
+        if not task_id:
+            raise ValueError(f"No taskId returned from Kie.ai API. Response: {result}")
 
         # Store external job ID
         await context.set_external_job_id(task_id)
 
-        # Poll for completion using Dedicated API status endpoint
-        status_url = f"https://api.kie.ai/api/v1/veo/record-info?taskId={task_id}"
-
-        max_polls = 180  # Maximum number of polls (30 minutes at 10s intervals)
-        poll_interval = 10  # Seconds between polls
-
-        result_data = None
-
-        async with httpx.AsyncClient() as client:
-            for poll_count in range(max_polls):
-                await asyncio.sleep(poll_interval)
-
-                status_response = await client.get(
-                    status_url,
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    timeout=30.0,
-                )
-
-                if status_response.status_code != 200:
-                    raise ValueError(
-                        f"Status check failed: {status_response.status_code} {status_response.text}"
-                    )
-
-                status_result = status_response.json()
-
-                if status_result.get("code") != 200:
-                    raise ValueError(f"Status check error: {status_result.get('msg')}")
-
-                # Parse Dedicated API status response
-                task_data = status_result.get("data", {})
-                success_flag = task_data.get("successFlag")
-
-                if success_flag == 1:
-                    # Success - extract result
-                    result_data = task_data
-                    break
-                elif success_flag in [2, 3]:
-                    # Failed
-                    error_msg = task_data.get("errorMsg", "Unknown error")
-                    raise ValueError(f"Generation failed: {error_msg}")
-                # Continue polling for successFlag == 0 (processing)
-
-                # Publish progress
-                progress = min(90, (poll_count / max_polls) * 100)
-                await context.publish_progress(
-                    ProgressUpdate(
-                        job_id=task_id,
-                        status="processing",
-                        progress=progress,
-                        phase="processing",
-                    )
-                )
-            else:
-                raise ValueError("Generation timed out after 30 minutes")
-
-        if not result_data:
-            raise ValueError("No result data returned from Kie.ai API")
+        # Poll for completion using base class method
+        result_data = await self._poll_for_completion(task_id, api_key, context)
 
         # Extract video URLs from response.resultUrls field
         # Dedicated API nests the results inside a 'response' object
