@@ -71,6 +71,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.gemini_25_flash_image_edit.FalGemini25FlashImageEditGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.gpt_image_1_5.FalGptImage15Generator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.gpt_image_1_edit_image.FalGptImage1EditImageGenerator"
     enabled: true
 
