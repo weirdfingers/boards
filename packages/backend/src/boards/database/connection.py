@@ -116,9 +116,12 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
         # Get the database URL
         db_url = database_url or get_database_url()
 
-        # Create sync engine
+        # Create sync engine - explicitly use psycopg v3 dialect
+        sync_db_url = db_url
+        if db_url.startswith("postgresql://"):
+            sync_db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
         _engine = create_engine(
-            db_url,
+            sync_db_url,
             pool_size=settings.database_pool_size,
             max_overflow=settings.database_max_overflow,
             echo=settings.sql_echo,
