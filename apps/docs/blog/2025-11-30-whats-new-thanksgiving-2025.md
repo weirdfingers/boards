@@ -10,7 +10,7 @@ tags:
   - docker
   - architecture
   - developer-guide
-description: A walkthrough of the latest Baseboards updates featuring Nano Banana Pro, the new create-baseboards CLI, and a deep dive into the Docker-based architecture that scales from local development to production.
+description: A walkthrough of the latest Baseboards updates featuring Nano Banana Pro, the new create-baseboards CLI, and a deep dive into the architecture that scales from local development to production.
 ---
 
 Based on [the Loom walkthrough](https://www.loom.com/share/f496dcd5f36c49cb9d308667bff813dd)
