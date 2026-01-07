@@ -32,11 +32,13 @@ class AsyncDBContext(threading.local):
     engine: AsyncEngine | None
     initialized: bool
     session_local: async_sessionmaker[AsyncSession] | None
+    lock: threading.Lock
 
     def __init__(self):
         self.engine = None
         self.initialized = False
         self.session_local = None
+        self.lock = threading.Lock()  # Per-thread lock for async initialization
 
 
 _async_db_ctx = AsyncDBContext()
@@ -58,11 +60,18 @@ def get_database_url() -> str:
 def reset_database():
     """Reset database connections (for tests)."""
     global _engine, _session_local, _sync_initialized
+
+    # Dispose of sync engine if it exists
+    if _engine is not None:
+        _engine.dispose()
+
     _engine = None
     _session_local = None
     _sync_initialized = False
 
     # Reset async context for current thread
+    # Note: async engine disposal must be done with await, so we just clear the reference
+    # The engine will be garbage collected when no sessions reference it
     _async_db_ctx.engine = None
     _async_db_ctx.session_local = None
     _async_db_ctx.initialized = False
@@ -147,22 +156,33 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
     # Async engines must be thread-local because asyncpg connections are tied to the event loop
     # and cannot be shared across threads/loops.
     if not _async_db_ctx.initialized or force_reinit:
-        if db_url.startswith("postgresql://"):
-            async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
-            _async_db_ctx.engine = create_async_engine(
-                url=async_db_url,
-                pool_size=settings.database_pool_size,
-                max_overflow=settings.database_max_overflow,
-                echo=settings.sql_echo,
-            )
-            _async_db_ctx.session_local = async_sessionmaker(
-                _async_db_ctx.engine,
-                class_=AsyncSession,
-                autocommit=False,
-                autoflush=False,
-            )
-            _async_db_ctx.initialized = True
-            logger.info("Async database initialized for thread", thread_id=threading.get_ident())
+        with _async_db_ctx.lock:
+            # Double-check after acquiring lock (another coroutine may have initialized)
+            if not _async_db_ctx.initialized or force_reinit:
+                if db_url.startswith("postgresql://"):
+                    async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+                    _async_db_ctx.engine = create_async_engine(
+                        url=async_db_url,
+                        pool_size=settings.database_pool_size,
+                        max_overflow=settings.database_max_overflow,
+                        echo=settings.sql_echo,
+                    )
+                    _async_db_ctx.session_local = async_sessionmaker(
+                        _async_db_ctx.engine,
+                        class_=AsyncSession,
+                        autocommit=False,
+                        autoflush=False,
+                    )
+                    _async_db_ctx.initialized = True
+                    logger.info(
+                        "Async database initialized for thread",
+                        thread_id=threading.get_ident(),
+                    )
+                else:
+                    logger.warning(
+                        "Non-PostgreSQL URL detected, async engine not initialized",
+                        url_prefix=db_url.split("://")[0] if "://" in db_url else "unknown",
+                    )
 
 
 def get_engine():
