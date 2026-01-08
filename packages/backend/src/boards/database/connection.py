@@ -8,7 +8,12 @@ from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..config import settings
@@ -18,11 +23,25 @@ logger = get_logger(__name__)
 
 # Global shared connection pools (proper FastAPI pattern)
 _engine = None
-_async_engine = None
 _session_local = None
-_async_session_local = None
-_initialized = False
-_init_lock = threading.Lock()  # Protect initialization from race conditions
+_sync_initialized = False
+_sync_init_lock = threading.Lock()
+
+
+class AsyncDBContext(threading.local):
+    engine: AsyncEngine | None
+    initialized: bool
+    session_local: async_sessionmaker[AsyncSession] | None
+    lock: threading.Lock
+
+    def __init__(self):
+        self.engine = None
+        self.initialized = False
+        self.session_local = None
+        self.lock = threading.Lock()  # Per-thread lock for async initialization
+
+
+_async_db_ctx = AsyncDBContext()
 
 
 def get_database_url() -> str:
@@ -40,12 +59,22 @@ def get_database_url() -> str:
 
 def reset_database():
     """Reset database connections (for tests)."""
-    global _engine, _async_engine, _session_local, _async_session_local, _initialized
+    global _engine, _session_local, _sync_initialized
+
+    # Dispose of sync engine if it exists
+    if _engine is not None:
+        _engine.dispose()
+
     _engine = None
-    _async_engine = None
     _session_local = None
-    _async_session_local = None
-    _initialized = False
+    _sync_initialized = False
+
+    # Reset async context for current thread
+    # Note: async engine disposal must be done with await, so we just clear the reference
+    # The engine will be garbage collected when no sessions reference it
+    _async_db_ctx.engine = None
+    _async_db_ctx.session_local = None
+    _async_db_ctx.initialized = False
 
 
 async def test_database_connection() -> tuple[bool, str | None]:
@@ -55,11 +84,11 @@ async def test_database_connection() -> tuple[bool, str | None]:
     Returns:
         tuple: (success: bool, error_message: str | None)
     """
-    if _async_engine is None:
+    if _async_db_ctx.engine is None:
         return False, "Database engine not initialized"
 
     try:
-        async with _async_engine.connect() as conn:
+        async with _async_db_ctx.engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
             return True, None
     except Exception as e:
@@ -101,51 +130,59 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
     Thread-safe initialization using a lock to prevent race conditions
     when multiple threads attempt to initialize simultaneously.
     """
-    global _engine, _async_engine, _session_local, _async_session_local, _initialized
+    global _engine, _session_local, _sync_initialized
 
-    # Fast path: already initialized, no lock needed
-    if _initialized and not force_reinit and database_url is None:
-        return
+    # Get the database URL
+    db_url = database_url or get_database_url()
 
-    # Slow path: acquire lock for initialization
-    with _init_lock:
-        # Double-check after acquiring lock (another thread may have initialized)
-        if _initialized and not force_reinit and database_url is None:
-            return
+    # Initialize Sync Engine (Global)
+    if not _sync_initialized or force_reinit:
+        with _sync_init_lock:
+            if not _sync_initialized or force_reinit:
+                sync_db_url = db_url
+                if db_url.startswith("postgresql://"):
+                    sync_db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
+                _engine = create_engine(
+                    url=sync_db_url,
+                    pool_size=settings.database_pool_size,
+                    max_overflow=settings.database_max_overflow,
+                    echo=settings.sql_echo,
+                )
+                _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+                _sync_initialized = True
+                logger.info("Sync database initialized", database_url=db_url)
 
-        # Get the database URL
-        db_url = database_url or get_database_url()
-
-        # Create sync engine - explicitly use psycopg v3 dialect
-        sync_db_url = db_url
-        if db_url.startswith("postgresql://"):
-            sync_db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
-        _engine = create_engine(
-            sync_db_url,
-            pool_size=settings.database_pool_size,
-            max_overflow=settings.database_max_overflow,
-            echo=settings.sql_echo,
-        )
-        _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
-
-        # Create async engine (if PostgreSQL)
-        if db_url.startswith("postgresql://"):
-            async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
-            _async_engine = create_async_engine(
-                async_db_url,
-                pool_size=settings.database_pool_size,
-                max_overflow=settings.database_max_overflow,
-                echo=settings.sql_echo,
-            )
-            _async_session_local = async_sessionmaker(
-                _async_engine,
-                class_=AsyncSession,
-                autocommit=False,
-                autoflush=False,
-            )
-
-        _initialized = True
-        logger.info("Database initialized", database_url=db_url)
+    # Initialize Async Engine (Thread-Local)
+    # Async engines must be thread-local because asyncpg connections are tied to the event loop
+    # and cannot be shared across threads/loops.
+    if not _async_db_ctx.initialized or force_reinit:
+        with _async_db_ctx.lock:
+            # Double-check after acquiring lock (another coroutine may have initialized)
+            if not _async_db_ctx.initialized or force_reinit:
+                if db_url.startswith("postgresql://"):
+                    async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+                    _async_db_ctx.engine = create_async_engine(
+                        url=async_db_url,
+                        pool_size=settings.database_pool_size,
+                        max_overflow=settings.database_max_overflow,
+                        echo=settings.sql_echo,
+                    )
+                    _async_db_ctx.session_local = async_sessionmaker(
+                        _async_db_ctx.engine,
+                        class_=AsyncSession,
+                        autocommit=False,
+                        autoflush=False,
+                    )
+                    _async_db_ctx.initialized = True
+                    logger.info(
+                        "Async database initialized for thread",
+                        thread_id=threading.get_ident(),
+                    )
+                else:
+                    logger.warning(
+                        "Non-PostgreSQL URL detected, async engine not initialized",
+                        url_prefix=db_url.split("://")[0] if "://" in db_url else "unknown",
+                    )
 
 
 def get_engine():
@@ -157,9 +194,9 @@ def get_engine():
 
 def get_async_engine():
     """Get the shared async SQLAlchemy engine."""
-    if _async_engine is None:
+    if _async_db_ctx.engine is None:
         init_database()
-    return _async_engine
+    return _async_db_ctx.engine
 
 
 @contextmanager
@@ -185,13 +222,13 @@ def get_session() -> Generator[Session, None, None]:
 @asynccontextmanager
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a database session (async) from shared pool."""
-    if _async_session_local is None:
+    if _async_db_ctx.session_local is None:
         init_database()
 
-    if _async_session_local is None:
+    if _async_db_ctx.session_local is None:
         raise RuntimeError("Async database not available (PostgreSQL required)")
 
-    async with _async_session_local() as session:
+    async with _async_db_ctx.session_local() as session:
         try:
             yield session
             await session.commit()
