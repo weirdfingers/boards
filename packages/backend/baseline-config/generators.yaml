@@ -131,6 +131,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.qwen_image.FalQwenImageGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.seedream_v45_text_to_image.FalSeedreamV45TextToImageGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.sora_2_text_to_video_pro.FalSora2TextToVideoProGenerator"
     enabled: true
 
