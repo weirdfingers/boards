@@ -1,5 +1,6 @@
 """Fal.ai image generators."""
 
+from .bytedance_seedream_v45_edit import FalBytedanceSeedreamV45EditGenerator
 from .clarity_upscaler import FalClarityUpscalerGenerator
 from .crystal_upscaler import FalCrystalUpscalerGenerator
 from .fal_ideogram_character import FalIdeogramCharacterGenerator
@@ -24,6 +25,7 @@ from .qwen_image import FalQwenImageGenerator
 from .qwen_image_edit import FalQwenImageEditGenerator
 
 __all__ = [
+    "FalBytedanceSeedreamV45EditGenerator",
     "FalClarityUpscalerGenerator",
     "FalCrystalUpscalerGenerator",
     "FalFlux2Generator",
