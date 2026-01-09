@@ -276,7 +276,9 @@ class KieDedicatedAPIGenerator(KieBaseGenerator):
 
         async with httpx.AsyncClient() as client:
             for poll_count in range(max_polls):
-                await asyncio.sleep(poll_interval)
+                # Don't sleep on first poll - check status immediately
+                if poll_count > 0:
+                    await asyncio.sleep(poll_interval)
 
                 status_response = await client.get(
                     status_url,

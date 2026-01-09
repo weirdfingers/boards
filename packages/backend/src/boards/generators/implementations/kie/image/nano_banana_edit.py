@@ -98,7 +98,13 @@ class KieNanoBananaEditGenerator(KieMarketAPIGenerator):
         # Submit task using base class method
         submit_url = "https://api.kie.ai/api/v1/jobs/createTask"
         result = await self._make_request(submit_url, "POST", api_key, json=body)
-        task_id = result["data"]["taskId"]
+
+        # Extract task ID with safe dictionary access
+        data = result.get("data", {})
+        task_id = data.get("taskId")
+
+        if not task_id:
+            raise ValueError(f"No taskId returned from Kie.ai API. Response: {result}")
 
         # Store external job ID
         await context.set_external_job_id(task_id)

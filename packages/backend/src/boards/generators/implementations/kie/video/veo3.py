@@ -129,6 +129,9 @@ class KieVeo3Generator(KieDedicatedAPIGenerator):
         # Store each video using output_index
         artifacts = []
         for idx, video_url in enumerate(result_urls):
+            if not video_url:
+                raise ValueError(f"Video {idx} missing URL in Kie.ai response")
+
             artifact = await context.store_video_result(
                 storage_url=video_url,
                 format="mp4",
