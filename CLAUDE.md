@@ -410,3 +410,5 @@ But Claude Code must NOT:
 - Run `git push` commands
 
 Unless the user explicitly asks for commits to be made.
+
+**CRITICAL**: Claude Code must NEVER push to remote repositories. Even when explicitly instructed to commit changes, always ask the user to push manually. This prevents accidental pushes to production or shared branches.
