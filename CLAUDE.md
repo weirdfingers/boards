@@ -113,14 +113,17 @@ The following packages are published to public registries:
 **When adding new code, ask:**
 
 1. **Is this specific to the Baseboards application UI/UX?**
+
    - YES → `apps/baseboards`
    - NO → Continue to question 2
 
 2. **Is this reusable toolkit functionality?**
+
    - NO → Reconsider the design
    - YES → Continue to question 3
 
 3. **Is this backend/server-side logic?**
+
    - YES → `packages/backend`
    - NO → Continue to question 4
 
@@ -131,6 +134,7 @@ The following packages are published to public registries:
 ### packages/backend (Python - Published to PyPI)
 
 **SHOULD contain:**
+
 - GraphQL schema definitions (Strawberry types and resolvers)
 - SQLAlchemy models and database logic
 - Business logic and service layer
@@ -141,11 +145,13 @@ The following packages are published to public registries:
 - Reusable utilities for backend development
 
 **SHOULD NOT contain:**
+
 - Application-specific business rules
 - Hardcoded configuration for specific deployments
 - Frontend-specific logic
 
 **Example:**
+
 ```python
 # ✅ Good - Generic board creation logic
 @strawberry.mutation
@@ -169,6 +175,7 @@ def create_board(self, info: Info, input: CreateBoardInput) -> Board:
 ### packages/frontend (React/TypeScript - Published to npm)
 
 **SHOULD contain:**
+
 - React hooks for all Boards functionality
 - GraphQL operations and fragments
 - urql client configuration and exchanges
@@ -179,11 +186,13 @@ def create_board(self, info: Info, input: CreateBoardInput) -> Board:
 - Reusable state management utilities
 
 **MUST be framework-agnostic:**
+
 - React only (no Next.js-specific code)
 - Should work with Remix, Vite, Create React App, etc.
 - No `next/router`, `next/navigation`, `next/image`, etc.
 
 **Components policy:**
+
 - Favor hooks over components
 - If shipping components, they MUST support:
   - Arbitrary theming (no hardcoded styles)
@@ -192,12 +201,14 @@ def create_board(self, info: Info, input: CreateBoardInput) -> Board:
 - When in doubt, ship a hook and let apps build their own UI
 
 **SHOULD NOT contain:**
+
 - Next.js-specific code
 - Styled/opinionated components
 - Application business logic
 - Direct imports that bypass hooks (apps importing from `/graphql/operations` directly)
 
 **Example:**
+
 ```typescript
 // ✅ Good - Generic hook for any React app
 export function useBoards() {
@@ -210,11 +221,7 @@ export function useBoards() {
 }
 
 // ✅ Good - Unstyled, accessible component
-export function BoardCard({
-  board,
-  className,
-  onSelect
-}: BoardCardProps) {
+export function BoardCard({ board, className, onSelect }: BoardCardProps) {
   return (
     <article
       className={className}
@@ -228,9 +235,9 @@ export function BoardCard({
 }
 
 // ❌ Bad - Next.js-specific code
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 export function useBoards() {
-  const router = useRouter();  // Not framework-agnostic!
+  const router = useRouter(); // Not framework-agnostic!
   // ...
 }
 
@@ -247,10 +254,12 @@ export function BoardCard({ board }: BoardCardProps) {
 ### apps/baseboards (Next.js - Published via Docker)
 
 **Purpose:** Baseboards serves dual roles:
+
 1. **Reference implementation** - demonstrates best practices for using the packages
 2. **Standalone application** - production-ready Boards instance deployable via Docker
 
 **SHOULD contain:**
+
 - Next.js pages, layouts, and routing
 - UI components with styling (Tailwind, Radix UI, etc.)
 - Application-specific configuration (environment variables, themes)
@@ -259,27 +268,32 @@ export function BoardCard({ board }: BoardCardProps) {
 - Generic application logic (not overly opinionated)
 
 **SHOULD import:**
+
 - Hooks from `@weirdfingers/boards`
 - Types from `@weirdfingers/boards`
 
 **SHOULD NOT import:**
+
 - Direct urql client usage (use hooks instead)
 - GraphQL operations from `@weirdfingers/boards/graphql/operations`
 - Anything that bypasses the hooks abstraction
 
 **SHOULD NOT contain:**
+
 - Reusable business logic (move to `packages/frontend` or `packages/backend`)
 - Hardcoded business rules that make it too opinionated
 - Backend logic (keep in `packages/backend`)
 
 **Philosophy:** Baseboards should be both:
+
 - Generic enough to deploy unchanged for most use cases
 - Well-structured enough to serve as a customization starting point
 
 **Example:**
+
 ```typescript
 // ✅ Good - Uses hooks from the package
-import { useBoards, useCreateBoard } from '@weirdfingers/boards';
+import { useBoards, useCreateBoard } from "@weirdfingers/boards";
 
 export function BoardsPage() {
   const { boards, loading } = useBoards();
@@ -288,7 +302,7 @@ export function BoardsPage() {
   return (
     <div className="container mx-auto">
       {/* Baseboards-specific styled UI */}
-      {boards.map(board => (
+      {boards.map((board) => (
         <StyledBoardCard key={board.id} board={board} />
       ))}
     </div>
@@ -296,11 +310,11 @@ export function BoardsPage() {
 }
 
 // ❌ Bad - Bypasses hooks, imports GraphQL directly
-import { useQuery } from 'urql';
-import { BoardsQuery } from '@weirdfingers/boards/graphql/operations';
+import { useQuery } from "urql";
+import { BoardsQuery } from "@weirdfingers/boards/graphql/operations";
 
 export function BoardsPage() {
-  const [result] = useQuery({ query: BoardsQuery });  // Should use useBoards() hook
+  const [result] = useQuery({ query: BoardsQuery }); // Should use useBoards() hook
   // ...
 }
 
@@ -314,17 +328,20 @@ export function useBoardValidation() {
 ### packages/cli-launcher (Node.js - Published to npm)
 
 **SHOULD contain:**
+
 - CLI commands for project scaffolding
 - Docker deployment utilities
 - Development environment setup
 
 **SHOULD NOT contain:**
+
 - Application business logic
 - Backend/frontend code (import from published packages instead)
 
 ### Auth Packages (Planned - Published to npm)
 
 **Future packages:**
+
 - `@weirdfingers/boards-auth-supabase`
 - `@weirdfingers/boards-auth-clerk`
 - `@weirdfingers/boards-auth-auth0`
@@ -341,18 +358,22 @@ Local development uses Docker Compose with:
 ## Code Quality Rules
 
 ### Type Checking and Testing
+
 - To typecheck the backend and frontend, run `make typecheck` at the root of the project
 - To run tests for the backend and frontend, run `make test` at the root of the project
 
 ### Logging
+
 - For backend logging, always use `@packages/backend/src/boards/logging.py` which is based on `structlog`
 - Use keyword arguments for log data, avoid f-strings
 - Never use `exc_info=True` in log statements
 
 ### SQLAlchemy Object Creation
+
 **IMPORTANT**: When creating SQLAlchemy model instances, DO NOT pass properties as kwargs to the constructor. Instead, set properties explicitly after instantiation. This allows the type checker (pyright) to catch incorrect property names.
 
 **Bad** (kwargs bypass type checking):
+
 ```python
 new_board = Boards(
     tenant_id=tenant_uuid,
@@ -363,6 +384,7 @@ new_board = Boards(
 ```
 
 **Good** (explicit assignment catches typos):
+
 ```python
 new_board = Boards()
 new_board.tenant_id = tenant_uuid
@@ -372,13 +394,16 @@ new_board.descritpion = input.description  # Type checker will error!
 ```
 
 ### GraphQL Schema Changes
+
 **CRITICAL**: When modifying GraphQL types in the backend, you MUST update the frontend in the same commit:
 
 1. **Backend changes** in `/packages/backend/src/boards/graphql/types/`:
+
    - Update the Strawberry GraphQL type definition
    - If removing/renaming fields, grep the frontend codebase first
 
 2. **Frontend changes** that MUST be synchronized:
+
    - Update GraphQL fragments in `/packages/frontend/src/graphql/operations.ts`
    - Update TypeScript interfaces in `/packages/frontend/src/hooks/`
    - Search for any component usage in example applications
@@ -386,6 +411,7 @@ new_board.descritpion = input.description  # Type checker will error!
 3. **Validation**: GraphQL queries that reference non-existent fields will fail at schema validation (before resolver execution), returning errors like "Cannot query field 'fieldName' on type 'TypeName'". This prevents resolvers from being called.
 
 **Example workflow when removing a field**:
+
 ```bash
 # 1. Remove from backend GraphQL type
 # 2. Search frontend for references
@@ -396,19 +422,22 @@ make typecheck
 ```
 
 ### Git Commit Policy
+
 **IMPORTANT**: Claude Code must NEVER commit changes to git without being explicitly instructed to do so by the user.
 
 Claude Code should:
+
 - Make code changes as requested
 - Run tests and verify changes
 - Show git status and explain what files have been modified
 - Suggest commit messages if helpful
 
 But Claude Code must NOT:
+
 - Run `git add` commands
 - Run `git commit` commands
 - Run `git push` commands
 
 Unless the user explicitly asks for commits to be made.
 
-**CRITICAL**: Claude Code must NEVER push to remote repositories. Even when explicitly instructed to commit changes, always ask the user to push manually. This prevents accidental pushes to production or shared branches.
+**CRITICAL**: Claude Code must NEVER push to remote repositories unless explicitly instructed to commit changes, always ask the user to push manually. This prevents accidental pushes to production or shared branches.
