@@ -197,6 +197,13 @@ generators:
   - class: "boards.generators.implementations.fal.video.wan_pro_image_to_video.FalWanProImageToVideoGenerator"
     enabled: true
 
+  # Kie.ai generators
+  - class: "boards.generators.implementations.kie.image.nano_banana_edit.KieNanoBananaEditGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.kie.video.veo3.KieVeo3Generator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true

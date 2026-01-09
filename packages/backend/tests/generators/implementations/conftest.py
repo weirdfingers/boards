@@ -61,6 +61,13 @@ def skip_if_no_openai_key():
         pytest.skip("OPENAI_API_KEY not set, skipping live API test")
 
 
+@pytest.fixture
+def skip_if_no_kie_key():
+    """Skip test if KIE_API_KEY is not available."""
+    if not check_api_key("KIE_API_KEY"):
+        pytest.skip("KIE_API_KEY not set, skipping live API test")
+
+
 class DummyGeneratorContext(GeneratorExecutionContext):
     """
     Minimal GeneratorExecutionContext for testing.
