@@ -17,6 +17,9 @@ generators:
   - class: "boards.generators.implementations.fal.audio.beatoven_sound_effect_generation.FalBeatovenSoundEffectGenerationGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.audio.chatterbox_tts_turbo.FalChatterboxTtsTurboGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.clarity_upscaler.FalClarityUpscalerGenerator"
     enabled: true
 
