@@ -32,7 +32,6 @@ export { useBoards } from "./hooks/useBoards";
 export { useBoard } from "./hooks/useBoard";
 export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
-export { useUpload } from "./hooks/useUpload";
 export { useMultiUpload } from "./hooks/useMultiUpload";
 export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
 export {
@@ -46,11 +45,6 @@ export type {
   AncestryNode,
   DescendantNode,
 } from "./hooks/useLineage";
-export type {
-  UploadRequest,
-  UploadResult,
-  UploadHook,
-} from "./hooks/useUpload";
 export type {
   MultiUploadRequest,
   MultiUploadResult,

@@ -157,6 +157,11 @@ export function useMultiUpload(): MultiUploadHook {
             // Store abort function for cancellation
             abortControllersRef.current.set(uploadId, () => xhr.abort());
 
+            // Cleanup function to ensure abort controller is always removed
+            const cleanup = () => {
+              abortControllersRef.current.delete(uploadId);
+            };
+
             xhr.upload.addEventListener("progress", (e) => {
               if (e.lengthComputable) {
                 const percentComplete = (e.loaded / e.total) * 100;
@@ -165,7 +170,7 @@ export function useMultiUpload(): MultiUploadHook {
             });
 
             xhr.addEventListener("load", () => {
-              abortControllersRef.current.delete(uploadId);
+              cleanup();
               if (xhr.status === 200) {
                 try {
                   const data = JSON.parse(xhr.responseText);
@@ -195,13 +200,18 @@ export function useMultiUpload(): MultiUploadHook {
             });
 
             xhr.addEventListener("error", () => {
-              abortControllersRef.current.delete(uploadId);
+              cleanup();
               reject(new Error("Upload failed: Network error"));
             });
 
             xhr.addEventListener("abort", () => {
-              abortControllersRef.current.delete(uploadId);
+              cleanup();
               reject(new Error("Upload cancelled"));
+            });
+
+            xhr.addEventListener("loadend", () => {
+              // Ensure cleanup happens in all cases (additional safety net)
+              cleanup();
             });
 
             xhr.open("POST", `${apiUrl}/api/uploads/artifact`);

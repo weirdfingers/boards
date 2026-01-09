@@ -7,11 +7,50 @@ import {
   UploadItem,
   MultiUploadRequest,
 } from "@weirdfingers/boards";
+import { toast } from "@/components/ui/use-toast";
 
 interface UploadArtifactProps {
   boardId: string;
   onUploadComplete?: (generationId: string) => void;
 }
+
+// Maximum file size: 100MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+// Allowed MIME types for each artifact type
+const ALLOWED_MIME_TYPES = {
+  image: [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/svg+xml",
+  ],
+  video: [
+    "video/mp4",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/webm",
+    "video/mpeg",
+    "video/x-matroska",
+  ],
+  audio: [
+    "audio/mpeg",
+    "audio/wav",
+    "audio/ogg",
+    "audio/webm",
+    "audio/mp4",
+    "audio/x-m4a",
+  ],
+  text: [
+    "text/plain",
+    "text/markdown",
+    "application/json",
+    "text/html",
+    "text/csv",
+  ],
+};
 
 function detectArtifactType(mimeType: string): ArtifactType {
   if (mimeType.startsWith("image/")) {
@@ -24,6 +63,49 @@ function detectArtifactType(mimeType: string): ArtifactType {
     return ArtifactType.TEXT;
   }
   return ArtifactType.IMAGE;
+}
+
+function validateFile(file: File): { valid: boolean; error?: string } {
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File size exceeds maximum of 100MB (${Math.round(file.size / 1024 / 1024)}MB)`,
+    };
+  }
+
+  // Check MIME type
+  const mimeType = file.type.toLowerCase();
+  const isValidMimeType = Object.values(ALLOWED_MIME_TYPES)
+    .flat()
+    .some((allowed) => mimeType === allowed.toLowerCase());
+
+  if (!isValidMimeType) {
+    return {
+      valid: false,
+      error: `Unsupported file type: ${file.type || "unknown"}. Please upload an image, video, audio, or text file.`,
+    };
+  }
+
+  return { valid: true };
+}
+
+function validateUrl(url: string): { valid: boolean; error?: string } {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return {
+        valid: false,
+        error: "URL must use HTTP or HTTPS protocol",
+      };
+    }
+    return { valid: true };
+  } catch {
+    return {
+      valid: false,
+      error: "Invalid URL format",
+    };
+  }
 }
 
 function UploadItemRow({
@@ -119,7 +201,32 @@ export function UploadArtifact({
     async (files: File[]) => {
       if (files.length === 0) return;
 
-      const requests: MultiUploadRequest[] = files.map((file) => ({
+      // Validate all files first
+      const invalidFiles: string[] = [];
+      const validFiles: File[] = [];
+
+      files.forEach((file) => {
+        const validation = validateFile(file);
+        if (!validation.valid) {
+          invalidFiles.push(`${file.name}: ${validation.error}`);
+        } else {
+          validFiles.push(file);
+        }
+      });
+
+      // Show errors for invalid files
+      if (invalidFiles.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Some files were rejected",
+          description: invalidFiles.join("; "),
+        });
+      }
+
+      // Upload valid files only
+      if (validFiles.length === 0) return;
+
+      const requests: MultiUploadRequest[] = validFiles.map((file) => ({
         boardId,
         artifactType: detectArtifactType(file.type),
         source: file,
@@ -131,7 +238,11 @@ export function UploadArtifact({
           onUploadComplete?.(result.id);
         });
       } catch (err) {
-        console.error("Upload failed:", err);
+        toast({
+          variant: "destructive",
+          title: "Upload failed",
+          description: err instanceof Error ? err.message : "An unknown error occurred",
+        });
       }
     },
     [uploadMultiple, boardId, onUploadComplete]
@@ -139,6 +250,17 @@ export function UploadArtifact({
 
   const handleUrlUpload = useCallback(async () => {
     if (!urlInput.trim()) return;
+
+    // Validate URL
+    const validation = validateUrl(urlInput.trim());
+    if (!validation.valid) {
+      toast({
+        variant: "destructive",
+        title: "Invalid URL",
+        description: validation.error,
+      });
+      return;
+    }
 
     try {
       const results = await uploadMultiple([
@@ -153,7 +275,11 @@ export function UploadArtifact({
       }
       setUrlInput("");
     } catch (err) {
-      console.error("URL upload failed:", err);
+      toast({
+        variant: "destructive",
+        title: "URL upload failed",
+        description: err instanceof Error ? err.message : "An unknown error occurred",
+      });
     }
   }, [uploadMultiple, boardId, urlInput, onUploadComplete]);
 
@@ -247,12 +373,14 @@ export function UploadArtifact({
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-600"
+              aria-label="Close upload dialog"
             >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -274,8 +402,18 @@ export function UploadArtifact({
                 ? "border-orange-500 bg-orange-50"
                 : "border-gray-300 hover:border-gray-400"
             }`}
+            role="button"
+            tabIndex={0}
+            aria-label="Upload files by drag and drop or click to select"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
           >
             <input
+              id="file-upload"
               ref={fileInputRef}
               type="file"
               multiple
@@ -289,6 +427,8 @@ export function UploadArtifact({
               }}
               className="hidden"
               accept="image/*,video/*,audio/*,text/*"
+              aria-label="Select files to upload"
+              aria-describedby="file-upload-description"
             />
 
             <div className="flex flex-col items-center gap-2">
@@ -297,6 +437,7 @@ export function UploadArtifact({
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -308,15 +449,17 @@ export function UploadArtifact({
 
               <div>
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="text-orange-600 hover:text-orange-700 font-medium"
+                  aria-label="Choose files to upload"
                 >
                   Choose files
                 </button>
                 <span className="text-gray-500"> or drag and drop here</span>
               </div>
 
-              <p className="text-sm text-gray-500">
+              <p id="file-upload-description" className="text-sm text-gray-500">
                 Images, videos, audio, and text files (max 100MB each)
               </p>
               <p className="text-xs text-gray-400">
@@ -357,7 +500,7 @@ export function UploadArtifact({
 
           {/* Upload progress list */}
           {activeUploads.length > 0 && (
-            <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+            <div className="mt-4 space-y-2 max-h-48 overflow-y-auto" role="status" aria-live="polite">
               {activeUploads.map((item) => (
                 <UploadItemRow
                   key={item.id}
@@ -370,7 +513,7 @@ export function UploadArtifact({
 
           {/* Overall progress bar */}
           {isUploading && (
-            <div className="mt-4">
+            <div className="mt-4" role="status" aria-live="polite" aria-atomic="true">
               <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
                 <span>
                   Uploading {activeUploads.length} file
@@ -378,7 +521,7 @@ export function UploadArtifact({
                 </span>
                 <span>{Math.round(overallProgress)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2" role="progressbar" aria-valuenow={Math.round(overallProgress)} aria-valuemin={0} aria-valuemax={100}>
                 <div
                   className="bg-orange-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${overallProgress}%` }}
@@ -389,7 +532,7 @@ export function UploadArtifact({
 
           {/* Summary when uploads finish */}
           {!isUploading && uploads.length > 0 && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg" role="status" aria-live="polite">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">
                   {completedCount > 0 && (
@@ -403,8 +546,10 @@ export function UploadArtifact({
                   )}
                 </span>
                 <button
+                  type="button"
                   onClick={clearUploads}
                   className="text-gray-500 hover:text-gray-700 text-xs"
+                  aria-label="Clear upload history"
                 >
                   Clear
                 </button>
