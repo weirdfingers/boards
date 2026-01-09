@@ -1,0 +1,29 @@
+name: Discord Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"New merge to main\",
+                \"description\": \"**${{ github.event.head_commit.message }}**\",
+                \"color\": 5814783,
+                \"fields\": [
+                  {\"name\": \"Author\", \"value\": \"${{ github.event.head_commit.author.name }}\", \"inline\": true},
+                  {\"name\": \"Repository\", \"value\": \"${{ github.repository }}\", \"inline\": true}
+                ],
+                \"url\": \"${{ github.event.head_commit.url }}\"
+              }]
+            }" \
+            $DISCORD_WEBHOOK
