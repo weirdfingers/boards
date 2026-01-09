@@ -80,6 +80,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.gpt_image_1_mini.FalGptImage1MiniGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.gpt_image_15_edit.FalGptImage15EditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.image.fal_ideogram_character.FalIdeogramCharacterGenerator"
     enabled: true
 
