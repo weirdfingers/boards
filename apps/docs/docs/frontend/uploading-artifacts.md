@@ -48,25 +48,27 @@ Download artifacts from external URLs via GraphQL mutation.
 - Works with web-hosted content
 - Useful for automation
 
-## Using the Upload Hook
+## Using the Multi-Upload Hook
 
-The `@weirdfingers/boards` package provides a `useUpload` hook for React applications:
+The `@weirdfingers/boards` package provides a `useMultiUpload` hook for React applications that supports uploading multiple files concurrently:
 
 ```typescript
-import { useUpload, ArtifactType } from '@weirdfingers/boards';
+import { useMultiUpload, ArtifactType } from '@weirdfingers/boards';
 
 function MyComponent() {
-  const { upload, isUploading, progress, error } = useUpload();
+  const { uploadMultiple, uploads, isUploading, overallProgress } = useMultiUpload();
 
-  const handleFileUpload = async (file: File) => {
+  const handleFilesUpload = async (files: File[]) => {
     try {
-      const result = await upload({
+      const requests = files.map(file => ({
         boardId: 'your-board-id',
         artifactType: ArtifactType.IMAGE,
         source: file, // Can be File or URL string
         userDescription: 'My uploaded image',
-      });
-      console.log('Upload complete:', result.id);
+      }));
+
+      const results = await uploadMultiple(requests);
+      console.log('Uploads complete:', results);
     } catch (err) {
       console.error('Upload failed:', err);
     }
@@ -76,11 +78,21 @@ function MyComponent() {
     <div>
       <input
         type="file"
-        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+        multiple
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          handleFilesUpload(files);
+        }}
         disabled={isUploading}
       />
-      {isUploading && <progress value={progress} max={100} />}
-      {error && <p>Error: {error.message}</p>}
+      {isUploading && <progress value={overallProgress} max={100} />}
+
+      {/* Show individual upload progress */}
+      {uploads.map(upload => (
+        <div key={upload.id}>
+          {upload.fileName}: {upload.status} ({upload.progress}%)
+        </div>
+      ))}
     </div>
   );
 }
@@ -91,7 +103,7 @@ function MyComponent() {
 #### Parameters
 
 ```typescript
-interface UploadRequest {
+interface MultiUploadRequest {
   boardId: string;               // UUID of the target board
   artifactType: ArtifactType;    // Type of artifact (IMAGE, VIDEO, AUDIO, TEXT)
   source: File | string;         // File object or URL string
@@ -103,17 +115,31 @@ interface UploadRequest {
 #### Return Value
 
 ```typescript
-interface UploadHook {
-  upload: (request: UploadRequest) => Promise<UploadResult>;
-  isUploading: boolean;    // True while upload in progress
-  progress: number;        // Upload progress (0-100)
-  error: Error | null;     // Error if upload failed
+interface MultiUploadHook {
+  uploadMultiple: (requests: MultiUploadRequest[]) => Promise<MultiUploadResult[]>;
+  uploads: UploadItem[];           // Array of upload items with progress
+  isUploading: boolean;            // True while any upload in progress
+  overallProgress: number;         // Overall progress (0-100)
+  clearUploads: () => void;        // Clear upload history
+  cancelUpload: (uploadId: string) => void;  // Cancel a specific upload
 }
 
-interface UploadResult {
+interface MultiUploadResult {
   id: string;           // UUID of created generation
   status: string;       // 'completed' or 'failed'
   storageUrl: string;   // URL to access the artifact
+  artifactType: ArtifactType;
+  generatorName: string;
+}
+
+interface UploadItem {
+  id: string;
+  file: File | string;
+  fileName: string;
+  status: 'pending' | 'uploading' | 'completed' | 'failed';
+  progress: number;
+  result?: MultiUploadResult;
+  error?: Error;
 }
 ```
 
@@ -269,32 +295,34 @@ The upload system provides detailed error messages for common issues:
 ## Example: Drag-and-Drop Upload
 
 ```typescript
-import { useUpload, ArtifactType } from '@weirdfingers/boards';
+import { useMultiUpload, ArtifactType } from '@weirdfingers/boards';
 import { useCallback, useState } from 'react';
 
 function DragDropUpload({ boardId }: { boardId: string }) {
-  const { upload, isUploading, progress } = useUpload();
+  const { uploadMultiple, isUploading, overallProgress } = useMultiUpload();
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
 
-    const files = e.dataTransfer.files;
+    const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      const file = files[0];
-
       // Determine artifact type from file MIME type
-      let artifactType = ArtifactType.IMAGE;
-      if (file.type.startsWith('video/')) {
-        artifactType = ArtifactType.VIDEO;
-      } else if (file.type.startsWith('audio/')) {
-        artifactType = ArtifactType.AUDIO;
-      }
+      const requests = files.map(file => {
+        let artifactType = ArtifactType.IMAGE;
+        if (file.type.startsWith('video/')) {
+          artifactType = ArtifactType.VIDEO;
+        } else if (file.type.startsWith('audio/')) {
+          artifactType = ArtifactType.AUDIO;
+        }
 
-      await upload({ boardId, artifactType, source: file });
+        return { boardId, artifactType, source: file };
+      });
+
+      await uploadMultiple(requests);
     }
-  }, [upload, boardId]);
+  }, [uploadMultiple, boardId]);
 
   return (
     <div
@@ -305,7 +333,7 @@ function DragDropUpload({ boardId }: { boardId: string }) {
       style={{ border: '2px dashed', padding: '2rem', textAlign: 'center' }}
     >
       {isUploading ? (
-        <div>Uploading... {Math.round(progress)}%</div>
+        <div>Uploading... {Math.round(overallProgress)}%</div>
       ) : (
         <div>Drag and drop files here</div>
       )}

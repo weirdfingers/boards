@@ -2,6 +2,7 @@ import React from "react";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/header";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({
   children,
@@ -14,6 +15,7 @@ export default function RootLayout({
         <Providers>
           <Header />
           {children}
+          <Toaster />
         </Providers>
       </body>
     </html>
