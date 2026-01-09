@@ -52,7 +52,7 @@ class TestKlingVideoAiAvatarV2ProGeneratorLive:
         # Create image artifact using a publicly accessible portrait image
         image_artifact = ImageArtifact(
             generation_id="example_image",
-            storage_url="https://placehold.co/512x512/222222/white.png",
+            storage_url="https://storage.googleapis.com/falserverless/example_inputs/kling_ai_avatar_input.jpg",
             format="png",
             width=512,
             height=512,
@@ -62,7 +62,7 @@ class TestKlingVideoAiAvatarV2ProGeneratorLive:
         # Using a publicly accessible short audio file
         audio_artifact = AudioArtifact(
             generation_id="example_audio",
-            storage_url="https://v3.fal.media/files/penguin/IjB1sco-ydVA-szm3a1Rm_E_voice.mp3",
+            storage_url="https://v3.fal.media/files/rabbit/9_0ZG_geiWjZOmn9yscO6_output.mp3",
             format="mp3",
             duration=5.0,  # Short audio to minimize cost (~$0.575)
             sample_rate=44100,
@@ -104,7 +104,7 @@ class TestKlingVideoAiAvatarV2ProGeneratorLive:
         # Create image artifact
         image_artifact = ImageArtifact(
             generation_id="example_image",
-            storage_url="https://placehold.co/512x512/222222/white.png",
+            storage_url="https://storage.googleapis.com/falserverless/example_inputs/kling_ai_avatar_input.jpg",
             format="png",
             width=512,
             height=512,
@@ -113,7 +113,7 @@ class TestKlingVideoAiAvatarV2ProGeneratorLive:
         # Create audio artifact
         audio_artifact = AudioArtifact(
             generation_id="example_audio",
-            storage_url="https://v3.fal.media/files/penguin/IjB1sco-ydVA-szm3a1Rm_E_voice.mp3",
+            storage_url="https://v3.fal.media/files/rabbit/9_0ZG_geiWjZOmn9yscO6_output.mp3",
             format="mp3",
             duration=5.0,
             sample_rate=44100,
@@ -152,14 +152,14 @@ class TestKlingVideoAiAvatarV2ProGeneratorLive:
         # Create dummy artifacts (used for cost estimation based on audio duration)
         image_artifact = ImageArtifact(
             generation_id="test",
-            storage_url="https://example.com/test.png",
+            storage_url="https://storage.googleapis.com/falserverless/example_inputs/kling_ai_avatar_input.jpg",
             format="png",
             width=512,
             height=512,
         )
         audio_artifact = AudioArtifact(
             generation_id="test",
-            storage_url="https://example.com/test.wav",
+            storage_url="https://v3.fal.media/files/rabbit/9_0ZG_geiWjZOmn9yscO6_output.mp3",
             format="wav",
             duration=10.0,  # 10 second audio
             sample_rate=None,
