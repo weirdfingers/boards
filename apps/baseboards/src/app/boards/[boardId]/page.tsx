@@ -158,11 +158,11 @@ export default function BoardPage() {
     console.error("[BoardPage] Board error:", boardError);
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-lg">
-          <h2 className="text-red-800 text-xl font-semibold mb-2">
+        <div className="bg-destructive/10 border border-destructive/50 rounded-lg p-6 max-w-lg">
+          <h2 className="text-destructive text-xl font-semibold mb-2">
             Error Loading Board
           </h2>
-          <p className="text-red-600">{boardError.message}</p>
+          <p className="text-destructive/90">{boardError.message}</p>
         </div>
       </div>
     );
@@ -171,11 +171,11 @@ export default function BoardPage() {
     console.error("[BoardPage] Generators error:", generatorsError);
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-lg">
-          <h2 className="text-red-800 text-xl font-semibold mb-2">
+        <div className="bg-destructive/10 border border-destructive/50 rounded-lg p-6 max-w-lg">
+          <h2 className="text-destructive text-xl font-semibold mb-2">
             Error Loading Generators
           </h2>
-          <p className="text-red-600">{generatorsError.message}</p>
+          <p className="text-destructive/90">{generatorsError.message}</p>
         </div>
       </div>
     );
@@ -185,7 +185,7 @@ export default function BoardPage() {
   if (boardLoading || !board) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -241,7 +241,7 @@ export default function BoardPage() {
 
   return (
     <GeneratorSelectionProvider>
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-muted/30">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
@@ -256,7 +256,7 @@ export default function BoardPage() {
                       onChange={(e) => setEditedTitle(e.target.value)}
                       onKeyDown={handleTitleKeyDown}
                       disabled={isUpdatingTitle}
-                      className="text-3xl font-bold text-gray-900 border-2 border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+                      className="text-3xl font-bold text-foreground border-2 border-border rounded px-2 py-1 focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed flex-1"
                       placeholder="Enter board title"
                       aria-label="Edit board title"
                       aria-invalid={!!titleError}
@@ -281,14 +281,14 @@ export default function BoardPage() {
                     </Button>
                   </div>
                   {titleError && (
-                    <p className="text-sm text-red-600" role="alert">
+                    <p className="text-sm text-destructive" role="alert">
                       {titleError}
                     </p>
                   )}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold text-gray-900">
+                  <h1 className="text-3xl font-bold text-foreground">
                     {board.title}
                   </h1>
                   <Button
@@ -303,7 +303,7 @@ export default function BoardPage() {
                 </div>
               )}
               {board.description && !isEditingTitle && (
-                <p className="text-gray-600 mt-2">{board.description}</p>
+                <p className="text-muted-foreground mt-2">{board.description}</p>
               )}
             </div>
             <UploadArtifact
@@ -327,12 +327,12 @@ export default function BoardPage() {
           {/* Generation Input */}
           <div id="generation-input" className="sticky bottom-6 z-10">
             {generatorsLoading ? (
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-                <p className="text-gray-500">Loading generators...</p>
+              <div className="bg-background rounded-lg shadow-lg p-6 text-center">
+                <p className="text-muted-foreground">Loading generators...</p>
               </div>
             ) : generators.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-                <p className="text-gray-500">No generators available</p>
+              <div className="bg-background rounded-lg shadow-lg p-6 text-center">
+                <p className="text-muted-foreground">No generators available</p>
               </div>
             ) : (
               <GenerationInput

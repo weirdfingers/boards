@@ -112,11 +112,11 @@ export function ArtifactPreview({
     if (isFailed) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-          <div className="text-red-500 mb-2">
+          <div className="text-destructive mb-2">
             {status === "CANCELLED" ? "Cancelled" : "Failed"}
           </div>
           {errorMessage && (
-            <p className="text-sm text-gray-500">{errorMessage}</p>
+            <p className="text-sm text-muted-foreground">{errorMessage}</p>
           )}
         </div>
       );
@@ -125,7 +125,7 @@ export function ArtifactPreview({
     if (isLoading) {
       return (
         <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       );
     }
@@ -144,8 +144,8 @@ export function ArtifactPreview({
           );
         }
         return (
-          <div className="flex items-center justify-center h-full bg-gray-100">
-            <ImageIcon className="w-12 h-12 text-gray-400" />
+          <div className="flex items-center justify-center h-full bg-muted/50">
+            <ImageIcon className="w-12 h-12 text-muted-foreground" />
           </div>
         );
 
@@ -198,8 +198,8 @@ export function ArtifactPreview({
           );
         }
         return (
-          <div className="flex items-center justify-center h-full bg-gray-100">
-            <FileVideo className="w-12 h-12 text-gray-400" />
+          <div className="flex items-center justify-center h-full bg-muted/50">
+            <FileVideo className="w-12 h-12 text-muted-foreground" />
           </div>
         );
 
@@ -277,8 +277,8 @@ export function ArtifactPreview({
 
       default:
         return (
-          <div className="flex items-center justify-center h-full bg-gray-100">
-            <span className="text-gray-400">Unknown type</span>
+          <div className="flex items-center justify-center h-full bg-muted/50">
+            <span className="text-muted-foreground">Unknown type</span>
           </div>
         );
     }
@@ -286,7 +286,7 @@ export function ArtifactPreview({
 
   return (
     <div
-      className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group"
+      className="relative aspect-square rounded-lg overflow-hidden border border-border group"
       draggable={isComplete && !!artifactId && canAddToSlot}
       onDragStart={(e) => {
         if (isComplete && artifactId) {
