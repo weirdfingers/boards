@@ -147,7 +147,7 @@ function UploadItemRow({
         )}
         {item.status === "completed" && (
           <svg
-            className="w-5 h-5 text-green-600 dark:text-green-400"
+            className="w-5 h-5 text-success"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -536,7 +536,7 @@ export function UploadArtifact({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   {completedCount > 0 && (
-                    <span className="text-green-600 dark:text-green-400">
+                    <span className="text-success">
                       {completedCount} completed
                     </span>
                   )}

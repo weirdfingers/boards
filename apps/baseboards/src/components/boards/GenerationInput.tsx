@@ -142,7 +142,7 @@ export function GenerationInput({
             onSelectArtifact={handleSelectArtifact}
           />
           {artifactSlots.every((s) => selectedArtifacts.has(s.name)) && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+            <div className="mt-3 flex items-center gap-2 text-sm text-success">
               <svg
                 className="w-4 h-4"
                 fill="none"

@@ -86,7 +86,7 @@ export function GeneratorSelector({
               </p>
             </div>
             {selectedGenerator?.name === generator.name && (
-              <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+              <Check className="w-4 h-4 text-success flex-shrink-0" />
             )}
           </DropdownMenuItem>
         ))}
