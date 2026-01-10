@@ -188,8 +188,7 @@ class KieMarketAPIGenerator(KieBaseGenerator):
 
                 if status_response.status_code != 200:
                     raise ValueError(
-                        f"Status check failed: {status_response.status_code} "
-                        f"{status_response.text}"
+                        f"Status check failed: {status_response.status_code} {status_response.text}"
                     )
 
                 status_result = status_response.json()
@@ -205,8 +204,7 @@ class KieMarketAPIGenerator(KieBaseGenerator):
                     raise ValueError(f"Generation failed: {error_msg}")
                 elif state not in ["waiting", "pending", "processing", None]:
                     raise ValueError(
-                        f"Unknown state '{state}' from Kie.ai API. "
-                        f"Full response: {status_result}"
+                        f"Unknown state '{state}' from Kie.ai API. Full response: {status_result}"
                     )
 
                 # Publish progress
@@ -288,8 +286,7 @@ class KieDedicatedAPIGenerator(KieBaseGenerator):
 
                 if status_response.status_code != 200:
                     raise ValueError(
-                        f"Status check failed: {status_response.status_code} "
-                        f"{status_response.text}"
+                        f"Status check failed: {status_response.status_code} {status_response.text}"
                     )
 
                 status_result = status_response.json()

@@ -18,9 +18,13 @@ Learn how to contribute to the Boards open-source project.
    ```
 3. **Set up the development environment**:
    ```bash
-   make install
-   make docker-up
+   make install      # Install all dependencies
+   make docker-up    # Start PostgreSQL and Redis
+   make upgrade-db   # Run database migrations
+   make dev          # Start development servers
    ```
+
+   > 📖 For a complete list of commands, see the [Makefile Commands Reference](./makefile-commands).
 
 ### Development Workflow
 
@@ -31,12 +35,15 @@ Learn how to contribute to the Boards open-source project.
 
 2. **Make your changes** following the coding standards
 
-3. **Test your changes**:
+3. **Format and test your changes**:
    ```bash
-   make test
-   make lint
-   make typecheck
+   make format        # Auto-fix formatting and linting issues
+   make test          # Run all tests
+   make lint          # Check for remaining issues
+   make typecheck     # Verify types
    ```
+
+   > 📖 See the [Makefile Commands Reference](./makefile-commands) for a complete list of available commands.
 
 4. **Commit your changes**:
    ```bash
