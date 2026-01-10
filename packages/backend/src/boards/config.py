@@ -2,9 +2,49 @@
 Configuration management for Boards backend
 """
 
+import base64
+import functools
+import json
 import os
 
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def decode_api_keys(value: str) -> dict[str, str]:
+    """
+    Decode API keys from environment variable.
+
+    Supports two formats:
+    1. Base64-encoded JSON (preferred, handles special characters safely)
+    2. Plain JSON (for backwards compatibility)
+
+    Args:
+        value: The raw value from environment variable
+
+    Returns:
+        Dictionary of API keys
+    """
+    if not value:
+        return {}
+
+    value = value.strip()
+    if not value:
+        return {}
+
+    # Try base64 decoding first
+    try:
+        decoded_bytes = base64.b64decode(value, validate=True)
+        decoded_str = decoded_bytes.decode("utf-8")
+        return json.loads(decoded_str)
+    except Exception:
+        pass
+
+    # Fall back to plain JSON parsing (backwards compatibility)
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return {}
 
 
 class Settings(BaseSettings):
@@ -36,7 +76,17 @@ class Settings(BaseSettings):
 
     # Generators Configuration
     generators_config_path: str | None = None
-    generator_api_keys: dict[str, str] = {}
+    # Raw API keys value (base64-encoded JSON or plain JSON)
+    # Uses validation_alias to read from BOARDS_GENERATOR_API_KEYS env var
+    generator_api_keys_raw: str = Field(
+        default="", validation_alias="BOARDS_GENERATOR_API_KEYS"
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @functools.cached_property
+    def generator_api_keys(self) -> dict[str, str]:
+        """Decoded API keys dictionary."""
+        return decode_api_keys(self.generator_api_keys_raw)
 
     # Environment
     environment: str = "development"  # 'development', 'staging', 'production'

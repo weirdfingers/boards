@@ -396,20 +396,21 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
     const apiEnvPath = path.join(ctx.dir, "api/.env");
     let apiEnv = fs.readFileSync(apiEnvPath, "utf-8");
 
-    // Format as JSON string for the environment variable
-    const jsonKeys = JSON.stringify(apiKeys);
+    // Base64 encode the JSON to handle special characters in API keys
+    // (quotes, newlines, shell metacharacters, etc.)
+    const encodedKeys = Buffer.from(JSON.stringify(apiKeys)).toString('base64');
 
     // Update or add BOARDS_GENERATOR_API_KEYS
     if (apiEnv.includes("BOARDS_GENERATOR_API_KEYS=")) {
       apiEnv = apiEnv.replace(
         /BOARDS_GENERATOR_API_KEYS=.*$/m,
-        `BOARDS_GENERATOR_API_KEYS=${jsonKeys}`
+        `BOARDS_GENERATOR_API_KEYS=${encodedKeys}`
       );
     } else {
       // Add it after the JWT secret section
       apiEnv = apiEnv.replace(
         /(BOARDS_JWT_SECRET=.*\n)/,
-        `$1\n# Generator API Keys (JSON format)\nBOARDS_GENERATOR_API_KEYS=${jsonKeys}\n`
+        `$1\n# Generator API Keys (base64-encoded JSON)\nBOARDS_GENERATOR_API_KEYS=${encodedKeys}\n`
       );
     }
 
