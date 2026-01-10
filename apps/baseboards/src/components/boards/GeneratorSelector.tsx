@@ -44,14 +44,14 @@ export function GeneratorSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2">
+        <button className="px-4 py-2 bg-background border border-border rounded-lg shadow-sm hover:bg-muted/50 flex items-center gap-2">
           {selectedGenerator ? (
             <>
               {getGeneratorIcon(selectedGenerator.name)}
               <span className="font-medium">{selectedGenerator.name}</span>
             </>
           ) : (
-            <span className="text-gray-500">Select Generator</span>
+            <span className="text-muted-foreground">Select Generator</span>
           )}
         </button>
       </DropdownMenuTrigger>
@@ -77,16 +77,16 @@ export function GeneratorSelector({
                 <span className="font-medium text-sm">
                   {generator.name}
                 </span>
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                   {generator.artifactType}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {generator.description}
               </p>
             </div>
             {selectedGenerator?.name === generator.name && (
-              <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
             )}
           </DropdownMenuItem>
         ))}

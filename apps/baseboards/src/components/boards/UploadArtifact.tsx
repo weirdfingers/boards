@@ -116,38 +116,38 @@ function UploadItemRow({
   onCancel: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+    <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">
+        <p className="text-sm font-medium text-foreground truncate">
           {item.fileName}
         </p>
         {item.status === "uploading" && (
-          <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+          <div className="mt-1 w-full bg-muted rounded-full h-1.5">
             <div
-              className="bg-orange-500 h-1.5 rounded-full transition-all duration-300"
+              className="bg-primary h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${item.progress}%` }}
             />
           </div>
         )}
         {item.status === "failed" && item.error && (
-          <p className="text-xs text-red-600 mt-1">{item.error.message}</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{item.error.message}</p>
         )}
       </div>
       <div className="flex-shrink-0">
         {item.status === "pending" && (
-          <span className="text-xs text-gray-500">Waiting...</span>
+          <span className="text-xs text-muted-foreground">Waiting...</span>
         )}
         {item.status === "uploading" && (
           <button
             onClick={onCancel}
-            className="text-xs text-gray-500 hover:text-red-600"
+            className="text-xs text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
           >
             Cancel
           </button>
         )}
         {item.status === "completed" && (
           <svg
-            className="w-5 h-5 text-green-500"
+            className="w-5 h-5 text-green-600 dark:text-green-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -162,7 +162,7 @@ function UploadItemRow({
         )}
         {item.status === "failed" && (
           <svg
-            className="w-5 h-5 text-red-500"
+            className="w-5 h-5 text-red-600 dark:text-red-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -346,7 +346,7 @@ export function UploadArtifact({
     <div className="relative">
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
       >
         <svg
           className="w-5 h-5"
@@ -365,14 +365,14 @@ export function UploadArtifact({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-xl p-6 z-50 border border-gray-200">
+        <div className="absolute right-0 top-full mt-2 w-96 bg-background rounded-lg shadow-xl p-6 z-50 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-foreground">
               Upload Artifacts
             </h3>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-muted-foreground hover:text-foreground"
               aria-label="Close upload dialog"
             >
               <svg
@@ -399,8 +399,8 @@ export function UploadArtifact({
             onDragLeave={handleDragLeave}
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
               dragActive
-                ? "border-orange-500 bg-orange-50"
-                : "border-gray-300 hover:border-gray-400"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-border/80"
             }`}
             role="button"
             tabIndex={0}
@@ -433,7 +433,7 @@ export function UploadArtifact({
 
             <div className="flex flex-col items-center gap-2">
               <svg
-                className="w-12 h-12 text-gray-400"
+                className="w-12 h-12 text-muted-foreground"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -451,18 +451,18 @@ export function UploadArtifact({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-orange-600 hover:text-orange-700 font-medium"
+                  className="text-primary hover:text-primary/90 font-medium"
                   aria-label="Choose files to upload"
                 >
                   Choose files
                 </button>
-                <span className="text-gray-500"> or drag and drop here</span>
+                <span className="text-muted-foreground"> or drag and drop here</span>
               </div>
 
-              <p id="file-upload-description" className="text-sm text-gray-500">
+              <p id="file-upload-description" className="text-sm text-muted-foreground">
                 Images, videos, audio, and text files (max 100MB each)
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground/80">
                 You can select multiple files at once
               </p>
             </div>
@@ -470,7 +470,7 @@ export function UploadArtifact({
 
           {/* URL input */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Or paste a URL or image
             </label>
             <div className="flex gap-2">
@@ -485,13 +485,13 @@ export function UploadArtifact({
                   }
                 }}
                 placeholder="https://example.com/image.jpg or paste an image"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
                 disabled={isUploading}
               />
               <button
                 onClick={handleUrlUpload}
                 disabled={!urlInput.trim() || isUploading}
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
               >
                 Upload
               </button>
@@ -514,16 +514,16 @@ export function UploadArtifact({
           {/* Overall progress bar */}
           {isUploading && (
             <div className="mt-4" role="status" aria-live="polite" aria-atomic="true">
-              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                 <span>
                   Uploading {activeUploads.length} file
                   {activeUploads.length !== 1 ? "s" : ""}...
                 </span>
                 <span>{Math.round(overallProgress)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2" role="progressbar" aria-valuenow={Math.round(overallProgress)} aria-valuemin={0} aria-valuemax={100}>
+              <div className="w-full bg-muted rounded-full h-2" role="progressbar" aria-valuenow={Math.round(overallProgress)} aria-valuemin={0} aria-valuemax={100}>
                 <div
-                  className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>
@@ -532,23 +532,23 @@ export function UploadArtifact({
 
           {/* Summary when uploads finish */}
           {!isUploading && uploads.length > 0 && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg" role="status" aria-live="polite">
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg" role="status" aria-live="polite">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">
+                <span className="text-muted-foreground">
                   {completedCount > 0 && (
-                    <span className="text-green-600">
+                    <span className="text-green-600 dark:text-green-400">
                       {completedCount} completed
                     </span>
                   )}
                   {completedCount > 0 && failedCount > 0 && ", "}
                   {failedCount > 0 && (
-                    <span className="text-red-600">{failedCount} failed</span>
+                    <span className="text-red-600 dark:text-red-400">{failedCount} failed</span>
                   )}
                 </span>
                 <button
                   type="button"
                   onClick={clearUploads}
-                  className="text-gray-500 hover:text-gray-700 text-xs"
+                  className="text-muted-foreground hover:text-foreground text-xs"
                   aria-label="Clear upload history"
                 >
                   Clear

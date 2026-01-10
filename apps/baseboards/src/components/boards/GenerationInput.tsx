@@ -122,9 +122,9 @@ export function GenerationInput({
         .every((s) => selectedArtifacts.has(s.name)));
 
   return (
-    <div className="border border-gray-300 rounded-lg bg-white shadow-sm">
+    <div className="border border-border rounded-lg bg-background shadow-sm">
       {/* Generator selector header */}
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-center">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-center">
         <GeneratorSelector
           generators={generators}
           selectedGenerator={selectedGenerator}
@@ -134,7 +134,7 @@ export function GenerationInput({
 
       {/* Artifact input slots (for generators like lipsync) */}
       {needsArtifactInputs && (
-        <div className="px-4 py-4 border-b border-gray-200">
+        <div className="px-4 py-4 border-b border-border">
           <ArtifactInputSlots
             slots={artifactSlots}
             selectedArtifacts={selectedArtifacts}
@@ -142,7 +142,7 @@ export function GenerationInput({
             onSelectArtifact={handleSelectArtifact}
           />
           {artifactSlots.every((s) => selectedArtifacts.has(s.name)) && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-green-600">
+            <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -164,7 +164,7 @@ export function GenerationInput({
 
       {/* Attached image preview (if any) */}
       {attachedImage && (
-        <div className="px-4 py-3 border-b border-gray-200">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex items-center gap-3">
             <Image
               src={attachedImage.thumbnailUrl || attachedImage.storageUrl || ""}
@@ -175,13 +175,13 @@ export function GenerationInput({
             />
             <div className="flex-1">
               <p className="text-sm font-medium">Image attached</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 ID: {attachedImage.id.substring(0, 8)}
               </p>
             </div>
             <button
               onClick={() => setAttachedImage(null)}
-              className="p-1 hover:bg-gray-100 rounded"
+              className="p-1 hover:bg-muted rounded"
             >
               <X className="w-4 h-4" />
             </button>
@@ -209,18 +209,18 @@ export function GenerationInput({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
             title="Settings"
           >
-            <Settings className="w-5 h-5 text-gray-600" />
+            <Settings className="w-5 h-5 text-muted-foreground" />
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
             className={`p-3 rounded-full transition-all ${
               canSubmit
-                ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
             }`}
             title="Generate (⌘+Enter)"
           >
@@ -231,14 +231,14 @@ export function GenerationInput({
 
       {/* Settings panel (collapsed by default) */}
       {showSettings && (
-        <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-4 py-4 border-t border-border bg-muted/50">
           {!parsedSchema || parsedSchema.settingsFields.length === 0 ? (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               No additional settings available for this generator
             </p>
           ) : (
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4">
+              <h3 className="text-sm font-medium text-foreground mb-4">
                 Generator Settings
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -246,12 +246,12 @@ export function GenerationInput({
                 <div key={field.fieldName} className="space-y-1.5">
                   <label
                     htmlFor={field.fieldName}
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-sm font-medium text-foreground"
                   >
                     {field.title}
                   </label>
                   {field.description && (
-                    <p className="text-xs text-gray-500">{field.description}</p>
+                    <p className="text-xs text-muted-foreground">{field.description}</p>
                   )}
 
                   {/* Slider control */}
@@ -274,9 +274,9 @@ export function GenerationInput({
                               : parseFloat(e.target.value),
                           })
                         }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                        className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                       />
-                      <div className="flex justify-between text-xs text-gray-600">
+                      <div className="flex justify-between text-xs text-muted-foreground">
                         <span>{field.min}</span>
                         <span className="font-medium">
                           {String(settings[field.fieldName] ?? field.default ?? field.min)}
@@ -297,7 +297,7 @@ export function GenerationInput({
                           [field.fieldName]: e.target.value,
                         })
                       }
-                      className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="block w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                     >
                       {field.options.map((option) => (
                         <option key={option} value={option}>
@@ -324,7 +324,7 @@ export function GenerationInput({
                             : parseFloat(e.target.value),
                         })
                       }
-                      className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="block w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                     />
                   )}
 
@@ -341,7 +341,7 @@ export function GenerationInput({
                         })
                       }
                       pattern={field.pattern}
-                      className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="block w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                     />
                   )}
                 </div>

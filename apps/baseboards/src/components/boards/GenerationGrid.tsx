@@ -24,7 +24,7 @@ export function GenerationGrid({
 
   if (generations.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-gray-500">
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
         <p>No generations yet. Create your first one below!</p>
       </div>
     );
