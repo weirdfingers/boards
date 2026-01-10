@@ -30,9 +30,27 @@ export function GenerationGrid({
     );
   }
 
-  const handleDownload = (generation: Generation) => {
-    if (generation.storageUrl) {
-      window.open(generation.storageUrl, "_blank");
+  const handleDownload = async (generation: Generation) => {
+    if (!generation.storageUrl) return;
+
+    try {
+      // Add download query parameter to force download instead of inline preview
+      // Also add custom filename based on generation ID
+      const url = new URL(generation.storageUrl);
+      url.searchParams.set('download', 'true');
+      url.searchParams.set('filename', `gen-${generation.id}`);
+
+      // Create temporary anchor and trigger download
+      const link = document.createElement('a');
+      link.href = url.toString();
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      // Fallback to opening in new tab if download fails
+      window.open(generation.storageUrl, '_blank');
     }
   };
 

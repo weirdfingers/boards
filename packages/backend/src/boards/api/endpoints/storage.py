@@ -21,15 +21,57 @@ async def storage_status():
     return {"status": "Storage endpoint ready"}
 
 
+def _get_extension_from_content_type(content_type: str) -> str:
+    """Get file extension from content type.
+
+    Args:
+        content_type: MIME type (e.g., 'video/mp4', 'image/png', 'audio/mpeg')
+
+    Returns:
+        File extension with dot (e.g., '.mp4', '.png', '.mp3')
+    """
+    # Map common content types to extensions
+    content_type_map = {
+        # Video
+        "video/mp4": ".mp4",
+        "video/webm": ".webm",
+        "video/quicktime": ".mov",
+        "video/x-msvideo": ".avi",
+        # Image
+        "image/png": ".png",
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+        # Audio
+        "audio/mpeg": ".mp3",
+        "audio/mp3": ".mp3",
+        "audio/wav": ".wav",
+        "audio/ogg": ".ogg",
+        "audio/aac": ".aac",
+        # Text
+        "text/plain": ".txt",
+        "text/html": ".html",
+    }
+
+    return content_type_map.get(content_type.lower(), "")
+
+
 @router.get("/{full_path:path}")
-async def serve_file(full_path: str):
+async def serve_file(full_path: str, download: bool = False, filename: str | None = None):
     """Serve a file from local storage.
 
     This endpoint serves files that were uploaded to local storage.
     The full_path includes the tenant_id/artifact_type/board_id/artifact_id/variant structure.
+
+    Args:
+        full_path: Path to the file in storage
+        download: If True, force download with Content-Disposition: attachment
+        filename: Optional custom filename (without extension) to use for download
     """
     try:
-        logger.info("Serving file", full_path=full_path)
+        logger.info("Serving file", full_path=full_path, download=download, filename=filename)
+
         # Create storage manager to get the configured local storage path
         storage_manager = create_storage_manager()
 
@@ -64,8 +106,47 @@ async def serve_file(full_path: str):
         if not file_path.is_file():
             raise HTTPException(status_code=400, detail="Path is not a file")
 
-        # Serve the file
-        return FileResponse(file_path)
+        # Determine the proper filename with extension
+        base_filename = filename if filename else file_path.stem
+        final_filename = file_path.name
+        has_extension = False
+
+        # Try to get metadata from storage to determine content type and proper extension
+        try:
+            metadata = await local_provider.get_metadata(full_path)
+            content_type = metadata.get("content_type")
+
+            if content_type:
+                extension = _get_extension_from_content_type(content_type)
+                if extension:
+                    # Use custom filename if provided, otherwise use file stem
+                    final_filename = f"{base_filename}{extension}"
+                    has_extension = True
+                    logger.info(
+                        "Determined filename from storage metadata",
+                        original=file_path.name,
+                        new_filename=final_filename,
+                        content_type=content_type,
+                        custom_filename=filename,
+                    )
+        except Exception as e:
+            # Log but don't fail if we can't get metadata
+            logger.warning("Failed to get storage metadata", path=full_path, error=str(e))
+
+        # Serve the file with proper filename
+        # Only set Content-Disposition if:
+        # 1. Download is explicitly requested, OR
+        # 2. We have a proper extension from metadata
+        headers = {}
+        if download:
+            # Force download with attachment
+            headers["Content-Disposition"] = f'attachment; filename="{final_filename}"'
+        elif has_extension:
+            # We have proper metadata, suggest filename but allow inline preview
+            headers["Content-Disposition"] = f'inline; filename="{final_filename}"'
+        # else: No Content-Disposition header - let browser decide based on content-type
+
+        return FileResponse(file_path, filename=final_filename, headers=headers)
 
     except HTTPException:
         raise
