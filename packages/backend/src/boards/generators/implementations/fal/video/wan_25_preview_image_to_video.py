@@ -50,7 +50,7 @@ class Wan25PreviewImageToVideoInput(BaseModel):
     seed: int | None = Field(
         default=None,
         description=(
-            "Random seed for reproducibility. " "If not specified, a random seed will be used."
+            "Random seed for reproducibility. If not specified, a random seed will be used."
         ),
     )
     negative_prompt: str | None = Field(

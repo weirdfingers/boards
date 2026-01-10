@@ -86,8 +86,7 @@ async def upload_artifact_file(
         raise HTTPException(
             status_code=400,
             detail=(
-                f"File extension '{file_ext}' is not allowed. "
-                f"Allowed extensions: {allowed_exts}"
+                f"File extension '{file_ext}' is not allowed. Allowed extensions: {allowed_exts}"
             ),
         )
 

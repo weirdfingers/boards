@@ -70,7 +70,7 @@ class FalChatterboxTextToSpeechGenerator(BaseGenerator):
     name = "fal-chatterbox-text-to-speech"
     artifact_type = "audio"
     description = (
-        "Fal: Chatterbox TTS - " "Expressive text-to-speech with emotive tags and voice cloning"
+        "Fal: Chatterbox TTS - Expressive text-to-speech with emotive tags and voice cloning"
     )
 
     def get_input_schema(self) -> type[ChatterboxTextToSpeechInput]:

@@ -111,15 +111,16 @@ boards/
 make dev                # Start all development servers
 make docs               # Start documentation at http://localhost:4500
 
+# Code Quality
+make format             # Format code (auto-fix issues) - run before committing
+make test               # Run all tests
+make lint               # Run linters
+make typecheck          # Type checking
+
 # Database Migrations
 cd packages/backend
 uv run alembic revision -m "your_migration" --autogenerate
 uv run alembic upgrade head
-
-# Testing
-make test               # Run all tests
-make lint               # Run linters
-make typecheck          # TypeScript type checking
 
 # Building
 make build              # Build all packages

@@ -1,4 +1,4 @@
-.PHONY: help install dev build test lint typecheck clean setup-python setup-node docker-up docker-down docker-logs docs dev-docs docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend clean-frontend
+.PHONY: help install dev build test lint typecheck format clean setup-python setup-node docker-up docker-down docker-logs docs dev-docs docs-build docs-serve install-backend install-frontend dev-backend dev-frontend build-backend build-frontend test-backend test-frontend lint-backend lint-frontend typecheck-backend typecheck-frontend format-backend format-frontend clean-backend clean-frontend
 
 BACKEND_DIR := packages/backend
 FRONTEND_FILTER := --filter=@weirdfingers/boards... --filter=@weirdfingers/auth-clerk... --filter=@weirdfingers/auth-jwt... --filter=@weirdfingers/auth-supabase... --filter=baseboards...  --filter=@weirdfingers/baseboards...
@@ -48,6 +48,8 @@ test: test-backend test-frontend ## Run all tests
 lint: lint-backend lint-frontend ## Run linters
 
 typecheck: typecheck-backend typecheck-frontend ## Run type checking
+
+format: format-backend format-frontend ## Format all code (Python and Node)
 
 clean: clean-backend clean-frontend ## Clean all build artifacts and dependencies
 
@@ -117,6 +119,14 @@ typecheck-backend: ## Typecheck backend (Python) only
 typecheck-frontend: ## Typecheck frontend (Node) only
 	@echo "Type checking frontend..."
 	pnpm turbo typecheck $(FRONTEND_FILTER)
+
+format-backend: ## Format backend (Python) code with ruff
+	@echo "Formatting backend..."
+	cd $(BACKEND_DIR) && uv run ruff check --fix . && uv run ruff format .
+
+format-frontend: ## Format frontend (Node) code with ESLint
+	@echo "Formatting frontend..."
+	pnpm turbo run lint $(FRONTEND_FILTER) -- --fix
 
 clean-backend: ## Clean backend (Python) artifacts only
 	@echo "Cleaning backend..."

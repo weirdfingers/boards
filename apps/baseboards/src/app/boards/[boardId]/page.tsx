@@ -2,10 +2,17 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import { useBoard, useGenerators, useGeneration, GeneratorSelectionProvider } from "@weirdfingers/boards";
+import {
+  useBoard,
+  useGenerators,
+  useGeneration,
+  GeneratorSelectionProvider,
+} from "@weirdfingers/boards";
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
 import { GenerationInput } from "@/components/boards/GenerationInput";
 import { UploadArtifact } from "@/components/boards/UploadArtifact";
+import { Button } from "@/components/ui/button";
+import { Pencil, Check, X } from "lucide-react";
 
 export default function BoardPage() {
   const params = useParams();
@@ -16,7 +23,15 @@ export default function BoardPage() {
     loading: boardLoading,
     error: boardError,
     refresh: refreshBoard,
+    updateBoard,
   } = useBoard(boardId);
+
+  // State for inline title editing
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+  const [editedTitle, setEditedTitle] = React.useState("");
+  const [titleError, setTitleError] = React.useState<string | null>(null);
+  const [isUpdatingTitle, setIsUpdatingTitle] = React.useState(false);
+  const titleInputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch available generators
   const {
@@ -26,13 +41,72 @@ export default function BoardPage() {
   } = useGenerators();
 
   // Use generation hook for submitting generations and real-time progress
-  const {
-    submit,
-    isGenerating,
-    progress,
-    error: generationError,
-    result,
-  } = useGeneration();
+  const { submit, isGenerating, progress } = useGeneration();
+
+  // Auto-focus input when entering edit mode
+  React.useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  // Handlers for title editing
+  const handleEditTitle = () => {
+    if (board) {
+      setEditedTitle(board.title);
+      setTitleError(null);
+      setIsEditingTitle(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingTitle(false);
+    setEditedTitle("");
+    setTitleError(null);
+  };
+
+  const handleSaveTitle = async () => {
+    const trimmedTitle = editedTitle.trim();
+
+    // Validation
+    if (!trimmedTitle) {
+      setTitleError("Title cannot be empty");
+      return;
+    }
+
+    if (trimmedTitle === board?.title) {
+      // No changes, just exit edit mode
+      handleCancelEdit();
+      return;
+    }
+
+    setIsUpdatingTitle(true);
+    setTitleError(null);
+
+    try {
+      await updateBoard({ title: trimmedTitle });
+      setIsEditingTitle(false);
+      setEditedTitle("");
+    } catch (error) {
+      console.error("Failed to update board title:", error);
+      setTitleError(
+        error instanceof Error ? error.message : "Failed to update title"
+      );
+    } finally {
+      setIsUpdatingTitle(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveTitle();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancelEdit();
+    }
+  };
 
   // Refresh board when a generation completes or fails
   // MUST be before conditional returns to satisfy Rules of Hooks
@@ -171,9 +245,64 @@ export default function BoardPage() {
         <div className="container mx-auto px-4 py-6 max-w-7xl">
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{board.title}</h1>
-              {board.description && (
+            <div className="flex-1">
+              {isEditingTitle ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={titleInputRef}
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      onKeyDown={handleTitleKeyDown}
+                      disabled={isUpdatingTitle}
+                      className="text-3xl font-bold text-gray-900 border-2 border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+                      placeholder="Enter board title"
+                      aria-label="Edit board title"
+                      aria-invalid={!!titleError}
+                    />
+                    <Button
+                      onClick={handleSaveTitle}
+                      disabled={isUpdatingTitle}
+                      size="icon"
+                      variant="default"
+                      aria-label="Save title"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      disabled={isUpdatingTitle}
+                      size="icon"
+                      variant="outline"
+                      aria-label="Cancel editing"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {titleError && (
+                    <p className="text-sm text-red-600" role="alert">
+                      {titleError}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {board.title}
+                  </h1>
+                  <Button
+                    onClick={handleEditTitle}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    aria-label="Edit board title"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {board.description && !isEditingTitle && (
                 <p className="text-gray-600 mt-2">{board.description}</p>
               )}
             </div>

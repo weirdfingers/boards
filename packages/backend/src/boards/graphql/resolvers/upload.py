@@ -114,7 +114,7 @@ def _is_safe_url(url: str) -> tuple[bool, str | None]:
         if parsed.scheme not in ("http", "https"):
             return (
                 False,
-                f"URL scheme '{parsed.scheme}' not allowed. " "Only http and https are supported.",
+                f"URL scheme '{parsed.scheme}' not allowed. Only http and https are supported.",
             )
 
         hostname = parsed.hostname
