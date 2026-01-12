@@ -26,17 +26,20 @@ interface Generation {
 interface GenerationGridProps {
   generations: Generation[];
   onGenerationClick?: (generation: Generation) => void;
+  onRemoveSuccess?: () => void;
 }
 
 export function GenerationGrid({
   generations,
   onGenerationClick,
+  onRemoveSuccess: onDeleteSuccess,
 }: GenerationGridProps) {
   const { canArtifactBeAdded, addArtifactToSlot } = useGeneratorSelection();
-  const { delete: deleteGeneration } = useGeneration();
+  const { remove: removeGeneration } = useGeneration();
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [generationToDelete, setGenerationToDelete] = useState<Generation | null>(null);
+  const [generationToDelete, setGenerationToDelete] =
+    useState<Generation | null>(null);
 
   if (generations.length === 0) {
     return (
@@ -53,20 +56,20 @@ export function GenerationGrid({
       // Add download query parameter to force download instead of inline preview
       // Also add custom filename based on generation ID
       const url = new URL(generation.storageUrl);
-      url.searchParams.set('download', 'true');
-      url.searchParams.set('filename', `gen-${generation.id}`);
+      url.searchParams.set("download", "true");
+      url.searchParams.set("filename", `gen-${generation.id}`);
 
       // Create temporary anchor and trigger download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url.toString();
-      link.target = '_blank';
+      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Failed to download file:', error);
+      console.error("Failed to download file:", error);
       // Fallback to opening in new tab if download fails
-      window.open(generation.storageUrl, '_blank');
+      window.open(generation.storageUrl, "_blank");
     }
   };
 
@@ -85,9 +88,12 @@ export function GenerationGrid({
 
     if (success) {
       // Scroll to the generation input to show the user where the artifact was added
-      const generationInput = document.getElementById('generation-input');
+      const generationInput = document.getElementById("generation-input");
       if (generationInput) {
-        generationInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        generationInput.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       }
     }
   };
@@ -101,18 +107,21 @@ export function GenerationGrid({
     if (!generationToDelete) return;
 
     try {
-      await deleteGeneration(generationToDelete.id);
+      await removeGeneration(generationToDelete.id);
       toast({
         title: "Generation deleted",
         description: "The generation has been permanently removed.",
       });
       setDeleteDialogOpen(false);
       setGenerationToDelete(null);
+      // Refresh the board data to update the generations list
+      onDeleteSuccess?.();
     } catch (error) {
       console.error("Failed to delete generation:", error);
       toast({
         title: "Failed to delete generation",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
       setDeleteDialogOpen(false);
@@ -122,7 +131,9 @@ export function GenerationGrid({
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {generations.map((generation) => {
-        const canAdd = generation.status === "COMPLETED" && canArtifactBeAdded(generation.artifactType);
+        const canAdd =
+          generation.status === "COMPLETED" &&
+          canArtifactBeAdded(generation.artifactType);
 
         return (
           <ArtifactPreview
@@ -148,7 +159,8 @@ export function GenerationGrid({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete generation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The generation will be permanently deleted.
+              This action cannot be undone. The generation will be permanently
+              deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

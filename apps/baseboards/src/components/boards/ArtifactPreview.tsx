@@ -313,9 +313,8 @@ export function ArtifactPreview({
         {renderContent()}
       </div>
 
-      {/* Bottom overlay with controls - show for all artifacts when not loading/failed */}
-      {!isLoading && !isFailed && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Bottom overlay with controls - show for all artifacts */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex items-center justify-between gap-2">
             {/* Drag handle - only for completed artifacts */}
             {isComplete && (
@@ -356,7 +355,7 @@ export function ArtifactPreview({
               )}
 
               {/* More options menu - show for all artifacts */}
-              {(onPreview || onDownload || artifactId) && (
+              {(onPreview || onDownload || artifactId || onDelete) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -380,10 +379,10 @@ export function ArtifactPreview({
                         View Lineage
                       </DropdownMenuItem>
                     )}
-                    {artifactId && (onPreview || onDownload) && (
+                    {artifactId && isComplete && (onPreview || onDownload) && (
                       <DropdownMenuSeparator />
                     )}
-                    {onPreview && (
+                    {isComplete && onPreview && (
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();
@@ -395,7 +394,7 @@ export function ArtifactPreview({
                         Preview
                       </DropdownMenuItem>
                     )}
-                    {onDownload && (
+                    {isComplete && onDownload && (
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();
@@ -428,7 +427,6 @@ export function ArtifactPreview({
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 }

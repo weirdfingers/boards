@@ -303,7 +303,9 @@ export default function BoardPage() {
                 </div>
               )}
               {board.description && !isEditingTitle && (
-                <p className="text-muted-foreground mt-2">{board.description}</p>
+                <p className="text-muted-foreground mt-2">
+                  {board.description}
+                </p>
               )}
             </div>
             <UploadArtifact
@@ -321,6 +323,7 @@ export default function BoardPage() {
               onGenerationClick={() => {
                 // TODO: Open generation detail modal
               }}
+              onRemoveSuccess={refreshBoard}
             />
           </div>
 
