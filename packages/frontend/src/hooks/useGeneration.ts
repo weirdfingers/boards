@@ -9,6 +9,7 @@ import {
   CREATE_GENERATION,
   CANCEL_GENERATION,
   RETRY_GENERATION,
+  DELETE_GENERATION,
   CreateGenerationInput,
   ArtifactType,
 } from "../graphql/operations";
@@ -98,6 +99,7 @@ export interface GenerationHook {
   submit: (request: GenerationRequest) => Promise<string>;
   cancel: (jobId: string) => Promise<void>;
   retry: (jobId: string) => Promise<void>;
+  delete: (jobId: string) => Promise<void>;
 
   // History
   history: GenerationResult[];
@@ -122,6 +124,7 @@ export function useGeneration(): GenerationHook {
   const [, createGenerationMutation] = useMutation(CREATE_GENERATION);
   const [, cancelGenerationMutation] = useMutation(CANCEL_GENERATION);
   const [, retryGenerationMutation] = useMutation(RETRY_GENERATION);
+  const [, deleteGenerationMutation] = useMutation(DELETE_GENERATION);
 
   // Clean up SSE connections on unmount
   useEffect(() => {
@@ -411,6 +414,46 @@ export function useGeneration(): GenerationHook {
     [retryGenerationMutation, connectToSSE]
   );
 
+  const deleteGeneration = useCallback(
+    async (jobId: string): Promise<void> => {
+      try {
+        // Delete via GraphQL
+        const result = await deleteGenerationMutation({ id: jobId });
+
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+
+        if (!result.data?.deleteGeneration) {
+          throw new Error("Failed to delete generation");
+        }
+
+        // Close SSE connection if any
+        const controller = abortControllers.current.get(jobId);
+        if (controller) {
+          controller.abort();
+          abortControllers.current.delete(jobId);
+        }
+
+        // Clear state if this was the current generation
+        if (progress?.jobId === jobId) {
+          setProgress(null);
+          setResult(null);
+          setIsGenerating(false);
+        }
+
+        // Remove from history
+        setHistory((prev) => prev.filter((item) => item.jobId !== jobId));
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to delete generation")
+        );
+        throw err;
+      }
+    },
+    [deleteGenerationMutation, progress]
+  );
+
   const clearHistory = useCallback(() => {
     setHistory([]);
   }, []);
@@ -423,6 +466,7 @@ export function useGeneration(): GenerationHook {
     submit,
     cancel,
     retry,
+    delete: deleteGeneration,
     history,
     clearHistory,
   };
