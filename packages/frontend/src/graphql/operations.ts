@@ -322,6 +322,12 @@ export const RETRY_GENERATION = gql`
   }
 `;
 
+export const DELETE_GENERATION = gql`
+  mutation DeleteGeneration($id: UUID!) {
+    deleteGeneration(id: $id)
+  }
+`;
+
 export const UPLOAD_ARTIFACT_FROM_URL = gql`
   ${GENERATION_FRAGMENT}
   mutation UploadArtifactFromUrl($input: UploadArtifactInput!) {

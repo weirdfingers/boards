@@ -416,7 +416,7 @@ Only generations with status `PENDING` or `PROCESSING` can be cancelled. Complet
 
 ### deleteGeneration
 
-Delete a generation and its associated files.
+Delete a generation and its associated storage artifacts.
 
 ```graphql
 mutation {
@@ -434,6 +434,39 @@ mutation {
 
 `true` if deletion was successful.
 
+#### Authorization
+
+Generation deletion requires authentication and follows these rules:
+
+- **Board owner** can delete any generation on their board
+- **Board editors** can only delete their own generations (ones they created)
+- **Board viewers** cannot delete any generations
+- **Non-members** cannot delete generations
+
+:::tip Authorization Examples
+```graphql
+# Owner deletes any generation on their board
+mutation {
+  deleteGeneration(id: "gen-uuid")  # ✅ Allowed
+}
+
+# Editor deletes their own generation
+mutation {
+  deleteGeneration(id: "gen-created-by-editor")  # ✅ Allowed
+}
+
+# Editor tries to delete owner's generation
+mutation {
+  deleteGeneration(id: "gen-created-by-owner")  # ❌ Permission denied
+}
+
+# Viewer tries to delete a generation
+mutation {
+  deleteGeneration(id: "gen-uuid")  # ❌ Permission denied
+}
+```
+:::
+
 #### Example
 
 ```graphql
@@ -441,6 +474,10 @@ mutation DeleteGeneration($genId: UUID!) {
   deleteGeneration(id: $genId)
 }
 ```
+
+:::warning
+This operation is destructive and cannot be undone. The generation record and associated storage artifacts will be permanently deleted.
+:::
 
 ---
 

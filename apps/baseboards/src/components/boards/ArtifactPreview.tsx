@@ -13,6 +13,7 @@ import {
   Pause,
   RotateCcw,
   GitBranch,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ interface ArtifactPreviewProps {
   canAddToSlot?: boolean;
   onDownload?: () => void;
   onPreview?: () => void;
+  onDelete?: () => void;
   artifactId?: string;
   prompt?: string | null;
 }
@@ -50,6 +52,7 @@ export function ArtifactPreview({
   canAddToSlot = false,
   onDownload,
   onPreview,
+  onDelete,
   artifactId,
   prompt,
 }: ArtifactPreviewProps) {
@@ -403,6 +406,21 @@ export function ArtifactPreview({
                         <Download className="w-4 h-4 mr-2" />
                         Download
                       </DropdownMenuItem>
+                    )}
+                    {onDelete && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                          }}
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>

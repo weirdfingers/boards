@@ -1,5 +1,17 @@
-import { useGeneratorSelection } from "@weirdfingers/boards";
+import { useState } from "react";
+import { useGeneratorSelection, useGeneration } from "@weirdfingers/boards";
 import { ArtifactPreview } from "./ArtifactPreview";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Generation {
   id: string;
@@ -21,6 +33,10 @@ export function GenerationGrid({
   onGenerationClick,
 }: GenerationGridProps) {
   const { canArtifactBeAdded, addArtifactToSlot } = useGeneratorSelection();
+  const { delete: deleteGeneration } = useGeneration();
+  const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [generationToDelete, setGenerationToDelete] = useState<Generation | null>(null);
 
   if (generations.length === 0) {
     return (
@@ -76,6 +92,33 @@ export function GenerationGrid({
     }
   };
 
+  const handleDeleteClick = (generation: Generation) => {
+    setGenerationToDelete(generation);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!generationToDelete) return;
+
+    try {
+      await deleteGeneration(generationToDelete.id);
+      toast({
+        title: "Generation deleted",
+        description: "The generation has been permanently removed.",
+      });
+      setDeleteDialogOpen(false);
+      setGenerationToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete generation:", error);
+      toast({
+        title: "Failed to delete generation",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {generations.map((generation) => {
@@ -95,9 +138,30 @@ export function GenerationGrid({
             canAddToSlot={canAdd}
             onDownload={() => handleDownload(generation)}
             onPreview={() => handlePreview(generation)}
+            onDelete={() => handleDeleteClick(generation)}
           />
         );
       })}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete generation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The generation will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
