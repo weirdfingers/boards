@@ -99,7 +99,7 @@ export interface GenerationHook {
   submit: (request: GenerationRequest) => Promise<string>;
   cancel: (jobId: string) => Promise<void>;
   retry: (jobId: string) => Promise<void>;
-  remove: (jobId: string) => Promise<void>;
+  deleteGeneration: (jobId: string) => Promise<void>;
 
   // History
   history: GenerationResult[];
@@ -466,7 +466,7 @@ export function useGeneration(): GenerationHook {
     submit,
     cancel,
     retry,
-    remove: deleteGeneration,
+    deleteGeneration,
     history,
     clearHistory,
   };

@@ -32,10 +32,10 @@ interface GenerationGridProps {
 export function GenerationGrid({
   generations,
   onGenerationClick,
-  onRemoveSuccess: onDeleteSuccess,
+  onRemoveSuccess: onRemoveSuccess,
 }: GenerationGridProps) {
   const { canArtifactBeAdded, addArtifactToSlot } = useGeneratorSelection();
-  const { remove: removeGeneration } = useGeneration();
+  const { deleteGeneration } = useGeneration();
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [generationToDelete, setGenerationToDelete] =
@@ -107,7 +107,7 @@ export function GenerationGrid({
     if (!generationToDelete) return;
 
     try {
-      await removeGeneration(generationToDelete.id);
+      await deleteGeneration(generationToDelete.id);
       toast({
         title: "Generation deleted",
         description: "The generation has been permanently removed.",
@@ -115,7 +115,7 @@ export function GenerationGrid({
       setDeleteDialogOpen(false);
       setGenerationToDelete(null);
       // Refresh the board data to update the generations list
-      onDeleteSuccess?.();
+      onRemoveSuccess?.();
     } catch (error) {
       console.error("Failed to delete generation:", error);
       toast({
