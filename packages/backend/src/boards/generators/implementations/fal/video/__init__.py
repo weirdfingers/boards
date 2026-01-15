@@ -23,6 +23,9 @@ from .kling_video_v2_5_turbo_pro_image_to_video import (
 from .kling_video_v2_5_turbo_pro_text_to_video import (
     FalKlingVideoV25TurboProTextToVideoGenerator,
 )
+from .kling_video_v26_pro_motion_control import (
+    FalKlingVideoV26ProMotionControlGenerator,
+)
 from .minimax_hailuo_2_3_pro_image_to_video import (
     FalMinimaxHailuo23ProImageToVideoGenerator,
 )
@@ -53,6 +56,7 @@ __all__ = [
     "FalKlingVideoAiAvatarV2StandardGenerator",
     "FalKlingVideoV25TurboProImageToVideoGenerator",
     "FalKlingVideoV25TurboProTextToVideoGenerator",
+    "FalKlingVideoV26ProMotionControlGenerator",
     "FalPixverseLipsyncGenerator",
     "FalSora2TextToVideoProGenerator",
     "FalSora2TextToVideoGenerator",
