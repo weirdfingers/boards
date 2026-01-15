@@ -33,6 +33,7 @@ export { useBoard } from "./hooks/useBoard";
 export { useGeneration } from "./hooks/useGeneration";
 export { useGenerators } from "./hooks/useGenerators";
 export { useMultiUpload } from "./hooks/useMultiUpload";
+export { useMediaRecorder, mediaResultToFile } from "./hooks/useMediaRecorder";
 export type { Generator, JSONSchema7 } from "./hooks/useGenerators";
 export {
   useAncestry,
@@ -52,6 +53,14 @@ export type {
   UploadItem,
   UploadStatus,
 } from "./hooks/useMultiUpload";
+export type {
+  MediaRecordingType,
+  MediaRecorderStatus,
+  MediaRecorderError,
+  UseMediaRecorderOptions,
+  MediaRecorderResult,
+  MediaRecorderHook,
+} from "./hooks/useMediaRecorder";
 
 // Generator schema utilities
 export * from "./types/generatorSchema";
