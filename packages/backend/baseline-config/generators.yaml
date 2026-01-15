@@ -104,6 +104,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.infinitalk.FalInfinitalkGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.kling_motion_control.FalKlingMotionControlGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.kling_video_ai_avatar_v2_pro.FalKlingVideoAiAvatarV2ProGenerator"
     enabled: true
 
