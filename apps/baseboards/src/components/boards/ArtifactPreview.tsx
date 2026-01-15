@@ -14,6 +14,7 @@ import {
   RotateCcw,
   GitBranch,
   Trash2,
+  Film,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -23,6 +24,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface ArtifactPreviewProps {
@@ -37,6 +41,7 @@ interface ArtifactPreviewProps {
   onDownload?: () => void;
   onPreview?: () => void;
   onDelete?: () => void;
+  onExtractFrame?: (position: "first" | "last") => void;
   artifactId?: string;
   prompt?: string | null;
 }
@@ -53,6 +58,7 @@ export function ArtifactPreview({
   onDownload,
   onPreview,
   onDelete,
+  onExtractFrame,
   artifactId,
   prompt,
 }: ArtifactPreviewProps) {
@@ -405,6 +411,34 @@ export function ArtifactPreview({
                         <Download className="w-4 h-4 mr-2" />
                         Download
                       </DropdownMenuItem>
+                    )}
+                    {isComplete && artifactType === "VIDEO" && onExtractFrame && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="cursor-pointer">
+                          <Film className="w-4 h-4 mr-2" />
+                          Extract Frame
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onExtractFrame("first");
+                            }}
+                            className="cursor-pointer"
+                          >
+                            First Frame
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onExtractFrame("last");
+                            }}
+                            className="cursor-pointer"
+                          >
+                            Last Frame
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
                     )}
                     {onDelete && (
                       <>
