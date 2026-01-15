@@ -11,6 +11,7 @@ import {
 import { GenerationGrid } from "@/components/boards/GenerationGrid";
 import { GenerationInput } from "@/components/boards/GenerationInput";
 import { UploadArtifact } from "@/components/boards/UploadArtifact";
+import { RecordMedia } from "@/components/boards/RecordMedia";
 import { Button } from "@/components/ui/button";
 import { Pencil, Check, X } from "lucide-react";
 
@@ -308,12 +309,20 @@ export default function BoardPage() {
                 </p>
               )}
             </div>
-            <UploadArtifact
-              boardId={boardId}
-              onUploadComplete={() => {
-                refreshBoard();
-              }}
-            />
+            <div className="flex items-center gap-2">
+              <RecordMedia
+                boardId={boardId}
+                onRecordingComplete={() => {
+                  refreshBoard();
+                }}
+              />
+              <UploadArtifact
+                boardId={boardId}
+                onUploadComplete={() => {
+                  refreshBoard();
+                }}
+              />
+            </div>
           </div>
 
           {/* Generation Grid */}
