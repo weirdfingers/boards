@@ -3,7 +3,7 @@ Boards Backend SDK
 Open-source creative toolkit for AI-generated content
 """
 
-__version__ = "0.6.2"
+__version__ = "0.7.0"
 
 from .config import settings
 
