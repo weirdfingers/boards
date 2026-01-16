@@ -168,8 +168,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
         chalk.gray(" - https://fal.ai/dashboard/keys")
     );
     console.log(
-      chalk.cyan("   • KIE_API_KEY") +
-        chalk.gray(" - https://kie.ai/dashboard")
+      chalk.cyan("   • KIE_API_KEY") + chalk.gray(" - https://kie.ai/dashboard")
     );
     console.log(
       chalk.cyan("   • OPENAI_API_KEY") +
@@ -187,7 +186,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   }
 
   // Step 7: Start Docker Compose (always detached initially)
-  await startDockerCompose(ctx, true);
+  await startDockerCompose(ctx);
 
   // Step 8: Wait for health checks
   await waitForHealthy(ctx);
@@ -202,9 +201,13 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   if (options.attach) {
     try {
       await attachToLogs(ctx);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle Ctrl+C gracefully
-      if (error.signal === "SIGINT" || error.exitCode === 130) {
+      const maybeProcError = error as { signal?: string; exitCode?: number };
+      if (
+        maybeProcError.signal === "SIGINT" ||
+        maybeProcError.exitCode === 130
+      ) {
         console.log(chalk.yellow("\n\n⚠️  Interrupted - services stopped"));
         process.exit(0);
       }
@@ -425,23 +428,33 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
   }
 }
 
-/**
- * Start Docker Compose (always in detached mode)
- */
-async function startDockerCompose(
-  ctx: ProjectContext,
-  detached: boolean
-): Promise<void> {
-  const spinner = ora("Starting Docker Compose...").start();
-
+function getComposeFiles(ctx: ProjectContext): string[] {
   const composeFiles = ["compose.yaml"];
   if (ctx.mode === "dev") {
     composeFiles.push("compose.dev.yaml");
   }
+  return composeFiles;
+}
+
+function getComposeBaseArgs(ctx: ProjectContext): string[] {
+  // IMPORTANT: use docker/.env for compose interpolation (e.g. PROJECT_NAME, ports)
+  // and keep it in sync with env_file usage inside compose.yaml.
+  return [
+    "compose",
+    "--env-file",
+    "docker/.env",
+    ...getComposeFiles(ctx).flatMap((f) => ["-f", f]),
+  ];
+}
+
+/**
+ * Start Docker Compose (always in detached mode)
+ */
+async function startDockerCompose(ctx: ProjectContext): Promise<void> {
+  const spinner = ora("Starting Docker Compose...").start();
 
   const composeArgs = [
-    "compose",
-    ...composeFiles.flatMap((f) => ["-f", f]),
+    ...getComposeBaseArgs(ctx),
     "up",
     "-d",
     "--build",
@@ -454,7 +467,7 @@ async function startDockerCompose(
       stdio: "inherit",
     });
     spinner.succeed("Docker Compose started");
-  } catch (error: any) {
+  } catch (error: unknown) {
     spinner.fail("Failed to start Docker Compose");
     throw error;
   }
@@ -469,17 +482,7 @@ async function attachToLogs(ctx: ProjectContext): Promise<void> {
   );
   console.log(chalk.gray("Streaming logs... (Press Ctrl+C to stop)\n"));
 
-  const composeFiles = ["compose.yaml"];
-  if (ctx.mode === "dev") {
-    composeFiles.push("compose.dev.yaml");
-  }
-
-  const composeArgs = [
-    "compose",
-    ...composeFiles.flatMap((f) => ["-f", f]),
-    "logs",
-    "-f",
-  ];
+  const composeArgs = [...getComposeBaseArgs(ctx), "logs", "-f"];
 
   await execa("docker", composeArgs, {
     cwd: ctx.dir,
@@ -496,11 +499,17 @@ async function waitForHealthy(ctx: ProjectContext): Promise<void> {
   const services = ["db", "cache", "api", "worker", "web"];
   const maxWaitMs = 120_000; // 2 minutes
 
+  type ComposePsEntry = {
+    Service?: string;
+    Health?: string;
+    State?: string;
+  };
+
   const checkHealth = async (): Promise<boolean> => {
     try {
       const { stdout } = await execa(
         "docker",
-        ["compose", "ps", "--format", "json"],
+        [...getComposeBaseArgs(ctx), "ps", "--format", "json"],
         {
           cwd: ctx.dir,
         }
@@ -509,10 +518,10 @@ async function waitForHealthy(ctx: ProjectContext): Promise<void> {
       const containers = stdout
         .split("\n")
         .filter(Boolean)
-        .map((line) => JSON.parse(line));
+        .map((line) => JSON.parse(line) as ComposePsEntry);
 
       const allHealthy = services.every((service) => {
-        const container = containers.find((c: any) => c.Service === service);
+        const container = containers.find((c) => c.Service === service);
         return (
           container &&
           (container.Health === "healthy" || container.State === "running")
@@ -520,7 +529,7 @@ async function waitForHealthy(ctx: ProjectContext): Promise<void> {
       });
 
       return allHealthy;
-    } catch (e) {
+    } catch {
       return false;
     }
   };
@@ -560,7 +569,15 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
   try {
     await execa(
       "docker",
-      ["compose", "exec", "-T", "api", "alembic", "upgrade", "head"],
+      [
+        ...getComposeBaseArgs(ctx),
+        "exec",
+        "-T",
+        "api",
+        "alembic",
+        "upgrade",
+        "head",
+      ],
       {
         cwd: ctx.dir,
       }
@@ -606,7 +623,9 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
           "\n⚠️  Database migrations failed. You may need to run them manually:"
         )
       );
-      console.log(chalk.cyan("   docker compose exec api alembic upgrade head"));
+      console.log(
+        chalk.cyan("   docker compose exec api alembic upgrade head")
+      );
       console.log(chalk.gray("\n   Error details:"));
       console.log(chalk.gray("   " + errorMessage));
     }
@@ -658,7 +677,12 @@ function printSuccessMessage(
  */
 async function checkForExistingVolumes(): Promise<boolean> {
   try {
-    const { stdout } = await execa("docker", ["volume", "ls", "--format", "{{.Name}}"]);
+    const { stdout } = await execa("docker", [
+      "volume",
+      "ls",
+      "--format",
+      "{{.Name}}",
+    ]);
     const volumes = stdout.split("\n").filter(Boolean);
 
     // Check for the project-specific database volume
@@ -684,13 +708,9 @@ async function cleanupDockerVolumes(ctx: ProjectContext): Promise<void> {
   try {
     // If compose files exist, use docker compose down -v
     if (ctx.isScaffolded) {
-      await execa(
-        "docker",
-        ["compose", "down", "-v"],
-        {
-          cwd: ctx.dir,
-        }
-      );
+      await execa("docker", [...getComposeBaseArgs(ctx), "down", "-v"], {
+        cwd: ctx.dir,
+      });
     } else {
       // If no compose files yet, manually remove the volume by name
       // This handles the case where project was deleted but volumes remain
