@@ -7,8 +7,8 @@ This directory contains 32 implementation tickets for the CLI launcher revamp, o
 The CLI launcher revamp modernizes `@weirdfingers/baseboards` by:
 - Publishing pre-built backend Docker images (no local build)
 - Downloading templates from GitHub Releases (multiple template options)
-- Simplifying to single dev mode (removing prod/dev distinction)
-- Adding local frontend development mode (--app-dev flag)
+- Simplifying to single mode with pre-built images (no hot-reload by default)
+- Adding local frontend development mode with hot-reload (--app-dev flag)
 - Improving template selection UX (interactive prompts)
 
 See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design document.
@@ -38,12 +38,12 @@ See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design d
 - [CLI-2.8](CLI-2.8.md) - Update Up Command to Use Template Downloader
 
 ### Phase 3: Remove Prod Mode, Update Compose (5 tickets)
-**Goal:** Simplify to dev-only mode with pre-built images
+**Goal:** Simplify to single mode with pre-built images (no hot-reload by default)
 
-- [CLI-3.1](CLI-3.1.md) - Update Base Compose to Use Docker Image
-- [CLI-3.2](CLI-3.2.md) - Create Web Service Overlay Compose
-- [CLI-3.3](CLI-3.3.md) - Merge Dev Overlay into Base Compose
-- [CLI-3.4](CLI-3.4.md) - Remove --prod Flag from CLI
+- [CLI-3.1](CLI-3.1.md) - Update Base Compose to Use Docker Image (no --reload)
+- [CLI-3.2](CLI-3.2.md) - Create Web Service Overlay Compose (production build)
+- [CLI-3.3](CLI-3.3.md) - Merge Dev Overlay into Base Compose (no hot-reload)
+- [CLI-3.4](CLI-3.4.md) - Remove --prod and --dev Flags from CLI
 - [CLI-3.5](CLI-3.5.md) - Update Compose File Loading Logic
 
 ### Phase 4: App-Dev Mode (5 tickets)
@@ -191,7 +191,7 @@ Focus: Build template download and caching
 - CLI-2.7, CLI-2.8
 
 ### Week 5: Phase 3 (Simplify Compose)
-Focus: Remove prod mode, use Docker images
+Focus: Single mode with pre-built images, no hot-reload
 - CLI-3.1, CLI-3.2 (parallel)
 - CLI-3.3
 - CLI-3.4, CLI-3.5
@@ -327,8 +327,9 @@ Each ticket follows this structure:
 
 ## Notes
 
-- Breaking changes occur in Phase 3 (removal of prod mode)
+- Breaking changes occur in Phase 3 (removal of prod/dev modes, no hot-reload by default)
 - Phase 6 tickets can start anytime but should complete last
 - Each phase builds on previous phases
 - Testing is critical at each phase boundary
 - Document any deviations from the plan in this README
+- Hot-reload is intentionally removed in default mode; available via --app-dev for frontend only

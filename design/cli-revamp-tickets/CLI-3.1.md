@@ -98,7 +98,7 @@ docker compose exec db psql -U boards -d boards_dev -c "\dt"
   ```yaml
   image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
   ```
-- [ ] Command unchanged: `["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800", "--reload"]`
+- [ ] Command without --reload flag: `["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]`
 - [ ] Volume mounts preserved:
   - [ ] `./config:/app/config:ro`
   - [ ] `./data/storage:/app/data/storage`

@@ -1,18 +1,18 @@
-# Remove --prod Flag from CLI
+# Remove --prod and --dev Flags from CLI
 
 ## Description
 
-Remove the `--prod` flag and production mode logic from the CLI, simplifying to a single development mode. This removes the prod/dev distinction throughout the codebase.
+Remove both `--prod` and `--dev` flags from the CLI, simplifying to a single mode. This removes the prod/dev distinction throughout the codebase.
 
 Changes involve:
 - Remove `--prod` flag from command options
-- Remove `--dev` flag (it becomes implicit/default)
+- Remove `--dev` flag from command options
 - Remove `mode` field from ProjectContext type
 - Remove mode-based conditionals in code
 - Update help text and error messages
 - Simplify compose file loading logic (preparation for CLI-3.5)
 
-After this change, `baseboards up` always runs in development mode.
+After this change, `baseboards up` always runs in a single, streamlined mode with pre-built images (no hot-reload).
 
 ## Dependencies
 
@@ -33,10 +33,11 @@ baseboards up test --prod
 # Expected: Error message or flag not recognized
 # "Unknown option: --prod"
 
-# Old dev flag should be ignored or error
+# Old dev flag should also error
 baseboards up test --dev
 
-# Expected: Either ignored (no-op) or error message
+# Expected: Error message or flag not recognized
+# "Unknown option: --dev"
 ```
 
 ### Default Behavior Test
@@ -56,9 +57,11 @@ baseboards up --help
 # - --dev flag
 # - "production mode"
 # - "development mode"
+# - "hot reload" (except for --app-dev)
 
 # Should focus on:
 # - template selection
+# - --app-dev flag
 # - port configuration
 # - other relevant flags
 ```
@@ -142,16 +145,17 @@ grep -r "prod" src/ | grep -v "reproduce" | grep -v "product"
 ### Backward Compatibility Note
 
 This is a **breaking change**:
-- [ ] Document that --prod no longer works
+- [ ] Document that both --prod and --dev no longer work
 - [ ] Users must use Docker for production deployments
-- [ ] CLI is for development/testing only
+- [ ] CLI provides pre-built images with no hot-reload
+- [ ] Frontend hot-reload available via --app-dev flag (Phase 4)
 - [ ] Add to migration guide (Phase 6)
 
 ### Documentation
 
 - [ ] Function comments updated
-- [ ] No references to "production mode"
-- [ ] Clear that CLI is for development
+- [ ] No references to "production mode" or "development mode"
+- [ ] Clear that CLI provides pre-built images (no hot-reload by default)
 - [ ] Help text accurate and helpful
 
 ### Testing

@@ -2,15 +2,15 @@
 
 ## Description
 
-Consolidate the development mode settings from `compose.dev.yaml` into the main `compose.yaml` file, making dev mode the only mode. This simplifies the system by removing the prod/dev distinction.
+Consolidate necessary settings from `compose.dev.yaml` into the main `compose.yaml` file and delete the dev overlay. This simplifies the system by removing the prod/dev distinction.
 
 Changes involve:
-- Moving dev-specific volume mounts to base compose
-- Moving dev-specific commands (--reload flags) to base compose
-- Moving dev-specific environment variables to base compose
+- Keeping the pre-built image approach (no source mounts)
+- Removing `--reload` flags (no hot-reload with pre-built images)
+- Keeping `PYTHONUNBUFFERED=1` for better log visibility
 - Deleting the `compose.dev.yaml` file entirely
 
-After this change, the backend always runs in development mode with hot reload and source mounts (though using the pre-built Docker image from CLI-3.1).
+After this change, the backend runs with pre-built images in a simple, streamlined mode (no hot-reload). Hot-reload is only available for frontend via `--app-dev` mode (Phase 4).
 
 ## Dependencies
 
@@ -33,29 +33,30 @@ docker compose ps
 # Should show all services running and healthy
 ```
 
-### Hot Reload Test
+### No Hot Reload Test
 ```bash
 # Start services
 docker compose up -d
 
-# Verify --reload flag is active
+# Verify NO --reload flag
 docker compose logs api | grep -i reload
-# Should show: "Uvicorn running with --reload"
+# Should NOT show: "Uvicorn running with --reload"
 
-# Make change to trigger reload (if possible with image)
-# Note: Hot reload may not work with pre-built image
-# This is expected behavior - document in ticket
+# Verify using pre-built image (not source mounts)
+docker compose config | grep -A10 "api:" | grep volumes
+# Should NOT show: ./api:/app (no source code mount)
+# Should only show: config and storage mounts
 ```
 
-### Development Features Test
+### Log Visibility Test
 ```bash
-# Verify PYTHONUNBUFFERED is set
+# Verify PYTHONUNBUFFERED is set for better logs
 docker compose exec api printenv | grep PYTHONUNBUFFERED
 # Should show: PYTHONUNBUFFERED=1
 
-# Verify config mounts are read-write (not read-only)
-docker compose exec api touch /app/config/test.txt
-# Should succeed (no permission denied)
+# Verify logs are visible in real-time
+docker compose logs api -f
+# Should show logs immediately without buffering
 ```
 
 ### No Build Context Test
@@ -81,11 +82,11 @@ docker compose config | grep -A5 "api:" | grep volumes
 
 ### API Service Updates
 
-- [ ] Command includes --reload flag:
+- [ ] Command does NOT include --reload flag:
   ```yaml
-  command: ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800", "--reload"]
+  command: ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]
   ```
-- [ ] Environment includes PYTHONUNBUFFERED:
+- [ ] Environment includes PYTHONUNBUFFERED for log visibility:
   ```yaml
   environment:
     - PYTHONUNBUFFERED=1
@@ -96,7 +97,7 @@ docker compose config | grep -A5 "api:" | grep volumes
     - ./config:/app/config:ro
     - ./data/storage:/app/data/storage
   ```
-- [ ] No source code mounts (backend code in image)
+- [ ] No source code mounts (backend code in pre-built image)
 
 ### Worker Service Updates
 
@@ -118,11 +119,12 @@ docker compose config | grep -A5 "api:" | grep volumes
 
 - [ ] Services start with only base compose file
 - [ ] No need to specify -f compose.dev.yaml
-- [ ] All development features work:
-  - [ ] Logs visible in real-time
+- [ ] Core features work:
+  - [ ] Logs visible in real-time (PYTHONUNBUFFERED)
   - [ ] Health checks pass
   - [ ] Migrations work
   - [ ] Config changes reflected (restart required)
+  - [ ] No hot-reload (expected with pre-built images)
 - [ ] No regressions in functionality
 
 ### Documentation
@@ -132,13 +134,14 @@ docker compose config | grep -A5 "api:" | grep volumes
 - [ ] Notes added about hot reload limitations with pre-built images
 - [ ] Example .env files updated if needed
 
-### Note on Hot Reload
+### Note on No Hot Reload
 
-Since we're using pre-built Docker images (CLI-3.1), hot reload of backend code is not possible. This is expected:
-- [ ] Document that backend hot reload requires rebuilding image
-- [ ] Explain that config files can still be changed (requires restart)
-- [ ] Clarify that this is for running, not developing the toolkit itself
-- [ ] For toolkit development, use local build setup (not CLI)
+The system intentionally does NOT provide hot-reload with pre-built Docker images. This is a design decision:
+- [ ] Document that there is no backend hot reload (by design)
+- [ ] Explain that config files can be changed (requires container restart)
+- [ ] Clarify that this CLI is for using Boards, not developing it
+- [ ] For toolkit development itself, use the monorepo dev setup (not CLI)
+- [ ] Frontend hot-reload is available via `--app-dev` flag (Phase 4)
 
 ### Quality
 

@@ -2,14 +2,16 @@
 
 ## Description
 
-Extract the web service from the main compose file into a separate overlay file (`compose.web.yaml`). This enables optional loading of the web service, which is needed for app-dev mode (Phase 4) where users may want to run the frontend locally instead of in Docker.
+Create a separate overlay file (`compose.web.yaml`) that defines the web service with a **production build** (no hot-reload, no volume mounts). This enables optional loading of the web service, which is needed for app-dev mode (Phase 4) where users may want to run the frontend locally instead of in Docker.
 
 The overlay approach using Docker Compose allows:
 - Base compose file runs backend services (api, worker, db, cache)
-- Web overlay adds frontend service when needed
-- CLI loads appropriate combination based on flags
+- Web overlay adds frontend service as a production-built container when needed
+- CLI loads appropriate combination based on flags (`--app-dev` skips the overlay)
 
 This is preparation for the `--app-dev` flag in Phase 4.
+
+**Key difference from previous dev mode:** The web service now uses a production build via `Dockerfile.web` with no source mounts or hot-reload.
 
 ## Dependencies
 
@@ -52,14 +54,12 @@ curl http://localhost:3300
 # Should return Next.js page
 ```
 
-### Volume Mounts Test
+### Production Build Test
 ```bash
-# Verify hot reload works
-echo "// test change" >> web/src/app/page.tsx
-
-# Check logs for reload
-docker compose logs web -f
-# Should show: "compiled successfully"
+# Verify web service uses production build (not dev mode)
+docker compose logs web
+# Should NOT show: "pnpm dev" or "Fast Refresh"
+# Should show: "Server listening on port 3000" or similar production output
 ```
 
 ### Dependency Test
@@ -95,17 +95,8 @@ docker compose logs web | grep -i "waiting"
   environment:
     - INTERNAL_API_URL=http://api:8800
   ```
-- [ ] Volume mounts for hot reload:
-  ```yaml
-  volumes:
-    - ./web:/app
-    - web-node-modules:/app/node_modules
-    - web-next:/app/.next
-  ```
-- [ ] Command for development mode:
-  ```yaml
-  command: ["sh", "-c", "pnpm install && pnpm dev"]
-  ```
+- [ ] No volume mounts (production build in image)
+- [ ] No custom command (uses default from Dockerfile.web)
 - [ ] Depends on api service:
   ```yaml
   depends_on:
@@ -131,15 +122,6 @@ docker compose logs web | grep -i "waiting"
     - internal
   ```
 
-### Volumes
-
-- [ ] Named volumes defined:
-  ```yaml
-  volumes:
-    web-node-modules:
-    web-next:
-  ```
-
 ### Integration
 
 - [ ] Works when loaded after base compose
@@ -152,7 +134,7 @@ docker compose logs web | grep -i "waiting"
 - [ ] Loading base only works (4 services)
 - [ ] Loading base + overlay works (5 services)
 - [ ] Web service can communicate with api service
-- [ ] Hot reload functions correctly
+- [ ] Production build works correctly (no hot-reload)
 - [ ] Health checks pass
 - [ ] Ports configurable via WEB_PORT env var
 

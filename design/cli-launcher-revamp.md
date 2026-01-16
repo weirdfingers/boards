@@ -3,13 +3,13 @@
 **Goal:** Modernize the `@weirdfingers/baseboards` CLI with a streamlined developer experience, pre-built backend Docker images, and extensible frontend templates.
 
 ```bash
-# Quick start with full-featured template
+# Quick start with full-featured template (pre-built images, no hot-reload)
 npx @weirdfingers/baseboards up my-app --template baseboards
 
-# Minimal starter for custom apps
+# Minimal starter for custom apps (pre-built images, no hot-reload)
 npx @weirdfingers/baseboards up my-app --template basic
 
-# Frontend runs locally, backend in Docker
+# Frontend development mode: runs locally with hot-reload, backend in Docker
 npx @weirdfingers/baseboards up my-app --template basic --app-dev
 ```
 
@@ -36,11 +36,12 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
 
 | Aspect | Before | After |
 |--------|--------|-------|
-| **Modes** | `--dev` (hot reload) vs `--prod` (prebuilt) | Dev mode only (always hot reload) |
+| **Modes** | `--dev` (hot reload) vs `--prod` (prebuilt) | Single mode (pre-built images) |
 | **Backend** | Built locally from source | Pre-built Docker image from registry |
 | **Frontend Templates** | Only `baseboards` (full app) | Multiple: `baseboards`, `basic`, future frameworks |
 | **Template Source** | Bundled in npm package | Downloaded from GitHub Releases |
-| **Frontend Execution** | Always in Docker | Docker (default) or local (`--app-dev`) |
+| **Frontend Execution** | Always in Docker | Pre-built image (default) or local dev (`--app-dev`) |
+| **Hot Reload** | Dev mode only | Only with `--app-dev` flag (frontend only) |
 
 ### What's Staying the Same
 
@@ -83,7 +84,7 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
         │                       │      │                       │
         │  ┌─────────────────┐  │      │  ┌─────────────────┐  │
         │  │   web (Docker)  │  │      │  │  web (local)    │  │
-        │  │   with mounts   │  │      │  │  pnpm/npm dev   │  │
+        │  │  pre-built img  │  │      │  │  pnpm/npm dev   │  │
         │  └─────────────────┘  │      │  └─────────────────┘  │
         └───────────────────────┘      └───────────────────────┘
                     │                               │
@@ -109,7 +110,7 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
 | **cache** | `redis:7` | None | Job queue, caching |
 | **api** | `ghcr.io/weirdfingers/boards-backend:X.Y.Z` | `./config`, `./data/storage` | GraphQL API server |
 | **worker** | `ghcr.io/weirdfingers/boards-backend:X.Y.Z` | `./config`, `./data/storage` | Background job processor |
-| **web** | Built locally OR local dev server | `./web` (when Docker) | Frontend application |
+| **web** | Built locally (default) OR local dev server (`--app-dev`) | None | Frontend application |
 
 ---
 
@@ -145,8 +146,8 @@ baseboards doctor [directory]
 
 | Flag | Reason |
 |------|--------|
-| `--dev` | Now the only mode (implicit) |
-| `--prod` | Removed - no production mode |
+| `--dev` | Removed - pre-built images are now default |
+| `--prod` | Removed - pre-built images are now default |
 
 ### New Flags
 
@@ -307,7 +308,7 @@ template-baseboards/
 │   └── .env.example
 ├── compose.yaml                  # Docker Compose (no web service)
 ├── compose.web.yaml              # Web service overlay (for non-app-dev)
-├── Dockerfile.web                # Web container build
+├── Dockerfile.web                # Production build for web container
 └── README.md
 ```
 
@@ -335,7 +336,7 @@ template-basic/
 │   └── .env.example
 ├── compose.yaml
 ├── compose.web.yaml
-├── Dockerfile.web
+├── Dockerfile.web                # Production build for web container
 └── README.md
 ```
 
@@ -593,7 +594,7 @@ publish-docker:
 
 ## 6) Development Modes
 
-### Default Mode (Frontend in Docker)
+### Default Mode (Pre-built Images)
 
 When `--app-dev` is NOT specified:
 
@@ -603,7 +604,7 @@ When `--app-dev` is NOT specified:
 │                                                             │
 │  ┌─────────┐  ┌─────────┐  ┌────────┐  ┌─────────────────┐  │
 │  │   api   │  │ worker  │  │   db   │  │      web        │  │
-│  │ (image) │  │ (image) │  │ pg:16  │  │ (built locally) │  │
+│  │ (image) │  │ (image) │  │ pg:16  │  │  (built image)  │  │
 │  └─────────┘  └─────────┘  └────────┘  └─────────────────┘  │
 │       │            │            │              │            │
 │       └────────────┴────────────┴──────────────┘            │
@@ -648,7 +649,7 @@ services:
 
   api:
     image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
-    command: ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800", "--reload"]
+    command: ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]
     env_file:
       - docker/.env
       - api/.env
@@ -709,11 +710,6 @@ services:
     env_file: web/.env
     environment:
       - INTERNAL_API_URL=http://api:8800
-    volumes:
-      - ./web:/app
-      - web-node-modules:/app/node_modules
-      - web-next:/app/.next
-    command: ["sh", "-c", "pnpm install && pnpm dev"]
     depends_on:
       api:
         condition: service_healthy
@@ -726,10 +722,44 @@ services:
       retries: 50
     networks:
       - internal
+```
 
-volumes:
-  web-node-modules:
-  web-next:
+**Dockerfile.web (Production Build):**
+
+```dockerfile
+# Dockerfile.web
+FROM node:20-slim AS base
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN pnpm build
+
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+EXPOSE 3000
+ENV PORT=3000
+
+CMD ["node", "server.js"]
 ```
 
 ### App-Dev Mode (Frontend Local)
@@ -845,11 +875,11 @@ async function promptPackageManager(): Promise<PackageManager> {
 | Aspect | Default Mode | App-Dev Mode |
 |--------|--------------|--------------|
 | **Docker services** | db, cache, api, worker, web | db, cache, api, worker |
-| **Frontend runs in** | Docker container | Local dev server |
-| **Hot reload speed** | Good (Docker volumes) | Excellent (native) |
+| **Frontend runs in** | Docker container (built image) | Local dev server |
+| **Hot reload** | None (pre-built image) | Yes (native) |
 | **Prerequisites** | Docker only | Docker + Node.js + package manager |
-| **IDE integration** | Limited | Full (TypeScript, debugging) |
-| **Use case** | Quick start, testing | Active frontend development |
+| **IDE integration** | None | Full (TypeScript, debugging) |
+| **Use case** | Quick start, testing, production-like environment | Active frontend development |
 
 ---
 
@@ -1075,19 +1105,21 @@ After a release, the following artifacts are published:
 
 ### Phase 3: Remove Prod Mode, Update Compose
 
-**Goal:** Simplify to dev-only mode with pre-built backend image.
+**Goal:** Simplify to single mode with pre-built images (no hot-reload by default).
 
 **Tasks:**
-1. Remove `--prod` flag from CLI
+1. Remove `--dev` and `--prod` flags from CLI
 2. Remove `compose.dev.yaml` (merge into `compose.yaml`)
-3. Update `compose.yaml` to use pre-built backend image
-4. Create `compose.web.yaml` overlay for web service
-5. Update `up` command logic
+3. Update `compose.yaml` to use pre-built backend image (no `--reload`)
+4. Create `compose.web.yaml` overlay for web service (production build)
+5. Create `Dockerfile.web` for production Next.js build
+6. Update `up` command logic
 
 **Files to modify:**
 - `packages/cli-launcher/src/commands/up.ts`
 - `packages/cli-launcher/template-sources/compose.yaml`
-- `packages/cli-launcher/template-sources/compose.web.yaml` (new, replaces compose.dev.yaml)
+- `packages/cli-launcher/template-sources/compose.web.yaml` (new, production build)
+- `packages/cli-launcher/template-sources/Dockerfile.web` (new, production Next.js)
 
 ### Phase 4: App-Dev Mode
 
@@ -1222,8 +1254,8 @@ my-app/                           # Scaffolded project
 ├── docker/
 │   └── .env                      # Generated (DB password, ports)
 ├── compose.yaml                  # Base services (api, worker, db, cache)
-├── compose.web.yaml              # Web service overlay
-├── Dockerfile.web                # Web container build
+├── compose.web.yaml              # Web service overlay (for non-app-dev)
+├── Dockerfile.web                # Production Next.js build
 ├── .gitignore
 └── README.md
 ```
