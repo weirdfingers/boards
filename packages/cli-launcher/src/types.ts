@@ -25,6 +25,12 @@ export interface ProjectContext {
 
   /** CLI version */
   version: string;
+
+  /**
+   * Whether to run frontend locally instead of in Docker.
+   * When true, web service is not started in Docker Compose.
+   */
+  appDev: boolean;
 }
 
 export interface UpOptions {
@@ -33,6 +39,7 @@ export interface UpOptions {
   attach?: boolean;
   ports?: string;
   fresh?: boolean;
+  appDev?: boolean;
 }
 
 export interface DownOptions {

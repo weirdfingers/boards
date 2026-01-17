@@ -51,6 +51,8 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     ...customPorts,
   };
 
+  const appDev = options.appDev || false;
+
   const ctx: ProjectContext = {
     dir,
     name,
@@ -58,6 +60,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     ports: defaultPorts,
     mode,
     version,
+    appDev,
   };
 
   // Track if this is a fresh scaffold to prompt for API keys later

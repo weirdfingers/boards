@@ -49,6 +49,7 @@ program
   .option("--attach", "Attach to logs (runs in foreground)")
   .option("--ports <ports>", "Custom ports (e.g., web=3300 api=8800)")
   .option("--fresh", "Clean up existing volumes before starting")
+  .option("--app-dev", "Run frontend locally instead of in Docker")
   .action(up);
 
 // down command
