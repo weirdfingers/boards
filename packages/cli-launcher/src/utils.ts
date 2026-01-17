@@ -10,6 +10,7 @@ import which from "which";
 import type { Prerequisites, ProjectContext } from "./types.js";
 import chalk from "chalk";
 import crypto from "crypto";
+import prompts from "prompts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -286,4 +287,36 @@ export async function waitFor(
   }
 
   return false;
+}
+
+/**
+ * Package manager type
+ */
+export type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
+
+/**
+ * Prompts user to select their preferred package manager.
+ * @returns Selected package manager: pnpm, npm, yarn, or bun
+ * @throws Exits process if user cancels
+ */
+export async function promptPackageManager(): Promise<PackageManager> {
+  const { packageManager } = await prompts({
+    type: "select",
+    name: "packageManager",
+    message: "Select your package manager:",
+    choices: [
+      { title: "pnpm", value: "pnpm" },
+      { title: "npm", value: "npm" },
+      { title: "yarn", value: "yarn" },
+      { title: "bun", value: "bun" },
+    ],
+    initial: 0,
+  });
+
+  if (!packageManager) {
+    console.log("\nPackage manager selection cancelled");
+    process.exit(0);
+  }
+
+  return packageManager;
 }
