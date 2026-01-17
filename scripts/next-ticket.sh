@@ -58,7 +58,7 @@ if [ "$INITIAL_STATUS" = "not-started" ]; then
     echo ""
 
     # Invoke Claude Code with the work-on-ticket command
-    claude "/work-on-ticket $NEXT_TICKET"
+    claude --dangerously-skip-permissions "/work-on-ticket $NEXT_TICKET"
 
 elif [ "$INITIAL_STATUS" = "in-progress" ]; then
     echo "⚠️  Ticket is already in progress."
@@ -66,7 +66,7 @@ elif [ "$INITIAL_STATUS" = "in-progress" ]; then
     echo ""
 
     # Invoke Claude Code with the resume-ticket command
-    claude "/resume-ticket $NEXT_TICKET"
+    claude --dangerously-skip-permissions "/resume-ticket $NEXT_TICKET"
 
 else
     echo "⚠️  Ticket has unexpected status: $INITIAL_STATUS"
@@ -74,7 +74,7 @@ else
     echo ""
 
     # Invoke Claude Code with the work-on-ticket command
-    claude "/project:work-on-ticket $NEXT_TICKET"
+    claude --dangerously-skip-permissions "/work-on-ticket $NEXT_TICKET"
 fi
 
 # After Claude finishes, check if the ticket was completed
