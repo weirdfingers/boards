@@ -7,11 +7,17 @@ Replace the local build context for the backend (`./api`) with the pre-built Doc
 Update the `compose.yaml` file to:
 - Use `image:` instead of `build:` for api and worker services
 - Reference `ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION}`
-- Maintain volume mounts for external config and storage
-- Keep environment variable configuration
+- Add volume mounts for extensibility:
+  - `./config:/app/config:ro` - Backend configuration
+  - `./data/storage:/app/data/storage` - Generated media persistence
+  - `./extensions:/app/extensions:ro` - Custom generators and plugins (NEW)
+- Add environment variables for extensibility:
+  - `PYTHONPATH=/app:/app/extensions` - Enables loading custom Python modules
+  - `BOARDS_GENERATORS_CONFIG_PATH` - Explicit path to generators config
+  - `BOARDS_STORAGE_CONFIG_PATH` - Explicit path to storage config
 - Preserve health checks and dependencies
 
-This change simplifies the setup for users and ensures everyone runs the same tested backend image.
+This change simplifies the setup for users, ensures everyone runs the same tested backend image, and enables custom generators and plugins to be loaded from the host filesystem without rebuilding Docker images.
 
 ## Dependencies
 
@@ -54,6 +60,14 @@ docker compose exec api ls -la /app/config
 docker compose exec api touch /app/data/storage/test.txt
 ls data/storage/test.txt
 # Should exist on host
+
+# Verify extensions directory is mounted
+docker compose exec api ls -la /app/extensions
+# Should show: generators/ plugins/
+
+# Verify PYTHONPATH allows importing from extensions
+docker compose exec api python -c "import sys; print('/app/extensions' in sys.path)"
+# Should output: True
 ```
 
 ### Environment Variables Test
@@ -65,7 +79,11 @@ docker compose exec api printenv | grep BOARDS_
 # BOARDS_DATABASE_URL=...
 # BOARDS_REDIS_URL=...
 # BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
-# etc.
+# BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
+
+# Verify PYTHONPATH is set
+docker compose exec api printenv PYTHONPATH
+# Should show: /app:/app/extensions
 ```
 
 ### Version Override Test
@@ -99,10 +117,15 @@ docker compose exec db psql -U boards -d boards_dev -c "\dt"
   image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
   ```
 - [ ] Command without --reload flag: `["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]`
-- [ ] Volume mounts preserved:
+- [ ] Volume mounts updated:
   - [ ] `./config:/app/config:ro`
   - [ ] `./data/storage:/app/data/storage`
-- [ ] Environment variables preserved (all BOARDS_* vars)
+  - [ ] `./extensions:/app/extensions:ro` (NEW - for custom generators and plugins)
+- [ ] Environment variables updated:
+  - [ ] All existing BOARDS_* vars preserved
+  - [ ] `PYTHONPATH=/app:/app/extensions` (NEW - enables loading custom modules)
+  - [ ] `BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml` (explicit)
+  - [ ] `BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml` (explicit)
 - [ ] Health check unchanged
 - [ ] Dependencies unchanged (db, cache)
 
@@ -114,8 +137,15 @@ docker compose exec db psql -U boards -d boards_dev -c "\dt"
   image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
   ```
 - [ ] Command unchanged: `["dramatiq-gevent", "boards.workers.actors:broker", ...]`
-- [ ] Volume mounts preserved (same as api)
-- [ ] Environment variables preserved
+- [ ] Volume mounts updated (same as api):
+  - [ ] `./config:/app/config:ro`
+  - [ ] `./data/storage:/app/data/storage`
+  - [ ] `./extensions:/app/extensions:ro` (NEW)
+- [ ] Environment variables updated (same as api):
+  - [ ] All existing BOARDS_* vars preserved
+  - [ ] `PYTHONPATH=/app:/app/extensions` (NEW)
+  - [ ] `BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml` (explicit)
+  - [ ] `BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml` (explicit)
 - [ ] Health check unchanged
 - [ ] Dependencies unchanged
 

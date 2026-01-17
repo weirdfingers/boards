@@ -11,6 +11,8 @@ The CLI launcher revamp modernizes `@weirdfingers/baseboards` by:
 - Adding local frontend development mode with hot-reload (--app-dev flag)
 - Improving template selection UX (interactive prompts)
 - Implementing in-place upgrade workflow with compatibility checking
+- Supporting custom generators and plugins via volume mounts (extensibility)
+- Ensuring generated media persists across container restarts (volume-backed storage)
 
 See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design document.
 

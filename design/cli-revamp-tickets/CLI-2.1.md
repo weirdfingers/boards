@@ -45,12 +45,20 @@ basic-template/
 │   └── .env.example
 ├── config/
 │   ├── generators.yaml
-│   └── storage_config.yaml
+│   └── storage_config.yaml (must use /app/data/storage for base_path)
+├── extensions/
+│   ├── generators/
+│   │   └── README.md (instructions for adding custom generators)
+│   └── plugins/
+│       └── README.md (instructions for adding plugins)
+├── data/
+│   └── storage/.gitkeep
 ├── docker/
 │   └── .env.example
 ├── compose.yaml (placeholder, will be copied from template-sources)
 ├── compose.web.yaml (placeholder, will be copied from template-sources)
 ├── Dockerfile.web (placeholder, will be copied from template-sources)
+├── .gitignore
 └── README.md
 ```
 
@@ -122,6 +130,13 @@ ls -lh basic-test.tar.gz
 - [ ] Create board button exists and is wired to useCreateBoard
 - [ ] README.md explains the template purpose
 - [ ] Config files (generators.yaml, storage_config.yaml) included
+  - [ ] storage_config.yaml uses `/app/data/storage` as base_path (Docker volume mount path)
+- [ ] extensions/ directory structure created:
+  - [ ] extensions/generators/README.md with instructions for custom generators
+  - [ ] extensions/plugins/README.md with instructions for plugins (PR #231)
+  - [ ] READMEs link to https://boards-docs.weirdfingers.com/docs/generators/configuration
+- [ ] data/storage/.gitkeep created (ensures directory exists)
+- [ ] .gitignore includes data/storage/* pattern
 - [ ] .env.example files included with proper variables
-- [ ] Compressed size under 50KB
+- [ ] Compressed size under 50KB (excluding READMEs which add minimal size)
 - [ ] No unnecessary dependencies or bloat

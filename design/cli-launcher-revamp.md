@@ -19,6 +19,8 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
 
 1. [Summary of Changes](#1-summary-of-changes)
 2. [Architecture Overview](#2-architecture-overview)
+   - Service Configuration
+   - Extensibility Support
 3. [CLI Interface](#3-cli-interface)
 4. [Template System](#4-template-system)
 5. [Docker Image Strategy](#5-docker-image-strategy)
@@ -109,9 +111,78 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
 |---------|--------------|--------|---------|
 | **db** | `postgres:16` | `db-data` volume | PostgreSQL database |
 | **cache** | `redis:7` | None | Job queue, caching |
-| **api** | `ghcr.io/weirdfingers/boards-backend:X.Y.Z` | `./config`, `./data/storage` | GraphQL API server |
-| **worker** | `ghcr.io/weirdfingers/boards-backend:X.Y.Z` | `./config`, `./data/storage` | Background job processor |
+| **api** | `ghcr.io/weirdfingers/boards-backend:X.Y.Z` | `./config`, `./data/storage`, `./extensions` | GraphQL API server |
+| **worker** | `ghcr.io/weirdfingers/boards-backend:X.Y.Z` | `./config`, `./data/storage`, `./extensions` | Background job processor |
 | **web** | Built locally (default) OR local dev server (`--app-dev`) | None | Frontend application |
+
+**Volume Mount Details:**
+
+- **`./config`** (read-only): Generator and storage configuration YAML files
+- **`./data/storage`** (read-write): Generated media artifacts (images, videos, audio) - persisted across container restarts
+- **`./extensions/generators`** (read-only): Custom generator implementations (Python modules)
+- **`./extensions/plugins`** (read-only): Plugin implementations (Python modules) - see [PR #231](https://github.com/weirdfingers/boards/pull/231)
+
+### Extensibility Support
+
+Boards supports loading custom code modules from outside the core source tree:
+
+**Custom Generators** - Implement generators not included in the core package:
+
+```yaml
+# config/generators.yaml
+generators:
+  # Core generator (built into image)
+  - class: "boards.generators.implementations.fal.image.flux_pro.FalFluxProGenerator"
+    enabled: true
+
+  # Custom generator (loaded from ./extensions/generators/)
+  - class: "custom_generators.my_generator.MyCustomGenerator"
+    enabled: true
+
+  # External package generator (via Python entry point)
+  - entrypoint: "myorg.custom_whisper"
+    enabled: true
+```
+
+**Custom Plugins** - Extend Boards functionality with custom plugins (PR #231):
+
+```python
+# extensions/plugins/my_plugin.py
+from boards.plugins import BasePlugin
+
+class MyCustomPlugin(BasePlugin):
+    def initialize(self):
+        # Plugin initialization logic
+        pass
+```
+
+**Backend Loading Mechanism:**
+
+1. `PYTHONPATH` environment variable includes `/app/extensions`
+2. Backend discovers Python modules in `./extensions/generators/` and `./extensions/plugins/`
+3. Generators configured via `generators.yaml` are imported and registered
+4. Plugins are loaded via entry point discovery mechanism
+
+**Storage Configuration:**
+
+The `storage_config.yaml` must use Docker volume paths to ensure persistence:
+
+```yaml
+# config/storage_config.yaml
+storage:
+  default_provider: "local"
+  providers:
+    local:
+      type: "local"
+      config:
+        base_path: "/app/data/storage"  # ← Docker volume mount
+        public_url_base: "http://localhost:8800/api/storage"
+```
+
+**Documentation:**
+
+- Custom generators: [https://boards-docs.weirdfingers.com/docs/generators/configuration](https://boards-docs.weirdfingers.com/docs/generators/configuration)
+- Entry points: [https://boards-docs.weirdfingers.com/docs/generators/configuration#plugin-entry-point-contract](https://boards-docs.weirdfingers.com/docs/generators/configuration#plugin-entry-point-contract)
 
 ---
 
@@ -311,11 +382,19 @@ template-baseboards/
 ├── config/                       # Backend configuration
 │   ├── generators.yaml
 │   └── storage_config.yaml
+├── extensions/                   # Custom code (volume-mounted)
+│   ├── generators/               # Custom generator implementations
+│   │   └── README.md             # Instructions for adding custom generators
+│   └── plugins/                  # Plugin implementations
+│       └── README.md             # Instructions for adding plugins
+├── data/
+│   └── storage/.gitkeep          # Generated media (volume-mounted)
 ├── docker/
 │   └── .env.example
 ├── compose.yaml                  # Docker Compose (no web service)
 ├── compose.web.yaml              # Web service overlay (for non-app-dev)
 ├── Dockerfile.web                # Production build for web container
+├── .gitignore
 └── README.md
 ```
 
@@ -339,11 +418,19 @@ template-basic/
 ├── config/
 │   ├── generators.yaml
 │   └── storage_config.yaml
+├── extensions/                   # Custom code (volume-mounted)
+│   ├── generators/               # Custom generator implementations
+│   │   └── README.md             # Instructions for adding custom generators
+│   └── plugins/                  # Plugin implementations
+│       └── README.md             # Instructions for adding plugins
+├── data/
+│   └── storage/.gitkeep          # Generated media (volume-mounted)
 ├── docker/
 │   └── .env.example
 ├── compose.yaml
 ├── compose.web.yaml
 ├── Dockerfile.web                # Production build for web container
+├── .gitignore
 └── README.md
 ```
 
@@ -493,7 +580,7 @@ const DEFAULT_BACKEND_VERSION = pkg.version; // e.g., "0.7.0"
 
 ### External Configuration Mounts
 
-The backend image expects configuration to be mounted externally:
+The backend image expects configuration and extensibility directories to be mounted externally:
 
 ```yaml
 services:
@@ -503,10 +590,18 @@ services:
       - ./config/generators.yaml:/app/config/generators.yaml:ro
       - ./config/storage_config.yaml:/app/config/storage_config.yaml:ro
       - ./data/storage:/app/data/storage
+      - ./extensions:/app/extensions:ro
     environment:
       BOARDS_GENERATORS_CONFIG_PATH: /app/config/generators.yaml
       BOARDS_STORAGE_CONFIG_PATH: /app/config/storage_config.yaml
+      PYTHONPATH: /app:/app/extensions
 ```
+
+**Volume purposes:**
+
+- **`./config`**: YAML configuration files for generators and storage
+- **`./data/storage`**: Persistent storage for generated media (images, videos, audio) - ensures artifacts survive container restarts
+- **`./extensions`**: Custom Python modules (generators and plugins) loaded at runtime - enables extensibility without rebuilding the Docker image
 
 ### Dockerfile for Backend Image
 
@@ -663,6 +758,11 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./data/storage:/app/data/storage
+      - ./extensions:/app/extensions:ro
+    environment:
+      - PYTHONPATH=/app:/app/extensions
+      - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
+      - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
     depends_on:
       db:
         condition: service_healthy
@@ -687,6 +787,11 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./data/storage:/app/data/storage
+      - ./extensions:/app/extensions:ro
+    environment:
+      - PYTHONPATH=/app:/app/extensions
+      - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
+      - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
     depends_on:
       db:
         condition: service_healthy
@@ -1103,15 +1208,20 @@ After a release, the following artifacts are published:
 
 **Tasks:**
 1. Create `basic` template in `packages/cli-launcher/basic-template/`
-2. Create `scripts/prepare-release-templates.sh`
-3. Create `scripts/generate-template-manifest.js`
-4. Add `publish-templates` job to workflow
-5. Implement template download logic in CLI
-6. Implement local cache in `~/.baseboards/templates/`
-7. Add `baseboards templates` command
+2. Add `extensions/generators/` and `extensions/plugins/` directories to templates with README files
+3. Update `storage_config.yaml` in templates to use Docker volume path (`/app/data/storage`)
+4. Create `scripts/prepare-release-templates.sh`
+5. Create `scripts/generate-template-manifest.js`
+6. Add `publish-templates` job to workflow
+7. Implement template download logic in CLI
+8. Implement local cache in `~/.baseboards/templates/`
+9. Add `baseboards templates` command
 
 **Files to create/modify:**
 - `packages/cli-launcher/basic-template/` (new directory)
+- `packages/cli-launcher/basic-template/extensions/generators/README.md` (new)
+- `packages/cli-launcher/basic-template/extensions/plugins/README.md` (new)
+- `packages/cli-launcher/template-sources/storage_config.yaml` (modify - update base_path)
 - `packages/cli-launcher/src/commands/templates.ts` (new)
 - `packages/cli-launcher/src/utils/template-downloader.ts` (new)
 - `packages/cli-launcher/src/commands/up.ts` (modify)
@@ -1127,13 +1237,15 @@ After a release, the following artifacts are published:
 1. Remove `--dev` and `--prod` flags from CLI
 2. Remove `compose.dev.yaml` (merge into `compose.yaml`)
 3. Update `compose.yaml` to use pre-built backend image (no `--reload`)
-4. Create `compose.web.yaml` overlay for web service (production build)
-5. Create `Dockerfile.web` for production Next.js build
-6. Update `up` command logic
+4. Add volume mounts for `./extensions` and update `PYTHONPATH` environment variable
+5. Add environment variables for `BOARDS_GENERATORS_CONFIG_PATH` and `BOARDS_STORAGE_CONFIG_PATH`
+6. Create `compose.web.yaml` overlay for web service (production build)
+7. Create `Dockerfile.web` for production Next.js build
+8. Update `up` command logic
 
 **Files to modify:**
 - `packages/cli-launcher/src/commands/up.ts`
-- `packages/cli-launcher/template-sources/compose.yaml`
+- `packages/cli-launcher/template-sources/compose.yaml` (add extensions volume, env vars)
 - `packages/cli-launcher/template-sources/compose.web.yaml` (new, production build)
 - `packages/cli-launcher/template-sources/Dockerfile.web` (new, production Next.js)
 
@@ -1545,13 +1657,18 @@ The following are preserved across upgrades (mounted as volumes):
 |------|-----------|-------|
 | `data/storage/` | ✅ Yes | Generated media (images, videos, audio) |
 | `config/*.yaml` | ✅ Yes | Generator and storage configuration |
+| `extensions/generators/` | ✅ Yes | Custom generator implementations |
+| `extensions/plugins/` | ✅ Yes | Custom plugin implementations |
 | `api/.env` | ✅ Yes | API keys, secrets |
 | `web/.env` | ✅ Yes | Frontend environment variables |
 | `docker/.env` | ⚠️  Merged | Updated with new version, but preserved values |
 | `web/src/` | ❌ No (default mode) | Rebuilt from template (customizations lost) |
 | `web/src/` | ✅ Yes (app-dev) | User manages via git/version control |
 
-**Recommendation for default mode**: If users have customized frontend code, they should switch to `--app-dev` mode or maintain a fork.
+**Recommendations:**
+
+- **Default mode**: If users have customized frontend code, they should switch to `--app-dev` mode or maintain a fork.
+- **Extensions**: Custom generators and plugins in `./extensions/` are preserved and do not require special handling during upgrades. They continue to work across versions as long as the Boards plugin API remains compatible.
 
 ### CLI Help Output
 
@@ -1669,21 +1786,32 @@ my-app/                           # Scaffolded project
 │   ├── next.config.js
 │   ├── tailwind.config.js
 │   └── .env                      # Generated
-├── config/                       # Backend configuration (mounted)
-│   ├── generators.yaml
-│   └── storage_config.yaml
+├── config/                       # Backend configuration (mounted read-only)
+│   ├── generators.yaml           # Generator configuration
+│   └── storage_config.yaml       # Storage provider configuration
+├── extensions/                   # Custom code (mounted read-only)
+│   ├── generators/               # Custom generator implementations
+│   │   └── README.md             # Instructions for adding custom generators
+│   └── plugins/                  # Plugin implementations
+│       └── README.md             # Instructions for adding plugins
 ├── api/                          # API environment only
 │   └── .env                      # Generated (API keys, secrets)
 ├── data/
-│   └── storage/                  # Generated media (gitignored)
+│   └── storage/                  # Generated media (volume-mounted, gitignored)
 ├── docker/
-│   └── .env                      # Generated (DB password, ports)
+│   └── .env                      # Generated (DB password, ports, versions)
 ├── compose.yaml                  # Base services (api, worker, db, cache)
 ├── compose.web.yaml              # Web service overlay (for non-app-dev)
 ├── Dockerfile.web                # Production Next.js build
 ├── .gitignore
 └── README.md
 ```
+
+**Volume-mounted directories:**
+
+- **`./config`**: Backend configuration files (read-only)
+- **`./data/storage`**: Persistent generated media (read-write)
+- **`./extensions`**: Custom generators and plugins (read-only)
 
 ## Appendix B: Environment Variables Reference
 
@@ -1712,6 +1840,8 @@ BOARDS_GENERATOR_API_KEYS={"REPLICATE_API_KEY":"...","FAL_KEY":"..."}
 BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
 BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
 ```
+
+**Note:** `PYTHONPATH=/app:/app/extensions` is set in `compose.yaml` environment variables to enable loading custom generators and plugins from the `./extensions/` directory.
 
 ### `web/.env`
 

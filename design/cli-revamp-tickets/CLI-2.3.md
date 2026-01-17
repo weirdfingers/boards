@@ -114,10 +114,17 @@ tar -tzf dist/template-basic-v0.8.0-test.tar.gz | grep -E '(compose\.yaml|Docker
   - [ ] Excludes .next, node_modules, build artifacts
   - [ ] Transforms workspace:* dependencies to $VERSION
   - [ ] Copies shared files (compose.yaml, compose.web.yaml, Dockerfile.web, config/)
+  - [ ] Creates extensions/ directories with README files (generators and plugins)
+  - [ ] Creates data/storage/.gitkeep
+  - [ ] Includes .gitignore with data/storage/* pattern
+  - [ ] Ensures storage_config.yaml uses /app/data/storage for base_path
 - [ ] Basic template prepared:
   - [ ] Copies from `packages/cli-launcher/basic-template/` to `dist/templates/basic/`
   - [ ] Updates version in package.json to $VERSION
   - [ ] Copies shared files
+  - [ ] Includes extensions/ directories (should already be in basic-template from CLI-2.1)
+  - [ ] Includes data/storage/.gitkeep
+  - [ ] Verifies storage_config.yaml path is correct
 - [ ] Creates tarballs:
   - [ ] `dist/template-baseboards-v$VERSION.tar.gz`
   - [ ] `dist/template-basic-v$VERSION.tar.gz`
