@@ -11,6 +11,9 @@ npx @weirdfingers/baseboards up my-app --template basic
 
 # Frontend development mode: runs locally with hot-reload, backend in Docker
 npx @weirdfingers/baseboards up my-app --template basic --app-dev
+
+# Package development mode: includes @weirdfingers/boards source for local changes
+npx @weirdfingers/baseboards up my-app --template basic --app-dev --dev-packages
 ```
 
 ---
@@ -45,6 +48,7 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
 | **Template Source** | Bundled in npm package | Downloaded from GitHub Releases |
 | **Frontend Execution** | Always in Docker | Pre-built image (default) or local dev (`--app-dev`) |
 | **Hot Reload** | Dev mode only | Only with `--app-dev` flag (frontend only) |
+| **Package Development** | Not supported | `--dev-packages` includes unpublished package source for local testing |
 
 ### What's Staying the Same
 
@@ -80,19 +84,19 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
               │  • template-expo-v0.7.0.tar.gz (future) │
               └─────────────────────────────────────────┘
                                     │
-                    ┌───────────────┴───────────────┐
-                    ▼                               ▼
-        ┌───────────────────────┐      ┌───────────────────────┐
-        │   Default Mode        │      │   --app-dev Mode      │
-        │                       │      │                       │
-        │  ┌─────────────────┐  │      │  ┌─────────────────┐  │
-        │  │   web (Docker)  │  │      │  │  web (local)    │  │
-        │  │  pre-built img  │  │      │  │  pnpm/npm dev   │  │
-        │  └─────────────────┘  │      │  └─────────────────┘  │
-        └───────────────────────┘      └───────────────────────┘
-                    │                               │
-                    └───────────────┬───────────────┘
-                                    ▼
+          ┌─────────────────────────┼─────────────────────────┐
+          ▼                         ▼                         ▼
+  ┌───────────────┐      ┌──────────────────┐      ┌─────────────────────┐
+  │ Default Mode  │      │ --app-dev Mode   │      │ --app-dev           │
+  │               │      │                  │      │ --dev-packages Mode │
+  │ ┌───────────┐ │      │ ┌──────────────┐ │      │ ┌─────────────────┐ │
+  │ │web(Docker)│ │      │ │ web (local)  │ │      │ │  web (local)    │ │
+  │ │pre-built  │ │      │ │ pnpm/npm dev │ │      │ │  + local pkg    │ │
+  │ └───────────┘ │      │ └──────────────┘ │      │ │  file:../       │ │
+  └───────────────┘      └──────────────────┘      │ └─────────────────┘ │
+          │                       │                 └─────────────────────┘
+          └───────────────────────┼───────────────────────────┘
+                                  ▼
         ┌─────────────────────────────────────────────────────────┐
         │              Docker Services (always)                    │
         │                                                         │
@@ -197,6 +201,7 @@ baseboards up [directory] [options]
 Options:
   --template <name>     Frontend template: "baseboards", "basic" (default: interactive)
   --app-dev             Run frontend locally instead of in Docker
+  --dev-packages        Include unpublished @weirdfingers/boards source (requires --app-dev)
   --backend-version <v> Backend image version (default: CLI version)
   --attach              Attach to logs after startup
   --ports <string>      Custom ports: "web=3300 api=8800"
@@ -233,6 +238,7 @@ baseboards doctor [directory]
 |------|---------|
 | `--template <name>` | Select frontend template |
 | `--app-dev` | Run frontend locally with native tooling |
+| `--dev-packages` | Include unpublished `@weirdfingers/boards` source for local package development (requires `--app-dev`) |
 | `--backend-version <v>` | Pin backend image to specific version |
 
 ### Interactive Flows
@@ -984,14 +990,249 @@ async function promptPackageManager(): Promise<PackageManager> {
 
 ### Comparison Table
 
-| Aspect | Default Mode | App-Dev Mode |
-|--------|--------------|--------------|
-| **Docker services** | db, cache, api, worker, web | db, cache, api, worker |
-| **Frontend runs in** | Docker container (built image) | Local dev server |
-| **Hot reload** | None (pre-built image) | Yes (native) |
-| **Prerequisites** | Docker only | Docker + Node.js + package manager |
-| **IDE integration** | None | Full (TypeScript, debugging) |
-| **Use case** | Quick start, testing, production-like environment | Active frontend development |
+| Aspect | Default Mode | App-Dev Mode | App-Dev + Dev-Packages Mode |
+|--------|--------------|--------------|----------------------------|
+| **Docker services** | db, cache, api, worker, web | db, cache, api, worker | db, cache, api, worker |
+| **Frontend runs in** | Docker container (built image) | Local dev server | Local dev server |
+| **Hot reload** | None (pre-built image) | Yes (native) | Yes (native + package source) |
+| **Prerequisites** | Docker only | Docker + Node.js + package manager | Docker + Node.js + package manager |
+| **IDE integration** | None | Full (TypeScript, debugging) | Full (TypeScript, debugging) |
+| **Package source** | Published npm package | Published npm package | Local source (`file:../frontend`) |
+| **Use case** | Quick start, testing, production-like environment | Active frontend development | Package development & testing |
+
+### Dev-Packages Mode (Local Package Development)
+
+When `--dev-packages` IS specified (requires `--app-dev`):
+
+**Purpose:** Enable development and testing of changes to the `@weirdfingers/boards` package before publishing.
+
+**IMPORTANT - Monorepo Requirement:**
+
+This feature is **only for Boards contributors/developers** working within the Boards monorepo. It is NOT available when running via `npx @weirdfingers/baseboards` from npm.
+
+- **Works:** Running CLI from within cloned monorepo (`cd boards && pnpm cli up ...`)
+- **Does NOT work:** Running via `npx @weirdfingers/baseboards` (no source to copy)
+
+The CLI validates that it's running from the monorepo and errors with a helpful message if not.
+
+**Project structure:**
+
+```
+my-app/
+├── frontend/                     # @weirdfingers/boards package source
+│   ├── src/
+│   │   ├── hooks/
+│   │   ├── graphql/
+│   │   └── ...
+│   ├── package.json              # @weirdfingers/boards package
+│   └── tsconfig.json
+├── web/                          # Template application
+│   ├── src/
+│   ├── package.json              # References: "@weirdfingers/boards": "file:../frontend"
+│   └── ...
+├── config/
+├── extensions/
+├── data/
+├── docker/
+├── compose.yaml
+└── ...
+```
+
+**How it works:**
+
+1. CLI copies the entire `packages/frontend` source from the monorepo into `my-app/frontend/`
+2. Template's `web/package.json` is modified to reference: `"@weirdfingers/boards": "file:../frontend"`
+3. Package manager (pnpm/npm/yarn/bun) installs the local source as a dependency
+4. Changes to `frontend/src/` are hot-reloaded in the running application
+5. Developer can iterate on package code and immediately see results in the application
+
+**CLI behavior with `--app-dev --dev-packages`:**
+
+```typescript
+async function upWithDevPackages(ctx: ProjectContext): Promise<void> {
+  // 1. Validate we're in the monorepo
+  const monorepoRoot = await detectMonorepoRoot();
+  if (!monorepoRoot) {
+    throw new Error(
+      '--dev-packages requires running from within the Boards monorepo.\n\n' +
+      'This feature is for Boards contributors testing unpublished package changes.\n' +
+      'Clone the monorepo and run: cd boards && pnpm cli up <dir> --app-dev --dev-packages\n\n' +
+      'If you want to develop apps using the published package, use --app-dev without --dev-packages.'
+    );
+  }
+
+  // 2. Scaffold template (same as app-dev)
+  await scaffoldTemplate(ctx);
+
+  // 3. Copy packages/frontend source to my-app/frontend/
+  console.log('📦 Copying @weirdfingers/boards source from monorepo...');
+  const monorepoFrontend = path.join(monorepoRoot, 'packages', 'frontend');
+  const targetFrontend = path.join(ctx.dir, 'frontend');
+
+  // Validate frontend package exists
+  if (!await fs.pathExists(monorepoFrontend)) {
+    throw new Error(
+      `Frontend package not found at: ${monorepoFrontend}\n` +
+      'Expected monorepo structure with packages/frontend directory.'
+    );
+  }
+
+  await fs.copy(monorepoFrontend, targetFrontend, {
+    filter: (src) => {
+      // Exclude build artifacts and dependencies
+      return !src.includes('node_modules') &&
+             !src.includes('dist') &&
+             !src.includes('.turbo') &&
+             !src.includes('.next');
+    }
+  });
+
+  // 3. Update web/package.json to use file:../frontend
+  console.log('🔗 Linking local package...');
+  const webPackageJson = path.join(ctx.dir, 'web', 'package.json');
+  const pkg = await fs.readJson(webPackageJson);
+  pkg.dependencies['@weirdfingers/boards'] = 'file:../frontend';
+  await fs.writeJson(webPackageJson, pkg, { spaces: 2 });
+
+  // 4. Setup env files (same as app-dev)
+  await ensureEnvFiles(ctx);
+
+  // 5. Prompt for package manager
+  const packageManager = await promptPackageManager();
+
+  // 6. Start Docker services (backend only)
+  await startDockerServices(ctx, { includeWeb: false });
+
+  // 7. Wait for backend health
+  await waitForHealth(ctx, { services: ["api", "db", "cache", "worker"] });
+
+  // 8. Run migrations
+  await runMigrations(ctx);
+
+  // 9. Install dependencies (including local frontend package)
+  console.log(`\nInstalling dependencies with ${packageManager}...`);
+  await exec(packageManager, ["install"], { cwd: path.join(ctx.dir, "web") });
+
+  // 10. Print instructions
+  printDevPackagesInstructions(ctx, packageManager);
+}
+
+function printDevPackagesInstructions(ctx: ProjectContext, pm: string): void {
+  console.log(`
+✅ Backend services are running!
+✅ Local @weirdfingers/boards package linked!
+
+   API:      http://localhost:${ctx.ports.api}
+   GraphQL:  http://localhost:${ctx.ports.api}/graphql
+
+Package development workflow:
+
+   1. Edit package source:
+      ${ctx.dir}/frontend/src/
+
+   2. Start the frontend:
+      cd ${ctx.dir}/web
+      ${pm} dev
+
+   3. Changes to the package will hot-reload automatically
+
+The frontend will be available at http://localhost:3000
+`);
+}
+
+/**
+ * Detect if CLI is running from within the Boards monorepo.
+ * Returns monorepo root path if found, null otherwise.
+ */
+async function detectMonorepoRoot(): Promise<string | null> {
+  let currentDir = CLI_PACKAGE_ROOT;
+
+  // Walk up directory tree looking for monorepo markers
+  for (let i = 0; i < 5; i++) {
+    // Check for pnpm-workspace.yaml (monorepo indicator)
+    const workspaceFile = path.join(currentDir, 'pnpm-workspace.yaml');
+    if (await fs.pathExists(workspaceFile)) {
+      // Validate it's the Boards monorepo (check for packages/frontend)
+      const frontendPackage = path.join(currentDir, 'packages', 'frontend', 'package.json');
+      if (await fs.pathExists(frontendPackage)) {
+        const pkg = await fs.readJson(frontendPackage);
+        // Verify it's the @weirdfingers/boards package
+        if (pkg.name === '@weirdfingers/boards') {
+          return currentDir;
+        }
+      }
+    }
+
+    // Move up one directory
+    const parent = path.dirname(currentDir);
+    if (parent === currentDir) break; // Reached filesystem root
+    currentDir = parent;
+  }
+
+  return null;
+}
+```
+
+**Validation:**
+
+When `--dev-packages` is used without `--app-dev`, the CLI should error:
+
+```typescript
+if (flags.devPackages && !flags.appDev) {
+  throw new Error(
+    '--dev-packages requires --app-dev mode. ' +
+    'Docker-based web service cannot use local package sources.'
+  );
+}
+```
+
+**Why `--dev-packages` requires `--app-dev`:**
+
+1. **Technical simplicity:** Docker build would require complex context and volume configuration to access `../frontend`
+2. **Use case alignment:** Local package development requires fast iteration with hot reload
+3. **Build performance:** Rebuilding Docker image on every package change would be prohibitively slow
+4. **Developer experience:** Native dev server provides better debugging, IDE integration, and error messages
+
+**Workflow example:**
+
+```bash
+# Prerequisites: Clone and setup Boards monorepo
+git clone https://github.com/weirdfingers/boards.git
+cd boards
+pnpm install
+
+# 1. Create project with dev packages (from monorepo root)
+pnpm cli up ../my-test-app --template basic --app-dev --dev-packages
+
+# 2. Make changes to the package
+cd ../my-test-app/frontend/src/hooks
+# Edit useBoards.ts
+
+# 3. Start frontend (in separate terminal)
+cd ../my-test-app/web
+pnpm dev
+
+# 4. Changes hot-reload automatically in the browser
+# 5. Test changes in the running application
+# 6. When satisfied, copy changes back to monorepo
+cd ../../boards
+cp -r ../my-test-app/frontend/src/hooks/useBoards.ts packages/frontend/src/hooks/
+```
+
+**Source synchronization:**
+
+The CLI does NOT maintain bidirectional sync between `my-app/frontend/` and the monorepo `packages/frontend/`. Developers are responsible for:
+- Copying changes from `my-app/frontend/` back to `packages/frontend/` manually
+- Using git or other version control tools to manage changes
+- Testing changes in the monorepo before committing
+
+**Comparison with alternatives:**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **`--dev-packages`** (file copy) | Simple, self-contained, no symlink issues | Manual sync required |
+| **`pnpm link`** | Bidirectional sync | Fragile, platform-specific, breaks frequently |
+| **Workspace protocol** | Monorepo-native | Requires entire monorepo, not portable |
 
 ---
 
@@ -1277,6 +1518,34 @@ After a release, the following artifacts are published:
 **Files to modify:**
 - `packages/cli-launcher/src/commands/up.ts`
 - `packages/cli-launcher/src/commands/templates.ts`
+
+### Phase 5.5: Dev-Packages Mode
+
+**Goal:** Enable local package development with `--dev-packages` flag.
+
+**Tasks:**
+1. Add `--dev-packages` flag to `up` command
+2. Implement validation: require `--app-dev` when `--dev-packages` is used
+3. **Implement monorepo detection** - validate CLI is running from within Boards monorepo
+4. Implement frontend package source copying from monorepo
+5. Modify template `package.json` to use `file:../frontend` dependency
+6. Add filter logic to exclude build artifacts (node_modules, dist, .turbo, .next)
+7. Update success messages with dev-packages workflow instructions
+8. Document manual sync workflow (no bidirectional sync)
+
+**Files to create/modify:**
+- `packages/cli-launcher/src/commands/up.ts` (modify - add dev-packages logic)
+- `packages/cli-launcher/src/utils/package-dev.ts` (new - package copying and monorepo detection utilities)
+
+**Implementation notes:**
+- **CRITICAL:** Only works when CLI runs from within Boards monorepo
+- Validate monorepo by checking for `pnpm-workspace.yaml` and `packages/frontend/package.json`
+- Error with helpful message if not in monorepo (suggest cloning repo)
+- Copy entire `packages/frontend` directory to `<project>/frontend/`
+- Exclude: `node_modules/`, `dist/`, `.turbo/`, `.next/`
+- Modify `web/package.json`: `"@weirdfingers/boards": "file:../frontend"`
+- CLI does NOT maintain sync - developers manually copy changes back
+- Feature is for **Boards contributors**, not end users
 
 ### Phase 6: Documentation and Testing
 
@@ -1799,10 +2068,17 @@ Third-party templates can be added by:
 my-app/                           # Scaffolded project
 ├── web/                          # Frontend (from template)
 │   ├── src/
-│   ├── package.json
+│   ├── package.json              # "@weirdfingers/boards": "0.7.0" (or "file:../frontend" with --dev-packages)
 │   ├── next.config.js
 │   ├── tailwind.config.js
 │   └── .env                      # Generated
+├── frontend/                     # @weirdfingers/boards source (only with --dev-packages)
+│   ├── src/
+│   │   ├── hooks/
+│   │   ├── graphql/
+│   │   └── ...
+│   ├── package.json
+│   └── tsconfig.json
 ├── config/                       # Backend configuration (mounted read-only)
 │   ├── generators.yaml           # Generator configuration
 │   └── storage_config.yaml       # Storage provider configuration
@@ -1829,6 +2105,11 @@ my-app/                           # Scaffolded project
 - **`./config`**: Backend configuration files (read-only)
 - **`./data/storage`**: Persistent generated media (read-write)
 - **`./extensions`**: Custom generators and plugins (read-only)
+
+**With `--dev-packages` flag:**
+
+- **`./frontend`**: Local copy of `@weirdfingers/boards` package source (not present without flag)
+- **`./web/package.json`**: References `"@weirdfingers/boards": "file:../frontend"` instead of published version
 
 ## Appendix B: Environment Variables Reference
 
@@ -1893,6 +2174,7 @@ Options:
 Examples:
   $ baseboards up my-app --template baseboards
   $ baseboards up my-app --template basic --app-dev
+  $ baseboards up my-app --template basic --app-dev --dev-packages
   $ baseboards upgrade my-app
   $ baseboards upgrade my-app --version 0.8.0 --dry-run
   $ baseboards down my-app --volumes

@@ -1,6 +1,6 @@
 # CLI Launcher Revamp - Implementation Tickets
 
-This directory contains 42 implementation tickets for the CLI launcher revamp, organized into 7 phases. Each ticket is a separate markdown file following GitHub Issues format.
+This directory contains 46 implementation tickets for the CLI launcher revamp, organized into 8 phases (including Phase 5.5). Each ticket is a separate markdown file following GitHub Issues format.
 
 ## Overview
 
@@ -10,6 +10,7 @@ The CLI launcher revamp modernizes `@weirdfingers/baseboards` by:
 - Simplifying to single mode with pre-built images (no hot-reload by default)
 - Adding local frontend development mode with hot-reload (--app-dev flag)
 - Improving template selection UX (interactive prompts)
+- **Enabling local package development for Boards contributors (--dev-packages flag)**
 - Implementing in-place upgrade workflow with compatibility checking
 - Supporting custom generators and plugins via volume mounts (extensibility)
 - Ensuring generated media persists across container restarts (volume-backed storage)
@@ -65,6 +66,14 @@ See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design d
 - [CLI-5.2](CLI-5.2.md) - Implement Interactive Template Selector
 - [CLI-5.3](CLI-5.3.md) - Add Template Download Progress Indicator
 - [CLI-5.4](CLI-5.4.md) - Handle Template Download Errors Gracefully
+
+### Phase 5.5: Dev-Packages Mode (4 tickets)
+**Goal:** Enable local package development for Boards contributors
+
+- [CLI-5.5.1](CLI-5.5.1.md) - Add --dev-packages Flag and Validation
+- [CLI-5.5.2](CLI-5.5.2.md) - Implement Monorepo Detection Utility
+- [CLI-5.5.3](CLI-5.5.3.md) - Implement Package Source Copying
+- [CLI-5.5.4](CLI-5.5.4.md) - Add Dev-Packages Integration Tests
 
 ### Phase 6: Documentation and Testing (6 tickets)
 **Goal:** Comprehensive docs and tests
@@ -256,6 +265,13 @@ Focus: Polish template selection
 - CLI-5.2, CLI-5.3 (parallel)
 - CLI-5.4
 
+### Week 7.5: Phase 5.5 (Dev-Packages Mode) - OPTIONAL
+Focus: Enable local package development for Boards contributors
+- CLI-5.5.1 (flag and validation)
+- CLI-5.5.2, CLI-5.5.3 (parallel: monorepo detection and package copying)
+- CLI-5.5.4 (integration tests)
+**Note:** This phase is optional and can be implemented in parallel with other phases or deferred. It only affects Boards contributors, not end users.
+
 ### Week 8-9: Phase 7 (Upgrade Command)
 Focus: In-place upgrade workflow
 - CLI-7.1 (manifest schema)
@@ -281,9 +297,11 @@ These tickets can be worked on in parallel:
 - **CLI-3.1 + CLI-3.2**: Compose updates can happen in parallel
 - **CLI-4.1 + CLI-4.2**: Flag and package manager selection are independent
 - **CLI-5.1 + CLI-5.3**: Flag and progress indicator are independent
+- **Phase 5.5 (entire phase)**: Dev-packages is independent of other phases and can be done in parallel or deferred
+- **CLI-5.5.2 + CLI-5.5.3**: Monorepo detection and package copying can be developed in parallel
 - **CLI-7.2 + CLI-7.4**: Manifest fetcher and mode detection are independent
 - **CLI-7.6 + CLI-7.7**: Default and app-dev upgrade flows can be developed in parallel
-- **CLI-6.1 + CLI-6.3 + CLI-6.4**: Documentation and testing are independent
+- **CLI-6.1 + CLI-6.3 + CLI-6.4 + CLI-5.5.4**: Documentation and testing are independent
 
 ## Testing Strategy
 
@@ -378,6 +396,12 @@ Each ticket follows this structure:
 - [ ] CLI-5.3 - Add Template Download Progress Indicator
 - [ ] CLI-5.4 - Handle Template Download Errors Gracefully
 
+### Phase 5.5: Dev-Packages Mode
+- [ ] CLI-5.5.1 - Add --dev-packages Flag and Validation
+- [ ] CLI-5.5.2 - Implement Monorepo Detection Utility
+- [ ] CLI-5.5.3 - Implement Package Source Copying
+- [ ] CLI-5.5.4 - Add Dev-Packages Integration Tests
+
 ### Phase 6: Documentation and Testing
 - [ ] CLI-6.1 - Update CLI README
 - [ ] CLI-6.2 - Update Main Documentation Site
@@ -402,7 +426,9 @@ Each ticket follows this structure:
 
 - Breaking changes occur in Phase 3 (removal of prod/dev modes, no hot-reload by default)
 - Phase 6 tickets can start anytime but should complete last
-- Each phase builds on previous phases
+- **Phase 5.5 is optional** and only affects Boards contributors, not end users
+- **Phase 5.5 requires monorepo** - the `--dev-packages` feature only works when CLI runs from within the Boards monorepo
+- Each phase builds on previous phases (except Phase 5.5, which is independent)
 - Testing is critical at each phase boundary
 - Document any deviations from the plan in this README
 - Hot-reload is intentionally removed in default mode; available via --app-dev for frontend only

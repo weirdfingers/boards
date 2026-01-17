@@ -32,11 +32,27 @@
     "status": "not-started"
   },
   {
+    "ticket": "design/cli-revamp-tickets/CLI-7.1.md",
+    "status": "not-started"
+  },
+  {
     "ticket": "design/cli-revamp-tickets/CLI-1.2.md",
     "status": "not-started"
   },
   {
     "ticket": "design/cli-revamp-tickets/CLI-2.3.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-5.5.1.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.2.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.9.md",
     "status": "not-started"
   },
   {
@@ -48,11 +64,35 @@
     "status": "not-started"
   },
   {
+    "ticket": "design/cli-revamp-tickets/CLI-5.5.2.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.3.md",
+    "status": "not-started"
+  },
+  {
     "ticket": "design/cli-revamp-tickets/CLI-2.5.md",
     "status": "not-started"
   },
   {
     "ticket": "design/cli-revamp-tickets/CLI-3.1.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-5.5.3.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-5.5.4.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.10.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.5.md",
     "status": "not-started"
   },
   {
@@ -100,7 +140,15 @@
     "status": "not-started"
   },
   {
+    "ticket": "design/cli-revamp-tickets/CLI-7.6.md",
+    "status": "not-started"
+  },
+  {
     "ticket": "design/cli-revamp-tickets/CLI-4.4.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.8.md",
     "status": "not-started"
   },
   {
@@ -109,6 +157,14 @@
   },
   {
     "ticket": "design/cli-revamp-tickets/CLI-6.4.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.4.md",
+    "status": "not-started"
+  },
+  {
+    "ticket": "design/cli-revamp-tickets/CLI-7.7.md",
     "status": "not-started"
   },
   {
