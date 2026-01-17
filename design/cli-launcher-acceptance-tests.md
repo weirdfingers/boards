@@ -28,6 +28,7 @@
 8. [Error Handling Tests](#8-error-handling-tests)
 9. [Performance Tests](#9-performance-tests)
 10. [Documentation Verification](#10-documentation-verification)
+11. [Release Process Tests](#11-release-process-tests)
 
 ---
 
@@ -1417,6 +1418,224 @@ npx @weirdfingers/baseboards@latest templates --help
 
 ---
 
+## 11) Release Process Tests
+
+### Test 11.1: Release Process Verification
+
+**Objective:** Verify that the complete GitHub Actions release workflow executes correctly when a release is published.
+
+**Prerequisites:**
+
+- Repository maintainer access (required to trigger workflow_dispatch)
+- GitHub secrets configured:
+  - `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`
+  - `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+- npm trusted publishing configured for `@weirdfingers/boards` and `@weirdfingers/baseboards`
+- PyPI trusted publishing configured for `boards` package
+
+**Test Type:** This is a smoke test performed during actual releases to verify the pipeline works, not to test code functionality.
+
+**Steps:**
+
+```bash
+# 1. Navigate to GitHub Actions tab
+# Go to: https://github.com/weirdfingers/boards/actions/workflows/version-bump.yml
+
+# 2. Click "Run workflow" button
+
+# 3. Select bump type (patch/minor/major) based on changes
+
+# 4. Click "Run workflow"
+
+# 5. Monitor workflow execution in real-time
+
+# 6. Wait for all 6 jobs to complete (approximately 15-20 minutes)
+```
+
+**Verification Checklist:**
+
+**Job 1: bump-and-release**
+- [ ] Workflow triggered successfully
+- [ ] Version bumped in all `package.json` files
+- [ ] Version bumped in all `pyproject.toml` files
+- [ ] Git commit created with message "chore: bump to vX.Y.Z"
+- [ ] Git tag created (vX.Y.Z)
+- [ ] Tag pushed to main branch
+- [ ] GitHub Release created
+- [ ] Release has auto-generated notes
+- [ ] Release is not marked as draft or prerelease
+- [ ] Release notes are accurate and complete
+
+**Job 2: publish-python**
+- [ ] Job ran after bump-and-release completed
+- [ ] Checked out correct tag (vX.Y.Z)
+- [ ] Backend package built successfully
+- [ ] Package published to PyPI
+- [ ] Verify on PyPI: Visit `https://pypi.org/project/boards/`
+- [ ] Latest version shows X.Y.Z
+- [ ] Can install: `pip install boards==X.Y.Z`
+
+**Job 3: publish-npm (frontend package)**
+- [ ] Job ran after bump-and-release completed
+- [ ] Checked out correct tag (vX.Y.Z)
+- [ ] Frontend package built successfully
+- [ ] Package published to npm
+- [ ] Verify on npm: Visit `https://www.npmjs.com/package/@weirdfingers/boards`
+- [ ] Latest version shows X.Y.Z
+- [ ] Can install: `npm install @weirdfingers/boards@X.Y.Z`
+- [ ] OIDC trusted publishing used (check job logs for confirmation)
+
+**Job 4: publish-cli-launcher**
+- [ ] Job ran after bump-and-release completed
+- [ ] Checked out correct tag (vX.Y.Z)
+- [ ] CLI package built successfully
+- [ ] Package published to npm
+- [ ] Verify on npm: Visit `https://www.npmjs.com/package/@weirdfingers/baseboards`
+- [ ] Latest version shows X.Y.Z
+- [ ] Can run: `npx @weirdfingers/baseboards@X.Y.Z --version`
+- [ ] OIDC trusted publishing used
+
+**Job 5: publish-docs**
+- [ ] Job ran after bump-and-release completed
+- [ ] Checked out correct tag (vX.Y.Z)
+- [ ] Documentation built successfully
+- [ ] No build warnings or errors
+- [ ] Deployed to Cloudflare Pages
+- [ ] Deployment succeeded (check job logs)
+- [ ] Docs site accessible at production URL
+- [ ] Version number updated in documentation
+
+**Job 6: publish-docker**
+- [ ] Job ran after bump-and-release completed
+- [ ] Checked out correct tag (vX.Y.Z)
+- [ ] Multi-architecture build completed (amd64 + arm64)
+- [ ] Build didn't time out (multi-arch builds can take 10+ minutes)
+- [ ] Images pushed to GHCR with version tag
+- [ ] Images pushed to GHCR with `latest` tag
+- [ ] Images pushed to Docker Hub with version tag
+- [ ] Images pushed to Docker Hub with `latest` tag
+- [ ] Both registries show same image digest
+
+**Manual Verification Steps (after workflow completes):**
+
+```bash
+# 1. Verify GitHub Release
+gh release view vX.Y.Z
+
+# Expected: Shows release with auto-generated notes, not draft/prerelease
+
+# 2. Verify PyPI package
+pip install --upgrade boards==X.Y.Z
+python -c "import boards; print(boards.__version__)"
+
+# Expected: X.Y.Z
+
+# 3. Verify npm frontend package
+npm view @weirdfingers/boards@X.Y.Z
+
+# Expected: Shows version X.Y.Z with correct dependencies
+
+# 4. Verify npm CLI package
+npm view @weirdfingers/baseboards@X.Y.Z
+
+# Expected: Shows version X.Y.Z
+
+# 5. Verify CLI functionality
+npx @weirdfingers/baseboards@X.Y.Z --version
+
+# Expected: X.Y.Z
+
+# 6. Verify Docker images on GHCR
+docker pull ghcr.io/weirdfingers/boards-backend:X.Y.Z
+docker pull ghcr.io/weirdfingers/boards-backend:latest
+docker images | grep boards-backend
+
+# Expected: Both images pulled, same image ID
+
+# 7. Verify Docker images on Docker Hub
+docker pull weirdfingers/boards-backend:X.Y.Z
+docker pull weirdfingers/boards-backend:latest
+
+# Expected: Images pulled successfully
+
+# 8. Verify multi-architecture support
+docker manifest inspect ghcr.io/weirdfingers/boards-backend:X.Y.Z
+
+# Expected: Shows manifests for both linux/amd64 and linux/arm64
+
+# 9. Verify docs site
+curl -I https://boards-docs.weirdfingers.com
+
+# Expected: 200 OK, site accessible
+
+# 10. End-to-end test with released CLI
+cd /tmp
+npx @weirdfingers/baseboards@X.Y.Z up release-test --template basic
+cd release-test
+docker compose ps
+
+# Expected: All services healthy, using new Docker image version X.Y.Z
+
+# 11. Verify backend version in running container
+docker compose exec api python -c "import boards; print(boards.__version__)"
+
+# Expected: X.Y.Z
+
+# 12. Cleanup
+docker compose down --volumes
+cd ..
+rm -rf release-test
+```
+
+**Common Issues to Check:**
+
+- [ ] No failed jobs in Actions tab (all green checkmarks)
+- [ ] No workflow permission errors
+- [ ] Docker build didn't time out (increase timeout if needed)
+- [ ] All npm publishes used OIDC (check logs for "Authenticated to registry using OIDC token")
+- [ ] PyPI publish used OIDC trusted publishing (no manual token)
+- [ ] Release notes are accurate and don't contain unrelated changes
+- [ ] All version numbers match across packages
+- [ ] No stale cache causing old version artifacts
+
+**Rollback Procedure (if release fails):**
+
+If the release workflow fails or publishes incorrect artifacts:
+
+```bash
+# 1. Delete the GitHub Release
+gh release delete vX.Y.Z --yes
+
+# 2. Delete the git tag
+git push --delete origin vX.Y.Z
+
+# 3. If packages were published, deprecate them
+npm deprecate @weirdfingers/boards@X.Y.Z "Release failed, please use version X.Y.Z-1"
+npm deprecate @weirdfingers/baseboards@X.Y.Z "Release failed, please use version X.Y.Z-1"
+
+# Note: PyPI packages cannot be deleted, only yanked
+# Docker images can be deleted from GHCR/Docker Hub web UI
+
+# 4. Fix the issue in the codebase
+
+# 5. Re-run the workflow with corrected version
+```
+
+**Pass Criteria:**
+
+- [ ] All 6 jobs completed successfully (green checkmarks in Actions tab)
+- [ ] All artifacts published to their respective registries
+- [ ] Version numbers consistent across all packages
+- [ ] End-to-end CLI installation works with new version
+- [ ] Docker images work on both amd64 and arm64
+- [ ] Documentation deployed successfully
+- [ ] No manual intervention required during workflow
+- [ ] Release is production-ready
+
+**Estimated Time:** 15-20 minutes for full workflow completion
+
+---
+
 ## Test Execution Checklist
 
 Use this checklist to track test execution:
@@ -1471,6 +1690,9 @@ Use this checklist to track test execution:
 ### Documentation Tests
 - [ ] Test 10.1: README Accuracy
 - [ ] Test 10.2: Help Output
+
+### Release Process Tests
+- [ ] Test 11.1: Release Process Verification
 
 ---
 

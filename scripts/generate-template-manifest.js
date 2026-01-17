@@ -86,7 +86,7 @@ function getFileSize(filePath) {
  */
 function extractTemplateName(filename) {
   const basename = path.basename(filename);
-  const match = basename.match(/^template-(.+?)-v[\d.]+\.tar\.gz$/);
+  const match = basename.match(/^template-(.+?)-v[\d.\-a-zA-Z]+\.tar\.gz$/);
   if (!match) {
     throw new Error(`Invalid template filename format: ${filename}`);
   }
