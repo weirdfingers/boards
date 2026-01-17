@@ -188,6 +188,45 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: main
 
+  publish-templates:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build templates
+        run: |
+          VERSION=${{ needs.bump-and-release.outputs.version }}
+          ./scripts/prepare-release-templates.sh "$VERSION"
+
+      - name: Upload templates to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${{ needs.bump-and-release.outputs.version }}"
+          files: |
+            dist/template-baseboards-v${{ needs.bump-and-release.outputs.version }}.tar.gz
+            dist/template-basic-v${{ needs.bump-and-release.outputs.version }}.tar.gz
+            dist/template-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+
   publish-docker:
     needs: bump-and-release
     runs-on: ubuntu-latest
