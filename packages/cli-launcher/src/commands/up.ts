@@ -76,6 +76,15 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   };
 
   const appDev = options.appDev || false;
+  const devPackages = options.devPackages || false;
+
+  // Validate: --dev-packages requires --app-dev
+  if (devPackages && !appDev) {
+    throw new Error(
+      '--dev-packages requires --app-dev mode. ' +
+      'Docker-based web service cannot use local package sources.'
+    );
+  }
 
   // Step 2.5: Determine template to use
   let selectedTemplate: string;
@@ -98,6 +107,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     mode,
     version,
     appDev,
+    devPackages,
     template: selectedTemplate,
   };
 

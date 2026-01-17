@@ -33,6 +33,14 @@ export interface ProjectContext {
   appDev: boolean;
 
   /**
+   * Whether to include unpublished @weirdfingers/boards package source.
+   * Only works when CLI runs from within the Boards monorepo.
+   * When true, packages/frontend is copied to project and linked via file: dependency.
+   * Requires appDev to be true.
+   */
+  devPackages: boolean;
+
+  /**
    * Name of the frontend template to use for scaffolding.
    * Examples: "baseboards", "basic"
    */
@@ -46,6 +54,7 @@ export interface UpOptions {
   ports?: string;
   fresh?: boolean;
   appDev?: boolean;
+  devPackages?: boolean;
   template?: string;
 }
 

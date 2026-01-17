@@ -1704,11 +1704,11 @@ Use this checklist to track test execution:
 
 **Environment:** macOS / Linux / Windows WSL2
 
-**Total tests:** 33
+**Total tests:** 34
 
-**Passed:** ___ / 33
+**Passed:** ___ / 34
 
-**Failed:** ___ / 33
+**Failed:** ___ / 34
 
 **Blockers:** (list critical failures that prevent release)
 
