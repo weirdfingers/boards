@@ -81,32 +81,6 @@ services:
     networks:
       - internal
 
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
-        - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:${API_PORT:-8800}/graphql
-    image: baseboards-web:local
-    env_file: web/.env
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
-      - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:${API_PORT:-8800}/graphql
-      - INTERNAL_API_URL=http://api:8800
-    depends_on:
-      api:
-        condition: service_healthy
-    ports:
-      - "${WEB_PORT:-3300}:3000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 3s
-      retries: 50
-    networks:
-      - internal
-
 networks:
   internal:
     driver: bridge
