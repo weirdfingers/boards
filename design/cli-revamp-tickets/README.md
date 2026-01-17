@@ -1,6 +1,6 @@
 # CLI Launcher Revamp - Implementation Tickets
 
-This directory contains 32 implementation tickets for the CLI launcher revamp, organized into 6 phases. Each ticket is a separate markdown file following GitHub Issues format.
+This directory contains 42 implementation tickets for the CLI launcher revamp, organized into 7 phases. Each ticket is a separate markdown file following GitHub Issues format.
 
 ## Overview
 
@@ -10,6 +10,7 @@ The CLI launcher revamp modernizes `@weirdfingers/baseboards` by:
 - Simplifying to single mode with pre-built images (no hot-reload by default)
 - Adding local frontend development mode with hot-reload (--app-dev flag)
 - Improving template selection UX (interactive prompts)
+- Implementing in-place upgrade workflow with compatibility checking
 
 See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design document.
 
@@ -63,7 +64,7 @@ See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design d
 - [CLI-5.3](CLI-5.3.md) - Add Template Download Progress Indicator
 - [CLI-5.4](CLI-5.4.md) - Handle Template Download Errors Gracefully
 
-### Phase 6: Documentation and Testing (8 tickets)
+### Phase 6: Documentation and Testing (6 tickets)
 **Goal:** Comprehensive docs and tests
 
 - [CLI-6.1](CLI-6.1.md) - Update CLI README
@@ -72,6 +73,20 @@ See [../cli-launcher-revamp.md](../cli-launcher-revamp.md) for the full design d
 - [CLI-6.4](CLI-6.4.md) - Add App-Dev Mode Integration Tests
 - [CLI-6.5](CLI-6.5.md) - Cross-Platform Testing
 - [CLI-6.6](CLI-6.6.md) - Create Migration Guide
+
+### Phase 7: Upgrade Command (10 tickets)
+**Goal:** Implement in-place upgrade workflow
+
+- [CLI-7.1](CLI-7.1.md) - Create Compatibility Manifest Schema
+- [CLI-7.2](CLI-7.2.md) - Implement Compatibility Manifest Fetcher
+- [CLI-7.3](CLI-7.3.md) - Implement Version Compatibility Checker
+- [CLI-7.4](CLI-7.4.md) - Implement Mode Detection (Default vs App-Dev)
+- [CLI-7.5](CLI-7.5.md) - Replace Update Command with Upgrade Command
+- [CLI-7.6](CLI-7.6.md) - Implement Default Mode Upgrade Flow
+- [CLI-7.7](CLI-7.7.md) - Implement App-Dev Mode Upgrade Flow
+- [CLI-7.8](CLI-7.8.md) - Add Dry-Run and Force Flags
+- [CLI-7.9](CLI-7.9.md) - Create Compatibility Manifest Generation Script
+- [CLI-7.10](CLI-7.10.md) - Update Release Workflow for Compatibility Manifests
 
 ## Dependency Graph
 
@@ -155,9 +170,35 @@ graph TD
     CLI-4.5 --> CLI-6.4
     CLI-6.1 --> CLI-6.2
 
+    %% Phase 7
+    CLI-7.1[CLI-7.1: Compat Manifest Schema]
+    CLI-7.2[CLI-7.2: Manifest Fetcher]
+    CLI-7.3[CLI-7.3: Compat Checker]
+    CLI-7.4[CLI-7.4: Mode Detection]
+    CLI-7.5[CLI-7.5: Replace Update Cmd]
+    CLI-7.6[CLI-7.6: Default Mode Upgrade]
+    CLI-7.7[CLI-7.7: App-Dev Upgrade]
+    CLI-7.8[CLI-7.8: Dry-Run/Force Flags]
+    CLI-7.9[CLI-7.9: Compat Gen Script]
+    CLI-7.10[CLI-7.10: Release Workflow]
+
+    CLI-7.1 --> CLI-7.2
+    CLI-7.2 --> CLI-7.3
+    CLI-7.3 --> CLI-7.5
+    CLI-7.4 --> CLI-7.5
+    CLI-7.5 --> CLI-7.6
+    CLI-7.5 --> CLI-7.7
+    CLI-7.6 --> CLI-7.8
+    CLI-7.7 --> CLI-7.8
+    CLI-7.1 --> CLI-7.9
+    CLI-7.9 --> CLI-7.10
+    CLI-2.4 --> CLI-7.10
+
     %% Cross-phase dependencies
     CLI-1.4 --> CLI-3.1
     CLI-2.8 --> CLI-5.1
+    CLI-3.5 --> CLI-7.4
+    CLI-4.5 --> CLI-7.7
 ```
 
 ## Critical Path
@@ -171,10 +212,14 @@ The critical path for implementation (tickets that block other phases):
 5. **CLI-3.1 → CLI-3.3 → CLI-3.4 → CLI-3.5** (Compose simplification)
 6. **CLI-3.5 → CLI-4.3** (Compose loading before app-dev)
 7. **CLI-4.3 → CLI-4.4 → CLI-4.5** (App-dev mode implementation)
+8. **CLI-7.1 → CLI-7.2 → CLI-7.3** (Compatibility system foundation)
+9. **CLI-7.3 → CLI-7.5** (Compatibility checking before upgrade command)
+10. **CLI-7.5 → CLI-7.6/CLI-7.7** (Upgrade command routes to mode-specific flows)
+11. **CLI-7.9 → CLI-7.10** (Manifest generation before release workflow)
 
 ## Implementation Order
 
-**Recommended sequence (8 weeks):**
+**Recommended sequence (10 weeks):**
 
 ### Week 1-2: Phase 1 (Docker Images)
 Focus: Get backend images published
@@ -209,7 +254,17 @@ Focus: Polish template selection
 - CLI-5.2, CLI-5.3 (parallel)
 - CLI-5.4
 
-### Week 8: Phase 6 (Docs & Testing)
+### Week 8-9: Phase 7 (Upgrade Command)
+Focus: In-place upgrade workflow
+- CLI-7.1 (manifest schema)
+- CLI-7.2, CLI-7.4 (parallel: fetcher and mode detection)
+- CLI-7.3 (compatibility checker)
+- CLI-7.5 (replace update command)
+- CLI-7.6, CLI-7.7 (parallel: default and app-dev flows)
+- CLI-7.8 (dry-run/force flags)
+- CLI-7.9, CLI-7.10 (sequential: generate script, update workflow)
+
+### Week 10: Phase 6 (Docs & Testing)
 Focus: Documentation and quality assurance
 - CLI-6.1, CLI-6.3, CLI-6.4 (parallel)
 - CLI-6.2
@@ -224,6 +279,8 @@ These tickets can be worked on in parallel:
 - **CLI-3.1 + CLI-3.2**: Compose updates can happen in parallel
 - **CLI-4.1 + CLI-4.2**: Flag and package manager selection are independent
 - **CLI-5.1 + CLI-5.3**: Flag and progress indicator are independent
+- **CLI-7.2 + CLI-7.4**: Manifest fetcher and mode detection are independent
+- **CLI-7.6 + CLI-7.7**: Default and app-dev upgrade flows can be developed in parallel
 - **CLI-6.1 + CLI-6.3 + CLI-6.4**: Documentation and testing are independent
 
 ## Testing Strategy
@@ -237,6 +294,7 @@ Each ticket includes specific acceptance criteria and testing requirements in it
 - **After Phase 3**: Test dev mode with Docker images
 - **After Phase 4**: Test app-dev mode full workflow
 - **After Phase 5**: Test complete UX flow
+- **After Phase 7**: Test upgrade flows (default and app-dev modes)
 - **After Phase 6**: Final cross-platform validation
 
 ### Rollback Points
@@ -245,6 +303,7 @@ Each ticket includes specific acceptance criteria and testing requirements in it
 - After Phase 3: **Breaking change** - requires communication
 - After Phase 4: App-dev is additive (safe)
 - After Phase 5: Template UX improvements (safe)
+- After Phase 7: Upgrade command is additive (safe)
 - After Phase 6: Documentation only (safe)
 
 ## Ticket Format
@@ -324,6 +383,18 @@ Each ticket follows this structure:
 - [ ] CLI-6.4 - Add App-Dev Mode Integration Tests
 - [ ] CLI-6.5 - Cross-Platform Testing
 - [ ] CLI-6.6 - Create Migration Guide
+
+### Phase 7: Upgrade Command
+- [ ] CLI-7.1 - Create Compatibility Manifest Schema
+- [ ] CLI-7.2 - Implement Compatibility Manifest Fetcher
+- [ ] CLI-7.3 - Implement Version Compatibility Checker
+- [ ] CLI-7.4 - Implement Mode Detection
+- [ ] CLI-7.5 - Replace Update Command with Upgrade Command
+- [ ] CLI-7.6 - Implement Default Mode Upgrade Flow
+- [ ] CLI-7.7 - Implement App-Dev Mode Upgrade Flow
+- [ ] CLI-7.8 - Add Dry-Run and Force Flags
+- [ ] CLI-7.9 - Create Compatibility Manifest Generation Script
+- [ ] CLI-7.10 - Update Release Workflow for Compatibility Manifests
 
 ## Notes
 

@@ -26,7 +26,8 @@ npx @weirdfingers/baseboards up my-app --template basic --app-dev
 7. [Release Process Changes](#7-release-process-changes)
 8. [Implementation Plan](#8-implementation-plan)
 9. [Migration Notes](#9-migration-notes)
-10. [Future Extensions](#10-future-extensions)
+10. [Upgrade Workflow](#10-upgrade-workflow)
+11. [Future Extensions](#11-future-extensions)
 
 ---
 
@@ -129,6 +130,12 @@ Options:
   --attach              Attach to logs after startup
   --ports <string>      Custom ports: "web=3300 api=8800"
   --fresh               Delete existing volumes before starting
+
+# Upgrade existing installation
+baseboards upgrade [directory] [options]
+  --version <version>   Target version (default: latest)
+  --dry-run             Show what would be upgraded without making changes
+  --force               Skip compatibility checks (dangerous)
 
 # List available templates
 baseboards templates [options]
@@ -1036,6 +1043,13 @@ jobs:
           VERSION=${{ needs.bump-and-release.outputs.version }}
           ./scripts/prepare-release-templates.sh "$VERSION"
 
+      - name: Generate compatibility manifest
+        run: |
+          VERSION=${{ needs.bump-and-release.outputs.version }}
+          node scripts/generate-compatibility-manifest.js \
+            --version "$VERSION" \
+            --output dist/compatibility-manifest.json
+
       - name: Upload templates to release
         uses: softprops/action-gh-release@v1
         with:
@@ -1044,6 +1058,7 @@ jobs:
             dist/template-baseboards-v${{ needs.bump-and-release.outputs.version }}.tar.gz
             dist/template-basic-v${{ needs.bump-and-release.outputs.version }}.tar.gz
             dist/template-manifest.json
+            dist/compatibility-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -1061,6 +1076,7 @@ After a release, the following artifacts are published:
 | Baseboards template | GitHub Release | `template-baseboards-v0.7.0.tar.gz` |
 | Basic template | GitHub Release | `template-basic-v0.7.0.tar.gz` |
 | Template manifest | GitHub Release | `template-manifest.json` |
+| Compatibility manifest | GitHub Release | `compatibility-manifest.json` |
 
 ---
 
@@ -1161,6 +1177,29 @@ After a release, the following artifacts are published:
 4. Add integration tests for `--app-dev` mode
 5. Test on macOS, Linux, Windows (WSL)
 
+### Phase 7: Upgrade Command
+
+**Goal:** Implement in-place upgrade workflow.
+
+**Tasks:**
+1. Replace legacy `update` command with new `upgrade` command
+2. Implement mode detection (default vs app-dev)
+3. Implement version compatibility checking
+4. Create compatibility manifest schema and fetch logic
+5. Implement default mode upgrade flow (rebuild frontend image)
+6. Implement app-dev mode upgrade flow (manual instructions)
+7. Add `--dry-run` and `--force` flags
+8. Create compatibility manifest generation script for releases
+9. Update release workflow to publish compatibility manifests
+10. Add integration tests for upgrade flows
+
+**Files to create/modify:**
+- `packages/cli-launcher/src/commands/upgrade.ts` (replace update.ts)
+- `packages/cli-launcher/src/utils/compatibility.ts` (new)
+- `packages/cli-launcher/src/utils/mode-detection.ts` (new)
+- `scripts/generate-compatibility-manifest.js` (new)
+- `.github/workflows/version-bump.yml` (modify - add compatibility manifest upload)
+
 ---
 
 ## 9) Migration Notes
@@ -1203,7 +1242,393 @@ Since we're not maintaining backward compatibility, existing users should:
 
 ---
 
-## 10) Future Extensions
+## 10) Upgrade Workflow
+
+### Philosophy
+
+Users should be able to upgrade Baseboards installations in-place without data loss. The upgrade process differs based on deployment mode:
+
+- **Default mode (Docker)**: Automated upgrade with new images and rebuilt frontend
+- **App-dev mode**: Semi-automated upgrade with manual dependency updates
+
+**Version policy**: All-or-nothing versioning. CLI, backend images, and frontend templates must match versions. No mixing (e.g., CLI v0.8.0 with backend v0.7.0 is not supported).
+
+**Data preservation**: Storage and configuration are mounted as volumes, so they persist across upgrades (assuming storage format compatibility).
+
+### Command Interface
+
+```bash
+# Upgrade to latest version
+baseboards upgrade [directory]
+
+# Upgrade to specific version
+baseboards upgrade [directory] --version 0.8.0
+
+# Dry run (show what would be upgraded)
+baseboards upgrade [directory] --dry-run
+
+# Force upgrade (skip compatibility checks)
+baseboards upgrade [directory] --force
+```
+
+**Note:** The `upgrade` command replaces the legacy `update` command.
+
+### Upgrade Flow (Default Mode)
+
+For projects running with Docker-based frontend (no `--app-dev`):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Upgrade Process (Default)                    │
+└─────────────────────────────────────────────────────────────────┘
+  │
+  ├─ 1. Detect current version (from docker/.env: BACKEND_VERSION)
+  │
+  ├─ 2. Determine target version (--version flag or latest)
+  │
+  ├─ 3. Check compatibility (breaking changes, migration notes)
+  │
+  ├─ 4. Stop services (baseboards down)
+  │
+  ├─ 5. Pull new backend Docker images
+  │    └─ ghcr.io/weirdfingers/boards-backend:0.8.0
+  │
+  ├─ 6. Download new template manifest
+  │    └─ Check for template structure changes
+  │
+  ├─ 7. Rebuild frontend Docker image (Dockerfile.web)
+  │    ├─ Update web/package.json (@weirdfingers/boards version)
+  │    └─ docker compose build web
+  │
+  ├─ 8. Update docker/.env (BACKEND_VERSION=0.8.0)
+  │
+  ├─ 9. Start services (baseboards up --no-scaffold)
+  │
+  ├─ 10. Run database migrations (auto-run via backend healthcheck)
+  │
+  └─ 11. Verify health (all services healthy)
+```
+
+**Implementation:**
+
+```typescript
+async function upgradeDefaultMode(ctx: UpgradeContext): Promise<void> {
+  const { currentVersion, targetVersion, projectDir } = ctx;
+
+  console.log(chalk.blue(`\n📦 Upgrading from v${currentVersion} to v${targetVersion}\n`));
+
+  // 1. Check compatibility
+  await checkCompatibility(currentVersion, targetVersion);
+
+  // 2. Stop services
+  console.log(chalk.gray('⏸️  Stopping services...'));
+  await stopServices(projectDir);
+
+  // 3. Pull new backend images
+  console.log(chalk.gray('⬇️  Pulling new backend images...'));
+  await pullBackendImages(targetVersion);
+
+  // 4. Update web/package.json with new @weirdfingers/boards version
+  console.log(chalk.gray('📝 Updating frontend dependencies...'));
+  await updateWebPackageJson(projectDir, targetVersion);
+
+  // 5. Rebuild frontend Docker image
+  console.log(chalk.gray('🔨 Rebuilding frontend image...'));
+  await rebuildWebImage(projectDir);
+
+  // 6. Update docker/.env with new version
+  console.log(chalk.gray('⚙️  Updating configuration...'));
+  await updateEnvVersion(projectDir, targetVersion);
+
+  // 7. Start services (migrations run automatically)
+  console.log(chalk.gray('🚀 Starting services...'));
+  await startServices(projectDir, { skipScaffold: true });
+
+  // 8. Wait for health
+  console.log(chalk.gray('🏥 Waiting for services to be healthy...'));
+  await waitForHealth(projectDir);
+
+  console.log(chalk.green(`\n✅ Successfully upgraded to v${targetVersion}!\n`));
+  printUpgradeSuccess(ctx);
+}
+```
+
+### Upgrade Flow (App-Dev Mode)
+
+For projects running with local frontend (`--app-dev`):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Upgrade Process (App-Dev)                     │
+└─────────────────────────────────────────────────────────────────┘
+  │
+  ├─ 1. Detect current version
+  │
+  ├─ 2. Determine target version
+  │
+  ├─ 3. Check compatibility
+  │
+  ├─ 4. Stop Docker services (backend only)
+  │
+  ├─ 5. Pull new backend Docker images
+  │
+  ├─ 6. Update docker/.env (BACKEND_VERSION=0.8.0)
+  │
+  ├─ 7. Start Docker services (backend only)
+  │
+  ├─ 8. Run database migrations (auto-run)
+  │
+  ├─ 9. Print manual instructions for frontend
+  │    └─ User must update @weirdfingers/boards manually
+  │
+  └─ 10. Verify backend health
+```
+
+**Implementation:**
+
+```typescript
+async function upgradeAppDevMode(ctx: UpgradeContext): Promise<void> {
+  const { currentVersion, targetVersion, projectDir } = ctx;
+
+  console.log(chalk.blue(`\n📦 Upgrading backend from v${currentVersion} to v${targetVersion}\n`));
+
+  // 1. Check compatibility
+  await checkCompatibility(currentVersion, targetVersion);
+
+  // 2. Stop backend services
+  console.log(chalk.gray('⏸️  Stopping backend services...'));
+  await stopServices(projectDir);
+
+  // 3. Pull new backend images
+  console.log(chalk.gray('⬇️  Pulling new backend images...'));
+  await pullBackendImages(targetVersion);
+
+  // 4. Update docker/.env
+  console.log(chalk.gray('⚙️  Updating configuration...'));
+  await updateEnvVersion(projectDir, targetVersion);
+
+  // 5. Start backend services
+  console.log(chalk.gray('🚀 Starting backend services...'));
+  await startServices(projectDir, { skipScaffold: true, skipWeb: true });
+
+  // 6. Wait for health
+  console.log(chalk.gray('🏥 Waiting for backend to be healthy...'));
+  await waitForHealth(projectDir, { services: ['api', 'worker', 'db', 'cache'] });
+
+  console.log(chalk.green(`\n✅ Backend upgraded to v${targetVersion}!\n`));
+
+  // 7. Print manual frontend upgrade instructions
+  printAppDevUpgradeInstructions(ctx);
+}
+
+function printAppDevUpgradeInstructions(ctx: UpgradeContext): void {
+  const { targetVersion, projectDir, packageManager } = ctx;
+
+  console.log(chalk.yellow('⚠️  Frontend requires manual upgrade:\n'));
+  console.log(chalk.gray('   1. Stop your dev server (Ctrl+C)'));
+  console.log(chalk.gray('   2. Update the frontend package:\n'));
+  console.log(chalk.cyan(`      cd ${projectDir}/web`));
+  console.log(chalk.cyan(`      ${packageManager} update @weirdfingers/boards@${targetVersion}\n`));
+  console.log(chalk.gray('   3. Check for breaking changes:'));
+  console.log(chalk.gray(`      https://github.com/weirdfingers/boards/releases/tag/v${targetVersion}\n`));
+  console.log(chalk.gray('   4. Restart your dev server:\n'));
+  console.log(chalk.cyan(`      ${packageManager} dev\n`));
+}
+```
+
+### Mode Detection
+
+```typescript
+function detectProjectMode(projectDir: string): 'default' | 'app-dev' {
+  // Check for presence of web service in running containers
+  const composeFiles = getComposeFiles(projectDir);
+
+  // If compose.web.yaml is NOT loaded, project is in app-dev mode
+  if (!composeFiles.includes('compose.web.yaml')) {
+    return 'app-dev';
+  }
+
+  return 'default';
+}
+```
+
+### Version Compatibility Checks
+
+```typescript
+interface CompatibilityCheck {
+  fromVersion: string;
+  toVersion: string;
+  breaking: boolean;
+  warnings: string[];
+  migrationNotes?: string;
+}
+
+async function checkCompatibility(
+  currentVersion: string,
+  targetVersion: string
+): Promise<CompatibilityCheck> {
+  // 1. Fetch compatibility manifest from GitHub Release
+  const manifest = await fetchCompatibilityManifest(targetVersion);
+
+  // 2. Check for breaking changes
+  const breaking = manifest.breakingChanges?.some((bc) =>
+    semver.satisfies(currentVersion, bc.affectedVersions)
+  );
+
+  // 3. Collect warnings
+  const warnings: string[] = [];
+
+  if (breaking) {
+    warnings.push('⚠️  This upgrade contains breaking changes!');
+    warnings.push(`   See: https://github.com/weirdfingers/boards/releases/tag/v${targetVersion}`);
+  }
+
+  // 4. Check storage format compatibility
+  if (manifest.storageFormatVersion !== currentStorageFormatVersion) {
+    warnings.push('⚠️  Storage format has changed - data migration required');
+  }
+
+  return {
+    fromVersion: currentVersion,
+    toVersion: targetVersion,
+    breaking,
+    warnings,
+    migrationNotes: manifest.migrationNotes,
+  };
+}
+```
+
+### Compatibility Manifest
+
+Each release includes a `compatibility-manifest.json` in GitHub Release assets:
+
+```json
+{
+  "version": "0.8.0",
+  "storageFormatVersion": "2",
+  "breakingChanges": [
+    {
+      "affectedVersions": ">=0.7.0 <0.8.0",
+      "description": "GraphQL schema: Board.tags field removed",
+      "mitigation": "Use Board.metadata.tags instead"
+    }
+  ],
+  "migrationNotes": "https://github.com/weirdfingers/boards/releases/tag/v0.8.0#migration-notes",
+  "requiredActions": [
+    "Manual .env update required if using custom auth provider"
+  ]
+}
+```
+
+### Rollback Strategy
+
+If upgrade fails or user needs to rollback:
+
+```bash
+# Rollback to previous version
+baseboards upgrade [directory] --version 0.7.0
+
+# Or manually:
+# 1. Update docker/.env: BACKEND_VERSION=0.7.0
+# 2. Pull old images: docker compose pull
+# 3. Rebuild frontend (default mode): docker compose build web
+# 4. Restart: baseboards down && baseboards up
+```
+
+**Database migrations**: Rollback is NOT automatically supported. If migrations have run, users must manually restore from backup or run manual SQL to revert schema changes.
+
+### Data Preservation
+
+The following are preserved across upgrades (mounted as volumes):
+
+| Path | Preserved | Notes |
+|------|-----------|-------|
+| `data/storage/` | ✅ Yes | Generated media (images, videos, audio) |
+| `config/*.yaml` | ✅ Yes | Generator and storage configuration |
+| `api/.env` | ✅ Yes | API keys, secrets |
+| `web/.env` | ✅ Yes | Frontend environment variables |
+| `docker/.env` | ⚠️  Merged | Updated with new version, but preserved values |
+| `web/src/` | ❌ No (default mode) | Rebuilt from template (customizations lost) |
+| `web/src/` | ✅ Yes (app-dev) | User manages via git/version control |
+
+**Recommendation for default mode**: If users have customized frontend code, they should switch to `--app-dev` mode or maintain a fork.
+
+### CLI Help Output
+
+```
+$ baseboards upgrade --help
+
+Usage: baseboards upgrade [directory] [options]
+
+Upgrade an existing Baseboards installation to a new version.
+
+Options:
+  --version <version>   Target version (default: latest)
+  --dry-run             Show what would be upgraded without making changes
+  --force               Skip compatibility checks (dangerous)
+  -h, --help            Show help
+
+Examples:
+  $ baseboards upgrade my-app
+  $ baseboards upgrade my-app --version 0.8.0
+  $ baseboards upgrade my-app --dry-run
+
+Notes:
+  - All services will be stopped during upgrade
+  - Configuration and storage data are preserved
+  - Frontend customizations are lost in default mode
+  - Use --app-dev mode for frontend customization persistence
+```
+
+### Edge Cases
+
+#### 1. Upgrade with running services
+
+If services are running, the CLI should:
+1. Warn user that services will be stopped
+2. Prompt for confirmation (unless `--force`)
+3. Proceed with upgrade
+
+#### 2. Upgrade with uncommitted changes (app-dev)
+
+If user has uncommitted changes in `web/`:
+1. Warn user to commit changes before updating dependencies
+2. Do NOT automatically update `web/package.json`
+3. Print instructions for manual update
+
+#### 3. Upgrade across multiple major versions
+
+If jumping multiple versions (e.g., 0.7.0 → 1.2.0):
+1. Fetch compatibility manifests for all intermediate versions
+2. Aggregate breaking changes and warnings
+3. Recommend step-by-step upgrade if too many breaking changes
+
+#### 4. Downgrade
+
+Downgrading (e.g., 0.8.0 → 0.7.0) is treated as an upgrade:
+1. Compatibility checks still apply
+2. Database migrations may need manual rollback
+3. Warn user about potential data loss
+
+### Testing the Upgrade Flow
+
+```bash
+# Test upgrade in a test project
+cd /tmp
+npx @weirdfingers/baseboards@0.7.0 up test-project --template basic
+
+cd test-project
+# Upgrade to latest
+npx @weirdfingers/baseboards@latest upgrade . --dry-run
+npx @weirdfingers/baseboards@latest upgrade .
+
+# Verify
+npx @weirdfingers/baseboards@latest status .
+```
+
+---
+
+## 11) Future Extensions
 
 ### Planned Templates
 
@@ -1306,6 +1731,7 @@ Usage: baseboards [command] [options]
 
 Commands:
   up [dir]          Scaffold and start a Boards project
+  upgrade [dir]     Upgrade existing installation to new version
   down [dir]        Stop running services
   logs [dir]        View service logs
   status [dir]      Show service status
@@ -1320,6 +1746,8 @@ Options:
 Examples:
   $ baseboards up my-app --template baseboards
   $ baseboards up my-app --template basic --app-dev
+  $ baseboards upgrade my-app
+  $ baseboards upgrade my-app --version 0.8.0 --dry-run
   $ baseboards down my-app --volumes
   $ baseboards logs my-app api worker -f
 
