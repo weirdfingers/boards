@@ -6,6 +6,12 @@ Update the documentation website ([apps/docs](apps/docs)) to reflect all the CLI
 
 The docs site is the primary source of truth for users, so it must be comprehensive and accurate.
 
+**Critical files requiring immediate attention:**
+- `/apps/docs/docs/baseboards/overview.md` - Contains outdated architecture, wrong ports (8088 vs 8800), removed flags (--prod, --dev), and references to removed compose.dev.yaml
+- `/apps/docs/docs/installation/installing-baseboards.md` - Wrong API port throughout (8088 vs 8800), uses old `update` command instead of `upgrade`, missing template and app-dev mode documentation
+
+These files are user-facing quick start documentation and must be updated to prevent user confusion.
+
 ## Dependencies
 
 - CLI-6.1 (CLI README should be complete for reference)
@@ -14,6 +20,8 @@ The docs site is the primary source of truth for users, so it must be comprehens
 
 - Modify `/apps/docs/docs/cli/*.md` (all CLI documentation pages)
 - Create `/apps/docs/docs/migration-v0.8.md` (new migration guide)
+- **Modify `/apps/docs/docs/baseboards/overview.md`** (critical - outdated architecture and commands)
+- **Modify `/apps/docs/docs/installation/installing-baseboards.md`** (critical - wrong ports and commands)
 - Update any other pages that reference CLI usage
 
 ## Testing
@@ -45,6 +53,72 @@ pnpm start
 ```
 
 ## Acceptance Criteria
+
+### Critical File Updates
+
+#### `/apps/docs/docs/baseboards/overview.md`
+
+- [ ] **Architecture section**:
+  - [ ] Update to reflect pre-built Docker images (not local builds)
+  - [ ] Add template system explanation
+  - [ ] Update service descriptions to match new architecture
+  - [ ] Add diagram showing default mode vs app-dev mode
+  - [ ] Remove references to local backend builds
+
+- [ ] **Services section**:
+  - [ ] Fix API port from 8088 to 8800
+  - [ ] Update web service description to mention production build
+  - [ ] Add note about pre-built backend images
+  - [ ] Update worker description to clarify image usage
+
+- [ ] **Configuration section**:
+  - [ ] Update environment variables examples
+  - [ ] Add section on template selection
+  - [ ] Add section on development modes (default vs --app-dev)
+  - [ ] Update storage configuration paths to match Docker volumes
+
+- [ ] **CLI Commands section**:
+  - [ ] Remove `--prod` flag from all examples
+  - [ ] Remove `--dev` flag from all examples
+  - [ ] Add `--template` flag examples
+  - [ ] Add `--app-dev` flag examples
+  - [ ] Replace `baseboards update` with `baseboards upgrade`
+  - [ ] Add `baseboards templates` command
+  - [ ] Update port examples to use 8800 (not 8088)
+
+- [ ] **Remove outdated references**:
+  - [ ] Remove references to `compose.dev.yaml` (merged into base)
+  - [ ] Remove references to hot-reload in default mode
+  - [ ] Update "Production Deployment" section for new architecture
+
+#### `/apps/docs/docs/installation/installing-baseboards.md`
+
+- [ ] **"What You'll Get" section**:
+  - [ ] Fix GraphQL API port from 8088 to 8800
+  - [ ] Add note about pre-built Docker images
+
+- [ ] **System Requirements**:
+  - [ ] Update ports from 8088 to 8800
+  - [ ] Add note about template download bandwidth
+
+- [ ] **Installation section**:
+  - [ ] Update step descriptions to mention template selection
+  - [ ] Add interactive template selection flow example
+  - [ ] Update success message to show correct port (8800)
+
+- [ ] **Configuration section**:
+  - [ ] Fix API port in all examples (8088 → 8800)
+  - [ ] Add section on template options
+  - [ ] Add section on --app-dev mode for frontend development
+
+- [ ] **"Using Baseboards" section**:
+  - [ ] Replace `baseboards update` with `baseboards upgrade`
+  - [ ] Add examples for new upgrade command with flags (--dry-run, --version)
+
+- [ ] **Troubleshooting section**:
+  - [ ] Update port numbers in all examples (8088 → 8800)
+  - [ ] Add troubleshooting for template download issues
+  - [ ] Add troubleshooting for Docker image pull issues
 
 ### CLI Documentation Pages
 
@@ -94,19 +168,28 @@ pnpm start
 
 - [ ] Create **Migration from v0.7.0 to v0.8.0** page:
   - [ ] Breaking changes summary:
-    - [ ] --prod flag removed
-    - [ ] --dev flag removed (now default)
-    - [ ] Backend runs from Docker image
-    - [ ] Templates downloaded from releases
-    - [ ] New project structure
+    - [ ] --prod flag removed (single mode now)
+    - [ ] --dev flag removed (no hot-reload by default, use --app-dev for frontend)
+    - [ ] Backend runs from pre-built Docker image (not local build)
+    - [ ] Templates downloaded from GitHub Releases (not bundled)
+    - [ ] New project structure with extensions/ directory
+    - [ ] API port standardized to 8800 (was inconsistently 8088 in docs)
+    - [ ] `baseboards update` command replaced with `baseboards upgrade`
+    - [ ] New `--template` flag for template selection
+    - [ ] New `--app-dev` flag for local frontend development
+    - [ ] compose.dev.yaml merged into compose.yaml
   - [ ] Step-by-step migration:
-    1. Back up configuration files
-    2. Stop and clean old scaffold
-    3. Re-scaffold with new CLI
-    4. Restore configuration
-  - [ ] What changed and why
-  - [ ] Benefits of upgrading
-  - [ ] Breaking changes impact assessment
+    1. Back up configuration files (api/.env, config/, extensions/)
+    2. Back up generated media (data/storage/)
+    3. Stop and clean old scaffold (baseboards down --volumes)
+    4. Update CLI (npx @weirdfingers/baseboards@latest)
+    5. Re-scaffold with new CLI (baseboards up --template baseboards)
+    6. Restore configuration files
+    7. Verify services start correctly
+    8. Test generators with API keys
+  - [ ] What changed and why (link to design doc)
+  - [ ] Benefits of upgrading (faster startup, better templates, upgrade support)
+  - [ ] Breaking changes impact assessment (data preserved, config preserved, custom code must be re-applied)
 
 ### Examples and Tutorials
 

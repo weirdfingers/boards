@@ -191,3 +191,17 @@ baseboards upgrade ./not-a-project
 - The `getLatestVersion()` utility queries npm registry
 - Confirmation prompt is skipped when `--force` is used
 - Dry-run mode is useful for CI/CD pipelines to check compatibility before upgrading
+
+## Documentation Requirements
+
+After implementing this command, ensure the following documentation is updated in **CLI-6.2**:
+
+- [ ] Add `baseboards upgrade` to Commands Reference page with:
+  - Command syntax and all flags (--version, --dry-run, --force)
+  - Examples for common upgrade scenarios
+  - Exit codes and error messages
+  - Comparison with old `update` command (deprecated)
+
+- [ ] Update Migration Guide to explain upgrade workflow
+- [ ] Add troubleshooting section for upgrade failures
+- [ ] Update CLI README with upgrade command examples

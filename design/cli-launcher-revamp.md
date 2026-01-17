@@ -1284,7 +1284,24 @@ After a release, the following artifacts are published:
 
 **Tasks:**
 1. Update CLI README
-2. Update docs site with new commands
+2. Update docs site with new commands:
+   - **Critical**: Update `/apps/docs/docs/baseboards/overview.md`
+     - Fix API port from 8088 to 8800 throughout
+     - Remove `--prod` and `--dev` flag references
+     - Replace `baseboards update` with `baseboards upgrade`
+     - Add `--template` and `--app-dev` flag documentation
+     - Remove references to `compose.dev.yaml` (merged into base)
+     - Update architecture section for pre-built images
+   - **Critical**: Update `/apps/docs/docs/installation/installing-baseboards.md`
+     - Fix API port from 8088 to 8800 throughout
+     - Replace `update` command with `upgrade` command
+     - Add template selection flow documentation
+     - Add `--app-dev` mode documentation
+     - Add troubleshooting for template downloads
+   - Create migration guide at `/apps/docs/docs/migration-v0.8.md`
+     - Breaking changes summary (flags, commands, architecture)
+     - Step-by-step migration procedure
+     - Data preservation notes
 3. Add integration tests for template download
 4. Add integration tests for `--app-dev` mode
 5. Test on macOS, Linux, Windows (WSL)
