@@ -31,6 +31,12 @@ export interface ProjectContext {
    * When true, web service is not started in Docker Compose.
    */
   appDev: boolean;
+
+  /**
+   * Name of the frontend template to use for scaffolding.
+   * Examples: "baseboards", "basic"
+   */
+  template: string;
 }
 
 export interface UpOptions {
@@ -40,6 +46,7 @@ export interface UpOptions {
   ports?: string;
   fresh?: boolean;
   appDev?: boolean;
+  template?: string;
 }
 
 export interface DownOptions {

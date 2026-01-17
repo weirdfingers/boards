@@ -22,6 +22,30 @@ import {
   waitFor,
 } from "../utils.js";
 
+/**
+ * Validate that a template name is available.
+ * TODO: Replace with fetchTemplateManifest when CLI-2.5 is implemented.
+ * @param templateName Template name to validate
+ * @param version CLI version (currently unused, will be used with manifest)
+ */
+async function validateTemplate(
+  templateName: string,
+  version: string
+): Promise<void> {
+  // TODO: Replace this hardcoded list with dynamic fetch from manifest (CLI-2.5)
+  // const manifest = await fetchTemplateManifest(version);
+  // const availableTemplates = manifest.templates.map(t => t.name);
+
+  // Hardcoded available templates until CLI-2.5 is implemented
+  const availableTemplates = ["baseboards", "basic"];
+
+  if (!availableTemplates.includes(templateName)) {
+    throw new Error(
+      `Template '${templateName}' not found. Available templates: ${availableTemplates.join(", ")}`
+    );
+  }
+}
+
 export async function up(directory: string, options: UpOptions): Promise<void> {
   console.log(chalk.blue.bold("\n🎨 Baseboards CLI\n"));
 
@@ -53,6 +77,19 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
 
   const appDev = options.appDev || false;
 
+  // Step 2.5: Determine template to use
+  let selectedTemplate: string;
+
+  if (options.template) {
+    // Validate template flag early
+    await validateTemplate(options.template, version);
+    selectedTemplate = options.template;
+  } else {
+    // TODO: Interactive selection (CLI-5.2)
+    // For now, default to "baseboards"
+    selectedTemplate = "baseboards";
+  }
+
   const ctx: ProjectContext = {
     dir,
     name,
@@ -61,6 +98,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     mode,
     version,
     appDev,
+    template: selectedTemplate,
   };
 
   // Track if this is a fresh scaffold to prompt for API keys later

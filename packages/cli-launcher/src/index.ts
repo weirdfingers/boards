@@ -50,6 +50,7 @@ program
   .option("--ports <ports>", "Custom ports (e.g., web=3300 api=8800)")
   .option("--fresh", "Clean up existing volumes before starting")
   .option("--app-dev", "Run frontend locally instead of in Docker")
+  .option("--template <name>", "Frontend template to use (baseboards, basic)")
   .action(up);
 
 // down command
