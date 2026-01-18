@@ -320,3 +320,33 @@ export async function promptPackageManager(): Promise<PackageManager> {
 
   return packageManager;
 }
+
+/**
+ * Get current version from docker/.env file
+ */
+export async function getCurrentVersion(dir: string): Promise<string | null> {
+  const envPath = path.join(dir, "docker", ".env");
+
+  if (!fs.existsSync(envPath)) {
+    return null;
+  }
+
+  try {
+    const envContent = await fs.readFile(envPath, "utf-8");
+    const match = envContent.match(/^VERSION=(.+)$/m);
+    return match ? match[1].trim() : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Export execAsync for use in other modules
+ */
+export async function execAsync(
+  command: string,
+  options?: { cwd?: string }
+): Promise<{ stdout: string; stderr: string }> {
+  const [cmd, ...args] = command.split(' ');
+  return execa(cmd, args, options);
+}

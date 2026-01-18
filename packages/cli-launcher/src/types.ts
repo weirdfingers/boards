@@ -83,6 +83,14 @@ export interface UpdateOptions {
   version?: string;
 }
 
+export interface UpgradeOptions {
+  version?: string;
+  dryRun?: boolean;
+  force?: boolean;
+}
+
+export type ProjectMode = 'default' | 'app-dev';
+
 export interface Prerequisites {
   docker: {
     installed: boolean;

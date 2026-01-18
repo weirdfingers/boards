@@ -20,6 +20,7 @@ import { logs } from "./commands/logs.js";
 import { status } from "./commands/status.js";
 import { clean } from "./commands/clean.js";
 import { update } from "./commands/update.js";
+import { upgrade } from "./commands/upgrade.js";
 import { doctor } from "./commands/doctor.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -92,14 +93,24 @@ program
   .option("--hard", "Remove volumes and images (WARNING: deletes data)")
   .action(clean);
 
-// update command
+// update command (deprecated - use upgrade instead)
 program
   .command("update")
-  .description("Update Baseboards to latest version")
+  .description("Update Baseboards to latest version (deprecated - use upgrade)")
   .argument("[directory]", "Project directory", ".")
   .option("--force", "Force update without safety checks")
   .option("--version <version>", "Update to specific version")
   .action(update);
+
+// upgrade command
+program
+  .command("upgrade")
+  .description("Upgrade Baseboards to a specific or latest version")
+  .argument("[directory]", "Project directory", ".")
+  .option("--version <version>", "Upgrade to specific version (default: latest)")
+  .option("--dry-run", "Preview upgrade without making changes")
+  .option("--force", "Skip confirmation prompts")
+  .action(upgrade);
 
 // doctor command
 program
