@@ -15,6 +15,7 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { extract } from "tar";
 import { tmpdir, homedir } from "os";
+import ora, { Ora } from "ora";
 
 /**
  * Information about a single template
@@ -51,6 +52,24 @@ export interface TemplateManifest {
  */
 const GITHUB_RELEASE_BASE =
   "https://github.com/weirdfingers/boards/releases/download";
+
+/**
+ * Format bytes to human-readable string
+ *
+ * @param bytes - Number of bytes
+ * @returns Formatted string (e.g., "1.2 MB", "45 KB")
+ *
+ * @example
+ * ```typescript
+ * formatBytes(1024); // "1.0 KB"
+ * formatBytes(1024 * 1024); // "1.0 MB"
+ * ```
+ */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 /**
  * Get the cache directory path for templates
@@ -283,6 +302,8 @@ export async function downloadTemplate(
   targetDir: string
 ): Promise<void> {
   let tempFilePath: string | null = null;
+  const isInteractive = process.stdout.isTTY;
+  let spinner: Ora | null = null;
 
   try {
     // Fetch manifest to get template metadata
@@ -307,32 +328,66 @@ export async function downloadTemplate(
     );
 
     let sourceFilePath: string;
+    let cacheHit = false;
 
     if (await fs.pathExists(cachedFilePath)) {
       // Verify cached file checksum
       try {
         await verifyChecksum(cachedFilePath, template.checksum);
         sourceFilePath = cachedFilePath;
+        cacheHit = true;
+
+        // Show cache hit message
+        if (isInteractive) {
+          console.log(`Using cached template ${name}...`);
+        } else {
+          console.log(`Using cached template ${name}...`);
+        }
       } catch (error) {
         // Cached file is corrupted, delete it and re-download
         await fs.remove(cachedFilePath);
+
+        // Start download progress
+        if (isInteractive) {
+          console.log(`\nDownloading template ${name}...`);
+          spinner = ora().start();
+        } else {
+          console.log(`Downloading template ${name}...`);
+        }
+
         sourceFilePath = await downloadAndCache(
           manifest.version,
           template,
-          cachedFilePath
+          cachedFilePath,
+          spinner
         );
       }
     } else {
       // Download and cache
+      if (isInteractive) {
+        console.log(`\nDownloading template ${name}...`);
+        spinner = ora().start();
+      } else {
+        console.log(`Downloading template ${name}...`);
+      }
+
       sourceFilePath = await downloadAndCache(
         manifest.version,
         template,
-        cachedFilePath
+        cachedFilePath,
+        spinner
       );
     }
 
     // Ensure target directory exists
     await fs.ensureDir(targetDir);
+
+    // Show extraction stage
+    if (spinner && isInteractive) {
+      spinner.text = "Extracting template...";
+    } else if (!cacheHit) {
+      console.log("Extracting template...");
+    }
 
     // Extract tarball
     // The tarball contains a directory (e.g., "baseboards/"), so we need to:
@@ -358,7 +413,19 @@ export async function downloadTemplate(
 
     // Clean up extraction directory
     await fs.remove(extractTempDir);
+
+    // Show success
+    if (spinner && isInteractive) {
+      spinner.succeed("Template ready");
+    } else if (!cacheHit) {
+      console.log("Template downloaded successfully");
+    }
   } catch (error) {
+    // Show failure
+    if (spinner && isInteractive) {
+      spinner.fail("Download failed");
+    }
+
     // Ensure we clean up on error
     if (tempFilePath && (await fs.pathExists(tempFilePath))) {
       await fs.remove(tempFilePath);
@@ -379,12 +446,14 @@ export async function downloadTemplate(
  * @param version - Version string
  * @param template - Template metadata
  * @param cachedFilePath - Path where to cache the file
+ * @param spinner - Optional ora spinner for progress updates
  * @returns Path to the downloaded file
  */
 async function downloadAndCache(
   version: string,
   template: TemplateInfo,
-  cachedFilePath: string
+  cachedFilePath: string,
+  spinner: Ora | null = null
 ): Promise<string> {
   // Construct download URL
   const downloadUrl = `${GITHUB_RELEASE_BASE}/v${version}/${template.file}`;
@@ -411,11 +480,60 @@ async function downloadAndCache(
       throw new Error("Response body is empty");
     }
 
-    // Save to temporary file
+    // Set up progress tracking
+    const totalBytes = template.size;
+    let downloadedBytes = 0;
+    let lastTime = Date.now();
+    let lastLoaded = 0;
+
+    // Create transform stream for progress tracking
+    const reader = response.body.getReader();
     const fileStream = fs.createWriteStream(tempFilePath);
-    await pipeline(Readable.fromWeb(response.body as any), fileStream);
+
+    // Read and track progress
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      // Write chunk to file
+      fileStream.write(value);
+      downloadedBytes += value.length;
+
+      // Update progress
+      if (spinner) {
+        const now = Date.now();
+        const timeDiff = (now - lastTime) / 1000; // seconds
+        const loadedDiff = downloadedBytes - lastLoaded;
+
+        // Calculate speed (only update every 100ms to avoid too frequent updates)
+        if (timeDiff >= 0.1) {
+          const speed = loadedDiff / timeDiff; // bytes per second
+          const speedStr = formatBytes(speed) + "/s";
+          const percent = Math.round((downloadedBytes / totalBytes) * 100);
+          const currentSize = formatBytes(downloadedBytes);
+          const totalSize = formatBytes(totalBytes);
+
+          spinner.text = `${percent}% (${currentSize} / ${totalSize}) [${speedStr}]`;
+
+          lastTime = now;
+          lastLoaded = downloadedBytes;
+        }
+      }
+    }
+
+    // Close the file stream
+    await new Promise<void>((resolve, reject) => {
+      fileStream.end(() => resolve());
+      fileStream.on("error", reject);
+    });
 
     // Verify checksum
+    if (spinner) {
+      spinner.text = "Verifying download...";
+    }
     await verifyChecksum(tempFilePath, template.checksum);
 
     // Move to cache atomically
