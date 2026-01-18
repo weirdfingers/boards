@@ -21,6 +21,7 @@ import {
   detectMissingProviderKeys,
   waitFor,
 } from "../utils.js";
+import { detectMonorepoRoot } from "../utils/monorepo-detection.js";
 
 /**
  * Validate that a template name is available.
@@ -86,6 +87,21 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     );
   }
 
+  // Validate: --dev-packages requires running from monorepo
+  let monorepoRoot: string | undefined;
+  if (devPackages) {
+    const detectedRoot = await detectMonorepoRoot();
+    if (!detectedRoot) {
+      throw new Error(
+        '--dev-packages requires running from within the Boards monorepo.\n\n' +
+        'This feature is for Boards contributors testing unpublished package changes.\n' +
+        'Clone the monorepo and run: cd boards && pnpm cli up <dir> --app-dev --dev-packages\n\n' +
+        'If you want to develop apps using the published package, use --app-dev without --dev-packages.'
+      );
+    }
+    monorepoRoot = detectedRoot;
+  }
+
   // Step 2.5: Determine template to use
   let selectedTemplate: string;
 
@@ -109,6 +125,7 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     appDev,
     devPackages,
     template: selectedTemplate,
+    monorepoRoot,
   };
 
   // Track if this is a fresh scaffold to prompt for API keys later

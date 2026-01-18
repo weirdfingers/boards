@@ -45,6 +45,12 @@ export interface ProjectContext {
    * Examples: "baseboards", "basic"
    */
   template: string;
+
+  /**
+   * Absolute path to monorepo root directory.
+   * Only set when devPackages is true and monorepo is detected.
+   */
+  monorepoRoot?: string;
 }
 
 export interface UpOptions {
