@@ -27,15 +27,26 @@ services:
       - internal
 
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    image: baseboards-api:local
+    # Pre-built backend image from GitHub Container Registry
+    # Override version with BACKEND_VERSION in docker/.env (defaults to latest)
+    image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
+    command: ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]
     env_file:
       - docker/.env
       - api/.env
+    environment:
+      # Enable loading custom generators and plugins from /app/extensions
+      - PYTHONPATH=/app:/app/extensions
+      # Explicit paths to configuration files
+      - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
+      - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
     volumes:
+      # Configuration files (read-only)
+      - ./config:/app/config:ro
+      # Generated media persistence (read-write)
       - ./data/storage:/app/data/storage
+      # Custom generators and plugins (read-only)
+      - ./extensions:/app/extensions:ro
     depends_on:
       db:
         condition: service_healthy
@@ -52,10 +63,9 @@ services:
       - internal
 
   worker:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    image: baseboards-api:local
+    # Pre-built backend image from GitHub Container Registry
+    # Override version with BACKEND_VERSION in docker/.env (defaults to latest)
+    image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
     command:
       [
         "boards-worker",
@@ -69,10 +79,21 @@ services:
     env_file:
       - docker/.env
       - api/.env
-    volumes:
-      - ./data/storage:/app/data/storage
     environment:
+      # Enable loading custom generators and plugins from /app/extensions
+      - PYTHONPATH=/app:/app/extensions
+      # Explicit paths to configuration files
+      - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
+      - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
+      # Internal API URL for worker communication
       - BOARDS_INTERNAL_API_URL=http://api:8800
+    volumes:
+      # Configuration files (read-only)
+      - ./config:/app/config:ro
+      # Generated media persistence (read-write)
+      - ./data/storage:/app/data/storage
+      # Custom generators and plugins (read-only)
+      - ./extensions:/app/extensions:ro
     depends_on:
       db:
         condition: service_healthy
