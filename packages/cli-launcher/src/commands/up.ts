@@ -49,6 +49,49 @@ async function validateTemplate(
   }
 }
 
+/**
+ * Prompts user to select a frontend template from available options.
+ * Fetches template manifest and displays interactive selection.
+ * @param version CLI version to fetch templates for
+ * @returns Selected template name
+ */
+async function promptTemplateSelection(version: string): Promise<string> {
+  try {
+    // Fetch manifest
+    const manifest = await fetchTemplateManifest(version);
+
+    // Build choices
+    const choices = manifest.templates.map((template) => ({
+      title:
+        template.name === "baseboards"
+          ? `${template.name}    ${template.description} (recommended)`
+          : `${template.name}         ${template.description}`,
+      value: template.name,
+    }));
+
+    // Prompt user
+    const { selectedTemplate } = await prompts({
+      type: "select",
+      name: "selectedTemplate",
+      message: "Select a frontend template:",
+      choices: choices,
+      initial: 0, // Default to first (baseboards)
+    });
+
+    // Handle cancellation
+    if (!selectedTemplate) {
+      console.log("\nTemplate selection cancelled");
+      process.exit(0);
+    }
+
+    return selectedTemplate;
+  } catch (error) {
+    console.error("Failed to fetch template list. Check your internet connection.");
+    console.log("Falling back to default template: baseboards");
+    return "baseboards"; // Graceful fallback
+  }
+}
+
 export async function up(directory: string, options: UpOptions): Promise<void> {
   console.log(chalk.blue.bold("\n🎨 Baseboards CLI\n"));
 
@@ -107,13 +150,12 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   let selectedTemplate: string;
 
   if (options.template) {
-    // Validate template flag early
+    // Explicit flag provided
     await validateTemplate(options.template, version);
     selectedTemplate = options.template;
   } else {
-    // TODO: Interactive selection (CLI-5.2)
-    // For now, default to "baseboards"
-    selectedTemplate = "baseboards";
+    // Interactive selection
+    selectedTemplate = await promptTemplateSelection(version);
   }
 
   const ctx: ProjectContext = {
