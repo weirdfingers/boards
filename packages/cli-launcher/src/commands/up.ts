@@ -15,7 +15,6 @@ import {
   generatePassword,
   generateSecret,
   getCliVersion,
-  getTemplatesDir,
   isScaffolded,
   parsePortsOption,
   detectMissingProviderKeys,
@@ -26,23 +25,22 @@ import {
   copyFrontendPackage,
   updatePackageJsonForDevPackages,
 } from "../utils/package-copy.js";
+import {
+  downloadTemplate,
+  fetchTemplateManifest,
+} from "../utils/template-downloader.js";
 
 /**
- * Validate that a template name is available.
- * TODO: Replace with fetchTemplateManifest when CLI-2.5 is implemented.
+ * Validate that a template name is available by fetching the manifest.
  * @param templateName Template name to validate
- * @param version CLI version (currently unused, will be used with manifest)
+ * @param version CLI version
  */
 async function validateTemplate(
   templateName: string,
   version: string
 ): Promise<void> {
-  // TODO: Replace this hardcoded list with dynamic fetch from manifest (CLI-2.5)
-  // const manifest = await fetchTemplateManifest(version);
-  // const availableTemplates = manifest.templates.map(t => t.name);
-
-  // Hardcoded available templates until CLI-2.5 is implemented
-  const availableTemplates = ["baseboards", "basic"];
+  const manifest = await fetchTemplateManifest(version);
+  const availableTemplates = manifest.templates.map(t => t.name);
 
   if (!availableTemplates.includes(templateName)) {
     throw new Error(
@@ -307,40 +305,17 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
 }
 
 /**
- * Scaffold a new project from templates
+ * Scaffold a new project by downloading the template
  */
 async function scaffoldProject(ctx: ProjectContext): Promise<void> {
-  const templatesDir = getTemplatesDir();
-  const spinner = ora("Copying templates...").start();
-
   // Create project directory
   fs.ensureDirSync(ctx.dir);
 
-  // Copy web and api directly to root
-  fs.copySync(path.join(templatesDir, "web"), path.join(ctx.dir, "web"));
-  fs.copySync(path.join(templatesDir, "api"), path.join(ctx.dir, "api"));
+  // Download template (with progress indicators)
+  await downloadTemplate(ctx.template, ctx.version, ctx.dir);
 
-  // Copy root files (compose, docker, README, .gitignore)
-  const rootFiles = [
-    "compose.yaml",
-    "README.md",
-    ".gitignore",
-  ];
-  for (const file of rootFiles) {
-    const src = path.join(templatesDir, file);
-    const dest = path.join(ctx.dir, file);
-    if (fs.existsSync(src)) {
-      fs.copySync(src, dest);
-    }
-  }
-
-  // Copy docker directory
-  fs.copySync(path.join(templatesDir, "docker"), path.join(ctx.dir, "docker"));
-
-  spinner.succeed("Templates copied");
-
-  // Create data/storage directory
-  spinner.start("Creating data directories...");
+  // Create data/storage directory (needed for runtime)
+  const spinner = ora("Creating data directories...").start();
   fs.ensureDirSync(path.join(ctx.dir, "data/storage"));
   spinner.succeed("Data directories created");
 
