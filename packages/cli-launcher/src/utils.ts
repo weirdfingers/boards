@@ -10,6 +10,7 @@ import which from "which";
 import type { Prerequisites, ProjectContext } from "./types.js";
 import chalk from "chalk";
 import crypto from "crypto";
+import prompts from "prompts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -286,4 +287,88 @@ export async function waitFor(
   }
 
   return false;
+}
+
+/**
+ * Package manager type
+ */
+export type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
+
+/**
+ * Prompts user to select their preferred package manager.
+ * @returns Selected package manager: pnpm, npm, yarn, or bun
+ * @throws Exits process if user cancels
+ */
+export async function promptPackageManager(): Promise<PackageManager> {
+  const { packageManager } = await prompts({
+    type: "select",
+    name: "packageManager",
+    message: "Select your package manager:",
+    choices: [
+      { title: "pnpm", value: "pnpm" },
+      { title: "npm", value: "npm" },
+      { title: "yarn", value: "yarn" },
+      { title: "bun", value: "bun" },
+    ],
+    initial: 0,
+  });
+
+  if (!packageManager) {
+    console.log("\nPackage manager selection cancelled");
+    process.exit(0);
+  }
+
+  return packageManager;
+}
+
+/**
+ * Get current version from docker/.env file
+ */
+export async function getCurrentVersion(dir: string): Promise<string | null> {
+  const envPath = path.join(dir, "docker", ".env");
+
+  if (!fs.existsSync(envPath)) {
+    return null;
+  }
+
+  try {
+    const envContent = await fs.readFile(envPath, "utf-8");
+    const match = envContent.match(/^VERSION=(.+)$/m);
+    return match ? match[1].trim() : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Detect package manager from lockfiles in a directory.
+ * Checks for pnpm-lock.yaml, package-lock.json, yarn.lock, or bun.lockb.
+ * Returns 'npm' as default if none are found.
+ */
+export async function detectPackageManager(dir: string): Promise<PackageManager> {
+  if (await fs.pathExists(path.join(dir, "pnpm-lock.yaml"))) {
+    return "pnpm";
+  }
+  if (await fs.pathExists(path.join(dir, "yarn.lock"))) {
+    return "yarn";
+  }
+  if (await fs.pathExists(path.join(dir, "bun.lockb"))) {
+    return "bun";
+  }
+  if (await fs.pathExists(path.join(dir, "package-lock.json"))) {
+    return "npm";
+  }
+  // Default to npm if no lockfile found
+  return "npm";
+}
+
+/**
+ * Export execAsync for use in other modules
+ */
+export async function execAsync(
+  command: string,
+  options?: { cwd?: string }
+): Promise<{ stdout: string; stderr: string }> {
+  const [cmd, ...args] = command.split(' ');
+  return execa(cmd, args, options);
 }

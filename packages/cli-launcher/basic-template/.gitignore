@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+
+# Next.js
+web/.next/
+web/out/
+web/.swc/
+
+# Storage (keep directory structure, ignore uploaded files)
+data/storage/*
+!data/storage/.gitkeep
+
+# Build artifacts
+*.tsbuildinfo
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

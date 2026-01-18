@@ -27,15 +27,28 @@ services:
       - internal
 
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    image: baseboards-api:local
+    # Pre-built backend image from GitHub Container Registry
+    # Override version with BACKEND_VERSION in docker/.env (defaults to latest)
+    image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
+    command: ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]
     env_file:
       - docker/.env
       - api/.env
+    environment:
+      # Enable loading custom generators and plugins from /app/extensions
+      - PYTHONPATH=/app:/app/extensions
+      # Explicit paths to configuration files
+      - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
+      - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
+      # Ensure logs are visible in real-time (no buffering)
+      - PYTHONUNBUFFERED=1
     volumes:
+      # Configuration files (read-only)
+      - ./config:/app/config:ro
+      # Generated media persistence (read-write)
       - ./data/storage:/app/data/storage
+      # Custom generators and plugins (read-only)
+      - ./extensions:/app/extensions:ro
     depends_on:
       db:
         condition: service_healthy
@@ -52,10 +65,9 @@ services:
       - internal
 
   worker:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    image: baseboards-api:local
+    # Pre-built backend image from GitHub Container Registry
+    # Override version with BACKEND_VERSION in docker/.env (defaults to latest)
+    image: ghcr.io/weirdfingers/boards-backend:${BACKEND_VERSION:-latest}
     command:
       [
         "boards-worker",
@@ -69,41 +81,28 @@ services:
     env_file:
       - docker/.env
       - api/.env
-    volumes:
-      - ./data/storage:/app/data/storage
     environment:
+      # Enable loading custom generators and plugins from /app/extensions
+      - PYTHONPATH=/app:/app/extensions
+      # Explicit paths to configuration files
+      - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
+      - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
+      # Internal API URL for worker communication
       - BOARDS_INTERNAL_API_URL=http://api:8800
+      # Ensure logs are visible in real-time (no buffering)
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Configuration files (read-only)
+      - ./config:/app/config:ro
+      # Generated media persistence (read-write)
+      - ./data/storage:/app/data/storage
+      # Custom generators and plugins (read-only)
+      - ./extensions:/app/extensions:ro
     depends_on:
       db:
         condition: service_healthy
       cache:
         condition: service_healthy
-    networks:
-      - internal
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
-        - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:${API_PORT:-8800}/graphql
-    image: baseboards-web:local
-    env_file: web/.env
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-8800}
-      - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:${API_PORT:-8800}/graphql
-      - INTERNAL_API_URL=http://api:8800
-    depends_on:
-      api:
-        condition: service_healthy
-    ports:
-      - "${WEB_PORT:-3300}:3000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 3s
-      retries: 50
     networks:
       - internal
 

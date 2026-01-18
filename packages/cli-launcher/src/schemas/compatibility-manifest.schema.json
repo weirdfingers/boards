@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Compatibility Manifest",
+  "description": "Metadata about version compatibility and breaking changes",
+  "type": "object",
+  "required": ["version", "storageFormatVersion"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver version this manifest describes"
+    },
+    "storageFormatVersion": {
+      "type": "string",
+      "description": "Storage format version identifier"
+    },
+    "breakingChanges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["affectedVersions", "description", "mitigation"],
+        "properties": {
+          "affectedVersions": {
+            "type": "string",
+            "description": "Semver range of affected versions"
+          },
+          "description": {
+            "type": "string",
+            "description": "What changed"
+          },
+          "mitigation": {
+            "type": "string",
+            "description": "How to handle this change"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["graphql", "environment", "storage", "config", "docker", "other"]
+          }
+        }
+      }
+    },
+    "migrationNotes": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to detailed migration documentation"
+    },
+    "requiredActions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Manual steps user must take"
+    }
+  }
+}

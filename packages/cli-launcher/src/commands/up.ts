@@ -15,12 +15,136 @@ import {
   generatePassword,
   generateSecret,
   getCliVersion,
-  getTemplatesDir,
   isScaffolded,
   parsePortsOption,
   detectMissingProviderKeys,
   waitFor,
+  promptPackageManager,
+  type PackageManager,
 } from "../utils.js";
+import { detectMonorepoRoot } from "../utils/monorepo-detection.js";
+import {
+  copyFrontendPackage,
+  updatePackageJsonForDevPackages,
+} from "../utils/package-copy.js";
+import {
+  downloadTemplate,
+  fetchTemplateManifest,
+} from "../utils/template-downloader.js";
+
+/**
+ * Validate that a template name is available by fetching the manifest.
+ * @param templateName Template name to validate
+ * @param version CLI version
+ */
+async function validateTemplate(
+  templateName: string,
+  version: string
+): Promise<void> {
+  const manifest = await fetchTemplateManifest(version);
+  const availableTemplates = manifest.templates.map(t => t.name);
+
+  if (!availableTemplates.includes(templateName)) {
+    throw new Error(
+      `Template '${templateName}' not found. Available templates: ${availableTemplates.join(", ")}`
+    );
+  }
+}
+
+/**
+ * Install frontend dependencies using the selected package manager.
+ * Only runs in app-dev mode after backend services are healthy.
+ * Prompts user to select their package manager if not already set.
+ *
+ * @param ctx Project context
+ * @throws Error if installation fails
+ */
+async function installFrontendDependencies(ctx: ProjectContext): Promise<void> {
+  const webDir = path.join(ctx.dir, "web");
+
+  // Check if package.json exists
+  const packageJsonPath = path.join(webDir, "package.json");
+  if (!fs.existsSync(packageJsonPath)) {
+    console.log(chalk.yellow("\n⚠️  No package.json found in web directory, skipping dependency installation"));
+    return;
+  }
+
+  // Prompt for package manager if not already set
+  if (!ctx.packageManager) {
+    ctx.packageManager = await promptPackageManager();
+  }
+
+  const packageManager = ctx.packageManager;
+
+  // Show progress
+  console.log(chalk.cyan(`\n📦 Installing frontend dependencies with ${packageManager}...`));
+
+  // Determine install command (all package managers use "install")
+  const installCmd = "install";
+
+  // Run install
+  try {
+    await execa(packageManager, [installCmd], {
+      cwd: webDir,
+      stdio: "inherit", // Show install output to user
+    });
+    console.log(chalk.green("✅ Dependencies installed successfully\n"));
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(chalk.red(`\n❌ Failed to install dependencies: ${errorMessage}`));
+
+    // Provide helpful error messages
+    console.log(chalk.yellow("\nTroubleshooting:"));
+    console.log(chalk.gray("  • Check that package.json is valid:"), chalk.cyan(`${webDir}/package.json`));
+    console.log(chalk.gray(`  • Ensure ${packageManager} is installed:`), chalk.cyan(`${packageManager} --version`));
+    console.log(chalk.gray("  • Try running the install manually:"), chalk.cyan(`cd ${webDir} && ${packageManager} install`));
+
+    throw error;
+  }
+}
+
+/**
+ * Prompts user to select a frontend template from available options.
+ * Fetches template manifest and displays interactive selection.
+ * @param version CLI version to fetch templates for
+ * @returns Selected template name
+ */
+async function promptTemplateSelection(version: string): Promise<string> {
+  try {
+    // Fetch manifest
+    const manifest = await fetchTemplateManifest(version);
+
+    // Build choices
+    const choices = manifest.templates.map((template) => ({
+      title:
+        template.name === "baseboards"
+          ? `${template.name}    ${template.description} (recommended)`
+          : `${template.name}         ${template.description}`,
+      value: template.name,
+    }));
+
+    // Prompt user
+    const { selectedTemplate } = await prompts({
+      type: "select",
+      name: "selectedTemplate",
+      message: "Select a frontend template:",
+      choices: choices,
+      initial: 0, // Default to first (baseboards)
+    });
+
+    // Handle cancellation
+    if (!selectedTemplate) {
+      console.log("\nTemplate selection cancelled");
+      process.exit(0);
+    }
+
+    return selectedTemplate;
+  } catch (error) {
+    console.error("Failed to fetch template list. Check your internet connection.");
+    console.log("Falling back to default template: baseboards");
+    return "baseboards"; // Graceful fallback
+  }
+}
 
 export async function up(directory: string, options: UpOptions): Promise<void> {
   console.log(chalk.blue.bold("\n🎨 Baseboards CLI\n"));
@@ -34,7 +158,6 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   const dir = path.resolve(process.cwd(), directory);
   const name = path.basename(dir);
   const version = getCliVersion();
-  const mode = options.prod ? "prod" : "dev";
 
   // Parse custom ports
   let customPorts = {};
@@ -51,13 +174,54 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     ...customPorts,
   };
 
+  const appDev = options.appDev || false;
+  const devPackages = options.devPackages || false;
+
+  // Validate: --dev-packages requires --app-dev
+  if (devPackages && !appDev) {
+    throw new Error(
+      '--dev-packages requires --app-dev mode. ' +
+      'Docker-based web service cannot use local package sources.'
+    );
+  }
+
+  // Validate: --dev-packages requires running from monorepo
+  let monorepoRoot: string | undefined;
+  if (devPackages) {
+    const detectedRoot = await detectMonorepoRoot();
+    if (!detectedRoot) {
+      throw new Error(
+        '--dev-packages requires running from within the Boards monorepo.\n\n' +
+        'This feature is for Boards contributors testing unpublished package changes.\n' +
+        'Clone the monorepo and run: cd boards && pnpm cli up <dir> --app-dev --dev-packages\n\n' +
+        'If you want to develop apps using the published package, use --app-dev without --dev-packages.'
+      );
+    }
+    monorepoRoot = detectedRoot;
+  }
+
+  // Step 2.5: Determine template to use
+  let selectedTemplate: string;
+
+  if (options.template) {
+    // Explicit flag provided
+    await validateTemplate(options.template, version);
+    selectedTemplate = options.template;
+  } else {
+    // Interactive selection
+    selectedTemplate = await promptTemplateSelection(version);
+  }
+
   const ctx: ProjectContext = {
     dir,
     name,
     isScaffolded: isScaffolded(dir),
     ports: defaultPorts,
-    mode,
     version,
+    appDev,
+    devPackages,
+    template: selectedTemplate,
+    monorepoRoot,
   };
 
   // Track if this is a fresh scaffold to prompt for API keys later
@@ -136,7 +300,25 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     );
   }
 
-  // Step 4: Check ports availability
+  // Step 4.5: Copy and link dev packages if requested
+  if (ctx.devPackages && ctx.monorepoRoot) {
+    const spinner = ora("Copying @weirdfingers/boards source from monorepo...").start();
+    try {
+      const targetFrontend = path.join(ctx.dir, "frontend");
+      await copyFrontendPackage(ctx.monorepoRoot, targetFrontend);
+      spinner.succeed("Package source copied");
+
+      spinner.start("Linking local package...");
+      const webDir = path.join(ctx.dir, "web");
+      await updatePackageJsonForDevPackages(webDir);
+      spinner.succeed("Local package linked successfully");
+    } catch (error) {
+      spinner.fail("Failed to setup dev-packages mode");
+      throw error;
+    }
+  }
+
+  // Step 5: Check ports availability
   spinner.start("Checking port availability...");
   ctx.ports.web = await findAvailablePort(ctx.ports.web);
   ctx.ports.api = await findAvailablePort(ctx.ports.api);
@@ -194,6 +376,11 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   // Step 9: Run database migrations
   await runMigrations(ctx);
 
+  // Step 9.5: Install frontend dependencies in app-dev mode
+  if (ctx.appDev) {
+    await installFrontendDependencies(ctx);
+  }
+
   // Step 10: Print success message
   printSuccessMessage(ctx, !options.attach, missingKeys.length > 0);
 
@@ -217,41 +404,17 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
 }
 
 /**
- * Scaffold a new project from templates
+ * Scaffold a new project by downloading the template
  */
 async function scaffoldProject(ctx: ProjectContext): Promise<void> {
-  const templatesDir = getTemplatesDir();
-  const spinner = ora("Copying templates...").start();
-
   // Create project directory
   fs.ensureDirSync(ctx.dir);
 
-  // Copy web and api directly to root
-  fs.copySync(path.join(templatesDir, "web"), path.join(ctx.dir, "web"));
-  fs.copySync(path.join(templatesDir, "api"), path.join(ctx.dir, "api"));
+  // Download template (with progress indicators)
+  await downloadTemplate(ctx.template, ctx.version, ctx.dir);
 
-  // Copy root files (compose, docker, README, .gitignore)
-  const rootFiles = [
-    "compose.yaml",
-    "compose.dev.yaml",
-    "README.md",
-    ".gitignore",
-  ];
-  for (const file of rootFiles) {
-    const src = path.join(templatesDir, file);
-    const dest = path.join(ctx.dir, file);
-    if (fs.existsSync(src)) {
-      fs.copySync(src, dest);
-    }
-  }
-
-  // Copy docker directory
-  fs.copySync(path.join(templatesDir, "docker"), path.join(ctx.dir, "docker"));
-
-  spinner.succeed("Templates copied");
-
-  // Create data/storage directory
-  spinner.start("Creating data directories...");
+  // Create data/storage directory (needed for runtime)
+  const spinner = ora("Creating data directories...").start();
   fs.ensureDirSync(path.join(ctx.dir, "data/storage"));
   spinner.succeed("Data directories created");
 
@@ -428,14 +591,35 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
   }
 }
 
+/**
+ * Get list of compose files to load.
+ * Always loads base compose.yaml (backend services).
+ * Conditionally loads compose.web.yaml (web service overlay).
+ *
+ * In app-dev mode (--app-dev flag), only backend services are started in Docker,
+ * allowing the frontend to be run locally for faster development iteration.
+ *
+ * @param ctx Project context
+ * @returns Array of compose file names relative to project directory
+ */
 function getComposeFiles(ctx: ProjectContext): string[] {
-  const composeFiles = ["compose.yaml"];
-  if (ctx.mode === "dev") {
-    composeFiles.push("compose.dev.yaml");
+  const files = ["compose.yaml"]; // Always load base
+
+  // Only add web overlay if NOT in app-dev mode
+  if (!ctx.appDev) {
+    files.push("compose.web.yaml");
   }
-  return composeFiles;
+
+  return files;
 }
 
+/**
+ * Get base docker compose arguments for all compose commands.
+ * Includes env file configuration and compose file list (which varies based on app-dev mode).
+ *
+ * @param ctx Project context
+ * @returns Array of docker compose base arguments
+ */
 function getComposeBaseArgs(ctx: ProjectContext): string[] {
   // IMPORTANT: use docker/.env for compose interpolation (e.g. PROJECT_NAME, ports)
   // and keep it in sync with env_file usage inside compose.yaml.
@@ -452,6 +636,16 @@ function getComposeBaseArgs(ctx: ProjectContext): string[] {
  */
 async function startDockerCompose(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Starting Docker Compose...").start();
+
+  // Check that all compose files exist before starting
+  const composeFiles = getComposeFiles(ctx);
+  for (const file of composeFiles) {
+    const filePath = path.join(ctx.dir, file);
+    if (!fs.existsSync(filePath)) {
+      spinner.fail(`Compose file not found: ${file}`);
+      throw new Error(`Compose file not found: ${file}`);
+    }
+  }
 
   const composeArgs = [
     ...getComposeBaseArgs(ctx),
@@ -491,12 +685,17 @@ async function attachToLogs(ctx: ProjectContext): Promise<void> {
 }
 
 /**
- * Wait for services to become healthy
+ * Wait for services to become healthy.
+ * In app-dev mode, only waits for backend services (no web service).
  */
 async function waitForHealthy(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Waiting for services to be healthy...").start();
 
-  const services = ["db", "cache", "api", "worker", "web"];
+  // In app-dev mode, only wait for backend services (web runs locally)
+  const services = ["db", "cache", "api", "worker"];
+  if (!ctx.appDev) {
+    services.push("web");
+  }
   const maxWaitMs = 120_000; // 2 minutes
 
   type ComposePsEntry = {
@@ -635,24 +834,41 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
 }
 
 /**
- * Print success message with URLs and next steps
+ * Get the dev command for the selected package manager.
+ * @param pm Package manager (pnpm, npm, yarn, or bun)
+ * @returns The command to start the dev server
  */
-function printSuccessMessage(
+function getDevCommand(pm: PackageManager): string {
+  const commands: Record<PackageManager, string> = {
+    pnpm: "pnpm dev",
+    npm: "npm run dev",
+    yarn: "yarn dev",
+    bun: "bun dev",
+  };
+  return commands[pm];
+}
+
+/**
+ * Print success message for default mode (all services in Docker).
+ * Shows all service URLs including web, API, and GraphQL.
+ * @param ctx Project context
+ * @param hasKeyWarning Whether to show API key warning
+ */
+function printDefaultSuccessMessage(
   ctx: ProjectContext,
-  detached: boolean,
   hasKeyWarning: boolean
 ): void {
-  console.log(chalk.green.bold("\n✨ Baseboards is running!\n"));
+  console.log(chalk.green.bold("\n✅ Baseboards is running!\n"));
   console.log(
-    chalk.cyan("  🌐 Web:"),
+    chalk.cyan("   Web:     "),
     chalk.underline(`http://localhost:${ctx.ports.web}`)
   );
   console.log(
-    chalk.cyan("  🔌 API:"),
+    chalk.cyan("   API:     "),
     chalk.underline(`http://localhost:${ctx.ports.api}`)
   );
   console.log(
-    chalk.cyan("  📊 GraphQL:"),
+    chalk.cyan("   GraphQL: "),
     chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
   );
 
@@ -665,11 +881,120 @@ function printSuccessMessage(
     );
   }
 
-  console.log(chalk.gray("\n📖 Commands:"));
-  console.log(chalk.gray("   Stop:"), chalk.cyan("baseboards down"));
-  console.log(chalk.gray("   Logs:"), chalk.cyan("baseboards logs"));
-  console.log(chalk.gray("   Status:"), chalk.cyan("baseboards status"));
+  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
+  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
   console.log();
+}
+
+/**
+ * Print success message for app-dev mode (backend in Docker, frontend local).
+ * Shows backend service URLs and instructions for starting the frontend locally.
+ * @param ctx Project context
+ * @param hasKeyWarning Whether to show API key warning
+ */
+function printAppDevSuccessMessage(
+  ctx: ProjectContext,
+  hasKeyWarning: boolean
+): void {
+  console.log(chalk.green.bold("\n✅ Backend services are running!\n"));
+  console.log(
+    chalk.cyan("   API:     "),
+    chalk.underline(`http://localhost:${ctx.ports.api}`)
+  );
+  console.log(
+    chalk.cyan("   GraphQL: "),
+    chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+  );
+
+  // Show frontend startup instructions
+  console.log(chalk.cyan("\nTo start the frontend:\n"));
+
+  // Calculate relative path from current directory to web directory
+  const relativeWebPath = path.relative(process.cwd(), path.join(ctx.dir, "web"));
+  const cdCommand = relativeWebPath || "web";
+
+  // Get the package manager command (default to pnpm if not set)
+  const packageManager = ctx.packageManager || "pnpm";
+  const devCommand = getDevCommand(packageManager);
+
+  console.log(chalk.cyan(`   cd ${cdCommand}`));
+  console.log(chalk.cyan(`   ${devCommand}`));
+
+  console.log(chalk.gray("\nThe frontend will be available at"), chalk.underline("http://localhost:3000"));
+
+  if (hasKeyWarning) {
+    console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+    console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+  }
+
+  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
+  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log();
+}
+
+/**
+ * Print success message for dev-packages mode (backend in Docker, frontend local with linked packages).
+ * Shows backend URLs and workflow for developing with local package sources.
+ * @param ctx Project context
+ * @param hasKeyWarning Whether to show API key warning
+ */
+function printDevPackagesSuccessMessage(
+  ctx: ProjectContext,
+  hasKeyWarning: boolean
+): void {
+  console.log(chalk.green.bold("\n✅ Backend services are running!"));
+  console.log(chalk.green.bold("✅ Local @weirdfingers/boards package linked!\n"));
+  console.log(
+    chalk.cyan("   API:     "),
+    chalk.underline(`http://localhost:${ctx.ports.api}`)
+  );
+  console.log(
+    chalk.cyan("   GraphQL: "),
+    chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+  );
+
+  console.log(chalk.cyan("\n📦 Package development workflow:\n"));
+  console.log(chalk.gray("   1. Edit package source:"));
+  console.log(chalk.cyan(`      ${ctx.dir}/frontend/src/`));
+  console.log(chalk.gray("\n   2. Start the frontend:"));
+  console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
+  console.log(chalk.cyan(`      pnpm install`));
+  console.log(chalk.cyan(`      pnpm dev`));
+  console.log(chalk.gray("\n   3. Changes to the package will hot-reload automatically"));
+  console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
+
+  if (hasKeyWarning) {
+    console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+    console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+  }
+
+  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
+  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log();
+}
+
+/**
+ * Print success message with URLs and next steps.
+ * Dispatches to appropriate message function based on mode (default, app-dev, or dev-packages).
+ * @param ctx Project context
+ * @param detached Whether services are running in detached mode (unused but kept for compatibility)
+ * @param hasKeyWarning Whether to show API key configuration warning
+ */
+function printSuccessMessage(
+  ctx: ProjectContext,
+  detached: boolean,
+  hasKeyWarning: boolean
+): void {
+  // Dev-packages mode takes precedence (it implies app-dev)
+  if (ctx.devPackages && ctx.appDev) {
+    printDevPackagesSuccessMessage(ctx, hasKeyWarning);
+  } else if (ctx.appDev) {
+    // App-dev mode without dev-packages
+    printAppDevSuccessMessage(ctx, hasKeyWarning);
+  } else {
+    // Default mode - all services in Docker
+    printDefaultSuccessMessage(ctx, hasKeyWarning);
+  }
 }
 
 /**

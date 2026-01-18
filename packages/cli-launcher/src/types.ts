@@ -20,19 +20,49 @@ export interface ProjectContext {
     redis: number;
   };
 
-  /** Environment: dev or prod */
-  mode: 'dev' | 'prod';
-
   /** CLI version */
   version: string;
+
+  /**
+   * Whether to run frontend locally instead of in Docker.
+   * When true, web service is not started in Docker Compose.
+   */
+  appDev: boolean;
+
+  /**
+   * Whether to include unpublished @weirdfingers/boards package source.
+   * Only works when CLI runs from within the Boards monorepo.
+   * When true, packages/frontend is copied to project and linked via file: dependency.
+   * Requires appDev to be true.
+   */
+  devPackages: boolean;
+
+  /**
+   * Name of the frontend template to use for scaffolding.
+   * Examples: "baseboards", "basic"
+   */
+  template: string;
+
+  /**
+   * Absolute path to monorepo root directory.
+   * Only set when devPackages is true and monorepo is detected.
+   */
+  monorepoRoot?: string;
+
+  /**
+   * Selected package manager for frontend development.
+   * Only set in app-dev mode after user selects their preferred package manager.
+   */
+  packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
 export interface UpOptions {
-  dev?: boolean;
-  prod?: boolean;
   attach?: boolean;
   ports?: string;
   fresh?: boolean;
+  appDev?: boolean;
+  devPackages?: boolean;
+  template?: string;
 }
 
 export interface DownOptions {
@@ -53,6 +83,14 @@ export interface UpdateOptions {
   force?: boolean;
   version?: string;
 }
+
+export interface UpgradeOptions {
+  version?: string;
+  dryRun?: boolean;
+  force?: boolean;
+}
+
+export type ProjectMode = 'default' | 'app-dev';
 
 export interface Prerequisites {
   docker: {

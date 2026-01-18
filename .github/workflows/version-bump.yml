@@ -117,7 +117,7 @@ jobs:
           pnpm publish --access public --no-git-checks
 
   publish-cli-launcher:
-    needs: bump-and-release
+    needs: [bump-and-release, publish-templates]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -187,3 +187,114 @@ jobs:
           directory: apps/docs/build
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: main
+
+  publish-templates:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build templates
+        run: |
+          VERSION=${{ needs.bump-and-release.outputs.version }}
+          ./scripts/prepare-release-templates.sh "$VERSION"
+
+      - name: Generate compatibility manifest
+        run: |
+          VERSION=${{ needs.bump-and-release.outputs.version }}
+          node scripts/generate-compatibility-manifest.js \
+            --version "$VERSION" \
+            --output dist/compatibility-manifest.json
+
+      - name: Validate compatibility manifest
+        run: |
+          # Ensure manifest exists and is valid JSON
+          if [ ! -f dist/compatibility-manifest.json ]; then
+            echo "❌ Compatibility manifest not generated"
+            exit 1
+          fi
+
+          # Check it's valid JSON
+          jq empty dist/compatibility-manifest.json || {
+            echo "❌ Invalid JSON in compatibility manifest"
+            exit 1
+          }
+
+          # Display manifest for debugging
+          echo "Generated compatibility manifest:"
+          cat dist/compatibility-manifest.json
+
+      - name: Upload templates and manifest to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${{ needs.bump-and-release.outputs.version }}"
+          files: |
+            dist/template-baseboards-v${{ needs.bump-and-release.outputs.version }}.tar.gz
+            dist/template-basic-v${{ needs.bump-and-release.outputs.version }}.tar.gz
+            dist/template-manifest.json
+            dist/compatibility-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-docker:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: packages/backend
+          file: packages/backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/weirdfingers/boards-backend:${{ needs.bump-and-release.outputs.version }}
+            ghcr.io/weirdfingers/boards-backend:latest
+            weirdfingers/boards-backend:${{ needs.bump-and-release.outputs.version }}
+            weirdfingers/boards-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,32 @@
+# Docker Compose Overlay - Web Service
+#
+# This overlay adds the web (frontend) service as a production-built container.
+# Use this overlay when you want to run the full stack including the frontend.
+#
+# Usage:
+#   docker compose -f compose.yaml up -d                     # Backend only (no web)
+#   docker compose -f compose.yaml -f compose.web.yaml up -d # Full stack with web
+#
+# The web service runs a production build (no hot-reload, no volume mounts).
+# For app development mode where you run the frontend locally, skip this overlay.
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: ../Dockerfile.web
+    env_file: web/.env
+    environment:
+      - INTERNAL_API_URL=http://api:8800
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3300}:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 3s
+      retries: 50
+    networks:
+      - internal
