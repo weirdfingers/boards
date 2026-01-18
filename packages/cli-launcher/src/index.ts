@@ -22,6 +22,7 @@ import { clean } from "./commands/clean.js";
 import { update } from "./commands/update.js";
 import { upgrade } from "./commands/upgrade.js";
 import { doctor } from "./commands/doctor.js";
+import { templates } from "./commands/templates.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -118,6 +119,14 @@ program
   .description("Run diagnostics and show system info")
   .argument("[directory]", "Project directory", ".")
   .action(doctor);
+
+// templates command
+program
+  .command("templates")
+  .description("List available templates")
+  .option("--refresh", "Clear cache and re-fetch templates")
+  .option("--version <version>", "Show templates for specific version")
+  .action(templates);
 
 // Parse without exitOverride - let commander handle exits naturally
 try {
