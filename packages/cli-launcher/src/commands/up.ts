@@ -537,19 +537,30 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
  * Always loads base compose.yaml (backend services).
  * Conditionally loads compose.web.yaml (web service overlay).
  *
+ * In app-dev mode (--app-dev flag), only backend services are started in Docker,
+ * allowing the frontend to be run locally for faster development iteration.
+ *
  * @param ctx Project context
  * @returns Array of compose file names relative to project directory
  */
 function getComposeFiles(ctx: ProjectContext): string[] {
   const files = ["compose.yaml"]; // Always load base
 
-  // TODO: In Phase 4, only add compose.web.yaml if NOT --app-dev mode
-  // For now, always add web overlay to run all 5 services
-  files.push("compose.web.yaml");
+  // Only add web overlay if NOT in app-dev mode
+  if (!ctx.appDev) {
+    files.push("compose.web.yaml");
+  }
 
   return files;
 }
 
+/**
+ * Get base docker compose arguments for all compose commands.
+ * Includes env file configuration and compose file list (which varies based on app-dev mode).
+ *
+ * @param ctx Project context
+ * @returns Array of docker compose base arguments
+ */
 function getComposeBaseArgs(ctx: ProjectContext): string[] {
   // IMPORTANT: use docker/.env for compose interpolation (e.g. PROJECT_NAME, ports)
   // and keep it in sync with env_file usage inside compose.yaml.
@@ -615,14 +626,17 @@ async function attachToLogs(ctx: ProjectContext): Promise<void> {
 }
 
 /**
- * Wait for services to become healthy
+ * Wait for services to become healthy.
+ * In app-dev mode, only waits for backend services (no web service).
  */
 async function waitForHealthy(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Waiting for services to be healthy...").start();
 
-  // TODO: In Phase 4, exclude "web" service if --app-dev mode
-  // For now, always expect all 5 services (db, cache, api, worker, web)
-  const services = ["db", "cache", "api", "worker", "web"];
+  // In app-dev mode, only wait for backend services (web runs locally)
+  const services = ["db", "cache", "api", "worker"];
+  if (!ctx.appDev) {
+    services.push("web");
+  }
   const maxWaitMs = 120_000; // 2 minutes
 
   type ComposePsEntry = {
