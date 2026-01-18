@@ -48,6 +48,12 @@ export interface ProjectContext {
    * Only set when devPackages is true and monorepo is detected.
    */
   monorepoRoot?: string;
+
+  /**
+   * Selected package manager for frontend development.
+   * Only set in app-dev mode after user selects their preferred package manager.
+   */
+  packageManager?: "pnpm" | "npm" | "yarn" | "bun";
 }
 
 export interface UpOptions {

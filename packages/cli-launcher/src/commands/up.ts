@@ -19,6 +19,8 @@ import {
   parsePortsOption,
   detectMissingProviderKeys,
   waitFor,
+  promptPackageManager,
+  type PackageManager,
 } from "../utils.js";
 import { detectMonorepoRoot } from "../utils/monorepo-detection.js";
 import {
@@ -46,6 +48,58 @@ async function validateTemplate(
     throw new Error(
       `Template '${templateName}' not found. Available templates: ${availableTemplates.join(", ")}`
     );
+  }
+}
+
+/**
+ * Install frontend dependencies using the selected package manager.
+ * Only runs in app-dev mode after backend services are healthy.
+ * Prompts user to select their package manager if not already set.
+ *
+ * @param ctx Project context
+ * @throws Error if installation fails
+ */
+async function installFrontendDependencies(ctx: ProjectContext): Promise<void> {
+  const webDir = path.join(ctx.dir, "web");
+
+  // Check if package.json exists
+  const packageJsonPath = path.join(webDir, "package.json");
+  if (!fs.existsSync(packageJsonPath)) {
+    console.log(chalk.yellow("\n⚠️  No package.json found in web directory, skipping dependency installation"));
+    return;
+  }
+
+  // Prompt for package manager if not already set
+  if (!ctx.packageManager) {
+    ctx.packageManager = await promptPackageManager();
+  }
+
+  const packageManager = ctx.packageManager;
+
+  // Show progress
+  console.log(chalk.cyan(`\n📦 Installing frontend dependencies with ${packageManager}...`));
+
+  // Determine install command (all package managers use "install")
+  const installCmd = "install";
+
+  // Run install
+  try {
+    await execa(packageManager, [installCmd], {
+      cwd: webDir,
+      stdio: "inherit", // Show install output to user
+    });
+    console.log(chalk.green("✅ Dependencies installed successfully\n"));
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(chalk.red(`\n❌ Failed to install dependencies: ${errorMessage}`));
+
+    // Provide helpful error messages
+    console.log(chalk.yellow("\nTroubleshooting:"));
+    console.log(chalk.gray("  • Check that package.json is valid:"), chalk.cyan(`${webDir}/package.json`));
+    console.log(chalk.gray(`  • Ensure ${packageManager} is installed:`), chalk.cyan(`${packageManager} --version`));
+    console.log(chalk.gray("  • Try running the install manually:"), chalk.cyan(`cd ${webDir} && ${packageManager} install`));
+
+    throw error;
   }
 }
 
@@ -321,6 +375,11 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
 
   // Step 9: Run database migrations
   await runMigrations(ctx);
+
+  // Step 9.5: Install frontend dependencies in app-dev mode
+  if (ctx.appDev) {
+    await installFrontendDependencies(ctx);
+  }
 
   // Step 10: Print success message
   printSuccessMessage(ctx, !options.attach, missingKeys.length > 0);
@@ -803,6 +862,29 @@ function printSuccessMessage(
     console.log(chalk.cyan(`      pnpm install`));
     console.log(chalk.cyan(`      pnpm dev`));
     console.log(chalk.gray("\n   3. Changes to the package will hot-reload automatically"));
+    console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
+
+    if (hasKeyWarning) {
+      console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+      console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+    }
+  } else if (ctx.appDev) {
+    // App-dev mode (without dev-packages) - dependencies installed, ready to run
+    console.log(chalk.green.bold("\n✅ Backend services are running!"));
+    console.log(chalk.green.bold("✅ Frontend dependencies installed!\n"));
+    console.log(
+      chalk.cyan("  🔌 API:"),
+      chalk.underline(`http://localhost:${ctx.ports.api}`)
+    );
+    console.log(
+      chalk.cyan("  📊 GraphQL:"),
+      chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+    );
+
+    console.log(chalk.cyan("\n🚀 Ready to develop!\n"));
+    console.log(chalk.gray("   Start the frontend:"));
+    console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
+    console.log(chalk.cyan(`      ${ctx.packageManager || 'pnpm'} dev`));
     console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
 
     if (hasKeyWarning) {
