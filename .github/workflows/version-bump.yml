@@ -294,7 +294,7 @@ jobs:
           tags: |
             ghcr.io/weirdfingers/boards-backend:${{ needs.bump-and-release.outputs.version }}
             ghcr.io/weirdfingers/boards-backend:latest
-            weirdfingers/boards-backend:${{ needs.bump-and-release.outputs.version }}
-            weirdfingers/boards-backend:latest
+            cdiddy/weirdfingers-boards-backend:${{ needs.bump-and-release.outputs.version }}
+            cdiddy/weirdfingers-boards-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
