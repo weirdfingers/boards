@@ -45,6 +45,7 @@ describe("Template Downloader", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
     mockFetch.mockClear();
     // Clean the actual cache directory before each test
     await clearCache().catch(() => {
@@ -57,6 +58,7 @@ describe("Template Downloader", () => {
     await clearCache().catch(() => {
       // Ignore errors
     });
+    vi.restoreAllMocks();
   });
 
   describe("fetchTemplateManifest", () => {
@@ -351,6 +353,242 @@ describe("Template Downloader", () => {
         "https://github.com/weirdfingers/boards/releases/download/v0.10.0/template-manifest.json",
         expect.any(Object)
       );
+    });
+  });
+
+  describe("Network Error Handling", () => {
+    test("handles connection timeout", async () => {
+      const timeoutError = new Error("Request timeout");
+      timeoutError.name = "TimeoutError";
+      mockFetch.mockRejectedValue(timeoutError);
+
+      await expect(fetchTemplateManifest("0.8.0")).rejects.toThrow(
+        "Failed to fetch template manifest"
+      );
+    });
+
+    test("handles connection refused (ECONNREFUSED)", async () => {
+      const connError = new Error("connect ECONNREFUSED");
+      (connError as any).code = "ECONNREFUSED";
+      mockFetch.mockRejectedValue(connError);
+
+      await expect(fetchTemplateManifest("0.8.0")).rejects.toThrow(
+        "Failed to fetch template manifest"
+      );
+    });
+
+    test("handles DNS failure (ENOTFOUND)", async () => {
+      const dnsError = new Error("getaddrinfo ENOTFOUND");
+      (dnsError as any).code = "ENOTFOUND";
+      mockFetch.mockRejectedValue(dnsError);
+
+      await expect(fetchTemplateManifest("0.8.0")).rejects.toThrow(
+        "Failed to fetch template manifest"
+      );
+    });
+  });
+
+  describe("GitHub API Error Handling", () => {
+    test("handles rate limiting (429)", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 429,
+        statusText: "Too Many Requests",
+      } as any);
+
+      await expect(fetchTemplateManifest("0.8.0")).rejects.toThrow(
+        "Failed to fetch manifest: 429 Too Many Requests"
+      );
+    });
+
+    test("handles 404 when fetching latest release", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      } as any);
+
+      await expect(fetchTemplateManifest("latest")).rejects.toThrow(
+        "No releases found"
+      );
+    });
+
+    test("handles other HTTP errors", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      } as any);
+
+      await expect(fetchTemplateManifest("0.8.0")).rejects.toThrow(
+        "Failed to fetch manifest: 500 Internal Server Error"
+      );
+    });
+  });
+
+  describe("Filesystem Error Handling", () => {
+    test("handles permission denied (EACCES) when verifying checksum", async () => {
+      const tempDir = await fs.mkdtemp(
+        path.join(os.tmpdir(), "template-test-")
+      );
+      const testFilePath = path.join(tempDir, "test-file.txt");
+      await fs.writeFile(testFilePath, "test content");
+
+      // Mock fs.createReadStream to throw EACCES error
+      const eaccesError = new Error("EACCES: permission denied");
+      (eaccesError as any).code = "EACCES";
+
+      vi.spyOn(fs, "createReadStream").mockImplementation(() => {
+        const { Readable } = require("stream");
+        const stream = new Readable();
+        stream._read = () => {};
+        process.nextTick(() => stream.emit("error", eaccesError));
+        return stream as any;
+      });
+
+      try {
+        await expect(
+          verifyChecksum(testFilePath, "sha256:abc123")
+        ).rejects.toThrow("Failed to read file for checksum");
+      } finally {
+        vi.spyOn(fs, "createReadStream").mockRestore();
+        await fs.remove(tempDir);
+      }
+    });
+
+    test("handles disk full (ENOSPC) during cache write", async () => {
+      // This test verifies that cache write failures don't crash the application
+      // The implementation continues even if caching fails
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockManifest,
+      } as any);
+
+      const enospcError = new Error("ENOSPC: no space left on device");
+      (enospcError as any).code = "ENOSPC";
+
+      vi.spyOn(fs, "writeJson").mockRejectedValue(enospcError);
+
+      try {
+        // Should not throw - cache write failure is non-critical
+        const result = await fetchTemplateManifest("0.8.0");
+        expect(result).toEqual(mockManifest);
+      } finally {
+        vi.spyOn(fs, "writeJson").mockRestore();
+      }
+    });
+  });
+
+  describe("Edge Cases", () => {
+    test("handles manifest with empty templates array", async () => {
+      const emptyManifest = {
+        version: "0.8.0",
+        templates: [],
+      };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => emptyManifest,
+      } as any);
+
+      const manifest = await fetchTemplateManifest("0.8.0");
+      expect(manifest.templates).toEqual([]);
+    });
+
+    test("handles manifest with missing template fields", async () => {
+      const invalidTemplateManifest = {
+        version: "0.8.0",
+        templates: [
+          {
+            name: "incomplete",
+            description: "Missing checksum and size",
+            file: "template.tar.gz",
+            frameworks: [],
+            features: [],
+            // Missing: size, checksum
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => invalidTemplateManifest,
+      } as any);
+
+      // Manifest fetching succeeds (validation is structural only)
+      const manifest = await fetchTemplateManifest("0.8.0");
+      expect(manifest.templates[0].name).toBe("incomplete");
+    });
+
+    test("handles malformed JSON in manifest", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new SyntaxError("Unexpected token in JSON");
+        },
+      } as any);
+
+      await expect(fetchTemplateManifest("0.8.0")).rejects.toThrow(
+        "Failed to fetch template manifest"
+      );
+    });
+
+    test("handles large file download simulation", async () => {
+      // Simulate downloading a large template file
+      const largeTemplate = {
+        ...mockManifest.templates[0],
+        size: 100 * 1024 * 1024, // 100MB
+      };
+
+      const largeManifest = {
+        version: "0.8.0",
+        templates: [largeTemplate],
+      };
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => largeManifest,
+        } as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          body: null, // Simulate failure for now
+        } as any);
+
+      const tempDir = await fs.mkdtemp(
+        path.join(os.tmpdir(), "template-test-")
+      );
+      const targetDir = path.join(tempDir, "target");
+
+      try {
+        await expect(
+          downloadTemplate(largeTemplate.name, "0.8.0", targetDir)
+        ).rejects.toThrow("Response body is empty");
+      } finally {
+        await fs.remove(tempDir);
+      }
+    });
+
+    test("handles checksum with incorrect prefix format", async () => {
+      const tempDir = await fs.mkdtemp(
+        path.join(os.tmpdir(), "template-test-")
+      );
+      const testFilePath = path.join(tempDir, "test-file.txt");
+      await fs.writeFile(testFilePath, "test content");
+
+      try {
+        await expect(
+          verifyChecksum(testFilePath, "md5:abc123")
+        ).rejects.toThrow("Invalid checksum format: must start with");
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
   });
 
