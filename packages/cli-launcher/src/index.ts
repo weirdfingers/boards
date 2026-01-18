@@ -46,8 +46,6 @@ program
   .command("up")
   .description("Start Baseboards (scaffolds if needed)")
   .argument("[directory]", "Project directory", ".")
-  .option("--dev", "Development mode with hot reload (default)", true)
-  .option("--prod", "Production mode with prebuilt images")
   .option("--attach", "Attach to logs (runs in foreground)")
   .option("--ports <ports>", "Custom ports (e.g., web=3300 api=8800)")
   .option("--fresh", "Clean up existing volumes before starting")

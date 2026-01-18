@@ -61,7 +61,6 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
   const dir = path.resolve(process.cwd(), directory);
   const name = path.basename(dir);
   const version = getCliVersion();
-  const mode = options.prod ? "prod" : "dev";
 
   // Parse custom ports
   let customPorts = {};
@@ -122,7 +121,6 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     name,
     isScaffolded: isScaffolded(dir),
     ports: defaultPorts,
-    mode,
     version,
     appDev,
     devPackages,

@@ -20,9 +20,6 @@ export interface ProjectContext {
     redis: number;
   };
 
-  /** Environment: dev or prod */
-  mode: 'dev' | 'prod';
-
   /** CLI version */
   version: string;
 
@@ -54,8 +51,6 @@ export interface ProjectContext {
 }
 
 export interface UpOptions {
-  dev?: boolean;
-  prod?: boolean;
   attach?: boolean;
   ports?: string;
   fresh?: boolean;
