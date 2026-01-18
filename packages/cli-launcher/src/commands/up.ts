@@ -22,6 +22,10 @@ import {
   waitFor,
 } from "../utils.js";
 import { detectMonorepoRoot } from "../utils/monorepo-detection.js";
+import {
+  copyFrontendPackage,
+  updatePackageJsonForDevPackages,
+} from "../utils/package-copy.js";
 
 /**
  * Validate that a template name is available.
@@ -204,7 +208,25 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     );
   }
 
-  // Step 4: Check ports availability
+  // Step 4.5: Copy and link dev packages if requested
+  if (ctx.devPackages && ctx.monorepoRoot) {
+    const spinner = ora("Copying @weirdfingers/boards source from monorepo...").start();
+    try {
+      const targetFrontend = path.join(ctx.dir, "frontend");
+      await copyFrontendPackage(ctx.monorepoRoot, targetFrontend);
+      spinner.succeed("Package source copied");
+
+      spinner.start("Linking local package...");
+      const webDir = path.join(ctx.dir, "web");
+      await updatePackageJsonForDevPackages(webDir);
+      spinner.succeed("Local package linked successfully");
+    } catch (error) {
+      spinner.fail("Failed to setup dev-packages mode");
+      throw error;
+    }
+  }
+
+  // Step 5: Check ports availability
   spinner.start("Checking port availability...");
   ctx.ports.web = await findAvailablePort(ctx.ports.web);
   ctx.ports.api = await findAvailablePort(ctx.ports.api);
@@ -710,27 +732,57 @@ function printSuccessMessage(
   detached: boolean,
   hasKeyWarning: boolean
 ): void {
-  console.log(chalk.green.bold("\n✨ Baseboards is running!\n"));
-  console.log(
-    chalk.cyan("  🌐 Web:"),
-    chalk.underline(`http://localhost:${ctx.ports.web}`)
-  );
-  console.log(
-    chalk.cyan("  🔌 API:"),
-    chalk.underline(`http://localhost:${ctx.ports.api}`)
-  );
-  console.log(
-    chalk.cyan("  📊 GraphQL:"),
-    chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
-  );
-
-  if (hasKeyWarning) {
-    console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
-    console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+  if (ctx.devPackages && ctx.appDev) {
+    // Dev packages mode - backend only running, frontend needs manual start
+    console.log(chalk.green.bold("\n✅ Backend services are running!"));
+    console.log(chalk.green.bold("✅ Local @weirdfingers/boards package linked!\n"));
     console.log(
-      chalk.gray("   Docs:"),
-      chalk.cyan("https://baseboards.dev/docs/setup")
+      chalk.cyan("  🔌 API:"),
+      chalk.underline(`http://localhost:${ctx.ports.api}`)
     );
+    console.log(
+      chalk.cyan("  📊 GraphQL:"),
+      chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+    );
+
+    console.log(chalk.cyan("\n📦 Package development workflow:\n"));
+    console.log(chalk.gray("   1. Edit package source:"));
+    console.log(chalk.cyan(`      ${ctx.dir}/frontend/src/`));
+    console.log(chalk.gray("\n   2. Start the frontend:"));
+    console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
+    console.log(chalk.cyan(`      pnpm install`));
+    console.log(chalk.cyan(`      pnpm dev`));
+    console.log(chalk.gray("\n   3. Changes to the package will hot-reload automatically"));
+    console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
+
+    if (hasKeyWarning) {
+      console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+      console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+    }
+  } else {
+    // Standard mode
+    console.log(chalk.green.bold("\n✨ Baseboards is running!\n"));
+    console.log(
+      chalk.cyan("  🌐 Web:"),
+      chalk.underline(`http://localhost:${ctx.ports.web}`)
+    );
+    console.log(
+      chalk.cyan("  🔌 API:"),
+      chalk.underline(`http://localhost:${ctx.ports.api}`)
+    );
+    console.log(
+      chalk.cyan("  📊 GraphQL:"),
+      chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+    );
+
+    if (hasKeyWarning) {
+      console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+      console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+      console.log(
+        chalk.gray("   Docs:"),
+        chalk.cyan("https://baseboards.dev/docs/setup")
+      );
+    }
   }
 
   console.log(chalk.gray("\n📖 Commands:"));
