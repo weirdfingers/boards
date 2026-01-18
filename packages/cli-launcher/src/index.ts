@@ -112,7 +112,16 @@ program
   .argument("[directory]", "Project directory", ".")
   .option("--version <version>", "Upgrade to specific version (default: latest)")
   .option("--dry-run", "Preview upgrade without making changes")
-  .option("--force", "Skip confirmation prompts")
+  .option("--force", "Skip confirmation prompts and compatibility warnings")
+  .addHelpText('after', `
+Examples:
+  $ baseboards upgrade                      Upgrade to latest version
+  $ baseboards upgrade --version 0.8.0      Upgrade to specific version
+  $ baseboards upgrade --dry-run            Preview what would be upgraded
+  $ baseboards upgrade --force              Skip confirmation prompts
+  $ baseboards upgrade --dry-run --version 0.8.0
+                                            Preview upgrade to specific version
+`)
   .action(upgrade);
 
 // doctor command

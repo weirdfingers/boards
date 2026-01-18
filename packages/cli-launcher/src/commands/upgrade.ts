@@ -49,10 +49,38 @@ export async function upgrade(
     return;
   }
 
-  console.log(chalk.blue(`\n📦 Upgrade: v${currentVersion} → v${targetVersion}\n`));
-
   // 5. Check compatibility
   const compatCheck = await checkCompatibility(currentVersion, targetVersion);
+
+  // 6. Detect project mode (needed for upgrade plan)
+  const mode = await detectProjectMode(dir);
+
+  // 7. Display upgrade plan
+  console.log(chalk.blue('📋 Upgrade Plan:\n'));
+  console.log(chalk.gray(`   Current version: ${currentVersion}`));
+  console.log(chalk.gray(`   Target version:  ${targetVersion}`));
+  console.log(chalk.gray(`   Project mode:    ${mode}`));
+  console.log('');
+
+  // Display what would be upgraded
+  if (mode === 'default') {
+    console.log(chalk.gray('   Steps:'));
+    console.log(chalk.gray('   1. Stop all services'));
+    console.log(chalk.gray('   2. Pull new backend images'));
+    console.log(chalk.gray('   3. Update web/package.json'));
+    console.log(chalk.gray('   4. Rebuild frontend Docker image'));
+    console.log(chalk.gray('   5. Update docker/.env'));
+    console.log(chalk.gray('   6. Start services'));
+    console.log(chalk.gray('   7. Wait for health checks'));
+  } else {
+    console.log(chalk.gray('   Steps:'));
+    console.log(chalk.gray('   1. Stop backend services'));
+    console.log(chalk.gray('   2. Pull new backend images'));
+    console.log(chalk.gray('   3. Update docker/.env'));
+    console.log(chalk.gray('   4. Start backend services'));
+    console.log(chalk.gray('   5. Print manual frontend update instructions'));
+  }
+  console.log('');
 
   // Display warnings
   if (compatCheck.warnings.length > 0) {
@@ -68,13 +96,18 @@ export async function upgrade(
     console.log('');
   }
 
-  // 6. Dry run mode - stop here
+  // 8. Dry run mode - stop here
   if (options.dryRun) {
-    console.log(chalk.blue('🔍 Dry run mode - no changes made\n'));
+    console.log(chalk.blue('🔍 Dry run complete - no changes made\n'));
     return;
   }
 
-  // 7. Prompt for confirmation (unless --force)
+  // 9. Force flag warning when skipping breaking change confirmation
+  if (options.force && compatCheck.breaking) {
+    console.log(chalk.yellow('⚠️  --force flag used: skipping confirmation despite breaking changes\n'));
+  }
+
+  // 10. Prompt for confirmation (unless --force)
   if (!options.force && compatCheck.breaking) {
     const { proceed } = await prompts({
       type: 'confirm',
@@ -89,10 +122,7 @@ export async function upgrade(
     }
   }
 
-  // 8. Detect project mode
-  const mode = await detectProjectMode(dir);
-
-  // 9. Route to appropriate upgrade flow
+  // 11. Route to appropriate upgrade flow
   if (mode === 'app-dev') {
     await upgradeAppDevMode(dir, currentVersion, targetVersion);
   } else {
