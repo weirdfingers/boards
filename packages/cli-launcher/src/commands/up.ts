@@ -834,94 +834,167 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
 }
 
 /**
- * Print success message with URLs and next steps
+ * Get the dev command for the selected package manager.
+ * @param pm Package manager (pnpm, npm, yarn, or bun)
+ * @returns The command to start the dev server
+ */
+function getDevCommand(pm: PackageManager): string {
+  const commands: Record<PackageManager, string> = {
+    pnpm: "pnpm dev",
+    npm: "npm run dev",
+    yarn: "yarn dev",
+    bun: "bun dev",
+  };
+  return commands[pm];
+}
+
+/**
+ * Print success message for default mode (all services in Docker).
+ * Shows all service URLs including web, API, and GraphQL.
+ * @param ctx Project context
+ * @param hasKeyWarning Whether to show API key warning
+ */
+function printDefaultSuccessMessage(
+  ctx: ProjectContext,
+  hasKeyWarning: boolean
+): void {
+  console.log(chalk.green.bold("\n✅ Baseboards is running!\n"));
+  console.log(
+    chalk.cyan("   Web:     "),
+    chalk.underline(`http://localhost:${ctx.ports.web}`)
+  );
+  console.log(
+    chalk.cyan("   API:     "),
+    chalk.underline(`http://localhost:${ctx.ports.api}`)
+  );
+  console.log(
+    chalk.cyan("   GraphQL: "),
+    chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+  );
+
+  if (hasKeyWarning) {
+    console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+    console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+    console.log(
+      chalk.gray("   Docs:"),
+      chalk.cyan("https://baseboards.dev/docs/setup")
+    );
+  }
+
+  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
+  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log();
+}
+
+/**
+ * Print success message for app-dev mode (backend in Docker, frontend local).
+ * Shows backend service URLs and instructions for starting the frontend locally.
+ * @param ctx Project context
+ * @param hasKeyWarning Whether to show API key warning
+ */
+function printAppDevSuccessMessage(
+  ctx: ProjectContext,
+  hasKeyWarning: boolean
+): void {
+  console.log(chalk.green.bold("\n✅ Backend services are running!\n"));
+  console.log(
+    chalk.cyan("   API:     "),
+    chalk.underline(`http://localhost:${ctx.ports.api}`)
+  );
+  console.log(
+    chalk.cyan("   GraphQL: "),
+    chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+  );
+
+  // Show frontend startup instructions
+  console.log(chalk.cyan("\nTo start the frontend:\n"));
+
+  // Calculate relative path from current directory to web directory
+  const relativeWebPath = path.relative(process.cwd(), path.join(ctx.dir, "web"));
+  const cdCommand = relativeWebPath || "web";
+
+  // Get the package manager command (default to pnpm if not set)
+  const packageManager = ctx.packageManager || "pnpm";
+  const devCommand = getDevCommand(packageManager);
+
+  console.log(chalk.cyan(`   cd ${cdCommand}`));
+  console.log(chalk.cyan(`   ${devCommand}`));
+
+  console.log(chalk.gray("\nThe frontend will be available at"), chalk.underline("http://localhost:3000"));
+
+  if (hasKeyWarning) {
+    console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+    console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+  }
+
+  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
+  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log();
+}
+
+/**
+ * Print success message for dev-packages mode (backend in Docker, frontend local with linked packages).
+ * Shows backend URLs and workflow for developing with local package sources.
+ * @param ctx Project context
+ * @param hasKeyWarning Whether to show API key warning
+ */
+function printDevPackagesSuccessMessage(
+  ctx: ProjectContext,
+  hasKeyWarning: boolean
+): void {
+  console.log(chalk.green.bold("\n✅ Backend services are running!"));
+  console.log(chalk.green.bold("✅ Local @weirdfingers/boards package linked!\n"));
+  console.log(
+    chalk.cyan("   API:     "),
+    chalk.underline(`http://localhost:${ctx.ports.api}`)
+  );
+  console.log(
+    chalk.cyan("   GraphQL: "),
+    chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
+  );
+
+  console.log(chalk.cyan("\n📦 Package development workflow:\n"));
+  console.log(chalk.gray("   1. Edit package source:"));
+  console.log(chalk.cyan(`      ${ctx.dir}/frontend/src/`));
+  console.log(chalk.gray("\n   2. Start the frontend:"));
+  console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
+  console.log(chalk.cyan(`      pnpm install`));
+  console.log(chalk.cyan(`      pnpm dev`));
+  console.log(chalk.gray("\n   3. Changes to the package will hot-reload automatically"));
+  console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
+
+  if (hasKeyWarning) {
+    console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
+    console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
+  }
+
+  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
+  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log();
+}
+
+/**
+ * Print success message with URLs and next steps.
+ * Dispatches to appropriate message function based on mode (default, app-dev, or dev-packages).
+ * @param ctx Project context
+ * @param detached Whether services are running in detached mode (unused but kept for compatibility)
+ * @param hasKeyWarning Whether to show API key configuration warning
  */
 function printSuccessMessage(
   ctx: ProjectContext,
   detached: boolean,
   hasKeyWarning: boolean
 ): void {
+  // Dev-packages mode takes precedence (it implies app-dev)
   if (ctx.devPackages && ctx.appDev) {
-    // Dev packages mode - backend only running, frontend needs manual start
-    console.log(chalk.green.bold("\n✅ Backend services are running!"));
-    console.log(chalk.green.bold("✅ Local @weirdfingers/boards package linked!\n"));
-    console.log(
-      chalk.cyan("  🔌 API:"),
-      chalk.underline(`http://localhost:${ctx.ports.api}`)
-    );
-    console.log(
-      chalk.cyan("  📊 GraphQL:"),
-      chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
-    );
-
-    console.log(chalk.cyan("\n📦 Package development workflow:\n"));
-    console.log(chalk.gray("   1. Edit package source:"));
-    console.log(chalk.cyan(`      ${ctx.dir}/frontend/src/`));
-    console.log(chalk.gray("\n   2. Start the frontend:"));
-    console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
-    console.log(chalk.cyan(`      pnpm install`));
-    console.log(chalk.cyan(`      pnpm dev`));
-    console.log(chalk.gray("\n   3. Changes to the package will hot-reload automatically"));
-    console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
-
-    if (hasKeyWarning) {
-      console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
-      console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
-    }
+    printDevPackagesSuccessMessage(ctx, hasKeyWarning);
   } else if (ctx.appDev) {
-    // App-dev mode (without dev-packages) - dependencies installed, ready to run
-    console.log(chalk.green.bold("\n✅ Backend services are running!"));
-    console.log(chalk.green.bold("✅ Frontend dependencies installed!\n"));
-    console.log(
-      chalk.cyan("  🔌 API:"),
-      chalk.underline(`http://localhost:${ctx.ports.api}`)
-    );
-    console.log(
-      chalk.cyan("  📊 GraphQL:"),
-      chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
-    );
-
-    console.log(chalk.cyan("\n🚀 Ready to develop!\n"));
-    console.log(chalk.gray("   Start the frontend:"));
-    console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
-    console.log(chalk.cyan(`      ${ctx.packageManager || 'pnpm'} dev`));
-    console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
-
-    if (hasKeyWarning) {
-      console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
-      console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
-    }
+    // App-dev mode without dev-packages
+    printAppDevSuccessMessage(ctx, hasKeyWarning);
   } else {
-    // Standard mode
-    console.log(chalk.green.bold("\n✨ Baseboards is running!\n"));
-    console.log(
-      chalk.cyan("  🌐 Web:"),
-      chalk.underline(`http://localhost:${ctx.ports.web}`)
-    );
-    console.log(
-      chalk.cyan("  🔌 API:"),
-      chalk.underline(`http://localhost:${ctx.ports.api}`)
-    );
-    console.log(
-      chalk.cyan("  📊 GraphQL:"),
-      chalk.underline(`http://localhost:${ctx.ports.api}/graphql`)
-    );
-
-    if (hasKeyWarning) {
-      console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
-      console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
-      console.log(
-        chalk.gray("   Docs:"),
-        chalk.cyan("https://baseboards.dev/docs/setup")
-      );
-    }
+    // Default mode - all services in Docker
+    printDefaultSuccessMessage(ctx, hasKeyWarning);
   }
-
-  console.log(chalk.gray("\n📖 Commands:"));
-  console.log(chalk.gray("   Stop:"), chalk.cyan("baseboards down"));
-  console.log(chalk.gray("   Logs:"), chalk.cyan("baseboards logs"));
-  console.log(chalk.gray("   Status:"), chalk.cyan("baseboards status"));
-  console.log();
 }
 
 /**
