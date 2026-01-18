@@ -9,14 +9,16 @@ import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import type { CompatibilityManifest } from '../types/compatibility-manifest.js';
 import compatibilitySchema from '../schemas/compatibility-manifest.schema.json' with { type: 'json' };
 
 const GITHUB_REPO = 'weirdfingers/boards';
 const CACHE_DIR = path.join(os.homedir(), '.baseboards', 'compatibility');
 
-// Configure Ajv to ignore unknown formats (uri is not built-in to Ajv v8)
+// Configure Ajv with format validators (includes uri format)
 const ajv = new Ajv({ strict: false });
+addFormats(ajv);
 const validateManifest = ajv.compile(compatibilitySchema);
 
 export interface FetchOptions {

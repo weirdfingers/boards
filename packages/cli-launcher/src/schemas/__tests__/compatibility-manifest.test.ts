@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -10,8 +11,9 @@ const __dirname = dirname(__filename);
 const schemaPath = join(__dirname, '..', 'compatibility-manifest.schema.json');
 const compatibilitySchema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
 
-// Configure Ajv to ignore unknown formats (uri is not built-in to Ajv v8)
+// Configure Ajv with format validators (includes uri format)
 const ajv = new Ajv({ strict: false });
+addFormats(ajv);
 const validate = ajv.compile(compatibilitySchema);
 
 describe('Compatibility Manifest Schema', () => {
