@@ -7,6 +7,10 @@ import {
   fetchTemplateManifest,
   verifyChecksum,
   downloadTemplate,
+  getCacheDir,
+  clearCache,
+  clearTemplateCache,
+  getCacheSize,
   type TemplateManifest,
 } from "../template-downloader.js";
 
@@ -39,8 +43,20 @@ describe("Template Downloader", () => {
     ],
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    mockFetch.mockClear();
+    // Clean the actual cache directory before each test
+    await clearCache().catch(() => {
+      // Ignore errors if cache doesn't exist
+    });
+  });
+
+  afterEach(async () => {
+    // Clean up cache directory after tests
+    await clearCache().catch(() => {
+      // Ignore errors
+    });
   });
 
   describe("fetchTemplateManifest", () => {
@@ -335,6 +351,142 @@ describe("Template Downloader", () => {
         "https://github.com/weirdfingers/boards/releases/download/v0.10.0/template-manifest.json",
         expect.any(Object)
       );
+    });
+  });
+
+  describe("Cache Management", () => {
+    describe("getCacheDir", () => {
+      test("returns cache directory path in home directory", () => {
+        const cacheDir = getCacheDir();
+
+        expect(cacheDir).toContain(".baseboards");
+        expect(cacheDir).toContain("templates");
+        expect(cacheDir).toContain(os.homedir());
+      });
+    });
+
+    describe("clearCache", () => {
+      test("clears all files from cache directory", async () => {
+        const cacheDir = getCacheDir();
+        // Create test files
+        const file1 = path.join(cacheDir, "template-basic-v0.8.0.tar.gz");
+        const file2 = path.join(cacheDir, "manifest-v0.8.0.json");
+        await fs.ensureDir(cacheDir);
+        await fs.writeFile(file1, "test data 1");
+        await fs.writeFile(file2, "test data 2");
+
+        await clearCache();
+
+        // Verify files are deleted
+        expect(await fs.pathExists(file1)).toBe(false);
+        expect(await fs.pathExists(file2)).toBe(false);
+
+        // Verify directory still exists
+        expect(await fs.pathExists(cacheDir)).toBe(true);
+      });
+
+      test("handles empty cache directory", async () => {
+        await expect(clearCache()).resolves.not.toThrow();
+      });
+    });
+
+    describe("clearTemplateCache", () => {
+      test("clears specific template from cache", async () => {
+        const cacheDir = getCacheDir();
+        const file1 = path.join(cacheDir, "template-basic-v0.8.0.tar.gz");
+        const file2 = path.join(cacheDir, "template-baseboards-v0.8.0.tar.gz");
+        await fs.ensureDir(cacheDir);
+        await fs.writeFile(file1, "test data 1");
+        await fs.writeFile(file2, "test data 2");
+
+        await clearTemplateCache("basic", "0.8.0");
+
+        // Verify only the specified template is deleted
+        expect(await fs.pathExists(file1)).toBe(false);
+        expect(await fs.pathExists(file2)).toBe(true);
+      });
+
+      test("handles clearing non-existent template", async () => {
+        await expect(
+          clearTemplateCache("nonexistent", "0.8.0")
+        ).resolves.not.toThrow();
+      });
+    });
+
+    describe("getCacheSize", () => {
+      test("calculates total cache size", async () => {
+        const cacheDir = getCacheDir();
+        const file1 = path.join(cacheDir, "template-basic-v0.8.0.tar.gz");
+        const file2 = path.join(cacheDir, "manifest-v0.8.0.json");
+        const content1 = "x".repeat(1000);
+        const content2 = "y".repeat(500);
+        await fs.ensureDir(cacheDir);
+        await fs.writeFile(file1, content1);
+        await fs.writeFile(file2, content2);
+
+        const size = await getCacheSize();
+
+        expect(size).toBe(1500);
+      });
+
+      test("returns 0 for empty cache", async () => {
+        const size = await getCacheSize();
+
+        expect(size).toBe(0);
+      });
+    });
+
+    describe("Manifest caching", () => {
+      test("caches manifest after fetching", async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => mockManifest,
+        } as any);
+
+        await fetchTemplateManifest("0.8.0");
+
+        const cacheDir = getCacheDir();
+        const cachedManifestPath = path.join(cacheDir, "manifest-v0.8.0.json");
+        expect(await fs.pathExists(cachedManifestPath)).toBe(true);
+
+        const cachedData = await fs.readJson(cachedManifestPath);
+        expect(cachedData).toEqual(mockManifest);
+      });
+
+      test("uses cached manifest on subsequent calls", async () => {
+        // Pre-populate cache
+        const cacheDir = getCacheDir();
+        const cachedManifestPath = path.join(cacheDir, "manifest-v0.8.0.json");
+        await fs.ensureDir(cacheDir);
+        await fs.writeJson(cachedManifestPath, mockManifest);
+
+        const result = await fetchTemplateManifest("0.8.0");
+
+        // Fetch should not be called if cache is used
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(result).toEqual(mockManifest);
+      });
+
+      test("re-fetches manifest if cached version is corrupted", async () => {
+        // Pre-populate cache with invalid data
+        const cacheDir = getCacheDir();
+        const cachedManifestPath = path.join(cacheDir, "manifest-v0.8.0.json");
+        await fs.ensureDir(cacheDir);
+        await fs.writeFile(cachedManifestPath, "invalid json");
+
+        mockFetch.mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => mockManifest,
+        } as any);
+
+        const result = await fetchTemplateManifest("0.8.0");
+
+        // Should have re-fetched from network
+        expect(mockFetch).toHaveBeenCalled();
+        expect(result).toEqual(mockManifest);
+      });
     });
   });
 });

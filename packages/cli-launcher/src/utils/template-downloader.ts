@@ -14,7 +14,7 @@ import { createHash } from "crypto";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { extract } from "tar";
-import { tmpdir } from "os";
+import { tmpdir, homedir } from "os";
 
 /**
  * Information about a single template
@@ -53,6 +53,29 @@ const GITHUB_RELEASE_BASE =
   "https://github.com/weirdfingers/boards/releases/download";
 
 /**
+ * Get the cache directory path for templates
+ *
+ * @returns Path to cache directory (~/.baseboards/templates/)
+ *
+ * @example
+ * ```typescript
+ * const cacheDir = getCacheDir();
+ * console.log(cacheDir); // ~/.baseboards/templates/
+ * ```
+ */
+export function getCacheDir(): string {
+  return path.join(homedir(), ".baseboards", "templates");
+}
+
+/**
+ * Ensure cache directory exists
+ */
+async function ensureCacheDir(): Promise<void> {
+  const cacheDir = getCacheDir();
+  await fs.ensureDir(cacheDir);
+}
+
+/**
  * Fetch template manifest from GitHub Release
  *
  * @param version - Version string (e.g., "0.8.0") or "latest" for the latest release
@@ -69,6 +92,7 @@ export async function fetchTemplateManifest(
   version: string
 ): Promise<TemplateManifest> {
   let manifestUrl: string;
+  let actualVersion = version;
 
   if (version === "latest") {
     // Fetch latest release version from GitHub API
@@ -94,8 +118,8 @@ export async function fetchTemplateManifest(
       }
 
       const release = (await response.json()) as { tag_name: string };
-      version = release.tag_name.replace(/^v/, ""); // Remove 'v' prefix
-      manifestUrl = `${GITHUB_RELEASE_BASE}/v${version}/template-manifest.json`;
+      actualVersion = release.tag_name.replace(/^v/, ""); // Remove 'v' prefix
+      manifestUrl = `${GITHUB_RELEASE_BASE}/v${actualVersion}/template-manifest.json`;
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to fetch latest release: ${error.message}`);
@@ -103,7 +127,26 @@ export async function fetchTemplateManifest(
       throw error;
     }
   } else {
+    actualVersion = version;
     manifestUrl = `${GITHUB_RELEASE_BASE}/v${version}/template-manifest.json`;
+  }
+
+  // Check cache first
+  await ensureCacheDir();
+  const cacheDir = getCacheDir();
+  const cachedManifestPath = path.join(cacheDir, `manifest-v${actualVersion}.json`);
+
+  if (await fs.pathExists(cachedManifestPath)) {
+    try {
+      const cachedManifest = await fs.readJson(cachedManifestPath);
+      // Validate cached manifest structure
+      if (cachedManifest.version && Array.isArray(cachedManifest.templates)) {
+        return cachedManifest as TemplateManifest;
+      }
+    } catch (error) {
+      // If cache is corrupted, delete it and continue to download
+      await fs.remove(cachedManifestPath);
+    }
   }
 
   // Retry configuration
@@ -121,7 +164,7 @@ export async function fetchTemplateManifest(
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error(
-            `Version ${version} not found. Please check that this version exists in GitHub Releases.`
+            `Version ${actualVersion} not found. Please check that this version exists in GitHub Releases.`
           );
         }
         throw new Error(
@@ -134,6 +177,14 @@ export async function fetchTemplateManifest(
       // Validate manifest structure
       if (!manifest.version || !Array.isArray(manifest.templates)) {
         throw new Error("Invalid manifest structure");
+      }
+
+      // Cache manifest for future use
+      try {
+        await fs.writeJson(cachedManifestPath, manifest, { spaces: 2 });
+      } catch (error) {
+        // Non-critical error - manifest fetched successfully but couldn't cache
+        // Continue without throwing
       }
 
       return manifest;
@@ -247,13 +298,102 @@ export async function downloadTemplate(
       );
     }
 
-    // Construct download URL
-    const downloadUrl = `${GITHUB_RELEASE_BASE}/v${manifest.version}/${template.file}`;
+    // Check cache first
+    await ensureCacheDir();
+    const cacheDir = getCacheDir();
+    const cachedFilePath = path.join(
+      cacheDir,
+      `template-${name}-v${manifest.version}.tar.gz`
+    );
 
-    // Create temporary file
+    let sourceFilePath: string;
+
+    if (await fs.pathExists(cachedFilePath)) {
+      // Verify cached file checksum
+      try {
+        await verifyChecksum(cachedFilePath, template.checksum);
+        sourceFilePath = cachedFilePath;
+      } catch (error) {
+        // Cached file is corrupted, delete it and re-download
+        await fs.remove(cachedFilePath);
+        sourceFilePath = await downloadAndCache(
+          manifest.version,
+          template,
+          cachedFilePath
+        );
+      }
+    } else {
+      // Download and cache
+      sourceFilePath = await downloadAndCache(
+        manifest.version,
+        template,
+        cachedFilePath
+      );
+    }
+
+    // Ensure target directory exists
+    await fs.ensureDir(targetDir);
+
+    // Extract tarball
+    // The tarball contains a directory (e.g., "baseboards/"), so we need to:
+    // 1. Extract to a temporary location
+    // 2. Move the contents to the target directory
     const tempDir = tmpdir();
-    tempFilePath = path.join(tempDir, template.file);
+    const extractTempDir = path.join(tempDir, `extract-${name}-${Date.now()}`);
+    await fs.ensureDir(extractTempDir);
 
+    await extract({
+      file: sourceFilePath,
+      cwd: extractTempDir,
+      strip: 1, // Strip the top-level directory
+    });
+
+    // Move extracted files to target directory
+    const files = await fs.readdir(extractTempDir);
+    for (const file of files) {
+      const srcPath = path.join(extractTempDir, file);
+      const destPath = path.join(targetDir, file);
+      await fs.move(srcPath, destPath, { overwrite: true });
+    }
+
+    // Clean up extraction directory
+    await fs.remove(extractTempDir);
+  } catch (error) {
+    // Ensure we clean up on error
+    if (tempFilePath && (await fs.pathExists(tempFilePath))) {
+      await fs.remove(tempFilePath);
+    }
+
+    throw error;
+  } finally {
+    // Clean up temporary file on success (only if it's not the cached file)
+    if (tempFilePath && (await fs.pathExists(tempFilePath))) {
+      await fs.remove(tempFilePath);
+    }
+  }
+}
+
+/**
+ * Download template tarball and cache it
+ *
+ * @param version - Version string
+ * @param template - Template metadata
+ * @param cachedFilePath - Path where to cache the file
+ * @returns Path to the downloaded file
+ */
+async function downloadAndCache(
+  version: string,
+  template: TemplateInfo,
+  cachedFilePath: string
+): Promise<string> {
+  // Construct download URL
+  const downloadUrl = `${GITHUB_RELEASE_BASE}/v${version}/${template.file}`;
+
+  // Create temporary file for atomic write
+  const tempDir = tmpdir();
+  const tempFilePath = path.join(tempDir, `${template.file}.tmp-${Date.now()}`);
+
+  try {
     // Download tarball
     const response = await fetch(downloadUrl, {
       headers: {
@@ -278,43 +418,131 @@ export async function downloadTemplate(
     // Verify checksum
     await verifyChecksum(tempFilePath, template.checksum);
 
-    // Ensure target directory exists
-    await fs.ensureDir(targetDir);
+    // Move to cache atomically
+    await fs.move(tempFilePath, cachedFilePath, { overwrite: true });
 
-    // Extract tarball
-    // The tarball contains a directory (e.g., "baseboards/"), so we need to:
-    // 1. Extract to a temporary location
-    // 2. Move the contents to the target directory
-    const extractTempDir = path.join(tempDir, `extract-${name}-${Date.now()}`);
-    await fs.ensureDir(extractTempDir);
-
-    await extract({
-      file: tempFilePath,
-      cwd: extractTempDir,
-      strip: 1, // Strip the top-level directory
-    });
-
-    // Move extracted files to target directory
-    const files = await fs.readdir(extractTempDir);
-    for (const file of files) {
-      const srcPath = path.join(extractTempDir, file);
-      const destPath = path.join(targetDir, file);
-      await fs.move(srcPath, destPath, { overwrite: true });
-    }
-
-    // Clean up extraction directory
-    await fs.remove(extractTempDir);
+    return cachedFilePath;
   } catch (error) {
-    // Ensure we clean up on error
-    if (tempFilePath && (await fs.pathExists(tempFilePath))) {
+    // Clean up temporary file on error
+    if (await fs.pathExists(tempFilePath)) {
       await fs.remove(tempFilePath);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Clear entire template cache
+ *
+ * Deletes all cached templates and manifests from ~/.baseboards/templates/
+ * The cache directory itself is preserved.
+ *
+ * @throws Error if cache cannot be cleared (e.g., permission denied)
+ *
+ * @example
+ * ```typescript
+ * await clearCache();
+ * console.log("Cache cleared successfully");
+ * ```
+ */
+export async function clearCache(): Promise<void> {
+  const cacheDir = getCacheDir();
+
+  // Ensure cache directory exists
+  await ensureCacheDir();
+
+  try {
+    // Read all files in cache directory
+    const files = await fs.readdir(cacheDir);
+
+    // Delete each file
+    for (const file of files) {
+      const filePath = path.join(cacheDir, file);
+      const stat = await fs.stat(filePath);
+
+      if (stat.isFile()) {
+        await fs.remove(filePath);
+      }
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to clear cache: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Clear a specific template from cache
+ *
+ * Deletes a specific cached template tarball. Useful for forcing a re-download.
+ *
+ * @param name - Template name (e.g., "baseboards", "basic")
+ * @param version - Version string (e.g., "0.8.0")
+ *
+ * @example
+ * ```typescript
+ * await clearTemplateCache("basic", "0.8.0");
+ * console.log("Template cache cleared");
+ * ```
+ */
+export async function clearTemplateCache(
+  name: string,
+  version: string
+): Promise<void> {
+  const cacheDir = getCacheDir();
+  const cachedFilePath = path.join(cacheDir, `template-${name}-v${version}.tar.gz`);
+
+  try {
+    if (await fs.pathExists(cachedFilePath)) {
+      await fs.remove(cachedFilePath);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to clear template cache: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get total size of template cache
+ *
+ * Calculates the total size of all cached files in bytes.
+ *
+ * @returns Total cache size in bytes
+ *
+ * @example
+ * ```typescript
+ * const sizeBytes = await getCacheSize();
+ * const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
+ * console.log(`Cache size: ${sizeMB} MB`);
+ * ```
+ */
+export async function getCacheSize(): Promise<number> {
+  const cacheDir = getCacheDir();
+
+  // Ensure cache directory exists
+  await ensureCacheDir();
+
+  try {
+    const files = await fs.readdir(cacheDir);
+    let totalSize = 0;
+
+    for (const file of files) {
+      const filePath = path.join(cacheDir, file);
+      const stat = await fs.stat(filePath);
+
+      if (stat.isFile()) {
+        totalSize += stat.size;
+      }
     }
 
-    throw error;
-  } finally {
-    // Clean up temporary file on success
-    if (tempFilePath && (await fs.pathExists(tempFilePath))) {
-      await fs.remove(tempFilePath);
+    return totalSize;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to calculate cache size: ${error.message}`);
     }
+    throw error;
   }
 }
