@@ -341,6 +341,28 @@ export async function getCurrentVersion(dir: string): Promise<string | null> {
 }
 
 /**
+ * Detect package manager from lockfiles in a directory.
+ * Checks for pnpm-lock.yaml, package-lock.json, yarn.lock, or bun.lockb.
+ * Returns 'npm' as default if none are found.
+ */
+export async function detectPackageManager(dir: string): Promise<PackageManager> {
+  if (await fs.pathExists(path.join(dir, "pnpm-lock.yaml"))) {
+    return "pnpm";
+  }
+  if (await fs.pathExists(path.join(dir, "yarn.lock"))) {
+    return "yarn";
+  }
+  if (await fs.pathExists(path.join(dir, "bun.lockb"))) {
+    return "bun";
+  }
+  if (await fs.pathExists(path.join(dir, "package-lock.json"))) {
+    return "npm";
+  }
+  // Default to npm if no lockfile found
+  return "npm";
+}
+
+/**
  * Export execAsync for use in other modules
  */
 export async function execAsync(
