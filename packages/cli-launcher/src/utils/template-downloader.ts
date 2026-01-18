@@ -18,6 +18,84 @@ import { tmpdir, homedir } from "os";
 import ora, { Ora } from "ora";
 
 /**
+ * Base error class for template download errors
+ */
+export class TemplateDownloadError extends Error {
+  constructor(
+    message: string,
+    public cause?: string,
+    public suggestion?: string
+  ) {
+    super(message);
+    this.name = "TemplateDownloadError";
+    // Maintain proper stack trace for where error was thrown (V8 only)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/**
+ * Error thrown when template or version is not found
+ */
+export class TemplateNotFoundError extends TemplateDownloadError {
+  constructor(message: string, cause?: string, suggestion?: string) {
+    super(message, cause, suggestion);
+    this.name = "TemplateNotFoundError";
+  }
+}
+
+/**
+ * Error thrown when network operations fail
+ */
+export class NetworkError extends TemplateDownloadError {
+  constructor(message: string, cause?: string, suggestion?: string) {
+    super(message, cause, suggestion);
+    this.name = "NetworkError";
+  }
+}
+
+/**
+ * Error thrown when checksum verification fails
+ */
+export class ChecksumError extends TemplateDownloadError {
+  constructor(message: string, cause?: string, suggestion?: string) {
+    super(message, cause, suggestion);
+    this.name = "ChecksumError";
+  }
+}
+
+/**
+ * Error thrown when disk space issues occur
+ */
+export class DiskSpaceError extends TemplateDownloadError {
+  constructor(message: string, cause?: string, suggestion?: string) {
+    super(message, cause, suggestion);
+    this.name = "DiskSpaceError";
+  }
+}
+
+/**
+ * Error thrown when permission issues occur
+ */
+export class PermissionError extends TemplateDownloadError {
+  constructor(message: string, cause?: string, suggestion?: string) {
+    super(message, cause, suggestion);
+    this.name = "PermissionError";
+  }
+}
+
+/**
+ * Error thrown when GitHub API rate limit is exceeded
+ */
+export class RateLimitError extends TemplateDownloadError {
+  constructor(message: string, cause?: string, suggestion?: string) {
+    super(message, cause, suggestion);
+    this.name = "RateLimitError";
+  }
+}
+
+/**
  * Information about a single template
  */
 export interface TemplateInfo {
@@ -72,6 +150,130 @@ function formatBytes(bytes: number): string {
 }
 
 /**
+ * Display error message with consistent formatting
+ *
+ * @param error - Error to display
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await downloadTemplate("basic", "0.8.0", "./my-project");
+ * } catch (error) {
+ *   displayError(error);
+ * }
+ * ```
+ */
+export function displayError(error: TemplateDownloadError | Error): void {
+  console.error(`\n❌ Error: ${error.message}`);
+
+  if (error instanceof TemplateDownloadError) {
+    if (error.cause) {
+      console.error(`Cause: ${error.cause}`);
+    }
+
+    if (error.suggestion) {
+      console.error(`\nSuggestion: ${error.suggestion}`);
+    }
+  }
+
+  console.error(); // Empty line
+}
+
+/**
+ * Check if an error is a transient network error that should be retried
+ *
+ * @param error - Error to check
+ * @returns true if error is transient
+ */
+function isTransientError(error: any): boolean {
+  const transientCodes = [
+    "ETIMEDOUT",
+    "ECONNRESET",
+    "ECONNREFUSED",
+    "EPIPE",
+    "ENOTFOUND",
+    "ENETUNREACH",
+    "EAI_AGAIN",
+  ];
+
+  if (error.code && transientCodes.includes(error.code)) {
+    return true;
+  }
+
+  // Check for fetch-specific errors
+  if (error.name === "AbortError" || error.name === "FetchError") {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Handle fetch errors and convert to user-friendly errors
+ *
+ * @param error - Error from fetch operation
+ * @param context - Context string for error message (e.g., "template manifest")
+ * @throws Appropriate TemplateDownloadError subclass
+ */
+function handleFetchError(error: any, context: string): never {
+  // Network errors
+  if (error.code === "ENOTFOUND") {
+    throw new NetworkError(
+      `Failed to download ${context}`,
+      "DNS resolution failed - cannot reach github.com",
+      "Check your internet connection and DNS settings. Verify you can access https://github.com"
+    );
+  }
+
+  if (error.code === "ECONNREFUSED") {
+    throw new NetworkError(
+      `Failed to download ${context}`,
+      "Connection refused",
+      "Check your internet connection and firewall settings"
+    );
+  }
+
+  if (error.code === "ETIMEDOUT") {
+    throw new NetworkError(
+      `Failed to download ${context}`,
+      "Connection timed out",
+      "Check your internet connection. Try again later or check if you're behind a proxy"
+    );
+  }
+
+  if (error.code === "ENETUNREACH") {
+    throw new NetworkError(
+      `Failed to download ${context}`,
+      "Network unreachable",
+      "Check your internet connection and network settings"
+    );
+  }
+
+  if (
+    error.code &&
+    (error.code.startsWith("CERT_") || error.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE")
+  ) {
+    throw new NetworkError(
+      `Failed to download ${context}`,
+      "SSL/TLS certificate verification failed",
+      "Check your system date/time settings. If you're behind a corporate proxy, you may need to configure SSL certificates"
+    );
+  }
+
+  // Generic network error
+  if (isTransientError(error)) {
+    throw new NetworkError(
+      `Failed to download ${context}`,
+      error.message || "Network error occurred",
+      "Check your internet connection and try again"
+    );
+  }
+
+  // Re-throw if not a network error
+  throw error;
+}
+
+/**
  * Get the cache directory path for templates
  *
  * @returns Path to cache directory (~/.baseboards/templates/)
@@ -88,10 +290,23 @@ export function getCacheDir(): string {
 
 /**
  * Ensure cache directory exists
+ * @throws PermissionError if directory cannot be created
  */
 async function ensureCacheDir(): Promise<void> {
   const cacheDir = getCacheDir();
-  await fs.ensureDir(cacheDir);
+
+  try {
+    await fs.ensureDir(cacheDir);
+  } catch (error: any) {
+    if (error.code === "EACCES" || error.code === "EPERM") {
+      throw new PermissionError(
+        "Cannot write to cache directory",
+        `Permission denied: ${cacheDir}`,
+        "Check file permissions or try running with appropriate permissions"
+      );
+    }
+    throw error;
+  }
 }
 
 /**
@@ -126,13 +341,38 @@ export async function fetchTemplateManifest(
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error(
-            "No releases found. Please specify a version explicitly."
+        // Handle rate limiting
+        if (response.status === 403 || response.status === 429) {
+          const resetTime = response.headers.get("x-ratelimit-reset");
+          let suggestion = "Please try again later";
+
+          if (resetTime) {
+            const resetDate = new Date(parseInt(resetTime) * 1000);
+            const minutesUntilReset = Math.ceil(
+              (resetDate.getTime() - Date.now()) / 60000
+            );
+            suggestion = `Please try again in ${minutesUntilReset} minute${minutesUntilReset !== 1 ? "s" : ""}`;
+          }
+
+          throw new RateLimitError(
+            "GitHub API rate limit exceeded",
+            "Too many requests to GitHub API",
+            suggestion
           );
         }
-        throw new Error(
-          `Failed to fetch latest release: ${response.status} ${response.statusText}`
+
+        if (response.status === 404) {
+          throw new TemplateNotFoundError(
+            "No releases found",
+            "No releases exist for this project yet",
+            "Please specify a version explicitly or wait for the first release"
+          );
+        }
+
+        throw new NetworkError(
+          `Failed to fetch latest release`,
+          `HTTP ${response.status}: ${response.statusText}`,
+          "Check your internet connection and try again"
         );
       }
 
@@ -140,10 +380,17 @@ export async function fetchTemplateManifest(
       actualVersion = release.tag_name.replace(/^v/, ""); // Remove 'v' prefix
       manifestUrl = `${GITHUB_RELEASE_BASE}/v${actualVersion}/template-manifest.json`;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to fetch latest release: ${error.message}`);
+      // Re-throw our custom errors
+      if (
+        error instanceof TemplateDownloadError ||
+        error instanceof NetworkError ||
+        error instanceof RateLimitError
+      ) {
+        throw error;
       }
-      throw error;
+
+      // Handle network errors
+      handleFetchError(error, "latest release information");
     }
   } else {
     actualVersion = version;
@@ -181,13 +428,38 @@ export async function fetchTemplateManifest(
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error(
-            `Version ${actualVersion} not found. Please check that this version exists in GitHub Releases.`
+        // Handle rate limiting
+        if (response.status === 403 || response.status === 429) {
+          const resetTime = response.headers.get("x-ratelimit-reset");
+          let suggestion = "Please try again later";
+
+          if (resetTime) {
+            const resetDate = new Date(parseInt(resetTime) * 1000);
+            const minutesUntilReset = Math.ceil(
+              (resetDate.getTime() - Date.now()) / 60000
+            );
+            suggestion = `Please try again in ${minutesUntilReset} minute${minutesUntilReset !== 1 ? "s" : ""}`;
+          }
+
+          throw new RateLimitError(
+            "GitHub API rate limit exceeded",
+            "Too many requests to GitHub API",
+            suggestion
           );
         }
-        throw new Error(
-          `Failed to fetch manifest: ${response.status} ${response.statusText}`
+
+        if (response.status === 404) {
+          throw new TemplateNotFoundError(
+            `Template manifest not found for version ${actualVersion}`,
+            `Version ${actualVersion} may not be released yet`,
+            `Check available versions at: https://github.com/weirdfingers/boards/releases`
+          );
+        }
+
+        throw new NetworkError(
+          `Failed to fetch template manifest`,
+          `HTTP ${response.status}: ${response.statusText}`,
+          "Check your internet connection and try again"
         );
       }
 
@@ -201,27 +473,62 @@ export async function fetchTemplateManifest(
       // Cache manifest for future use
       try {
         await fs.writeJson(cachedManifestPath, manifest, { spaces: 2 });
-      } catch (error) {
-        // Non-critical error - manifest fetched successfully but couldn't cache
-        // Continue without throwing
+      } catch (error: any) {
+        // Non-critical error - check if it's a permission issue
+        if (error.code === "EACCES" || error.code === "EPERM") {
+          // Continue without caching
+        } else if (error.code === "ENOSPC") {
+          // Continue without caching - low disk space
+        }
+        // Otherwise continue without throwing
       }
 
       return manifest;
     } catch (error) {
-      if (attempt === maxRetries) {
-        if (error instanceof Error) {
-          throw new Error(`Failed to fetch template manifest: ${error.message}`);
-        }
+      // Don't retry on non-transient errors
+      if (
+        error instanceof TemplateNotFoundError ||
+        error instanceof RateLimitError
+      ) {
         throw error;
       }
 
-      // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      // On the last attempt, throw the error
+      if (attempt === maxRetries) {
+        if (error instanceof TemplateDownloadError) {
+          throw error;
+        }
+
+        // Handle network errors
+        handleFetchError(error, "template manifest");
+      }
+
+      // Only retry on transient errors
+      if (isTransientError(error)) {
+        // Wait before retrying with exponential backoff
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelay * attempt)
+        );
+      } else {
+        // Non-transient error, throw immediately
+        if (error instanceof Error) {
+          throw new NetworkError(
+            `Failed to fetch template manifest`,
+            error.message,
+            "Check your internet connection and try again"
+          );
+        }
+        throw error;
+      }
     }
   }
 
   // Should never reach here, but TypeScript requires a return
-  throw new Error("Failed to fetch template manifest after all retries");
+  throw new NetworkError(
+    "Failed to fetch template manifest after all retries",
+    "Network error occurred",
+    "Check your internet connection and try again"
+  );
 }
 
 /**
@@ -243,8 +550,10 @@ export async function verifyChecksum(
 ): Promise<boolean> {
   // Validate checksum format
   if (!expectedChecksum.startsWith("sha256:")) {
-    throw new Error(
-      `Invalid checksum format: must start with "sha256:" (got: ${expectedChecksum})`
+    throw new ChecksumError(
+      "Invalid checksum format",
+      `Checksum must start with "sha256:" (got: ${expectedChecksum})`,
+      "This is likely a bug in the template manifest. Please report it at: https://github.com/weirdfingers/boards/issues"
     );
   }
 
@@ -264,11 +573,10 @@ export async function verifyChecksum(
 
       if (actualHash !== expectedHash) {
         reject(
-          new Error(
-            `Checksum mismatch for ${path.basename(filePath)}:\n` +
-              `  Expected: sha256:${expectedHash}\n` +
-              `  Actual:   sha256:${actualHash}\n` +
-              `The file may be corrupted or tampered with.`
+          new ChecksumError(
+            "Template verification failed",
+            "Downloaded file checksum does not match expected value",
+            "The download may have been corrupted. It will be automatically retried."
           )
         );
       } else {
@@ -277,7 +585,9 @@ export async function verifyChecksum(
     });
 
     fileStream.on("error", (error) => {
-      reject(new Error(`Failed to read file for checksum: ${error.message}`));
+      reject(
+        new Error(`Failed to read file for checksum: ${error.message}`)
+      );
     });
   });
 }
@@ -302,6 +612,7 @@ export async function downloadTemplate(
   targetDir: string
 ): Promise<void> {
   let tempFilePath: string | null = null;
+  let extractTempDir: string | null = null;
   const isInteractive = process.stdout.isTTY;
   let spinner: Ora | null = null;
 
@@ -313,9 +624,10 @@ export async function downloadTemplate(
     const template = manifest.templates.find((t) => t.name === name);
     if (!template) {
       const available = manifest.templates.map((t) => t.name).join(", ");
-      throw new Error(
-        `Template "${name}" not found in version ${manifest.version}.\n` +
-          `Available templates: ${available}`
+      throw new TemplateNotFoundError(
+        `Template "${name}" not found in version ${manifest.version}`,
+        `Template "${name}" does not exist in this version`,
+        `Available templates: ${available}`
       );
     }
 
@@ -380,7 +692,25 @@ export async function downloadTemplate(
     }
 
     // Ensure target directory exists
-    await fs.ensureDir(targetDir);
+    try {
+      await fs.ensureDir(targetDir);
+    } catch (error: any) {
+      if (error.code === "EACCES" || error.code === "EPERM") {
+        throw new PermissionError(
+          "Cannot create target directory",
+          `Permission denied: ${targetDir}`,
+          "Check file permissions or choose a different directory"
+        );
+      }
+      if (error.code === "ENOSPC") {
+        throw new DiskSpaceError(
+          "Cannot create target directory",
+          "Not enough disk space",
+          `Free up disk space and try again. Required: ~${formatBytes(template.size)}`
+        );
+      }
+      throw error;
+    }
 
     // Show extraction stage
     if (spinner && isInteractive) {
@@ -394,25 +724,62 @@ export async function downloadTemplate(
     // 1. Extract to a temporary location
     // 2. Move the contents to the target directory
     const tempDir = tmpdir();
-    const extractTempDir = path.join(tempDir, `extract-${name}-${Date.now()}`);
-    await fs.ensureDir(extractTempDir);
+    extractTempDir = path.join(tempDir, `extract-${name}-${Date.now()}`);
 
-    await extract({
-      file: sourceFilePath,
-      cwd: extractTempDir,
-      strip: 1, // Strip the top-level directory
-    });
+    try {
+      await fs.ensureDir(extractTempDir);
+    } catch (error: any) {
+      if (error.code === "ENOSPC") {
+        throw new DiskSpaceError(
+          "Cannot extract template",
+          "Not enough disk space",
+          `Free up disk space and try again. Required: ~${formatBytes(template.size)}`
+        );
+      }
+      throw error;
+    }
+
+    try {
+      await extract({
+        file: sourceFilePath,
+        cwd: extractTempDir,
+        strip: 1, // Strip the top-level directory
+      });
+    } catch (error: any) {
+      throw new Error(
+        `Failed to extract template: ${error.message || "Unknown error"}`
+      );
+    }
 
     // Move extracted files to target directory
-    const files = await fs.readdir(extractTempDir);
-    for (const file of files) {
-      const srcPath = path.join(extractTempDir, file);
-      const destPath = path.join(targetDir, file);
-      await fs.move(srcPath, destPath, { overwrite: true });
+    try {
+      const files = await fs.readdir(extractTempDir);
+      for (const file of files) {
+        const srcPath = path.join(extractTempDir, file);
+        const destPath = path.join(targetDir, file);
+        await fs.move(srcPath, destPath, { overwrite: true });
+      }
+    } catch (error: any) {
+      if (error.code === "EACCES" || error.code === "EPERM") {
+        throw new PermissionError(
+          "Cannot write template files",
+          `Permission denied: ${targetDir}`,
+          "Check file permissions or choose a different directory"
+        );
+      }
+      if (error.code === "ENOSPC") {
+        throw new DiskSpaceError(
+          "Cannot write template files",
+          "Not enough disk space",
+          `Free up disk space and try again. Required: ~${formatBytes(template.size)}`
+        );
+      }
+      throw error;
     }
 
     // Clean up extraction directory
     await fs.remove(extractTempDir);
+    extractTempDir = null;
 
     // Show success
     if (spinner && isInteractive) {
@@ -426,17 +793,22 @@ export async function downloadTemplate(
       spinner.fail("Download failed");
     }
 
-    // Ensure we clean up on error
-    if (tempFilePath && (await fs.pathExists(tempFilePath))) {
-      await fs.remove(tempFilePath);
+    // Clean up on error
+    try {
+      // Clean up partial downloads
+      if (tempFilePath && (await fs.pathExists(tempFilePath))) {
+        await fs.remove(tempFilePath);
+      }
+
+      // Clean up partial extraction
+      if (extractTempDir && (await fs.pathExists(extractTempDir))) {
+        await fs.remove(extractTempDir);
+      }
+    } catch (cleanupError) {
+      // Ignore cleanup errors
     }
 
     throw error;
-  } finally {
-    // Clean up temporary file on success (only if it's not the cached file)
-    if (tempFilePath && (await fs.pathExists(tempFilePath))) {
-      await fs.remove(tempFilePath);
-    }
   }
 }
 
@@ -458,95 +830,251 @@ async function downloadAndCache(
   // Construct download URL
   const downloadUrl = `${GITHUB_RELEASE_BASE}/v${version}/${template.file}`;
 
-  // Create temporary file for atomic write
-  const tempDir = tmpdir();
-  const tempFilePath = path.join(tempDir, `${template.file}.tmp-${Date.now()}`);
+  // Retry configuration for checksum failures
+  const maxChecksumRetries = 2;
 
-  try {
-    // Download tarball
-    const response = await fetch(downloadUrl, {
-      headers: {
-        "User-Agent": "@weirdfingers/baseboards-cli",
-      },
-    });
+  for (let checksumAttempt = 1; checksumAttempt <= maxChecksumRetries; checksumAttempt++) {
+    // Create temporary file for atomic write
+    const tempDir = tmpdir();
+    const tempFilePath = path.join(tempDir, `${template.file}.tmp-${Date.now()}`);
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to download template: ${response.status} ${response.statusText}`
-      );
-    }
+    try {
+      // Download with retry for transient network errors
+      const maxDownloadRetries = 3;
+      let downloadedBytes = 0;
+      let response: Response | null = null;
 
-    if (!response.body) {
-      throw new Error("Response body is empty");
-    }
+      for (let downloadAttempt = 1; downloadAttempt <= maxDownloadRetries; downloadAttempt++) {
+        try {
+          response = await fetch(downloadUrl, {
+            headers: {
+              "User-Agent": "@weirdfingers/baseboards-cli",
+            },
+          });
 
-    // Set up progress tracking
-    const totalBytes = template.size;
-    let downloadedBytes = 0;
-    let lastTime = Date.now();
-    let lastLoaded = 0;
+          if (!response.ok) {
+            // Handle rate limiting
+            if (response.status === 403 || response.status === 429) {
+              const resetTime = response.headers.get("x-ratelimit-reset");
+              let suggestion = "Please try again later";
 
-    // Create transform stream for progress tracking
-    const reader = response.body.getReader();
-    const fileStream = fs.createWriteStream(tempFilePath);
+              if (resetTime) {
+                const resetDate = new Date(parseInt(resetTime) * 1000);
+                const minutesUntilReset = Math.ceil(
+                  (resetDate.getTime() - Date.now()) / 60000
+                );
+                suggestion = `Please try again in ${minutesUntilReset} minute${minutesUntilReset !== 1 ? "s" : ""}`;
+              }
 
-    // Read and track progress
-    while (true) {
-      const { done, value } = await reader.read();
+              throw new RateLimitError(
+                "GitHub API rate limit exceeded",
+                "Too many requests to GitHub API",
+                suggestion
+              );
+            }
 
-      if (done) {
-        break;
-      }
+            if (response.status === 404) {
+              throw new TemplateNotFoundError(
+                `Template file not found`,
+                `File ${template.file} does not exist in version ${version}`,
+                "This version may be incomplete. Try a different version."
+              );
+            }
 
-      // Write chunk to file
-      fileStream.write(value);
-      downloadedBytes += value.length;
+            throw new NetworkError(
+              `Failed to download template`,
+              `HTTP ${response.status}: ${response.statusText}`,
+              "Check your internet connection and try again"
+            );
+          }
 
-      // Update progress
-      if (spinner) {
-        const now = Date.now();
-        const timeDiff = (now - lastTime) / 1000; // seconds
-        const loadedDiff = downloadedBytes - lastLoaded;
+          if (!response.body) {
+            throw new NetworkError(
+              "Failed to download template",
+              "Response body is empty",
+              "Try again later or check if you're behind a proxy"
+            );
+          }
 
-        // Calculate speed (only update every 100ms to avoid too frequent updates)
-        if (timeDiff >= 0.1) {
-          const speed = loadedDiff / timeDiff; // bytes per second
-          const speedStr = formatBytes(speed) + "/s";
-          const percent = Math.round((downloadedBytes / totalBytes) * 100);
-          const currentSize = formatBytes(downloadedBytes);
-          const totalSize = formatBytes(totalBytes);
+          break; // Success, exit retry loop
+        } catch (error) {
+          // Re-throw non-transient errors
+          if (error instanceof TemplateDownloadError) {
+            throw error;
+          }
 
-          spinner.text = `${percent}% (${currentSize} / ${totalSize}) [${speedStr}]`;
+          // On the last attempt, handle the error
+          if (downloadAttempt === maxDownloadRetries) {
+            handleFetchError(error, "template file");
+          }
 
-          lastTime = now;
-          lastLoaded = downloadedBytes;
+          // Retry on transient errors
+          if (isTransientError(error)) {
+            if (spinner) {
+              spinner.text = `Network error, retrying (${downloadAttempt}/${maxDownloadRetries})...`;
+            }
+            await new Promise((resolve) =>
+              setTimeout(resolve, 1000 * downloadAttempt)
+            );
+          } else {
+            // Non-transient error, throw immediately
+            handleFetchError(error, "template file");
+          }
         }
       }
+
+      // At this point, response should be valid
+      if (!response || !response.body) {
+        throw new NetworkError(
+          "Failed to download template",
+          "Could not establish connection",
+          "Check your internet connection and try again"
+        );
+      }
+
+      // Set up progress tracking
+      const totalBytes = template.size;
+      downloadedBytes = 0;
+      let lastTime = Date.now();
+      let lastLoaded = 0;
+
+      // Create transform stream for progress tracking
+      const reader = response.body.getReader();
+      const fileStream = fs.createWriteStream(tempFilePath);
+
+      // Read and track progress
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          // Write chunk to file
+          fileStream.write(value);
+          downloadedBytes += value.length;
+
+          // Update progress
+          if (spinner) {
+            const now = Date.now();
+            const timeDiff = (now - lastTime) / 1000; // seconds
+            const loadedDiff = downloadedBytes - lastLoaded;
+
+            // Calculate speed (only update every 100ms to avoid too frequent updates)
+            if (timeDiff >= 0.1) {
+              const speed = loadedDiff / timeDiff; // bytes per second
+              const speedStr = formatBytes(speed) + "/s";
+              const percent = Math.round((downloadedBytes / totalBytes) * 100);
+              const currentSize = formatBytes(downloadedBytes);
+              const totalSize = formatBytes(totalBytes);
+
+              spinner.text = `${percent}% (${currentSize} / ${totalSize}) [${speedStr}]`;
+
+              lastTime = now;
+              lastLoaded = downloadedBytes;
+            }
+          }
+        }
+      } catch (error: any) {
+        if (error.code === "ENOSPC") {
+          throw new DiskSpaceError(
+            "Failed to save template",
+            "Not enough disk space",
+            `Free up disk space and try again. Required: ~${formatBytes(template.size)}`
+          );
+        }
+        throw error;
+      }
+
+      // Close the file stream
+      await new Promise<void>((resolve, reject) => {
+        fileStream.end(() => resolve());
+        fileStream.on("error", reject);
+      });
+
+      // Verify checksum
+      try {
+        if (spinner) {
+          spinner.text = "Verifying download...";
+        }
+        await verifyChecksum(tempFilePath, template.checksum);
+
+        // Success! Move to cache atomically
+        try {
+          await fs.move(tempFilePath, cachedFilePath, { overwrite: true });
+        } catch (error: any) {
+          if (error.code === "ENOSPC") {
+            throw new DiskSpaceError(
+              "Failed to save template to cache",
+              "Not enough disk space",
+              `Free up disk space and try again. Required: ~${formatBytes(template.size)}`
+            );
+          }
+          if (error.code === "EACCES" || error.code === "EPERM") {
+            throw new PermissionError(
+              "Cannot write to cache directory",
+              `Permission denied: ${cachedFilePath}`,
+              "Check file permissions or try running with appropriate permissions"
+            );
+          }
+          throw error;
+        }
+
+        return cachedFilePath;
+      } catch (error) {
+        // Checksum verification failed
+        if (error instanceof ChecksumError) {
+          if (checksumAttempt < maxChecksumRetries) {
+            // Clean up and retry
+            if (await fs.pathExists(tempFilePath)) {
+              await fs.remove(tempFilePath);
+            }
+
+            if (spinner) {
+              spinner.text = `Checksum verification failed. Retrying download (attempt ${checksumAttempt + 1}/${maxChecksumRetries})...`;
+            } else {
+              console.log(
+                `Checksum verification failed. Retrying download (attempt ${checksumAttempt + 1}/${maxChecksumRetries})...`
+              );
+            }
+
+            // Wait a bit before retrying
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue; // Retry the entire download
+          } else {
+            // Final attempt failed
+            throw new ChecksumError(
+              "Template verification failed",
+              "Downloaded file is corrupted after multiple attempts",
+              "Please try again later. If the problem persists, report it at: https://github.com/weirdfingers/boards/issues"
+            );
+          }
+        }
+
+        throw error;
+      }
+    } catch (error) {
+      // Clean up temporary file on error
+      try {
+        const tempFilePath = path.join(tempDir, `${template.file}.tmp-${Date.now()}`);
+        if (await fs.pathExists(tempFilePath)) {
+          await fs.remove(tempFilePath);
+        }
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+
+      throw error;
     }
-
-    // Close the file stream
-    await new Promise<void>((resolve, reject) => {
-      fileStream.end(() => resolve());
-      fileStream.on("error", reject);
-    });
-
-    // Verify checksum
-    if (spinner) {
-      spinner.text = "Verifying download...";
-    }
-    await verifyChecksum(tempFilePath, template.checksum);
-
-    // Move to cache atomically
-    await fs.move(tempFilePath, cachedFilePath, { overwrite: true });
-
-    return cachedFilePath;
-  } catch (error) {
-    // Clean up temporary file on error
-    if (await fs.pathExists(tempFilePath)) {
-      await fs.remove(tempFilePath);
-    }
-    throw error;
   }
+
+  // Should never reach here
+  throw new ChecksumError(
+    "Template verification failed",
+    "Downloaded file is corrupted after multiple attempts",
+    "Please try again later. If the problem persists, report it at: https://github.com/weirdfingers/boards/issues"
+  );
 }
 
 /**

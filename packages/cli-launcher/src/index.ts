@@ -23,6 +23,10 @@ import { update } from "./commands/update.js";
 import { upgrade } from "./commands/upgrade.js";
 import { doctor } from "./commands/doctor.js";
 import { templates } from "./commands/templates.js";
+import {
+  TemplateDownloadError,
+  displayError,
+} from "./utils/template-downloader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -130,6 +134,12 @@ program
 try {
   await program.parseAsync(process.argv);
 } catch (error: unknown) {
+  // Check if this is a template download error with custom formatting
+  if (error instanceof TemplateDownloadError) {
+    displayError(error);
+    process.exit(1);
+  }
+
   const err = error as { message?: string; stderr?: string };
   // Actual error (not help/version)
   console.error(chalk.red("\n❌ Error:"), err.message || "Unknown error");
