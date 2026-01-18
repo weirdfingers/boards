@@ -40,6 +40,8 @@ services:
       # Explicit paths to configuration files
       - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
       - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
+      # Ensure logs are visible in real-time (no buffering)
+      - PYTHONUNBUFFERED=1
     volumes:
       # Configuration files (read-only)
       - ./config:/app/config:ro
@@ -87,6 +89,8 @@ services:
       - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
       # Internal API URL for worker communication
       - BOARDS_INTERNAL_API_URL=http://api:8800
+      # Ensure logs are visible in real-time (no buffering)
+      - PYTHONUNBUFFERED=1
     volumes:
       # Configuration files (read-only)
       - ./config:/app/config:ro

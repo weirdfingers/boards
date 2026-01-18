@@ -99,7 +99,6 @@ my-app/
 ├─ data/storage/              # Generated media (local storage)
 ├─ docker/                    # Docker Compose configuration
 ├─ compose.yaml
-├─ compose.dev.yaml
 └─ README.md
 ```
 

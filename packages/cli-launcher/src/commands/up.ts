@@ -323,7 +323,6 @@ async function scaffoldProject(ctx: ProjectContext): Promise<void> {
   // Copy root files (compose, docker, README, .gitignore)
   const rootFiles = [
     "compose.yaml",
-    "compose.dev.yaml",
     "README.md",
     ".gitignore",
   ];
@@ -520,9 +519,7 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
 
 function getComposeFiles(ctx: ProjectContext): string[] {
   const composeFiles = ["compose.yaml"];
-  if (ctx.mode === "dev") {
-    composeFiles.push("compose.dev.yaml");
-  }
+  // Note: Web compose overlay handled separately in Phase 4
   return composeFiles;
 }
 
