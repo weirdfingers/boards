@@ -36,11 +36,23 @@ function parseArgs() {
     if (arg === '--help' || arg === '-h') {
       options.help = true;
     } else if (arg === '--version') {
-      options.version = args[++i];
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        throw new Error('Missing value for --version');
+      }
+      options.version = args[i + 1];
+      i++;
     } else if (arg === '--output') {
-      options.output = args[++i];
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        throw new Error('Missing value for --output');
+      }
+      options.output = args[i + 1];
+      i++;
     } else if (arg === '--changelog') {
-      options.changelog = args[++i];
+      if (i + 1 >= args.length || args[i + 1].startsWith('-')) {
+        throw new Error('Missing value for --changelog');
+      }
+      options.changelog = args[i + 1];
+      i++;
     }
   }
 

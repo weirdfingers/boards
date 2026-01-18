@@ -209,6 +209,35 @@ function isTransientError(error: any): boolean {
 }
 
 /**
+ * Create a fetch request with timeout
+ *
+ * @param url - URL to fetch
+ * @param options - Fetch options
+ * @param timeoutMs - Timeout in milliseconds (default: 30000)
+ * @returns Promise resolving to Response
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = 30000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+/**
  * Handle fetch errors and convert to user-friendly errors
  *
  * @param error - Error from fetch operation
@@ -421,7 +450,7 @@ export async function fetchTemplateManifest(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(manifestUrl, {
+      const response = await fetchWithTimeout(manifestUrl, {
         headers: {
           "User-Agent": "@weirdfingers/baseboards-cli",
         },
@@ -846,7 +875,7 @@ async function downloadAndCache(
 
       for (let downloadAttempt = 1; downloadAttempt <= maxDownloadRetries; downloadAttempt++) {
         try {
-          response = await fetch(downloadUrl, {
+          response = await fetchWithTimeout(downloadUrl, {
             headers: {
               "User-Agent": "@weirdfingers/baseboards-cli",
             },
@@ -1057,7 +1086,6 @@ async function downloadAndCache(
     } catch (error) {
       // Clean up temporary file on error
       try {
-        const tempFilePath = path.join(tempDir, `${template.file}.tmp-${Date.now()}`);
         if (await fs.pathExists(tempFilePath)) {
           await fs.remove(tempFilePath);
         }

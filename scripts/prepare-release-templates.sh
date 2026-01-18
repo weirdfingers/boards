@@ -86,6 +86,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$PROJECT_ROOT/dist"
 TEMPLATES_DIR="$DIST_DIR/templates"
+STORAGE_BASE_PATH="/app/data/storage"
 
 log_info "Preparing release templates for version: $VERSION"
 log_info "Project root: $PROJECT_ROOT"
@@ -255,7 +256,7 @@ EOF
     # Verify storage_config.yaml has correct path
     local storage_config="$template_dir/config/storage_config.yaml"
     if [[ -f "$storage_config" ]]; then
-        if grep -q 'base_path: "/app/data/storage"' "$storage_config"; then
+        if grep -q "base_path: \"$STORAGE_BASE_PATH\"" "$storage_config"; then
             log_success "  storage_config.yaml has correct base_path"
         else
             log_warning "  storage_config.yaml may need manual review for base_path"
@@ -300,7 +301,7 @@ prepare_basic_template() {
     # Verify storage_config.yaml path
     local storage_config="$template_dir/config/storage_config.yaml"
     if [[ -f "$storage_config" ]]; then
-        if grep -q 'base_path: "/app/data/storage"' "$storage_config"; then
+        if grep -q "base_path: \"$STORAGE_BASE_PATH\"" "$storage_config"; then
             log_success "  storage_config.yaml has correct base_path"
         else
             log_warning "  storage_config.yaml may need manual review for base_path"

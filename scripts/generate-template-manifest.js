@@ -198,9 +198,17 @@ function parseArgs() {
     if (arg === '--help' || arg === '-h') {
       options.help = true;
     } else if (arg === '--version') {
-      options.version = args[++i];
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --version');
+      }
+      options.version = args[i + 1];
+      i++;
     } else if (arg === '--templates') {
-      const templatesArg = args[++i];
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --templates');
+      }
+      const templatesArg = args[i + 1];
+      i++;
       // Support comma-separated list or glob pattern
       if (templatesArg.includes(',')) {
         options.templates = templatesArg.split(',').map((t) => t.trim());
@@ -213,7 +221,11 @@ function parseArgs() {
         options.templates = matches;
       }
     } else if (arg === '--output') {
-      options.output = args[++i];
+      if (i + 1 >= args.length) {
+        throw new Error('Missing value for --output');
+      }
+      options.output = args[i + 1];
+      i++;
     }
   }
 

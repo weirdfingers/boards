@@ -162,7 +162,9 @@ function isVersionAffected(version: string, affectedRange: string): boolean {
   try {
     return semver.satisfies(version, affectedRange);
   } catch (error) {
-    console.warn(`Invalid semver range: ${affectedRange}`, error);
+    // Swallow invalid semver range errors and treat them as "not affected".
+    // Higher-level callers can implement their own logging or error handling
+    // if they need to surface these issues.
     return false;
   }
 }

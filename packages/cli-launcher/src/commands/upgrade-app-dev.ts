@@ -119,8 +119,19 @@ async function printAppDevUpgradeInstructions(
       console.log(chalk.yellow('⚠️  You have uncommitted changes in web/'));
       console.log(chalk.gray('   Consider committing before updating dependencies.\n'));
     }
-  } catch {
-    // Not a git repo or git not available, skip warning
+  } catch (error: any) {
+    // Only show a message if it's clearly not a git repository or git is missing
+    // Check if .git directory exists to determine the appropriate message
+    const gitDir = path.join(webDir, '.git');
+    if (!fs.existsSync(gitDir)) {
+      console.log(chalk.gray('   Skipping git status check: web/ is not a git repository.'));
+    } else {
+      console.log(
+        chalk.gray(
+          '   Skipping git status check: git is not available or an error occurred while checking repository status.'
+        )
+      );
+    }
   }
 }
 
