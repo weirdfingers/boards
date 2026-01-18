@@ -532,10 +532,22 @@ async function promptForApiKeys(ctx: ProjectContext): Promise<void> {
   }
 }
 
+/**
+ * Get list of compose files to load.
+ * Always loads base compose.yaml (backend services).
+ * Conditionally loads compose.web.yaml (web service overlay).
+ *
+ * @param ctx Project context
+ * @returns Array of compose file names relative to project directory
+ */
 function getComposeFiles(ctx: ProjectContext): string[] {
-  const composeFiles = ["compose.yaml"];
-  // Note: Web compose overlay handled separately in Phase 4
-  return composeFiles;
+  const files = ["compose.yaml"]; // Always load base
+
+  // TODO: In Phase 4, only add compose.web.yaml if NOT --app-dev mode
+  // For now, always add web overlay to run all 5 services
+  files.push("compose.web.yaml");
+
+  return files;
 }
 
 function getComposeBaseArgs(ctx: ProjectContext): string[] {
@@ -554,6 +566,16 @@ function getComposeBaseArgs(ctx: ProjectContext): string[] {
  */
 async function startDockerCompose(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Starting Docker Compose...").start();
+
+  // Check that all compose files exist before starting
+  const composeFiles = getComposeFiles(ctx);
+  for (const file of composeFiles) {
+    const filePath = path.join(ctx.dir, file);
+    if (!fs.existsSync(filePath)) {
+      spinner.fail(`Compose file not found: ${file}`);
+      throw new Error(`Compose file not found: ${file}`);
+    }
+  }
 
   const composeArgs = [
     ...getComposeBaseArgs(ctx),
@@ -598,6 +620,8 @@ async function attachToLogs(ctx: ProjectContext): Promise<void> {
 async function waitForHealthy(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Waiting for services to be healthy...").start();
 
+  // TODO: In Phase 4, exclude "web" service if --app-dev mode
+  // For now, always expect all 5 services (db, cache, api, worker, web)
   const services = ["db", "cache", "api", "worker", "web"];
   const maxWaitMs = 120_000; // 2 minutes
 

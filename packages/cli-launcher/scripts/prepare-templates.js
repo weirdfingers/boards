@@ -235,6 +235,12 @@ fs.copySync(
 console.log("   ✅ compose.yaml");
 
 fs.copySync(
+  path.join(TEMPLATE_SOURCES_DIR, "compose.web.yaml"),
+  path.join(TEMPLATES_DIR, "compose.web.yaml")
+);
+console.log("   ✅ compose.web.yaml");
+
+fs.copySync(
   path.join(TEMPLATE_SOURCES_DIR, ".gitignore"),
   path.join(TEMPLATES_DIR, ".gitignore")
 );
