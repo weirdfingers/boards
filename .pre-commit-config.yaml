@@ -37,14 +37,14 @@ repos:
         name: lint (frontend packages)
         entry: make lint-frontend
         language: system
-        files: ^packages/(frontend|auth-.*)/.*\.(ts|tsx|js|jsx)$
+        files: ^packages/(frontend|auth-.*|cli-launcher)/.*\.(ts|tsx|js|jsx)$
         pass_filenames: false
 
       - id: typecheck-frontend
         name: typecheck (frontend packages)
         entry: make typecheck-frontend
         language: system
-        files: ^packages/(frontend|auth-.*)/.*\.(ts|tsx)$
+        files: ^packages/(frontend|auth-.*|cli-launcher)/.*\.(ts|tsx)$
         pass_filenames: false
 
   # General file checks

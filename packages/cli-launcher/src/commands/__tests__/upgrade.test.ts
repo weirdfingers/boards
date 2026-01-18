@@ -34,6 +34,8 @@ describe('Upgrade Command Flags', () => {
     vi.mocked(utils.execAsync).mockResolvedValue({ stdout: mockTargetVersion, stderr: '' });
     vi.mocked(modeDetection.detectProjectMode).mockResolvedValue('default');
     vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+      fromVersion: mockCurrentVersion,
+      toVersion: mockTargetVersion,
       breaking: false,
       warnings: [],
       requiredActions: [],
@@ -114,6 +116,8 @@ describe('Upgrade Command Flags', () => {
     test('shows warnings and required actions', async () => {
       const mockConsoleLog = vi.spyOn(console, 'log');
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: true,
         warnings: ['⚠️  Warning: Breaking changes detected'],
         requiredActions: ['Run migration manually', 'Update config'],
@@ -141,6 +145,8 @@ describe('Upgrade Command Flags', () => {
 
     test('exits with success even with warnings', async () => {
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: true,
         warnings: ['⚠️  Warning: Breaking changes'],
         requiredActions: [],
@@ -154,6 +160,8 @@ describe('Upgrade Command Flags', () => {
   describe('--force flag', () => {
     test('skips confirmation prompt', async () => {
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: true,
         warnings: [],
         requiredActions: [],
@@ -171,6 +179,8 @@ describe('Upgrade Command Flags', () => {
     test('shows warning when skipping breaking change confirmation', async () => {
       const mockConsoleLog = vi.spyOn(console, 'log');
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: true,
         warnings: [],
         requiredActions: [],
@@ -186,6 +196,8 @@ describe('Upgrade Command Flags', () => {
     test('does not show warning when no breaking changes', async () => {
       const mockConsoleLog = vi.spyOn(console, 'log');
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: false,
         warnings: [],
         requiredActions: [],
@@ -223,6 +235,8 @@ describe('Upgrade Command Flags', () => {
   describe('Normal confirmation flow', () => {
     test('prompts for confirmation when breaking changes and no --force', async () => {
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: true,
         warnings: [],
         requiredActions: [],
@@ -242,6 +256,8 @@ describe('Upgrade Command Flags', () => {
     test('cancels upgrade when user declines', async () => {
       const mockConsoleLog = vi.spyOn(console, 'log');
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: true,
         warnings: [],
         requiredActions: [],
@@ -258,6 +274,8 @@ describe('Upgrade Command Flags', () => {
 
     test('proceeds when no breaking changes', async () => {
       vi.mocked(compatibilityChecker.checkCompatibility).mockResolvedValue({
+        fromVersion: mockCurrentVersion,
+        toVersion: mockTargetVersion,
         breaking: false,
         warnings: [],
         requiredActions: [],

@@ -29,7 +29,7 @@ export async function detectProjectMode(projectDir: string): Promise<ProjectMode
     if (services.includes('web')) {
       return 'default';
     }
-  } catch (error) {
+  } catch {
     // Docker Compose not running or error - fall through to other methods
   }
 
