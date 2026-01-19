@@ -319,6 +319,7 @@ export default function BoardPage() {
           <div className="mb-8">
             <GenerationGrid
               generations={generations}
+              boardId={boardId}
               onGenerationClick={() => {
                 // TODO: Open generation detail modal
               }}
