@@ -193,7 +193,6 @@ export function useMultiUpload(): MultiUploadHook {
                       errorData.detail || `Upload failed: ${xhr.statusText}`
                     )
                   );
-                  // meaningless comment
                 } catch {
                   reject(new Error(`Upload failed: ${xhr.statusText}`));
                 }
