@@ -7,6 +7,7 @@ import {
   useGeneratorSelection,
 } from "@weirdfingers/boards";
 import { GeneratorSelector, GeneratorInfo } from "./GeneratorSelector";
+import { useGeneratorMRU } from "@/hooks/useGeneratorMRU";
 import { ArtifactInputSlots } from "./ArtifactInputSlots";
 
 interface Generation {
@@ -42,6 +43,8 @@ export function GenerationInput({
     setSelectedArtifacts
   } = useGeneratorSelection();
 
+  const { lastUsedGenerator } = useGeneratorMRU();
+
   const [prompt, setPrompt] = useState("");
   const [attachedImage, setAttachedImage] = useState<Generation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -49,10 +52,21 @@ export function GenerationInput({
 
   // Initialize selected generator if not set
   useEffect(() => {
-    if (!selectedGenerator && generators.length > 0) {
-      setSelectedGenerator(generators[0]);
+    if (selectedGenerator || generators.length === 0) {
+      return;
     }
-  }, [generators, selectedGenerator, setSelectedGenerator]);
+
+    // Try to load from MRU
+    if (lastUsedGenerator) {
+      const match = generators.find(g => g.name === lastUsedGenerator);
+      if (match) {
+        setSelectedGenerator(match);
+        return;
+      }
+    }
+
+    setSelectedGenerator(generators[0]);
+  }, [generators, selectedGenerator, setSelectedGenerator, lastUsedGenerator]);
 
   const artifactSlots = useMemo(() => {
     if (!parsedSchema) return [];

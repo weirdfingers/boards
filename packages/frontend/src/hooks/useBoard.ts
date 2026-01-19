@@ -295,6 +295,7 @@ export function useBoard(
 
   // Placeholder implementations for sharing features
   const generateShareLink = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_options: ShareLinkOptions): Promise<ShareLink> => {
       // TODO: Implement share link generation
       throw new Error("Share links not implemented yet");
@@ -303,6 +304,7 @@ export function useBoard(
   );
 
   const revokeShareLink = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_linkId: string): Promise<void> => {
       // TODO: Implement share link revocation
       throw new Error("Share link revocation not implemented yet");

@@ -1,15 +1,16 @@
 "use client";
 
-import { Zap, Check, Search } from "lucide-react";
+import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react";
 import type { JSONSchema7 } from "@weirdfingers/boards";
 import { useGeneratorSelection } from "@weirdfingers/boards";
+import { Zap, Search, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react";
+import { useGeneratorMRU } from "@/hooks/useGeneratorMRU";
 
 export interface GeneratorInfo {
   name: string;
@@ -24,36 +25,19 @@ interface GeneratorSelectorProps {
   onSelect: (generator: GeneratorInfo) => void;
 }
 
-const MRU_STORAGE_KEY = "boards-generator-mru";
-const MRU_MAX_SIZE = 3;
-
 export function GeneratorSelector({
   generators,
   selectedGenerator,
   onSelect,
 }: GeneratorSelectorProps) {
   const { setSelectedGenerator } = useGeneratorSelection();
+  const { mruGenerators, addGeneratorToMRU } = useGeneratorMRU();
+
   const [searchInput, setSearchInput] = useState("");
   const deferredSearch = useDeferredValue(searchInput);
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
-  const [mruGenerators, setMruGenerators] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Load MRU from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(MRU_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setMruGenerators(parsed);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load MRU generators:", error);
-    }
-  }, []);
 
   // Focus search input when dropdown opens
   useEffect(() => {
@@ -123,7 +107,7 @@ export function GeneratorSelector({
 
   const getGeneratorIcon = (name: string) => {
     // You can customize icons per generator here
-    return <Zap className="w-4 h-4" />;
+    return <Zap className="w-4 h-4" aria-label={name} />;
   };
 
   const handleSelect = (generator: GeneratorInfo) => {
@@ -132,17 +116,7 @@ export function GeneratorSelector({
     onSelect(generator);
 
     // Update MRU
-    const newMru = [
-      generator.name,
-      ...mruGenerators.filter((name) => name !== generator.name),
-    ].slice(0, MRU_MAX_SIZE);
-
-    setMruGenerators(newMru);
-    try {
-      localStorage.setItem(MRU_STORAGE_KEY, JSON.stringify(newMru));
-    } catch (error) {
-      console.error("Failed to save MRU generators:", error);
-    }
+    addGeneratorToMRU(generator.name);
   };
 
   const toggleType = (type: string) => {
