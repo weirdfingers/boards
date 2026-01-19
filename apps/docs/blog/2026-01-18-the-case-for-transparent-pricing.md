@@ -7,6 +7,8 @@ tags: [philosophy, pricing, transparency, user-rights]
 
 # The Case for Transparent Pricing in AI Generation
 
+Most AI creative tools rely on opaque subscription tiers and confusing credit systems that obscure the actual cost of generation. This article argues that these models are fundamentally adversarial to users. We propose an open-source alternative: unbundling the interface from the infrastructure, allowing creators to bring their own keys and pay wholesale rates directly to providers.
+
 ## The subscription credit shell game
 
 Open any AI image generation platform today and you'll find a familiar pattern: subscription tiers with "credits" that translate to generations through formulas that would make a derivatives trader squint.
@@ -69,17 +71,21 @@ Per-transaction pricing—where you pay the actual cost of each generation, clea
 
 **No use-it-or-lose-it pressure.** You're not racing to extract value from a subscription before it renews. You're not generating images you don't need because you have "credits left over." You generate when you have something to generate.
 
-## The pass-through model: even more transparent
+## The unbundled alternative: open source software
 
-Boards takes this further. Rather than setting our own per-transaction prices, we use a **pass-through model**: you bring your own API keys to providers like Replicate, FAL, and others. You pay them directly at their published rates.
+The real value that creative platforms provide is "the board"—an abstraction manifest as a user interface that lets you organize assets and create new ones.
+
+Boards is an open-source version of that same value proposition. It is not a service or a subscription; it is software you run yourself. Because it is code, there is no markup. We don't charge anything because we aren't selling anything.
+
+Instead, Boards enables **direct wholesale access** to the best AI models. You establish an account with providers like FAL, KIE, or Replicate, and bring your own API keys.
 
 This means:
 
-- **No markup.** We don't sit between you and the provider extracting margin.
-- **No metering.** We don't track your usage to optimize our pricing against you.
-- **No surprises.** Provider pricing is published and auditable. If FAL charges $0.03 for an image, you pay FAL $0.03.
+- **Wholesale pricing.** You pay providers directly at their published API rates.
+- **Zero markup.** The software is free. You only pay for the compute you use.
+- **Privacy.** Your keys are stored locally on your machine. We never see them.
 
-We've intentionally removed ourselves from the financial transaction. Our incentive is to make the software useful, not to maximize your generation volume.
+We've removed ourselves from the financial transaction entirely. Our goal is to build the best interface for creation, not to arbitrage your compute usage.
 
 ## "But subscription pricing is more predictable"
 
@@ -121,7 +127,7 @@ The thread connecting these practices is the same: **the platform's interests ov
 
 Boards is built on a different premise: **you should know what you're paying, what you're getting, and what happens to it afterward.**
 
-- **Pricing:** Pass-through to providers. No markup, no metering, no credit abstraction.
+- **Pricing:** Wholesale direct to providers. No markup because we are open source code, not a billing entity.
 - **Storage:** Your filesystem or your cloud bucket. Not ours.
 - **Training:** We don't see your generations. We can't train on what we don't have.
 - **Export:** Your data is already local. There's nothing to export.
