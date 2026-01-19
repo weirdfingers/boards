@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   useGeneratorSelection,
 } from "@weirdfingers/boards";
-import { GeneratorSelector, GeneratorInfo } from "./GeneratorSelector";
+import { GeneratorSelector, GeneratorInfo, MRU_STORAGE_KEY } from "./GeneratorSelector";
 import { ArtifactInputSlots } from "./ArtifactInputSlots";
 
 interface Generation {
@@ -49,9 +49,29 @@ export function GenerationInput({
 
   // Initialize selected generator if not set
   useEffect(() => {
-    if (!selectedGenerator && generators.length > 0) {
-      setSelectedGenerator(generators[0]);
+    if (selectedGenerator || generators.length === 0) {
+      return;
     }
+
+    // Try to load from MRU
+    try {
+      const stored = localStorage.getItem(MRU_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const lastUsedName = parsed[0];
+          const lastUsedGenerator = generators.find(g => g.name === lastUsedName);
+          if (lastUsedGenerator) {
+            setSelectedGenerator(lastUsedGenerator);
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load MRU generator preference:", e);
+    }
+
+    setSelectedGenerator(generators[0]);
   }, [generators, selectedGenerator, setSelectedGenerator]);
 
   const artifactSlots = useMemo(() => {

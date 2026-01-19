@@ -24,7 +24,7 @@ interface GeneratorSelectorProps {
   onSelect: (generator: GeneratorInfo) => void;
 }
 
-const MRU_STORAGE_KEY = "boards-generator-mru";
+export const MRU_STORAGE_KEY = "boards-generator-mru";
 const MRU_MAX_SIZE = 3;
 
 export function GeneratorSelector({
