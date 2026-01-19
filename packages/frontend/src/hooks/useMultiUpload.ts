@@ -182,7 +182,7 @@ export function useMultiUpload(): MultiUploadHook {
                     artifactType: data.artifactType as ArtifactType,
                     generatorName: data.generatorName,
                   });
-                } catch (err) {
+                } catch {
                   reject(new Error("Failed to parse response"));
                 }
               } else {

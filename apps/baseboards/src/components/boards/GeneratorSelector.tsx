@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react";
 import type { JSONSchema7 } from "@weirdfingers/boards";
 import { useGeneratorSelection } from "@weirdfingers/boards";
+import { Zap, Search, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,7 @@ export function GeneratorSelector({
 }: GeneratorSelectorProps) {
   const { setSelectedGenerator } = useGeneratorSelection();
   const { mruGenerators, addGeneratorToMRU } = useGeneratorMRU();
-  
+
   const [searchInput, setSearchInput] = useState("");
   const deferredSearch = useDeferredValue(searchInput);
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
@@ -106,7 +107,7 @@ export function GeneratorSelector({
 
   const getGeneratorIcon = (name: string) => {
     // You can customize icons per generator here
-    return <Zap className="w-4 h-4" />;
+    return <Zap className="w-4 h-4" aria-label={name} />;
   };
 
   const handleSelect = (generator: GeneratorInfo) => {

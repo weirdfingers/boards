@@ -20,7 +20,6 @@ export default function BoardPage() {
 
   const {
     board,
-    loading: boardLoading,
     error: boardError,
     refresh: refreshBoard,
     updateBoard,

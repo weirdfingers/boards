@@ -65,7 +65,7 @@ export function ArtifactInputSlots({
         e.dataTransfer.dropEffect = "copy";
         setDragOverSlot(slotName);
       }
-    } catch (err) {
+    } catch {
       // Ignore errors during drag over
     }
   };

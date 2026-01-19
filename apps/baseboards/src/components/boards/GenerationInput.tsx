@@ -42,7 +42,7 @@ export function GenerationInput({
     selectedArtifacts,
     setSelectedArtifacts
   } = useGeneratorSelection();
-  
+
   const { lastUsedGenerator } = useGeneratorMRU();
 
   const [prompt, setPrompt] = useState("");

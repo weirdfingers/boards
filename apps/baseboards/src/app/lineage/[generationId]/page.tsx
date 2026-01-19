@@ -140,6 +140,7 @@ function AncestryTree({ node, currentGenerationId }: AncestryTreeProps) {
             </p>
           </div>
           {node.generation.thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={node.generation.thumbnailUrl}
               alt="Thumbnail"
@@ -208,6 +209,7 @@ function DescendantTree({ node, currentGenerationId }: DescendantTreeProps) {
             </p>
           </div>
           {node.generation.thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={node.generation.thumbnailUrl}
               alt="Thumbnail"
