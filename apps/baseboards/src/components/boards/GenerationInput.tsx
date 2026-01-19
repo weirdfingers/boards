@@ -6,7 +6,8 @@ import Image from "next/image";
 import {
   useGeneratorSelection,
 } from "@weirdfingers/boards";
-import { GeneratorSelector, GeneratorInfo, MRU_STORAGE_KEY } from "./GeneratorSelector";
+import { GeneratorSelector, GeneratorInfo } from "./GeneratorSelector";
+import { useGeneratorMRU } from "@/hooks/useGeneratorMRU";
 import { ArtifactInputSlots } from "./ArtifactInputSlots";
 
 interface Generation {
@@ -41,6 +42,8 @@ export function GenerationInput({
     selectedArtifacts,
     setSelectedArtifacts
   } = useGeneratorSelection();
+  
+  const { lastUsedGenerator } = useGeneratorMRU();
 
   const [prompt, setPrompt] = useState("");
   const [attachedImage, setAttachedImage] = useState<Generation | null>(null);
@@ -54,25 +57,16 @@ export function GenerationInput({
     }
 
     // Try to load from MRU
-    try {
-      const stored = localStorage.getItem(MRU_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const lastUsedName = parsed[0];
-          const lastUsedGenerator = generators.find(g => g.name === lastUsedName);
-          if (lastUsedGenerator) {
-            setSelectedGenerator(lastUsedGenerator);
-            return;
-          }
-        }
+    if (lastUsedGenerator) {
+      const match = generators.find(g => g.name === lastUsedGenerator);
+      if (match) {
+        setSelectedGenerator(match);
+        return;
       }
-    } catch (e) {
-      console.error("Failed to load MRU generator preference:", e);
     }
 
     setSelectedGenerator(generators[0]);
-  }, [generators, selectedGenerator, setSelectedGenerator]);
+  }, [generators, selectedGenerator, setSelectedGenerator, lastUsedGenerator]);
 
   const artifactSlots = useMemo(() => {
     if (!parsedSchema) return [];
