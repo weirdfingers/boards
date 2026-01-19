@@ -146,22 +146,58 @@ copy_template_structure() {
     local src="$1"
     local dest="$2"
     local template_name="$3"
+    local type="${4:-web}"  # Default to 'web', can be 'api' or 'web'
 
     log_info "Copying $template_name template from $src"
 
     # Create destination directory
     mkdir -p "$dest"
 
-    # Copy all files except build artifacts and dependencies
-    rsync -a \
-        --exclude='.next' \
-        --exclude='node_modules' \
-        --exclude='dist' \
-        --exclude='build' \
-        --exclude='.turbo' \
-        --exclude='*.tsbuildinfo' \
-        --exclude='.DS_Store' \
-        "$src/" "$dest/"
+    # Base exclusions (common to all types)
+    local base_excludes=(
+        --exclude='.DS_Store'
+        --exclude='.env'
+        --exclude='.env.local'
+    )
+
+    # Type-specific exclusions
+    if [[ "$type" == "api" ]]; then
+        # Python/backend exclusions
+        local excludes=(
+            "${base_excludes[@]}"
+            --exclude='.venv'
+            --exclude='__pycache__'
+            --exclude='*.pyc'
+            --exclude='.pytest_cache'
+            --exclude='.ruff_cache'
+            --exclude='build'
+            --exclude='dist'
+            --exclude='*.egg-info'
+            --exclude='uv.lock'
+            --exclude='tests'
+            --exclude='test_*.py'
+            --exclude='pytest.ini'
+            --exclude='MANIFEST.in'
+            --exclude='pyrightconfig.json'
+            --exclude='baseline-config'
+            --exclude='example-config'
+            --exclude='examples'
+        )
+    else
+        # Node.js/frontend exclusions
+        local excludes=(
+            "${base_excludes[@]}"
+            --exclude='.next'
+            --exclude='node_modules'
+            --exclude='dist'
+            --exclude='build'
+            --exclude='.turbo'
+            --exclude='*.tsbuildinfo'
+        )
+    fi
+
+    # Copy all files with appropriate exclusions
+    rsync -a "${excludes[@]}" "$src/" "$dest/"
 
     log_success "  Copied $template_name template structure"
 }
@@ -180,6 +216,64 @@ prepare_baseboards_template() {
 
     # Transform workspace dependencies
     transform_package_json "$web_dir/package.json" "$VERSION"
+
+    # Create minimal API directory (just config files, no source code)
+    # The backend runs from pre-built Docker images, so source code is not needed
+    log_info "  Creating minimal API directory..."
+    local api_dir="$template_dir/api"
+    mkdir -p "$api_dir"
+
+    # Copy API environment file
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" "$api_dir/.env.example"
+        log_success "  Copied api/.env.example"
+    else
+        log_error "api-env.example not found"
+        exit 1
+    fi
+
+    # Copy Dockerfile (optional, for users who want to build from source)
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" "$api_dir/Dockerfile"
+        log_success "  Copied api/Dockerfile"
+    fi
+
+    # Create a README explaining the setup
+    cat > "$api_dir/README.md" << 'EOF'
+# Backend API Directory
+
+This directory contains environment configuration for the Boards backend services.
+
+## Pre-built Docker Images
+
+By default, Baseboards uses pre-built Docker images from GitHub Container Registry:
+- `ghcr.io/weirdfingers/boards-backend:latest`
+
+This means:
+- **No build time** - services start immediately
+- **Verified releases** - you get the tested, published backend version
+- **Automatic updates** - pull the latest image to get updates
+
+## Configuration
+
+Edit `api/.env` to configure:
+- API keys for image generation providers (Replicate, Fal, OpenAI, etc.)
+- JWT secrets for authentication
+- Other environment variables
+
+See `.env.example` for all available options.
+
+## Building from Source (Advanced)
+
+If you need to customize the backend Python code:
+
+1. Get the source code from: https://github.com/weirdfingers/boards/tree/main/packages/backend
+2. Update `compose.yaml` to build from source instead of using pre-built images
+3. Place the backend source code in this directory
+
+This is **not recommended** for most users. The pre-built images are the supported path.
+EOF
+    log_success "  Created api/README.md"
 
     # Copy shared template files from basic-template
     log_info "  Copying shared template files..."
@@ -221,6 +315,16 @@ prepare_baseboards_template() {
         cat > "$template_dir/.gitignore" << 'EOF'
 # Dependencies
 node_modules/
+__pycache__/
+*.pyc
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Python virtual environments
+.venv/
+venv/
+*.egg-info/
 
 # Build outputs
 .next/
@@ -233,12 +337,23 @@ build/
 .env
 .env.local
 
-# Storage
+# Storage (keep directory structure, ignore uploaded files)
 data/storage/*
 !data/storage/.gitkeep
 
+# Testing & caching
+.pytest_cache/
+.ruff_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
 # OS files
 .DS_Store
+Thumbs.db
 EOF
     else
         # Append storage pattern if not present
@@ -279,6 +394,63 @@ prepare_basic_template() {
 
     # Update version in package.json
     transform_package_json "$template_dir/web/package.json" "$VERSION"
+
+    # Create minimal API directory (required by compose.yaml)
+    log_info "  Creating minimal API directory..."
+    local api_dir="$template_dir/api"
+    mkdir -p "$api_dir"
+
+    # Copy API environment file
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" "$api_dir/.env.example"
+        log_success "  Copied api/.env.example"
+    else
+        log_error "api-env.example not found"
+        exit 1
+    fi
+
+    # Copy Dockerfile (optional, for users who want to build from source)
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" "$api_dir/Dockerfile"
+        log_success "  Copied api/Dockerfile"
+    fi
+
+    # Create a README explaining the setup
+    cat > "$api_dir/README.md" << 'EOF'
+# Backend API Directory
+
+This directory contains environment configuration for the Boards backend services.
+
+## Pre-built Docker Images
+
+By default, Baseboards uses pre-built Docker images from GitHub Container Registry:
+- `ghcr.io/weirdfingers/boards-backend:latest`
+
+This means:
+- **No build time** - services start immediately
+- **Verified releases** - you get the tested, published backend version
+- **Automatic updates** - pull the latest image to get updates
+
+## Configuration
+
+Edit `api/.env` to configure:
+- API keys for image generation providers (Replicate, Fal, OpenAI, etc.)
+- JWT secrets for authentication
+- Other environment variables
+
+See `.env.example` for all available options.
+
+## Building from Source (Advanced)
+
+If you need to customize the backend Python code:
+
+1. Get the source code from: https://github.com/weirdfingers/boards/tree/main/packages/backend
+2. Update `compose.yaml` to build from source instead of using pre-built images
+3. Place the backend source code in this directory
+
+This is **not recommended** for most users. The pre-built images are the supported path.
+EOF
+    log_success "  Created api/README.md"
 
     # Verify extensions directories exist
     if [[ ! -d "$template_dir/extensions/generators" ]]; then
