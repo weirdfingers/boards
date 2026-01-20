@@ -818,18 +818,24 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
       );
     } else {
       console.log(
+        chalk.red(
+          "\n❌ Database migrations failed"
+        )
+      );
+      console.log(chalk.gray("\n   Error details:"));
+      console.log(chalk.gray("   " + errorMessage));
+      console.log(
         chalk.yellow(
-          "\n⚠️  Database migrations failed. You may need to run them manually:"
+          "\n   You can try running migrations manually:"
         )
       );
       console.log(
         chalk.cyan("   docker compose exec api alembic upgrade head")
       );
-      console.log(chalk.gray("\n   Error details:"));
-      console.log(chalk.gray("   " + errorMessage));
     }
 
-    // Don't throw - app can still start
+    // Migrations are critical - throw to fail the initialization
+    throw new Error("Database migrations failed");
   }
 }
 
