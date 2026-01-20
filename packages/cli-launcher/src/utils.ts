@@ -128,7 +128,9 @@ export async function assertPrerequisites(): Promise<void> {
  */
 export function isScaffolded(dir: string): boolean {
   // Check for key files that indicate scaffolding
-  const keyFiles = ["compose.yaml", "web/package.json", "api/pyproject.toml"];
+  // Note: We check for docker/env.example (template file) rather than api/pyproject.toml
+  // because released templates use pre-built Docker images without backend source code
+  const keyFiles = ["compose.yaml", "web/package.json", "docker/env.example"];
 
   return keyFiles.every((file) => fs.existsSync(path.join(dir, file)));
 }

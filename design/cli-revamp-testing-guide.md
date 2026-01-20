@@ -794,6 +794,28 @@ sudo usermod -aG docker $USER
 # Log out and back in
 ```
 
+**Generator dependency errors (ModuleNotFoundError):**
+
+If you see errors like `ModuleNotFoundError: No module named 'fal_client'` in worker logs:
+
+```bash
+# This indicates the Docker image lacks generator dependencies
+# FIXED: As of 2026-01-20, the Dockerfile now includes all generator extras
+
+# If testing with an older image, you can:
+# 1. Build the updated image locally:
+cd packages/backend
+docker build -t boards-backend:local .
+
+# 2. Update your project's compose.yaml to use the local image:
+#    Change: ghcr.io/weirdfingers/boards-backend:latest
+#    To: boards-backend:local
+
+# 3. Restart services:
+npx @weirdfingers/baseboards down your-project-name --volumes
+npx @weirdfingers/baseboards up your-project-name
+```
+
 ---
 
 ## Reporting Results

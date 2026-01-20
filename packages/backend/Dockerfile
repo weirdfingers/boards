@@ -20,8 +20,9 @@ COPY pyproject.toml uv.lock ./
 
 # Install dependencies (production only, no dev dependencies)
 # Using --frozen to ensure reproducible builds
+# Install with all generator and storage extras for out-of-box functionality
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-dev --no-install-project --extra all
 
 # Copy source code and build artifacts
 COPY src ./src
@@ -31,8 +32,9 @@ COPY README.md ./
 COPY MANIFEST.in ./
 
 # Install the package itself in the virtual environment
+# Include all generator and storage extras for complete functionality
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --frozen --no-dev --extra all
 
 # Runtime stage - minimal production image
 FROM python:3.12-slim AS runtime
