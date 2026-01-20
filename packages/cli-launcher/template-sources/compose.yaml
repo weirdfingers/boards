@@ -36,7 +36,8 @@ services:
       - api/.env
     environment:
       # Enable loading custom generators and plugins from /app/extensions
-      - PYTHONPATH=/app:/app/extensions
+      # Include /app/src for the boards module (from Docker image)
+      - PYTHONPATH=/app/src:/app/extensions
       # Explicit paths to configuration files
       - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
       - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml
@@ -83,7 +84,8 @@ services:
       - api/.env
     environment:
       # Enable loading custom generators and plugins from /app/extensions
-      - PYTHONPATH=/app:/app/extensions
+      # Include /app/src for the boards module (from Docker image)
+      - PYTHONPATH=/app/src:/app/extensions
       # Explicit paths to configuration files
       - BOARDS_GENERATORS_CONFIG_PATH=/app/config/generators.yaml
       - BOARDS_STORAGE_CONFIG_PATH=/app/config/storage_config.yaml

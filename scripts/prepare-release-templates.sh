@@ -156,6 +156,7 @@ copy_template_structure() {
     # Base exclusions (common to all types)
     local base_excludes=(
         --exclude='.DS_Store'
+        --exclude='._*'
         --exclude='.env'
         --exclude='.env.local'
     )
@@ -213,6 +214,12 @@ prepare_baseboards_template() {
 
     # Copy baseboards app to web/ directory
     copy_template_structure "$PROJECT_ROOT/apps/baseboards" "$web_dir" "baseboards"
+
+    # Copy web environment file
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/web-env.example" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/web-env.example" "$web_dir/.env.example"
+        log_success "  Copied web/.env.example"
+    fi
 
     # Transform workspace dependencies
     transform_package_json "$web_dir/package.json" "$VERSION"
@@ -275,12 +282,12 @@ This is **not recommended** for most users. The pre-built images are the support
 EOF
     log_success "  Created api/README.md"
 
-    # Copy shared template files from basic-template
+    # Copy shared template files from template-sources
     log_info "  Copying shared template files..."
-    cp "$PROJECT_ROOT/packages/cli-launcher/basic-template/compose.yaml" "$template_dir/"
-    cp "$PROJECT_ROOT/packages/cli-launcher/basic-template/compose.web.yaml" "$template_dir/"
-    cp "$PROJECT_ROOT/packages/cli-launcher/basic-template/Dockerfile.web" "$template_dir/"
-    cp "$PROJECT_ROOT/packages/cli-launcher/basic-template/README.md" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/compose.yaml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/compose.web.yaml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.web" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/README.md" "$template_dir/"
 
     # Copy config directory
     mkdir -p "$template_dir/config"
@@ -491,6 +498,9 @@ create_tarballs() {
 
     cd "$TEMPLATES_DIR"
 
+    # Set COPYFILE_DISABLE to prevent macOS from including ._* (AppleDouble) files
+    export COPYFILE_DISABLE=1
+
     # Create baseboards tarball
     log_info "  Creating template-baseboards-v${VERSION}.tar.gz..."
     tar -czf "$DIST_DIR/template-baseboards-v${VERSION}.tar.gz" baseboards/
@@ -501,6 +511,7 @@ create_tarballs() {
     tar -czf "$DIST_DIR/template-basic-v${VERSION}.tar.gz" basic/
     log_success "  Created template-basic-v${VERSION}.tar.gz"
 
+    unset COPYFILE_DISABLE
     cd "$PROJECT_ROOT"
 }
 
