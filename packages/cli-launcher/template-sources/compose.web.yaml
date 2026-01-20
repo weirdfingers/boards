@@ -15,6 +15,9 @@ services:
     build:
       context: ./web
       dockerfile: ../Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8800}
+        NEXT_PUBLIC_GRAPHQL_URL: ${NEXT_PUBLIC_GRAPHQL_URL:-http://localhost:8800/graphql}
     env_file: web/.env
     environment:
       - INTERNAL_API_URL=http://api:8800

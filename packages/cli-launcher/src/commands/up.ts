@@ -766,7 +766,7 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Running database migrations...").start();
 
   try {
-    await execa(
+    const { stdout } = await execa(
       "docker",
       [
         ...getComposeBaseArgs(ctx),
@@ -781,7 +781,27 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
         cwd: ctx.dir,
       }
     );
+
+    // Show migration output in debug mode or if there were changes
+    if (stdout && (stdout.includes("Running upgrade") || process.env.DEBUG)) {
+      console.log(chalk.gray("\n   Migration output:"));
+      console.log(chalk.gray("   " + stdout.split("\n").join("\n   ")));
+    }
+
     spinner.succeed("Database migrations complete");
+
+    // Restart API to ensure it picks up new schema
+    spinner.start("Restarting API to apply migrations...");
+    await execa(
+      "docker",
+      [...getComposeBaseArgs(ctx), "restart", "api"],
+      {
+        cwd: ctx.dir,
+      }
+    );
+    // Give API a moment to start up cleanly
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    spinner.succeed("API restarted");
   } catch (error) {
     spinner.fail("Database migrations failed");
 
