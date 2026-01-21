@@ -8,6 +8,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import type { DownOptions } from '../types.js';
 import { isScaffolded } from '../utils.js';
+import { getComposeBaseArgs } from '../utils/compose.js';
 
 export async function down(directory: string, options: DownOptions): Promise<void> {
   const dir = path.resolve(process.cwd(), directory);
@@ -20,7 +21,7 @@ export async function down(directory: string, options: DownOptions): Promise<voi
 
   const spinner = ora('Stopping services...').start();
 
-  const args = ['compose', 'down'];
+  const args = [...getComposeBaseArgs(dir), 'down'];
   if (options.volumes) {
     args.push('--volumes');
   }

@@ -6,6 +6,7 @@ import { execa } from 'execa';
 import path from 'path';
 import chalk from 'chalk';
 import { isScaffolded } from '../utils.js';
+import { getComposeBaseArgs } from '../utils/compose.js';
 
 export async function status(directory: string): Promise<void> {
   const dir = path.resolve(process.cwd(), directory);
@@ -19,7 +20,7 @@ export async function status(directory: string): Promise<void> {
   console.log(chalk.blue.bold('\n📊 Service Status\n'));
 
   try {
-    await execa('docker', ['compose', 'ps'], {
+    await execa('docker', [...getComposeBaseArgs(dir), 'ps'], {
       cwd: dir,
       stdio: 'inherit',
     });

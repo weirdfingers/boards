@@ -9,6 +9,7 @@ import ora from 'ora';
 import prompts from 'prompts';
 import type { CleanOptions } from '../types.js';
 import { isScaffolded } from '../utils.js';
+import { getComposeBaseArgs } from '../utils/compose.js';
 
 export async function clean(
   directory: string,
@@ -45,14 +46,14 @@ export async function clean(
 
   try {
     // Stop containers
-    await execa('docker', ['compose', 'down', '--volumes', '--remove-orphans'], {
+    await execa('docker', [...getComposeBaseArgs(dir), 'down', '--volumes', '--remove-orphans'], {
       cwd: dir,
     });
 
     if (options.hard) {
       // Remove images
       try {
-        const { stdout } = await execa('docker', ['compose', 'images', '-q'], {
+        const { stdout } = await execa('docker', [...getComposeBaseArgs(dir), 'images', '-q'], {
           cwd: dir,
         });
 

@@ -7,6 +7,7 @@ import path from 'path';
 import chalk from 'chalk';
 import type { LogsOptions } from '../types.js';
 import { isScaffolded } from '../utils.js';
+import { getComposeBaseArgs } from '../utils/compose.js';
 
 export async function logs(
   directory: string,
@@ -21,7 +22,7 @@ export async function logs(
     process.exit(1);
   }
 
-  const args = ['compose', 'logs'];
+  const args = [...getComposeBaseArgs(dir), 'logs'];
 
   if (options.follow) {
     args.push('--follow');
