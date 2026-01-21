@@ -200,22 +200,28 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     monorepoRoot = detectedRoot;
   }
 
-  // Step 2.5: Determine template to use
+  // Check if project is already scaffolded before prompting for template
+  const alreadyScaffolded = isScaffolded(dir);
+
+  // Step 2.5: Determine template to use (only needed for new projects)
   let selectedTemplate: string;
 
-  if (options.template) {
+  if (alreadyScaffolded) {
+    // Skip template selection for existing projects - it's not needed
+    selectedTemplate = options.template || "baseboards"; // Default doesn't matter since we won't scaffold
+  } else if (options.template) {
     // Explicit flag provided
     await validateTemplate(options.template, version);
     selectedTemplate = options.template;
   } else {
-    // Interactive selection
+    // Interactive selection for new projects
     selectedTemplate = await promptTemplateSelection(version);
   }
 
   const ctx: ProjectContext = {
     dir,
     name,
-    isScaffolded: isScaffolded(dir),
+    isScaffolded: alreadyScaffolded,
     ports: defaultPorts,
     version,
     appDev,
