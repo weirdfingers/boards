@@ -22,6 +22,7 @@ import {
   promptPackageManager,
   type PackageManager,
 } from "../utils.js";
+import { generateRootPackageJson, installRootDependencies } from "../utils/root-package.js";
 import { detectMonorepoRoot } from "../utils/monorepo-detection.js";
 import {
   copyFrontendPackage,
@@ -334,6 +335,16 @@ export async function up(directory: string, options: UpOptions): Promise<void> {
     await promptForApiKeys(ctx);
   }
 
+  // Step 5.6: Install root dependencies (only on fresh scaffold)
+  // This installs @weirdfingers/baseboards locally for ergonomic CLI commands
+  if (isFreshScaffold) {
+    // Prompt for package manager if not already set (app-dev mode sets it later for web/)
+    if (!ctx.packageManager) {
+      ctx.packageManager = await promptPackageManager();
+    }
+    await installRootDependencies(ctx.dir, ctx.packageManager);
+  }
+
   // Step 6: Detect missing API keys
   const apiEnvPath = path.join(ctx.dir, "api/.env");
   const missingKeys = detectMissingProviderKeys(apiEnvPath);
@@ -417,6 +428,11 @@ async function scaffoldProject(ctx: ProjectContext): Promise<void> {
   const spinner = ora("Creating data directories...").start();
   fs.ensureDirSync(path.join(ctx.dir, "data/storage"));
   spinner.succeed("Data directories created");
+
+  // Generate root package.json for ergonomic CLI commands
+  spinner.start("Generating project configuration...");
+  await generateRootPackageJson(ctx.dir, ctx.name, ctx.version);
+  spinner.succeed("Project configuration created");
 
   console.log(chalk.green("   ✨ Project scaffolded successfully!"));
 }
@@ -908,8 +924,9 @@ function printDefaultSuccessMessage(
     );
   }
 
-  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
-  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log(chalk.gray("\nUseful commands:"));
+  console.log(chalk.gray("  View logs: "), chalk.cyan("npm run logs"));
+  console.log(chalk.gray("  Stop:      "), chalk.cyan("npm run down"));
   console.log();
 }
 
@@ -954,8 +971,9 @@ function printAppDevSuccessMessage(
     console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
   }
 
-  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
-  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log(chalk.gray("\nUseful commands:"));
+  console.log(chalk.gray("  View logs: "), chalk.cyan("npm run logs"));
+  console.log(chalk.gray("  Stop:      "), chalk.cyan("npm run down"));
   console.log();
 }
 
@@ -995,8 +1013,9 @@ function printDevPackagesSuccessMessage(
     console.log(chalk.gray("   Edit:"), chalk.cyan("api/.env"));
   }
 
-  console.log(chalk.gray("\nView logs:"), chalk.cyan(`baseboards logs ${ctx.name} -f`));
-  console.log(chalk.gray("Stop:     "), chalk.cyan(`baseboards down ${ctx.name}`));
+  console.log(chalk.gray("\nUseful commands:"));
+  console.log(chalk.gray("  View logs: "), chalk.cyan("npm run logs"));
+  console.log(chalk.gray("  Stop:      "), chalk.cyan("npm run down"));
   console.log();
 }
 
