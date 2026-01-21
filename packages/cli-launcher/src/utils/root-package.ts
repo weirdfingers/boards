@@ -41,6 +41,7 @@ export function createRootPackageJsonContent(
     scripts: {
       dev: "baseboards dev",
       up: "baseboards up",
+      "up:attach": "baseboards up --attach",
       down: "baseboards down",
       logs: "baseboards logs -f",
       status: "baseboards status",
@@ -85,7 +86,7 @@ export async function generateRootPackageJson(
  *
  * This runs the package manager's install command at the project root,
  * which installs @weirdfingers/baseboards as a local devDependency.
- * This enables shorter commands like `npx baseboards dev` and allows
+ * This enables shorter commands like `npx baseboards up` and allows
  * npm scripts to reference `baseboards` directly.
  *
  * @param projectDir - Path to the project directory
@@ -122,9 +123,9 @@ export async function installRootDependencies(
     console.log(chalk.green("✅ Project dependencies installed successfully"));
     console.log(
       chalk.gray("   You can now use: ") +
-        chalk.cyan("npm run dev") +
-        chalk.gray(", ") +
         chalk.cyan("npm run up") +
+        chalk.gray(", ") +
+        chalk.cyan("npm run logs") +
         chalk.gray(", etc.")
     );
   } catch (error: unknown) {

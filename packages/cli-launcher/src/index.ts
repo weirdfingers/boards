@@ -16,6 +16,7 @@ import chalk from "chalk";
 // Import commands
 import { up } from "./commands/up.js";
 import { down } from "./commands/down.js";
+import { dev } from "./commands/dev.js";
 import { logs } from "./commands/logs.js";
 import { status } from "./commands/status.js";
 import { clean } from "./commands/clean.js";
@@ -65,6 +66,13 @@ program
   .argument("[directory]", "Project directory", ".")
   .option("--volumes", "Also remove volumes")
   .action(down);
+
+// dev command
+program
+  .command("dev")
+  .description("Start frontend development server (app-dev mode only)")
+  .argument("[directory]", "Project directory", ".")
+  .action(dev);
 
 // logs command
 program
