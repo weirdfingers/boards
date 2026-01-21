@@ -20,7 +20,6 @@ import {
   detectMissingProviderKeys,
   waitFor,
   promptPackageManager,
-  type PackageManager,
 } from "../utils.js";
 import { generateRootPackageJson, installRootDependencies } from "../utils/root-package.js";
 import { detectMonorepoRoot } from "../utils/monorepo-detection.js";
@@ -877,21 +876,6 @@ async function runMigrations(ctx: ProjectContext): Promise<void> {
 }
 
 /**
- * Get the dev command for the selected package manager.
- * @param pm Package manager (pnpm, npm, yarn, or bun)
- * @returns The command to start the dev server
- */
-function getDevCommand(pm: PackageManager): string {
-  const commands: Record<PackageManager, string> = {
-    pnpm: "pnpm dev",
-    npm: "npm run dev",
-    yarn: "yarn dev",
-    bun: "bun dev",
-  };
-  return commands[pm];
-}
-
-/**
  * Print success message for default mode (all services in Docker).
  * Shows all service URLs including web, API, and GraphQL.
  * @param ctx Project context
@@ -952,19 +936,9 @@ function printAppDevSuccessMessage(
 
   // Show frontend startup instructions
   console.log(chalk.cyan("\nTo start the frontend:\n"));
+  console.log(chalk.cyan(`   baseboards dev ${ctx.name}`));
 
-  // Calculate relative path from current directory to web directory
-  const relativeWebPath = path.relative(process.cwd(), path.join(ctx.dir, "web"));
-  const cdCommand = relativeWebPath || "web";
-
-  // Get the package manager command (default to pnpm if not set)
-  const packageManager = ctx.packageManager || "pnpm";
-  const devCommand = getDevCommand(packageManager);
-
-  console.log(chalk.cyan(`   cd ${cdCommand}`));
-  console.log(chalk.cyan(`   ${devCommand}`));
-
-  console.log(chalk.gray("\nThe frontend will be available at"), chalk.underline("http://localhost:3000"));
+  console.log(chalk.gray("\nThe frontend will be available at"), chalk.underline("http://localhost:3300"));
 
   if (hasKeyWarning) {
     console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));
@@ -1002,11 +976,9 @@ function printDevPackagesSuccessMessage(
   console.log(chalk.gray("   1. Edit package source:"));
   console.log(chalk.cyan(`      ${ctx.dir}/frontend/src/`));
   console.log(chalk.gray("\n   2. Start the frontend:"));
-  console.log(chalk.cyan(`      cd ${ctx.dir}/web`));
-  console.log(chalk.cyan(`      pnpm install`));
-  console.log(chalk.cyan(`      pnpm dev`));
+  console.log(chalk.cyan(`      baseboards dev ${ctx.name}`));
   console.log(chalk.gray("\n   3. Changes to the package will hot-reload automatically"));
-  console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3000`));
+  console.log(chalk.gray(`\n   Frontend will be available at http://localhost:3300`));
 
   if (hasKeyWarning) {
     console.log(chalk.yellow("\n⚠️  Remember to configure provider API keys!"));

@@ -99,6 +99,9 @@ export async function dev(directory: string): Promise<void> {
   const packageManager = await detectPackageManager(webDir);
   const { cmd, args } = getDevCommand(packageManager);
 
+  // Use port 3300 to match CORS configuration (same as Docker mode)
+  const port = '3300';
+
   console.log(chalk.blue.bold('\n🚀 Starting frontend development server...\n'));
   console.log(
     chalk.gray('   Package manager:'),
@@ -108,13 +111,19 @@ export async function dev(directory: string): Promise<void> {
     chalk.gray('   Directory:'),
     chalk.cyan(webDir)
   );
+  console.log(
+    chalk.gray('   Port:'),
+    chalk.cyan(port)
+  );
   console.log();
 
   try {
     // Run the dev server with inherited stdio so user sees output
+    // Set PORT=3300 to match CORS configuration in api/.env
     await execa(cmd, args, {
       cwd: webDir,
       stdio: 'inherit',
+      env: { ...process.env, PORT: port },
     });
   } catch (error: unknown) {
     // Check if it was a user interrupt (Ctrl+C)
