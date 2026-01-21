@@ -204,48 +204,48 @@ copy_template_structure() {
 }
 
 ###############################################################################
-# Prepare Baseboards Template
+# Helper function: Setup common template infrastructure
+#
+# This function handles all the common setup that every template needs:
+# - Copying compose files from template-sources
+# - Creating api/ directory with env files
+# - Setting up extensions directories
+# - Creating data/storage directory
+# - Verifying storage configuration
+#
+# Usage: setup_common_template_files <template_dir>
 ###############################################################################
-prepare_baseboards_template() {
-    log_info "Preparing baseboards template..."
-
-    local template_dir="$TEMPLATES_DIR/baseboards"
-    local web_dir="$template_dir/web"
-
-    # Copy baseboards app to web/ directory
-    copy_template_structure "$PROJECT_ROOT/apps/baseboards" "$web_dir" "baseboards"
-
-    # Copy web environment file
-    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/web-env.example" ]]; then
-        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/web-env.example" "$web_dir/.env.example"
-        log_success "  Copied web/.env.example"
-    fi
-
-    # Transform workspace dependencies
-    transform_package_json "$web_dir/package.json" "$VERSION"
-
-    # Create minimal API directory (just config files, no source code)
-    # The backend runs from pre-built Docker images, so source code is not needed
-    log_info "  Creating minimal API directory..."
+setup_common_template_files() {
+    local template_dir="$1"
     local api_dir="$template_dir/api"
+
+    # Copy shared compose/Docker files from template-sources
+    log_info "  Copying shared template files from template-sources..."
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/compose.yaml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/compose.web.yaml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.web" "$template_dir/"
+    log_success "  Copied compose.yaml, compose.web.yaml, Dockerfile.web"
+
+    # Create minimal API directory (backend runs from pre-built Docker images)
+    log_info "  Creating API directory..."
     mkdir -p "$api_dir"
 
-    # Copy API environment file
+    # Copy API environment file (required)
     if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" ]]; then
         cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" "$api_dir/.env.example"
         log_success "  Copied api/.env.example"
     else
-        log_error "api-env.example not found"
+        log_error "api-env.example not found in template-sources"
         exit 1
     fi
 
-    # Copy Dockerfile (optional, for users who want to build from source)
+    # Copy API Dockerfile (optional, for users who want to build from source)
     if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" ]]; then
         cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" "$api_dir/Dockerfile"
         log_success "  Copied api/Dockerfile"
     fi
 
-    # Create a README explaining the setup
+    # Create api/README.md
     cat > "$api_dir/README.md" << 'EOF'
 # Backend API Directory
 
@@ -282,24 +282,8 @@ This is **not recommended** for most users. The pre-built images are the support
 EOF
     log_success "  Created api/README.md"
 
-    # Copy shared template files from template-sources
-    log_info "  Copying shared template files..."
-    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/compose.yaml" "$template_dir/"
-    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/compose.web.yaml" "$template_dir/"
-    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.web" "$template_dir/"
-    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/README.md" "$template_dir/"
-
-    # Copy config directory
-    mkdir -p "$template_dir/config"
-    cp -r "$PROJECT_ROOT/packages/cli-launcher/basic-template/config/"* "$template_dir/config/"
-
-    # Copy docker directory
-    if [[ -d "$PROJECT_ROOT/packages/cli-launcher/basic-template/docker" ]]; then
-        cp -r "$PROJECT_ROOT/packages/cli-launcher/basic-template/docker" "$template_dir/"
-    fi
-
-    # Create extensions directories with README files
-    log_info "  Creating extensions directories..."
+    # Ensure extensions directories exist
+    log_info "  Setting up extensions directories..."
     mkdir -p "$template_dir/extensions/generators"
     mkdir -p "$template_dir/extensions/plugins"
 
@@ -310,13 +294,31 @@ EOF
     if [[ -f "$PROJECT_ROOT/packages/cli-launcher/basic-template/extensions/plugins/README.md" ]]; then
         cp "$PROJECT_ROOT/packages/cli-launcher/basic-template/extensions/plugins/README.md" "$template_dir/extensions/plugins/"
     fi
+    log_success "  Extensions directories ready"
 
-    # Create data/storage directory with .gitkeep
-    log_info "  Creating data/storage directory..."
+    # Ensure data/storage directory exists
+    log_info "  Setting up data/storage directory..."
     mkdir -p "$template_dir/data/storage"
     touch "$template_dir/data/storage/.gitkeep"
+    log_success "  Data directory ready"
 
-    # Create .gitignore if it doesn't exist
+    # Verify storage_config.yaml has correct path
+    local storage_config="$template_dir/config/storage_config.yaml"
+    if [[ -f "$storage_config" ]]; then
+        if grep -q "base_path: \"$STORAGE_BASE_PATH\"" "$storage_config"; then
+            log_success "  storage_config.yaml has correct base_path"
+        else
+            log_warning "  storage_config.yaml may need manual review for base_path"
+        fi
+    fi
+}
+
+###############################################################################
+# Helper function: Ensure .gitignore exists with standard patterns
+###############################################################################
+ensure_gitignore() {
+    local template_dir="$1"
+
     if [[ ! -f "$template_dir/.gitignore" ]]; then
         log_info "  Creating .gitignore..."
         cat > "$template_dir/.gitignore" << 'EOF'
@@ -362,6 +364,7 @@ data/storage/*
 .DS_Store
 Thumbs.db
 EOF
+        log_success "  Created .gitignore"
     else
         # Append storage pattern if not present
         if ! grep -q "data/storage/\*" "$template_dir/.gitignore"; then
@@ -374,16 +377,48 @@ data/storage/*
 EOF
         fi
     fi
+}
 
-    # Verify storage_config.yaml has correct path
-    local storage_config="$template_dir/config/storage_config.yaml"
-    if [[ -f "$storage_config" ]]; then
-        if grep -q "base_path: \"$STORAGE_BASE_PATH\"" "$storage_config"; then
-            log_success "  storage_config.yaml has correct base_path"
-        else
-            log_warning "  storage_config.yaml may need manual review for base_path"
-        fi
+###############################################################################
+# Prepare Baseboards Template
+###############################################################################
+prepare_baseboards_template() {
+    log_info "Preparing baseboards template..."
+
+    local template_dir="$TEMPLATES_DIR/baseboards"
+    local web_dir="$template_dir/web"
+
+    # Copy baseboards app to web/ directory
+    copy_template_structure "$PROJECT_ROOT/apps/baseboards" "$web_dir" "baseboards"
+
+    # Copy web environment file (baseboards app may not have one)
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/web-env.example" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/web-env.example" "$web_dir/.env.example"
+        log_success "  Copied web/.env.example"
     fi
+
+    # Transform workspace dependencies to published versions
+    transform_package_json "$web_dir/package.json" "$VERSION"
+
+    # Copy config directory from basic-template (shared config)
+    mkdir -p "$template_dir/config"
+    cp -r "$PROJECT_ROOT/packages/cli-launcher/basic-template/config/"* "$template_dir/config/"
+
+    # Copy docker directory
+    if [[ -d "$PROJECT_ROOT/packages/cli-launcher/basic-template/docker" ]]; then
+        cp -r "$PROJECT_ROOT/packages/cli-launcher/basic-template/docker" "$template_dir/"
+    fi
+
+    # Copy template README
+    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/README.md" ]]; then
+        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/README.md" "$template_dir/"
+    fi
+
+    # Setup common infrastructure (compose files, api/, extensions/, data/)
+    setup_common_template_files "$template_dir"
+
+    # Ensure .gitignore exists
+    ensure_gitignore "$template_dir"
 
     log_success "Baseboards template prepared at $template_dir"
 }
@@ -396,96 +431,18 @@ prepare_basic_template() {
 
     local template_dir="$TEMPLATES_DIR/basic"
 
-    # Copy basic template (already has proper structure from CLI-2.1)
+    # Copy basic template (has web/, config/, docker/, extensions/ structure)
     copy_template_structure "$PROJECT_ROOT/packages/cli-launcher/basic-template" "$template_dir" "basic"
 
-    # Update version in package.json
+    # Transform workspace dependencies to published versions
     transform_package_json "$template_dir/web/package.json" "$VERSION"
 
-    # Create minimal API directory (required by compose.yaml)
-    log_info "  Creating minimal API directory..."
-    local api_dir="$template_dir/api"
-    mkdir -p "$api_dir"
+    # Setup common infrastructure (compose files, api/, extensions/, data/)
+    # This replaces placeholder compose files with real ones from template-sources
+    setup_common_template_files "$template_dir"
 
-    # Copy API environment file
-    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" ]]; then
-        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/api-env.example" "$api_dir/.env.example"
-        log_success "  Copied api/.env.example"
-    else
-        log_error "api-env.example not found"
-        exit 1
-    fi
-
-    # Copy Dockerfile (optional, for users who want to build from source)
-    if [[ -f "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" ]]; then
-        cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/Dockerfile.api" "$api_dir/Dockerfile"
-        log_success "  Copied api/Dockerfile"
-    fi
-
-    # Create a README explaining the setup
-    cat > "$api_dir/README.md" << 'EOF'
-# Backend API Directory
-
-This directory contains environment configuration for the Boards backend services.
-
-## Pre-built Docker Images
-
-By default, Baseboards uses pre-built Docker images from GitHub Container Registry:
-- `ghcr.io/weirdfingers/boards-backend:latest`
-
-This means:
-- **No build time** - services start immediately
-- **Verified releases** - you get the tested, published backend version
-- **Automatic updates** - pull the latest image to get updates
-
-## Configuration
-
-Edit `api/.env` to configure:
-- API keys for image generation providers (Replicate, Fal, OpenAI, etc.)
-- JWT secrets for authentication
-- Other environment variables
-
-See `.env.example` for all available options.
-
-## Building from Source (Advanced)
-
-If you need to customize the backend Python code:
-
-1. Get the source code from: https://github.com/weirdfingers/boards/tree/main/packages/backend
-2. Update `compose.yaml` to build from source instead of using pre-built images
-3. Place the backend source code in this directory
-
-This is **not recommended** for most users. The pre-built images are the supported path.
-EOF
-    log_success "  Created api/README.md"
-
-    # Verify extensions directories exist
-    if [[ ! -d "$template_dir/extensions/generators" ]]; then
-        log_warning "  extensions/generators directory missing, creating..."
-        mkdir -p "$template_dir/extensions/generators"
-    fi
-
-    if [[ ! -d "$template_dir/extensions/plugins" ]]; then
-        log_warning "  extensions/plugins directory missing, creating..."
-        mkdir -p "$template_dir/extensions/plugins"
-    fi
-
-    # Verify data/storage exists
-    if [[ ! -d "$template_dir/data/storage" ]]; then
-        log_warning "  data/storage directory missing, creating..."
-        mkdir -p "$template_dir/data/storage"
-        touch "$template_dir/data/storage/.gitkeep"
-    fi
-
-    # Verify storage_config.yaml path
-    local storage_config="$template_dir/config/storage_config.yaml"
-    if [[ -f "$storage_config" ]]; then
-        if grep -q "base_path: \"$STORAGE_BASE_PATH\"" "$storage_config"; then
-            log_success "  storage_config.yaml has correct base_path"
-        else
-            log_warning "  storage_config.yaml may need manual review for base_path"
-        fi
-    fi
+    # Ensure .gitignore exists
+    ensure_gitignore "$template_dir"
 
     log_success "Basic template prepared at $template_dir"
 }
