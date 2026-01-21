@@ -7,12 +7,9 @@
     "baseboards": "./dist/index.js"
   },
   "files": [
-    "dist",
-    "templates"
+    "dist"
   ],
   "scripts": {
-    "prepare-templates": "node scripts/prepare-templates.js",
-    "prebuild": "pnpm run prepare-templates",
     "build": "tsup && node scripts/add-shebang.js",
     "dev": "tsup --watch",
     "test": "vitest --run",

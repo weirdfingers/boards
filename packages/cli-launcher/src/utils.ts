@@ -16,14 +16,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Get the templates directory (bundled with the CLI package)
- */
-export function getTemplatesDir(): string {
-  // In built package, templates are at root level next to dist/
-  return path.join(__dirname, "../templates");
-}
-
-/**
  * Check system prerequisites
  */
 export async function checkPrerequisites(): Promise<Prerequisites> {

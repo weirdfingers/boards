@@ -18,9 +18,8 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8800}
         NEXT_PUBLIC_GRAPHQL_URL: ${NEXT_PUBLIC_GRAPHQL_URL:-http://localhost:8800/graphql}
+        NEXT_PUBLIC_CONTAINERIZED: "true"
     env_file: web/.env
-    environment:
-      - INTERNAL_API_URL=http://api:8800
     depends_on:
       api:
         condition: service_healthy
