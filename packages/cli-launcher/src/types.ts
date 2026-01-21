@@ -79,11 +79,6 @@ export interface CleanOptions {
   hard?: boolean;
 }
 
-export interface UpdateOptions {
-  force?: boolean;
-  version?: string;
-}
-
 export interface UpgradeOptions {
   version?: string;
   dryRun?: boolean;

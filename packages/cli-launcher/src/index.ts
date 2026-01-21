@@ -20,7 +20,6 @@ import { dev } from "./commands/dev.js";
 import { logs } from "./commands/logs.js";
 import { status } from "./commands/status.js";
 import { clean } from "./commands/clean.js";
-import { update } from "./commands/update.js";
 import { upgrade } from "./commands/upgrade.js";
 import { doctor } from "./commands/doctor.js";
 import { templates } from "./commands/templates.js";
@@ -103,15 +102,6 @@ program
   .argument("[directory]", "Project directory", ".")
   .option("--hard", "Remove volumes and images (WARNING: deletes data)")
   .action(clean);
-
-// update command (deprecated - use upgrade instead)
-program
-  .command("update")
-  .description("Update Baseboards to latest version (deprecated - use upgrade)")
-  .argument("[directory]", "Project directory", ".")
-  .option("--force", "Force update without safety checks")
-  .option("--version <version>", "Update to specific version")
-  .action(update);
 
 // upgrade command
 program

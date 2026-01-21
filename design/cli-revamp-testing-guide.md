@@ -710,6 +710,118 @@ rm -rf test-error test-network test-conflict
 
 ---
 
+### Scenario 14: Upgrade Command Test
+
+**Purpose:** Test upgrading projects to newer versions.
+
+**Setup:**
+```bash
+# Create a project to upgrade
+npx @weirdfingers/baseboards up test-upgrade
+```
+
+**Commands:**
+
+**Part A: Check Current Version**
+```bash
+# View current version in docker/.env
+cat test-upgrade/docker/.env | grep VERSION
+```
+
+**Part B: Dry Run Upgrade**
+```bash
+npx @weirdfingers/baseboards upgrade test-upgrade --dry-run
+```
+
+**Expected Output:**
+```
+📋 Upgrade Plan:
+
+   Current version: X.X.X
+   Target version:  Y.Y.Y
+   Project mode:    default
+
+   Steps:
+   1. Stop all services
+   2. Pull new backend images
+   3. Update web/package.json
+   4. Rebuild frontend Docker image
+   5. Update docker/.env
+   6. Start services
+   7. Wait for health checks
+
+🔍 Dry run complete - no changes made
+```
+
+**What to Check:**
+- [ ] Current version detected correctly
+- [ ] Target version shown (latest from npm)
+- [ ] Project mode detected (default or app-dev)
+- [ ] Upgrade steps listed
+- [ ] No changes made in dry run
+
+**Part C: Upgrade to Specific Version**
+```bash
+npx @weirdfingers/baseboards upgrade test-upgrade --version 0.9.0 --dry-run
+```
+
+**What to Check:**
+- [ ] Specified version shown as target
+- [ ] Compatibility warnings displayed (if any)
+
+**Part D: Force Upgrade (skip confirmation)**
+```bash
+npx @weirdfingers/baseboards upgrade test-upgrade --force --dry-run
+```
+
+**What to Check:**
+- [ ] No confirmation prompt shown
+- [ ] Warning about --force flag displayed (if breaking changes)
+
+**Part E: Already at Target Version**
+```bash
+# Get current version
+CURRENT=$(cat test-upgrade/docker/.env | grep VERSION | cut -d= -f2)
+
+# Try to upgrade to same version
+npx @weirdfingers/baseboards upgrade test-upgrade --version $CURRENT
+```
+
+**Expected Output:**
+```
+✅ Already at vX.X.X
+```
+
+**What to Check:**
+- [ ] Detects already at target version
+- [ ] No upgrade performed
+- [ ] Clean exit
+
+**Part F: Invalid Project**
+```bash
+mkdir empty-dir
+npx @weirdfingers/baseboards upgrade empty-dir
+```
+
+**Expected Output:**
+```
+❌ Error: Not a Baseboards project
+   Run baseboards up to scaffold a project first.
+```
+
+**What to Check:**
+- [ ] Detects non-Baseboards directory
+- [ ] Helpful error message
+- [ ] Suggests running `baseboards up`
+
+**Cleanup:**
+```bash
+npx @weirdfingers/baseboards down test-upgrade --volumes
+rm -rf test-upgrade empty-dir
+```
+
+---
+
 ## Performance Benchmarking
 
 ### Template Download Time
