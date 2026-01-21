@@ -566,4 +566,5 @@ kubectl -n boards top pods
 - [Configuration Reference](./configuration.md) - All environment variables
 - [Database Setup](./database/managed-postgresql.md) - Configure managed PostgreSQL
 - [Storage Configuration](./storage.md) - Configure S3 or GCS storage
+- [Upgrades & Migrations](./upgrades.md) - Upgrade versions and run database migrations
 - [Monitoring](./monitoring.md) - Set up logging and metrics

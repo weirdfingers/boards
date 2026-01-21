@@ -168,6 +168,7 @@ Before going to production:
 | [Storage](./storage.md) | Object storage setup |
 | [Authentication](./authentication.md) | Auth provider configuration |
 | [Frontend](./frontend.md) | Web application deployment |
+| [Upgrades](./upgrades.md) | Version upgrades and database migrations |
 | [Database](./database/) | PostgreSQL setup guides |
 | [Cloud Platforms](./cloud/) | Platform-specific guides |
 

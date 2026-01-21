@@ -390,4 +390,5 @@ docker volume prune
 - [Storage Configuration](./storage.md) - Set up S3, GCS, or Supabase storage
 - [Authentication](./authentication.md) - Configure auth providers
 - [Frontend Deployment](./frontend.md) - Deploy the web frontend
+- [Upgrades & Migrations](./upgrades.md) - Upgrade versions and run database migrations
 - [Monitoring](./monitoring.md) - Logging and health checks
