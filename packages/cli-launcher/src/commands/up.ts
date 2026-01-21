@@ -489,6 +489,7 @@ async function ensureEnvFiles(ctx: ProjectContext): Promise<void> {
 
     // Set version
     dockerEnv = dockerEnv.replace(/VERSION=.*/g, `VERSION=${ctx.version}`);
+    dockerEnv = dockerEnv.replace(/BACKEND_VERSION=.*/g, `BACKEND_VERSION=${ctx.version}`);
 
     // Set project name
     dockerEnv = dockerEnv.replace(
