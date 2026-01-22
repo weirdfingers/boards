@@ -1,0 +1,9 @@
+{
+  "label": "Cloud Platforms",
+  "position": 20,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Deploy Boards to cloud platforms."
+  }
+}

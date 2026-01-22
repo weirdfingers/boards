@@ -1,0 +1,9 @@
+{
+  "label": "Database",
+  "position": 10,
+  "collapsed": true,
+  "link": {
+    "type": "generated-index",
+    "description": "Configure PostgreSQL for your Boards deployment."
+  }
+}
