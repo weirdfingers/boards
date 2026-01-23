@@ -19,21 +19,20 @@ sidebar_position: 3
 
 Railway deploys each service as a separate container:
 
-```
-┌─────────────────────────────────────────┐
-│              Railway Project             │
-│  ┌─────────────┐  ┌─────────────────┐   │
-│  │  API Service │  │  Worker Service │   │
-│  └──────┬──────┘  └────────┬────────┘   │
-│         │                   │            │
-│  ┌──────┴───────────────────┴──────┐    │
-│  │         Internal Network         │    │
-│  └──────┬───────────────────┬──────┘    │
-│         │                   │            │
-│  ┌──────┴──────┐    ┌──────┴──────┐     │
-│  │  PostgreSQL  │    │    Redis    │     │
-│  └─────────────┘    └─────────────┘     │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Railway["Railway Project"]
+        APIService["API Service"]
+        WorkerService["Worker Service"]
+
+        subgraph Network["Internal Network"]
+            PostgreSQL["PostgreSQL"]
+            Redis["Redis"]
+        end
+
+        APIService --> Network
+        WorkerService --> Network
+    end
 ```
 
 ## Quick Start

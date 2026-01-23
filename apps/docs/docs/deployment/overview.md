@@ -109,29 +109,25 @@ See [Configuration Reference](./configuration.md) for all variables.
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       Your Application                       │
-│  ┌─────────────────┐         ┌─────────────────────────┐    │
-│  │    Frontend     │         │     Load Balancer       │    │
-│  │   (Next.js)     │────────▶│    (nginx/Caddy/ALB)    │    │
-│  └─────────────────┘         └───────────┬─────────────┘    │
-│                                          │                   │
-│                              ┌───────────┴───────────┐      │
-│                              │                       │      │
-│                        ┌─────▼─────┐          ┌──────▼─────┐│
-│                        │    API    │          │   Worker   ││
-│                        │ (uvicorn) │          │  (boards-  ││
-│                        │           │          │   worker)  ││
-│                        └─────┬─────┘          └──────┬─────┘│
-│                              │                       │      │
-│          ┌───────────────────┼───────────────────────┤      │
-│          │                   │                       │      │
-│    ┌─────▼─────┐       ┌─────▼─────┐          ┌─────▼─────┐ │
-│    │ PostgreSQL │       │   Redis   │          │  Storage  │ │
-│    │           │       │           │          │ (S3/GCS)  │ │
-│    └───────────┘       └───────────┘          └───────────┘ │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph App["Your Application"]
+        Frontend["Frontend<br/>(Next.js)"]
+        LB["Load Balancer<br/>(nginx/Caddy/ALB)"]
+        API["API<br/>(uvicorn)"]
+        Worker["Worker<br/>(boards-worker)"]
+
+        Frontend --> LB
+        LB --> API
+        LB --> Worker
+    end
+
+    API --> PostgreSQL["PostgreSQL"]
+    API --> Redis["Redis"]
+    API --> Storage["Storage<br/>(S3/GCS)"]
+    Worker --> PostgreSQL
+    Worker --> Redis
+    Worker --> Storage
 ```
 
 ## Pre-built Images

@@ -17,23 +17,20 @@ sidebar_position: 4
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────┐
-│              Render Account              │
-│                                          │
-│  ┌─────────────┐  ┌─────────────────┐   │
-│  │ Web Service │  │Background Worker│   │
-│  │   (API)     │  │   (Worker)      │   │
-│  └──────┬──────┘  └────────┬────────┘   │
-│         │                   │            │
-│  ┌──────┴───────────────────┴──────┐    │
-│  │         Private Network          │    │
-│  └──────┬───────────────────┬──────┘    │
-│         │                   │            │
-│  ┌──────┴──────┐    ┌──────┴──────┐     │
-│  │  PostgreSQL  │    │    Redis    │     │
-│  └─────────────┘    └─────────────┘     │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Render["Render Account"]
+        WebService["Web Service<br/>(API)"]
+        BGWorker["Background Worker<br/>(Worker)"]
+
+        subgraph Network["Private Network"]
+            PostgreSQL["PostgreSQL"]
+            Redis["Redis"]
+        end
+
+        WebService --> Network
+        BGWorker --> Network
+    end
 ```
 
 ## Quick Start
