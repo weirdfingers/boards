@@ -90,8 +90,9 @@ def _apply_provider_env_overrides(config_data: dict[str, Any], env_prefix: str):
     """Apply environment variable overrides for provider configurations."""
 
     # Supabase configuration
+    # Use service_role key since boards handles auth at the GraphQL layer, not via Supabase RLS
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_ANON_KEY")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     supabase_bucket = os.getenv(f"{env_prefix}SUPABASE_BUCKET")
 
     if supabase_url and supabase_key:
@@ -153,7 +154,7 @@ def create_example_config() -> str:
                     "type": "supabase",
                     "config": {
                         "url": "${SUPABASE_URL}",
-                        "key": "${SUPABASE_ANON_KEY}",
+                        "key": "${SUPABASE_SERVICE_ROLE_KEY}",
                         "bucket": "boards-artifacts",
                     },
                 },
