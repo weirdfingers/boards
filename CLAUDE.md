@@ -106,7 +106,7 @@ The following packages are published to public registries:
 - **`packages/backend`** → PyPI (Python package for backends)
 - **`packages/frontend`** → npm as `@weirdfingers/boards` (React hooks)
 - **`packages/cli-launcher`** → npm (CLI tool for scaffolding/deployment)
-- **Auth packages** (planned) → npm as `@weirdfingers/boards-auth-*` (separate packages per provider)
+- **Auth packages** → npm as `@weirdfingers/boards-auth-*` (separate packages per provider)
 
 ### Package Decision Tree
 
@@ -338,15 +338,16 @@ export function useBoardValidation() {
 - Application business logic
 - Backend/frontend code (import from published packages instead)
 
-### Auth Packages (Planned - Published to npm)
+### Auth Packages (Published to npm)
 
-**Future packages:**
+**Available packages:**
 
-- `@weirdfingers/boards-auth-supabase`
-- `@weirdfingers/boards-auth-clerk`
-- `@weirdfingers/boards-auth-auth0`
+- `@weirdfingers/boards-auth-supabase` - Supabase authentication provider
+- `@weirdfingers/boards-auth-clerk` - Clerk authentication provider
+- `@weirdfingers/boards-auth-jwt` - JWT authentication provider
+- `@weirdfingers/boards-auth-auth0` (placeholder) - Auth0 authentication provider
 
-Each should contain frontend auth adapter implementations for their respective providers.
+Each contains frontend auth adapter implementations for their respective providers.
 
 ## Database Configuration
 

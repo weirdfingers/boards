@@ -225,13 +225,13 @@ importers:
 
   packages/auth-supabase:
     dependencies:
-      '@supabase/supabase-js':
-        specifier: ^2.0.0
-        version: 2.57.0
       react:
         specifier: ^18.0.0
         version: 18.3.1
     devDependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.50.2
+        version: 2.57.0
       '@types/react':
         specifier: ^18.0.0
         version: 18.3.24
