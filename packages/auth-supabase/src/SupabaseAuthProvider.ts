@@ -3,28 +3,24 @@
  */
 
 import { BaseAuthProvider, AuthState, User } from "@weirdfingers/boards";
+import type { SupabaseClient, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import type { SupabaseConfig } from "./types";
+import { isClientConfig, isCredentialsConfig } from "./types";
 
 export class SupabaseAuthProvider extends BaseAuthProvider {
   protected config: SupabaseConfig;
   private listeners: ((state: AuthState) => void)[] = [];
   private currentState: AuthState;
-  private supabase: any; // Will be typed properly when @supabase/supabase-js is available
+  private supabase: SupabaseClient | null = null;
 
   constructor(config: SupabaseConfig) {
     super(config);
-    this.config = {
-      options: {
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-      ...config,
-    };
+    this.config = config;
 
     this.currentState = {
       user: null,
       status: "loading",
-      signIn: this.signIn.bind(this) as any,
+      signIn: this.signIn.bind(this) as AuthState["signIn"],
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
       refreshToken: this.refreshToken.bind(this),
@@ -33,19 +29,34 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
 
   async initialize(): Promise<void> {
     try {
-      // Dynamically import Supabase
-      const { createClient } = await import("@supabase/supabase-js");
+      if (isClientConfig(this.config)) {
+        // Use the provided client directly
+        this.supabase = this.config.client;
+      } else if (isCredentialsConfig(this.config)) {
+        // Dynamically import Supabase and create a new client
+        const { createClient } = await import("@supabase/supabase-js");
 
-      this.supabase = createClient(this.config.url, this.config.anonKey, {
-        auth: {
-          ...this.config.options,
-        },
-      });
+        this.supabase = createClient(this.config.url, this.config.anonKey, {
+          auth: {
+            persistSession: this.config.options?.persistSession ?? true,
+            detectSessionInUrl: this.config.options?.detectSessionInUrl ?? true,
+            ...(this.config.options?.headers && {
+              headers: this.config.options.headers,
+            }),
+          },
+        });
+      } else {
+        throw new Error(
+          "Invalid configuration: provide either { url, anonKey } or { client }"
+        );
+      }
 
       // Set up auth state listener
-      this.supabase.auth.onAuthStateChange((_event: string, session: any) => {
-        this.handleAuthStateChange(_event, session);
-      });
+      this.supabase.auth.onAuthStateChange(
+        (event: AuthChangeEvent, session: Session | null) => {
+          this.handleAuthStateChange(event, session);
+        }
+      );
 
       // Get initial session
       const {
@@ -70,7 +81,7 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
       provider?: "google" | "github" | "discord" | "twitter" | "facebook";
       type?: "signup" | "signin" | "magic_link";
       options?: {
-        data?: Record<string, any>;
+        data?: Record<string, unknown>;
         redirectTo?: string;
         shouldCreateUser?: boolean;
       };
@@ -85,12 +96,13 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
     try {
       // Social provider login
       if (opts.provider) {
+        const tenantId = this.getTenantId();
         const { error } = await this.supabase.auth.signInWithOAuth({
           provider: opts.provider,
           options: {
             redirectTo: opts.options?.redirectTo || window.location.origin,
-            ...(this.config.tenantId && {
-              queryParams: { tenant: this.config.tenantId },
+            ...(tenantId !== "default" && {
+              queryParams: { tenant: tenantId },
             }),
           },
         });
@@ -199,11 +211,14 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
     // Supabase client cleanup is handled automatically
   }
 
-  private handleAuthStateChange(_event: string, session: any): void {
+  private handleAuthStateChange(
+    _event: AuthChangeEvent | "INITIAL_SESSION",
+    session: Session | null
+  ): void {
     if (session) {
       const user: User = {
         id: session.user.id,
-        email: session.user.email,
+        email: session.user.email ?? "",
         name:
           session.user.user_metadata?.display_name ||
           session.user.user_metadata?.full_name ||
@@ -232,9 +247,16 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
   }
 
   /**
+   * Get the tenant ID from config.
+   */
+  protected override getTenantId(): string {
+    return this.config.tenantId ?? "default";
+  }
+
+  /**
    * Get the underlying Supabase client for advanced operations.
    */
-  getSupabaseClient() {
+  getSupabaseClient(): SupabaseClient | null {
     return this.supabase;
   }
 

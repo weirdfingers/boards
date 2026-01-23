@@ -153,6 +153,46 @@ jobs:
           cd packages/cli-launcher
           pnpm publish --access public --no-git-checks
 
+  publish-auth-packages:
+    needs: bump-and-release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        package: [auth-supabase, auth-clerk, auth-jwt]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "v${{ needs.bump-and-release.outputs.version }}"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+      - name: Update npm to latest
+        run: npm install -g npm@latest
+      - name: Verify npm version
+        run: |
+          echo "npm version: $(npm --version)"
+          echo "Required: >= 11.5.1 for OIDC trusted publishing"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build auth package
+        run: |
+          cd packages/${{ matrix.package }}
+          pnpm build
+      - name: Publish auth package to npm
+        run: |
+          cd packages/${{ matrix.package }}
+          pnpm publish --access public --no-git-checks
+
   publish-docs:
     needs: bump-and-release
     runs-on: ubuntu-latest
@@ -298,7 +338,7 @@ jobs:
             cdiddy/weirdfingers-boards-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  
+
   discord-notify:
     needs: bump-and-release
     runs-on: ubuntu-latest

@@ -199,6 +199,10 @@ def update_all_versions(new_version: str, base_dir: Path) -> None:
     update_backend_version(new_version, base_dir)
     update_package_json_version(base_dir / "packages" / "frontend", new_version)
     update_package_json_version(base_dir / "packages" / "cli-launcher", new_version)
+    # Auth packages
+    update_package_json_version(base_dir / "packages" / "auth-supabase", new_version)
+    update_package_json_version(base_dir / "packages" / "auth-clerk", new_version)
+    update_package_json_version(base_dir / "packages" / "auth-jwt", new_version)
 
 
 def prompt_bump_type() -> str:

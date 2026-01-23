@@ -6,7 +6,13 @@
  */
 
 export { SupabaseAuthProvider } from './SupabaseAuthProvider';
-export type { SupabaseConfig } from './types';
+export type {
+  SupabaseConfig,
+  SupabaseConfigWithCredentials,
+  SupabaseConfigWithClient,
+  SupabaseAuthOptions,
+} from './types';
+export { isCredentialsConfig, isClientConfig } from './types';
 
 // Re-export core types for convenience
 export type {
