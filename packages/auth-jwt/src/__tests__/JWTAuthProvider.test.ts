@@ -18,7 +18,8 @@ Object.defineProperty(window, "localStorage", {
 });
 
 // Mock fetch
-global.fetch = vi.fn();
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 describe("JWTAuthProvider", () => {
   let provider: JWTAuthProvider;
@@ -117,7 +118,7 @@ describe("JWTAuthProvider", () => {
         exp: Math.floor(Date.now() / 1000) + 3600,
       });
 
-      (fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: mockToken }),
       });
@@ -152,7 +153,7 @@ describe("JWTAuthProvider", () => {
     });
 
     it("should handle sign in failure", async () => {
-      (fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: "Unauthorized",
       });
@@ -169,7 +170,7 @@ describe("JWTAuthProvider", () => {
     });
 
     it("should handle network error", async () => {
-      (fetch as any).mockRejectedValueOnce(new Error("Network error"));
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
       await expect(
         provider.signIn({
@@ -180,7 +181,7 @@ describe("JWTAuthProvider", () => {
     });
 
     it("should handle missing token in response", async () => {
-      (fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({}), // No token in response
       });
@@ -255,7 +256,7 @@ describe("JWTAuthProvider", () => {
         exp: Math.floor(Date.now() / 1000) + 3600,
       });
 
-      (fetch as any).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: mockToken }),
       });
@@ -317,7 +318,15 @@ describe("JWTAuthProvider", () => {
 });
 
 // Helper function to create mock JWT tokens
-function createMockJWT(payload: any): string {
+interface MockJWTPayload {
+  sub: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  exp: number;
+}
+
+function createMockJWT(payload: MockJWTPayload): string {
   const header = { alg: "HS256", typ: "JWT" };
   const encodedHeader = btoa(JSON.stringify(header));
   const encodedPayload = btoa(JSON.stringify(payload));

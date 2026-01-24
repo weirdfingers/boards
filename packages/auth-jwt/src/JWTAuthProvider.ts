@@ -21,7 +21,7 @@ export class JWTAuthProvider extends BaseAuthProvider {
     this.currentState = {
       user: null,
       status: "loading",
-      signIn: this.signIn.bind(this) as any,
+      signIn: this.signIn.bind(this) as AuthState["signIn"],
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
       refreshToken: this.refreshToken.bind(this),
@@ -53,8 +53,8 @@ export class JWTAuthProvider extends BaseAuthProvider {
   async signIn(
     options?: import("@weirdfingers/boards").SignInOptions
   ): Promise<void> {
-    const email = (options as any)?.email as string | undefined;
-    const password = (options as any)?.password as string | undefined;
+    const email = options?.email as string | undefined;
+    const password = options?.password as string | undefined;
     this.updateState({ status: "loading" });
 
     try {
