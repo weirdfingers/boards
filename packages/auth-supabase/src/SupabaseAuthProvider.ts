@@ -191,7 +191,7 @@ export class SupabaseAuthProvider extends BaseAuthProvider {
       } = await this.supabase.auth.refreshSession();
       if (error) throw error;
       return session?.access_token || null;
-    } catch (_err) {
+    } catch {
       return null;
     }
   }
