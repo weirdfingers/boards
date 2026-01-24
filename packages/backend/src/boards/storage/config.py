@@ -88,11 +88,12 @@ def _apply_env_overrides(config_data: dict[str, Any], env_prefix: str) -> dict[s
 
 def _apply_provider_env_overrides(config_data: dict[str, Any], env_prefix: str):
     """Apply environment variable overrides for provider configurations."""
+    from ..config import settings
 
     # Supabase configuration
     # Use service_role key since boards handles auth at the GraphQL layer, not via Supabase RLS
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    supabase_url = settings.supabase_url
+    supabase_key = settings.supabase_service_role_key
     supabase_bucket = os.getenv(f"{env_prefix}SUPABASE_BUCKET")
 
     if supabase_url and supabase_key:
@@ -108,8 +109,8 @@ def _apply_provider_env_overrides(config_data: dict[str, Any], env_prefix: str):
     # S3 configuration
     s3_bucket = os.getenv(f"{env_prefix}S3_BUCKET")
     s3_region = os.getenv(f"{env_prefix}S3_REGION")
-    aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-    aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    aws_access_key = settings.aws_access_key_id
+    aws_secret_key = settings.aws_secret_access_key
 
     if s3_bucket and aws_access_key and aws_secret_key:
         config_data["providers"]["s3"] = {

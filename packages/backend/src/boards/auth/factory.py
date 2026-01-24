@@ -60,13 +60,15 @@ def get_auth_adapter() -> AuthAdapter:
                 "Install the supabase package: pip install 'weirdfingers-boards[auth-supabase]'"
             )
 
-        url = config.get("url") or os.getenv("SUPABASE_URL")
-        service_role_key = config.get("service_role_key") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        from ..config import settings
+
+        url = config.get("url") or settings.supabase_url
+        service_role_key = config.get("service_role_key") or settings.supabase_service_role_key
 
         if not url or not service_role_key:
             raise ValueError(
                 "Supabase URL and service role key are required. "
-                "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY or provide in config."
+                "Set BOARDS_SUPABASE_URL and BOARDS_SUPABASE_SERVICE_ROLE_KEY or provide in config."
             )
 
         return SupabaseAuthAdapter(url=url, service_role_key=service_role_key)  # type: ignore

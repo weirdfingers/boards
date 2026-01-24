@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # Storage
     storage_config_path: str | None = None
 
+    # Cloud Storage Credentials (for storage providers)
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+
     # Auth
     auth_provider: str = "none"  # 'none', 'supabase', 'clerk', 'auth0', 'jwt'
     auth_config: dict = {}

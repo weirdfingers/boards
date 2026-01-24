@@ -87,7 +87,12 @@ class SupabaseStorageProvider(StorageProvider):
                 },
             )
 
-            return response.path
+            # Return the full public URL, not just the path
+            # This matches the behavior of LocalStorageProvider which returns a full URL
+            public_url_response = await client.storage.from_(self.bucket).get_public_url(
+                response.path
+            )
+            return public_url_response
 
         except Exception as e:
             if isinstance(e, StorageException):
