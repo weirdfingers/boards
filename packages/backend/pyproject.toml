@@ -139,6 +139,7 @@ Changelog = "https://github.com/weirdfingers/boards/blob/main/CHANGELOG.md"
 [project.scripts]
 boards-server = "boards.cli:main"
 boards-worker = "boards.workers.cli:main"
+boards-worker-health = "boards.workers.worker_main:main"
 boards-migrate = "boards.database.cli:main"
 
 [tool.setuptools.packages.find]
