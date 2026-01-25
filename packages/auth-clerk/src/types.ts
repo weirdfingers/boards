@@ -15,8 +15,8 @@ export interface ClerkConfig extends AuthProviderConfig {
    */
   options?: {
     debug?: boolean;
-    localization?: any;
-    appearance?: any;
+    localization?: unknown;
+    appearance?: unknown;
     [key: string]: unknown;
   };
 }
