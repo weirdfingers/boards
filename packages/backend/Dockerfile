@@ -96,6 +96,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8800/health || exit 1
 
 # Default command: API server
-# Override this command to run as worker:
+# Override this command to run as worker with health endpoint (recommended for Cloud Run):
+#   docker run ... boards-backend boards-worker-health --processes 1 --threads 50
+# Or without health endpoint (legacy):
 #   docker run ... boards-backend dramatiq-gevent boards.workers.actors:broker --processes 1 --threads 50
 CMD ["uvicorn", "boards.api.app:app", "--host", "0.0.0.0", "--port", "8800"]
