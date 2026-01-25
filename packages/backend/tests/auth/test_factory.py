@@ -66,23 +66,20 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="JWT secret key is required"):
             get_auth_adapter()
 
-    @patch.dict(
-        os.environ,
-        {
-            "BOARDS_AUTH_PROVIDER": "supabase",
-            "SUPABASE_URL": "https://test.supabase.co",
-            "SUPABASE_SERVICE_ROLE_KEY": "test-key",
-        },
-    )
+    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "supabase"})
     @patch("boards.auth.adapters.supabase.create_client")
     def test_supabase_adapter(self, mock_create_client):
         """Test creating Supabase adapter."""
+        from boards import config
         from boards.auth.adapters.supabase import SupabaseAuthAdapter
 
-        adapter = get_auth_adapter()
-        assert isinstance(adapter, SupabaseAuthAdapter)
-        # Verify create_client was called with correct args
-        mock_create_client.assert_called_once_with("https://test.supabase.co", "test-key")
+        # Patch the settings attributes directly since settings is imported at module load time
+        with patch.object(config.settings, "supabase_url", "https://test.supabase.co"):
+            with patch.object(config.settings, "supabase_service_role_key", "test-key"):
+                adapter = get_auth_adapter()
+                assert isinstance(adapter, SupabaseAuthAdapter)
+                # Verify create_client was called with correct args
+                mock_create_client.assert_called_once_with("https://test.supabase.co", "test-key")
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "supabase"})
     def test_supabase_adapter_missing_config(self):

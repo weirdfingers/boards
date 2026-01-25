@@ -9,7 +9,8 @@ export class ClerkAuthProvider extends BaseAuthProvider {
   protected config: ClerkConfig;
   private listeners: ((state: AuthState) => void)[] = [];
   private currentState: AuthState;
-  private clerk: any; // Will be typed properly when @clerk/clerk-js is available
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Clerk instance is dynamically imported
+  private clerk: any;
 
   constructor(config: ClerkConfig) {
     super(config);
@@ -18,7 +19,7 @@ export class ClerkAuthProvider extends BaseAuthProvider {
     this.currentState = {
       user: null,
       status: "loading",
-      signIn: this.signIn.bind(this) as any,
+      signIn: this.signIn.bind(this) as AuthState["signIn"],
       signOut: this.signOut.bind(this),
       getToken: this.getToken.bind(this),
       refreshToken: async () => null,
