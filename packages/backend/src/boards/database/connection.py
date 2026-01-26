@@ -141,7 +141,9 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             if not _sync_initialized or force_reinit:
                 sync_db_url = db_url
                 if db_url.startswith("postgresql://"):
-                    sync_db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
+                    sync_db_url = db_url.replace(
+                        "postgresql://", "postgresql+psycopg://"
+                    )
                 _engine = create_engine(
                     url=sync_db_url,
                     pool_size=settings.database_pool_size,
@@ -151,7 +153,9 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     pool_pre_ping=True,
                     pool_recycle=300,
                 )
-                _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+                _session_local = sessionmaker(
+                    autocommit=False, autoflush=False, bind=_engine
+                )
                 _sync_initialized = True
                 logger.info("Sync database initialized", database_url=db_url)
 
@@ -163,14 +167,24 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             # Double-check after acquiring lock (another coroutine may have initialized)
             if not _async_db_ctx.initialized or force_reinit:
                 if db_url.startswith("postgresql://"):
-                    async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+                    async_db_url = db_url.replace(
+                        "postgresql://", "postgresql+asyncpg://"
+                    )
                     # Build connect_args for asyncpg
                     # For Supabase transaction pooling (pgbouncer), we need to disable
                     # prepared statements since pgbouncer doesn't support them
                     connect_args = {}
+                    logger.info("connect_args", connect_args=connect_args)
                     if "pgbouncer=true" in db_url or ":6543" in db_url:
+                        logger.info(
+                            "Transaction pooling mode - disable prepared statements"
+                        )
                         # Transaction pooling mode - disable prepared statements
                         connect_args["statement_cache_size"] = 0
+                    else:
+                        logger.info(
+                            "No transaction pooling mode - enable prepared statements"
+                        )
 
                     _async_db_ctx.engine = create_async_engine(
                         url=async_db_url,
@@ -198,7 +212,9 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                 else:
                     logger.warning(
                         "Non-PostgreSQL URL detected, async engine not initialized",
-                        url_prefix=db_url.split("://")[0] if "://" in db_url else "unknown",
+                        url_prefix=(
+                            db_url.split("://")[0] if "://" in db_url else "unknown"
+                        ),
                     )
 
 
