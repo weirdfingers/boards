@@ -1,6 +1,6 @@
 {
   "name": "@weirdfingers/boards-auth-clerk",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "description": "Clerk authentication provider for Boards",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
