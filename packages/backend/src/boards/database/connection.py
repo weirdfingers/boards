@@ -170,21 +170,25 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     async_db_url = db_url.replace(
                         "postgresql://", "postgresql+asyncpg://"
                     )
-                    # Build connect_args for asyncpg
                     # For Supabase transaction pooling (pgbouncer), we need to disable
                     # prepared statements since pgbouncer doesn't support them
-                    connect_args = {}
-                    logger.info("connect_args", connect_args=connect_args)
-                    if "pgbouncer=true" in db_url or ":6543" in db_url:
+                    # We add this to the URL directly for more reliable application
+                    is_transaction_pooling = "pgbouncer=true" in db_url or ":6543" in db_url
+                    if is_transaction_pooling:
                         logger.info(
-                            "Transaction pooling mode - disable prepared statements"
+                            "Transaction pooling mode - disabling prepared statements"
                         )
-                        # Transaction pooling mode - disable prepared statements
-                        connect_args["statement_cache_size"] = 0
+                        # Add prepared_statement_cache_size=0 to URL
+                        separator = "&" if "?" in async_db_url else "?"
+                        async_db_url = f"{async_db_url}{separator}prepared_statement_cache_size=0"
                     else:
                         logger.info(
-                            "No transaction pooling mode - enable prepared statements"
+                            "Direct connection mode - prepared statements enabled"
                         )
+
+                    # Log URL without credentials
+                    url_display = async_db_url.split("@")[1] if "@" in async_db_url else "hidden"
+                    logger.info("Creating async engine", url=url_display)
 
                     _async_db_ctx.engine = create_async_engine(
                         url=async_db_url,
@@ -196,7 +200,6 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                         pool_pre_ping=True,
                         # Recycle connections before server-side timeout (5 minutes)
                         pool_recycle=300,
-                        connect_args=connect_args,
                     )
                     _async_db_ctx.session_local = async_sessionmaker(
                         _async_db_ctx.engine,
