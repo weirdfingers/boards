@@ -170,7 +170,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     connect_args = {}
                     if "pgbouncer=true" in db_url or ":6543" in db_url:
                         # Transaction pooling mode - disable prepared statements
-                        connect_args["prepared_statement_cache_size"] = 0
+                        connect_args["statement_cache_size"] = 0
 
                     _async_db_ctx.engine = create_async_engine(
                         url=async_db_url,
