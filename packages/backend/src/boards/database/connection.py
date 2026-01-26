@@ -147,6 +147,9 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     pool_size=settings.database_pool_size,
                     max_overflow=settings.database_max_overflow,
                     echo=settings.sql_echo,
+                    # Supabase connection pooler can close idle connections
+                    pool_pre_ping=True,
+                    pool_recycle=300,
                 )
                 _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
                 _sync_initialized = True
@@ -161,11 +164,25 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             if not _async_db_ctx.initialized or force_reinit:
                 if db_url.startswith("postgresql://"):
                     async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+                    # Build connect_args for asyncpg
+                    # For Supabase transaction pooling (pgbouncer), we need to disable
+                    # prepared statements since pgbouncer doesn't support them
+                    connect_args = {}
+                    if "pgbouncer=true" in db_url or ":6543" in db_url:
+                        # Transaction pooling mode - disable prepared statements
+                        connect_args["prepared_statement_cache_size"] = 0
+
                     _async_db_ctx.engine = create_async_engine(
                         url=async_db_url,
                         pool_size=settings.database_pool_size,
                         max_overflow=settings.database_max_overflow,
                         echo=settings.sql_echo,
+                        # Supabase connection pooler can close idle connections
+                        # pool_pre_ping checks connection health before use
+                        pool_pre_ping=True,
+                        # Recycle connections before server-side timeout (5 minutes)
+                        pool_recycle=300,
+                        connect_args=connect_args,
                     )
                     _async_db_ctx.session_local = async_sessionmaker(
                         _async_db_ctx.engine,
