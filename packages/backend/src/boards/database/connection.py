@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from ..config import settings
 from ..logging import get_logger
@@ -170,37 +171,47 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     async_db_url = db_url.replace(
                         "postgresql://", "postgresql+asyncpg://"
                     )
-                    # For Supabase transaction pooling (pgbouncer), we need to disable
-                    # prepared statements since pgbouncer doesn't support them
-                    # We add this to the URL directly for more reliable application
-                    is_transaction_pooling = "pgbouncer=true" in db_url or ":6543" in db_url
-                    if is_transaction_pooling:
-                        logger.info(
-                            "Transaction pooling mode - disabling prepared statements"
-                        )
-                        # Add prepared_statement_cache_size=0 to URL
-                        separator = "&" if "?" in async_db_url else "?"
-                        async_db_url = f"{async_db_url}{separator}prepared_statement_cache_size=0"
-                    else:
-                        logger.info(
-                            "Direct connection mode - prepared statements enabled"
-                        )
+                    # Detect if using transaction pooling (pgbouncer/Supavisor)
+                    is_transaction_pooling = (
+                        "pgbouncer=true" in db_url or ":6543" in db_url
+                    )
 
                     # Log URL without credentials
-                    url_display = async_db_url.split("@")[1] if "@" in async_db_url else "hidden"
-                    logger.info("Creating async engine", url=url_display)
-
-                    _async_db_ctx.engine = create_async_engine(
-                        url=async_db_url,
-                        pool_size=settings.database_pool_size,
-                        max_overflow=settings.database_max_overflow,
-                        echo=settings.sql_echo,
-                        # Supabase connection pooler can close idle connections
-                        # pool_pre_ping checks connection health before use
-                        pool_pre_ping=True,
-                        # Recycle connections before server-side timeout (5 minutes)
-                        pool_recycle=300,
+                    url_display = (
+                        async_db_url.split("@")[1] if "@" in async_db_url else "hidden"
                     )
+
+                    if is_transaction_pooling:
+                        # Transaction pooling mode:
+                        # - Use NullPool (no SQLAlchemy pooling, let pgbouncer handle it)
+                        # - Disable prepared statements (pgbouncer doesn't support them)
+                        logger.info(
+                            "Transaction pooling mode - using NullPool",
+                            url=url_display,
+                        )
+                        separator = "&" if "?" in async_db_url else "?"
+                        async_db_url = (
+                            f"{async_db_url}{separator}prepared_statement_cache_size=0"
+                        )
+                        _async_db_ctx.engine = create_async_engine(
+                            url=async_db_url,
+                            echo=settings.sql_echo,
+                            poolclass=NullPool,
+                        )
+                    else:
+                        # Direct connection mode: use SQLAlchemy pooling
+                        logger.info(
+                            "Direct connection mode - using connection pool",
+                            url=url_display,
+                        )
+                        _async_db_ctx.engine = create_async_engine(
+                            url=async_db_url,
+                            pool_size=settings.database_pool_size,
+                            max_overflow=settings.database_max_overflow,
+                            echo=settings.sql_echo,
+                            pool_pre_ping=True,
+                            pool_recycle=300,
+                        )
                     _async_db_ctx.session_local = async_sessionmaker(
                         _async_db_ctx.engine,
                         class_=AsyncSession,
