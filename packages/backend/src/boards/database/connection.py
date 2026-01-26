@@ -185,18 +185,19 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                         # Transaction pooling mode:
                         # - Use NullPool (no SQLAlchemy pooling, let pgbouncer handle it)
                         # - Disable prepared statements (pgbouncer doesn't support them)
+                        # - Use both URL param and connect_args to ensure it's disabled
                         logger.info(
                             "Transaction pooling mode - using NullPool",
                             url=url_display,
-                        )
-                        separator = "&" if "?" in async_db_url else "?"
-                        async_db_url = (
-                            f"{async_db_url}{separator}prepared_statement_cache_size=0"
                         )
                         _async_db_ctx.engine = create_async_engine(
                             url=async_db_url,
                             echo=settings.sql_echo,
                             poolclass=NullPool,
+                            connect_args={
+                                "statement_cache_size": 0,
+                                "prepared_statement_cache_size": 0,
+                            },
                         )
                     else:
                         # Direct connection mode: use SQLAlchemy pooling
