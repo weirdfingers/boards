@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 import aiofiles
 
 from ...logging import get_logger
+from ..base import StorageException, StorageProvider
 
 logger = get_logger(__name__)
 if TYPE_CHECKING:
@@ -24,8 +25,6 @@ except ImportError as e:
     create_async_client = None
     # AsyncClient = None
     _supabase_available = False
-
-from ..base import StorageException, StorageProvider
 
 
 class SupabaseStorageProvider(StorageProvider):
@@ -90,9 +89,9 @@ class SupabaseStorageProvider(StorageProvider):
 
             # Return the full public URL, not just the path
             # This matches the behavior of LocalStorageProvider which returns a full URL
-            public_url_response = await client.storage.from_(
-                self.bucket
-            ).get_public_url(response.path)
+            public_url_response = await client.storage.from_(self.bucket).get_public_url(
+                response.path
+            )
             return public_url_response
 
         except Exception as e:
@@ -127,9 +126,7 @@ class SupabaseStorageProvider(StorageProvider):
 
         try:
             client = await self._get_client()
-            response = await client.storage.from_(self.bucket).create_signed_upload_url(
-                path=key
-            )
+            response = await client.storage.from_(self.bucket).create_signed_upload_url(path=key)
 
             return {
                 "url": response["signed_url"],
@@ -161,9 +158,7 @@ class SupabaseStorageProvider(StorageProvider):
             if isinstance(e, StorageException):
                 raise
             logger.error(f"Failed to create presigned download URL for {key}: {e}")
-            raise StorageException(
-                f"Presigned download URL creation failed: {e}"
-            ) from e
+            raise StorageException(f"Presigned download URL creation failed: {e}") from e
 
     async def delete(self, key: str) -> bool:
         """Delete file by storage key."""

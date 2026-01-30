@@ -112,11 +112,13 @@ def configure_logging(debug: bool = False, google_logging_compat: bool = False) 
         processors.append(structlog.dev.ConsoleRenderer(colors=True))
     elif google_logging_compat:
         # Production with GCP: JSON with Cloud Logging field names
-        processors.extend([
-            _level_to_severity,
-            _rename_event_to_message,
-            structlog.processors.JSONRenderer(),
-        ])
+        processors.extend(
+            [
+                _level_to_severity,
+                _rename_event_to_message,
+                structlog.processors.JSONRenderer(),
+            ]
+        )
     else:
         # Production: standard JSON output
         processors.append(structlog.processors.JSONRenderer())

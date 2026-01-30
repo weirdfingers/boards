@@ -142,9 +142,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             if not _sync_initialized or force_reinit:
                 sync_db_url = db_url
                 if db_url.startswith("postgresql://"):
-                    sync_db_url = db_url.replace(
-                        "postgresql://", "postgresql+psycopg://"
-                    )
+                    sync_db_url = db_url.replace("postgresql://", "postgresql+psycopg://")
                 _engine = create_engine(
                     url=sync_db_url,
                     pool_size=settings.database_pool_size,
@@ -154,9 +152,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     pool_pre_ping=True,
                     pool_recycle=300,
                 )
-                _session_local = sessionmaker(
-                    autocommit=False, autoflush=False, bind=_engine
-                )
+                _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
                 _sync_initialized = True
                 logger.info("Sync database initialized", database_url=db_url)
 
@@ -168,18 +164,12 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
             # Double-check after acquiring lock (another coroutine may have initialized)
             if not _async_db_ctx.initialized or force_reinit:
                 if db_url.startswith("postgresql://"):
-                    async_db_url = db_url.replace(
-                        "postgresql://", "postgresql+asyncpg://"
-                    )
+                    async_db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
                     # Detect if using transaction pooling (pgbouncer/Supavisor)
-                    is_transaction_pooling = (
-                        "pgbouncer=true" in db_url or ":6543" in db_url
-                    )
+                    is_transaction_pooling = "pgbouncer=true" in db_url or ":6543" in db_url
 
                     # Log URL without credentials
-                    url_display = (
-                        async_db_url.split("@")[1] if "@" in async_db_url else "hidden"
-                    )
+                    url_display = async_db_url.split("@")[1] if "@" in async_db_url else "hidden"
 
                     if is_transaction_pooling:
                         # Transaction pooling mode:
@@ -229,9 +219,7 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                 else:
                     logger.warning(
                         "Non-PostgreSQL URL detected, async engine not initialized",
-                        url_prefix=(
-                            db_url.split("://")[0] if "://" in db_url else "unknown"
-                        ),
+                        url_prefix=(db_url.split("://")[0] if "://" in db_url else "unknown"),
                     )
 
 
