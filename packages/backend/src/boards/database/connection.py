@@ -7,6 +7,7 @@ import threading
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -154,6 +155,14 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                 )
                 _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
                 _sync_initialized = True
+
+                # Instrument Sync Engine
+                if settings.environment.lower() in ("production", "prod"):
+                    try:
+                        SQLAlchemyInstrumentor().instrument(engine=_engine)
+                    except Exception as e:
+                        logger.warning("Failed to instrument sync engine", error=str(e))
+
                 logger.info("Sync database initialized", database_url=db_url)
 
     # Initialize Async Engine (Thread-Local)
@@ -212,6 +221,14 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                         autoflush=False,
                     )
                     _async_db_ctx.initialized = True
+
+                    # Instrument Async Engine
+                    if settings.environment.lower() in ("production", "prod"):
+                        try:
+                            SQLAlchemyInstrumentor().instrument(engine=_async_db_ctx.engine)
+                        except Exception as e:
+                            logger.warning("Failed to instrument async engine", error=str(e))
+
                     logger.info(
                         "Async database initialized for thread",
                         thread_id=threading.get_ident(),

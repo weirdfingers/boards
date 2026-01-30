@@ -8,7 +8,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from ...database.connection import get_async_session
-from ...dbmodels import BoardMembers, Boards, Generations, Users
+from ...dbmodels import BoardMembers, Boards, Generations
 from ...generators.registry import registry as generator_registry
 from ...jobs import repository as jobs_repo
 from ...logging import get_logger
@@ -208,64 +208,53 @@ async def resolve_recent_generations(
 async def resolve_generation_board(generation: Generation, info: strawberry.Info) -> Board:
     """Resolve the board this generation belongs to."""
     auth_context = await get_auth_context_from_info(info)
+    loaders = info.context["loaders"]
 
-    async with get_async_session() as session:
-        stmt = (
-            select(Boards)
-            .where(Boards.id == generation.board_id)
-            .options(
-                selectinload(Boards.owner),
-                selectinload(Boards.board_members).selectinload(BoardMembers.user),
-            )
-        )
-        result = await session.execute(stmt)
-        board = result.scalar_one_or_none()
+    board = await loaders.board_loader.load(generation.board_id)
 
-        if not board:
-            raise RuntimeError("Generation board not found")
+    if not board:
+        raise RuntimeError("Generation board not found")
 
-        if not can_access_board(board, auth_context):
-            raise RuntimeError("Access denied to generation board")
+    if not can_access_board(board, auth_context):
+        raise RuntimeError("Access denied to generation board")
 
-        from ..types.board import Board as BoardType
+    from ..types.board import Board as BoardType
 
-        return BoardType(
-            id=board.id,
-            tenant_id=board.tenant_id,
-            owner_id=board.owner_id,
-            title=board.title,
-            description=board.description,
-            is_public=board.is_public,
-            settings=board.settings or {},
-            metadata=board.metadata_ or {},
-            created_at=board.created_at,
-            updated_at=board.updated_at,
-        )
+    return BoardType(
+        id=board.id,
+        tenant_id=board.tenant_id,
+        owner_id=board.owner_id,
+        title=board.title,
+        description=board.description,
+        is_public=board.is_public,
+        settings=board.settings or {},
+        metadata=board.metadata_ or {},
+        created_at=board.created_at,
+        updated_at=board.updated_at,
+    )
 
 
 async def resolve_generation_user(generation: Generation, info: strawberry.Info) -> User:
     """Resolve the user who created this generation."""
-    async with get_async_session() as session:
-        stmt = select(Users).where(Users.id == generation.user_id)
-        result = await session.execute(stmt)
-        user = result.scalar_one_or_none()
+    loaders = info.context["loaders"]
+    user = await loaders.user_loader.load(generation.user_id)
 
-        if not user:
-            raise RuntimeError("Generation user not found")
+    if not user:
+        raise RuntimeError("Generation user not found")
 
-        from ..types.user import User as UserType
+    from ..types.user import User as UserType
 
-        return UserType(
-            id=user.id,
-            tenant_id=user.tenant_id,
-            auth_provider=user.auth_provider,
-            auth_subject=user.auth_subject,
-            email=user.email,
-            display_name=user.display_name,
-            avatar_url=user.avatar_url,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+    return UserType(
+        id=user.id,
+        tenant_id=user.tenant_id,
+        auth_provider=user.auth_provider,
+        auth_subject=user.auth_subject,
+        email=user.email,
+        display_name=user.display_name,
+        avatar_url=user.avatar_url,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
 
 
 async def resolve_generation_parent(

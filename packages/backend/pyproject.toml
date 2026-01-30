@@ -40,7 +40,7 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "httpx[http2]>=0.24.0",
     "python-dotenv>=1.0.0",
-    "strawberry-graphql[fastapi]>=0.200.0",
+    "strawberry-graphql[fastapi,opentelemetry]>=0.200.0",
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.23.0",
     "dramatiq[redis,watch]>=1.15.0",
@@ -56,6 +56,12 @@ dependencies = [
     "redis>=5.0.0",
     "pyjwt[crypto]>=2.8.0",
     "psutil>=7.0.0",
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-gcp-trace>=1.6.0",
+    "opentelemetry-instrumentation-fastapi>=0.40.0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.40.0",
+    "opentelemetry-instrumentation-asyncpg>=0.40.0",
 ]
 
 [project.optional-dependencies]

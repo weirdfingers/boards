@@ -7,9 +7,12 @@ from typing import Any
 import strawberry
 from fastapi import Request
 from graphql import validate_schema as gql_validate_schema
+from strawberry.extensions.tracing import OpenTelemetryExtension
 from strawberry.fastapi import GraphQLRouter
 
+from ..config import settings
 from ..logging import get_logger
+from .loaders import Loaders
 from .mutations.root import Mutation
 from .queries.root import Query
 
@@ -18,9 +21,14 @@ from .queries.root import Query
 logger = get_logger(__name__)
 
 # Create the GraphQL schema
+extensions = []
+if settings.environment.lower() in ("production", "prod"):
+    extensions.append(OpenTelemetryExtension)
+
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
+    extensions=extensions,
     # Note: Introspection is enabled by default in strawberry
     # TODO: Disable in production for security by using extensions
 )
@@ -71,6 +79,7 @@ def create_graphql_router() -> GraphQLRouter[dict[str, Any], None]:
         """Get the context for GraphQL resolvers."""
         return {
             "request": request,
+            "loaders": Loaders(),
         }
 
     return GraphQLRouter(

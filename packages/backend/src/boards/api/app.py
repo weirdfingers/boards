@@ -7,6 +7,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from opentelemetry import trace
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from ..config import initialize_generator_api_keys, settings
 from ..database import init_database
@@ -142,7 +147,15 @@ def create_app() -> FastAPI:
             raise
 
     # REST API endpoints (for SSE, webhooks, etc.)
-    from .endpoints import jobs, setup, sse, storage, tenant_registration, uploads, webhooks
+    from .endpoints import (
+        jobs,
+        setup,
+        sse,
+        storage,
+        tenant_registration,
+        uploads,
+        webhooks,
+    )
 
     app.include_router(sse.router, prefix="/api/sse", tags=["SSE"])
     app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
@@ -153,6 +166,21 @@ def create_app() -> FastAPI:
     app.include_router(
         tenant_registration.router, prefix="/api/tenants", tags=["Tenant Registration"]
     )
+
+    # OpenTelemetry Instrumentation
+    if settings.environment.lower() in ("production", "prod"):
+        try:
+            tracer_provider = TracerProvider()
+            cloud_trace_exporter = CloudTraceSpanExporter()
+            tracer_provider.add_span_processor(BatchSpanProcessor(cloud_trace_exporter))
+            trace.set_tracer_provider(tracer_provider)
+
+            # Instrument FastAPI
+            FastAPIInstrumentor.instrument_app(app)
+
+            logger.info("OpenTelemetry instrumentation enabled")
+        except Exception as e:
+            logger.error("Failed to initialize OpenTelemetry", error=str(e))
 
     return app
 
