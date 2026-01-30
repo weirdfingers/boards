@@ -18,6 +18,33 @@ request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 user_id_ctx: ContextVar[str | None] = ContextVar("user_id", default=None)
 
 
+def _rename_event_to_message(
+    _logger: Any, _method_name: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
+    """Rename 'event' to 'message' for Google Cloud Logging compatibility."""
+    if "event" in event_dict:
+        event_dict["message"] = event_dict.pop("event")
+    return event_dict
+
+
+def _level_to_severity(
+    _logger: Any, _method_name: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
+    """Convert 'level' to 'severity' with uppercase value for Google Cloud Logging."""
+    if "level" in event_dict:
+        level = event_dict.pop("level")
+        # Map structlog levels to Google Cloud Logging severity levels
+        severity_map = {
+            "debug": "DEBUG",
+            "info": "INFO",
+            "warning": "WARNING",
+            "error": "ERROR",
+            "critical": "CRITICAL",
+        }
+        event_dict["severity"] = severity_map.get(level.lower(), "DEFAULT")
+    return event_dict
+
+
 class RequestContextFilter:
     """Add request context to log records."""
 
@@ -38,11 +65,13 @@ class RequestContextFilter:
         return event_dict
 
 
-def configure_logging(debug: bool = False) -> None:
+def configure_logging(debug: bool = False, google_logging_compat: bool = False) -> None:
     """Configure structlog with appropriate processors and formatters.
 
     Args:
         debug: If True, use human-readable console output. If False, use JSON.
+        google_logging_compat: If True, format JSON for Google Cloud Logging
+            (renames 'event' to 'message', 'level' to 'severity').
     """
 
     # Determine log level
@@ -81,8 +110,15 @@ def configure_logging(debug: bool = False) -> None:
     if debug:
         # Development: human-readable console output
         processors.append(structlog.dev.ConsoleRenderer(colors=True))
+    elif google_logging_compat:
+        # Production with GCP: JSON with Cloud Logging field names
+        processors.extend([
+            _level_to_severity,
+            _rename_event_to_message,
+            structlog.processors.JSONRenderer(),
+        ])
     else:
-        # Production: JSON output
+        # Production: standard JSON output
         processors.append(structlog.processors.JSONRenderer())
 
     # Configure structlog

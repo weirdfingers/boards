@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     debug: bool = True
     sql_echo: bool = False
     log_level: str = "INFO"
+    google_logging_compat: bool = False  # Enable GCP Cloud Logging field formatting
 
     # Tenant Settings (for multi-tenant mode)
     multi_tenant_mode: bool = False

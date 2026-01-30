@@ -196,7 +196,9 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                             poolclass=NullPool,
                             connect_args={
                                 "statement_cache_size": 0,
-                                "prepared_statement_cache_size": 0,
+                                # Use unnamed prepared statements for pgbouncer compatibility
+                                # Empty string causes asyncpg to use unnamed statements
+                                "prepared_statement_name_func": lambda: "",
                             },
                         )
                     else:

@@ -15,7 +15,7 @@ from ..logging import configure_logging, get_logger
 from ..middleware import LoggingContextMiddleware, TenantRoutingMiddleware
 
 # Configure logging before creating logger
-configure_logging(debug=settings.debug)
+configure_logging(debug=settings.debug, google_logging_compat=settings.google_logging_compat)
 logger = get_logger(__name__)
 
 

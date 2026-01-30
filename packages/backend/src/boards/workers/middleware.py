@@ -43,7 +43,7 @@ class GeneratorLoaderMiddleware(Middleware):
             worker: The worker process instance
         """
         # Configure logging for this worker process (subprocess doesn't inherit parent's config)
-        configure_logging(debug=settings.debug)
+        configure_logging(debug=settings.debug, google_logging_compat=settings.google_logging_compat)
 
         logger.info("Loading generators in worker process", worker_id=id(worker))
 
