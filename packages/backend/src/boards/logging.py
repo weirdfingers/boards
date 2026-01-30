@@ -4,6 +4,7 @@ Centralized logging configuration using structlog
 
 import base64
 import logging
+import os
 import secrets
 import sys
 import time
@@ -66,13 +67,7 @@ class RequestContextFilter:
 
 
 def configure_logging(debug: bool = False, google_logging_compat: bool = False) -> None:
-    """Configure structlog with appropriate processors and formatters.
-
-    Args:
-        debug: If True, use human-readable console output. If False, use JSON.
-        google_logging_compat: If True, format JSON for Google Cloud Logging
-            (renames 'event' to 'message', 'level' to 'severity').
-    """
+    """Configure structlog with appropriate processors and formatters."""
 
     # Determine log level
     log_level = logging.DEBUG if debug else logging.INFO
@@ -87,6 +82,8 @@ def configure_logging(debug: bool = False, google_logging_compat: bool = False) 
 
     # Configure structlog processors
     processors = [
+        # Add context vars to the event dict from the OpenTelemetry context
+        structlog.contextvars.merge_contextvars,
         # Filter out keys with underscores (internal)
         structlog.stdlib.filter_by_level,
         # Add logger name to event dict
@@ -106,6 +103,29 @@ def configure_logging(debug: bool = False, google_logging_compat: bool = False) 
         # Unicode decoder processor
         structlog.processors.UnicodeDecoder(),
     ]
+
+    # Add OpenTelemetry trace_id and span_id to logs if available
+    try:
+        from opentelemetry import trace
+
+        def add_opentelemetry_context(logger, method_name, event_dict):
+            span = trace.get_current_span()
+            # Check if span is valid by checking if it has a context
+            if span.get_span_context().is_valid:
+                span_context = span.get_span_context()
+                event_dict["trace_id"] = f"{span_context.trace_id:032x}"
+                event_dict["span_id"] = f"{span_context.span_id:016x}"
+                # For GCP Cloud Logging correlation
+                project_id = os.environ.get("GCP_PROJECT_ID", "")
+                event_dict["logging.googleapis.com/trace"] = (
+                    f"projects/{project_id}/traces/{event_dict['trace_id']}"
+                )
+                event_dict["logging.googleapis.com/spanId"] = event_dict["span_id"]
+            return event_dict
+
+        processors.insert(1, add_opentelemetry_context)
+    except ImportError:
+        pass
 
     if debug:
         # Development: human-readable console output
