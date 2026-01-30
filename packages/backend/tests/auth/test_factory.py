@@ -67,7 +67,7 @@ class TestAuthFactory:
             get_auth_adapter()
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "supabase"})
-    @patch("boards.auth.adapters.supabase.create_client")
+    @patch("boards.auth.adapters.supabase.create_async_client")
     def test_supabase_adapter(self, mock_create_client):
         """Test creating Supabase adapter."""
         from boards import config
@@ -78,8 +78,8 @@ class TestAuthFactory:
             with patch.object(config.settings, "supabase_service_role_key", "test-key"):
                 adapter = get_auth_adapter()
                 assert isinstance(adapter, SupabaseAuthAdapter)
-                # Verify create_client was called with correct args
-                mock_create_client.assert_called_once_with("https://test.supabase.co", "test-key")
+                # Verify create_async_client was NOT called immediately (lazy init)
+                mock_create_client.assert_not_called()
 
     @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "supabase"})
     def test_supabase_adapter_missing_config(self):
@@ -87,7 +87,10 @@ class TestAuthFactory:
         with pytest.raises(ValueError, match="Supabase URL and service role key are required"):
             get_auth_adapter()
 
-    @patch.dict(os.environ, {"BOARDS_AUTH_PROVIDER": "clerk", "CLERK_SECRET_KEY": "test-clerk-key"})
+    @patch.dict(
+        os.environ,
+        {"BOARDS_AUTH_PROVIDER": "clerk", "CLERK_SECRET_KEY": "test-clerk-key"},
+    )
     def test_clerk_adapter(self):
         """Test creating Clerk adapter."""
         from boards.auth.adapters.clerk import ClerkAuthAdapter
