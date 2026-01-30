@@ -1,6 +1,6 @@
 {
   "name": "@weirdfingers/boards-auth-jwt",
-  "version": "0.10.10",
+  "version": "0.11.0",
   "description": "JWT authentication provider for Boards",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

@@ -1,6 +1,6 @@
 {
   "name": "@weirdfingers/boards",
-  "version": "0.10.10",
+  "version": "0.11.0",
   "description": "React hooks for Boards creative toolkit",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
