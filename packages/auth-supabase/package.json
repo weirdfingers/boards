@@ -1,6 +1,6 @@
 {
   "name": "@weirdfingers/boards-auth-supabase",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "description": "Supabase authentication provider for Boards",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
