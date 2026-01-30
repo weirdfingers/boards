@@ -178,6 +178,16 @@ def create_app() -> FastAPI:
             # Instrument FastAPI
             FastAPIInstrumentor.instrument_app(app)
 
+            # Instrument HTTPX
+            try:
+                from opentelemetry.instrumentation.httpx import (  # type: ignore
+                    HTTPXClientInstrumentor,
+                )
+
+                HTTPXClientInstrumentor().instrument()
+            except Exception as e:
+                logger.warning("Failed to instrument HTTPX", error=str(e))
+
             logger.info("OpenTelemetry instrumentation enabled")
         except Exception as e:
             logger.error("Failed to initialize OpenTelemetry", error=str(e))

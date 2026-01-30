@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import jwt
-from supabase import Client, create_client
+from supabase import AsyncClient, create_async_client
 
 from ...logging import get_logger
 from .base import AuthenticationError, Principal
@@ -26,13 +26,20 @@ class SupabaseAuthAdapter:
         """
         self.url = url
         self.service_role_key = service_role_key
-        self.client: Client = create_client(url, service_role_key)
+        self._client: AsyncClient | None = None
+
+    async def _get_client(self) -> AsyncClient:
+        """Get or create the async Supabase client."""
+        if self._client is None:
+            self._client = await create_async_client(self.url, self.service_role_key)
+        return self._client
 
     async def verify_token(self, token: str) -> Principal:
         """Verify a Supabase JWT token and return the principal."""
         try:
             # Get user info from Supabase auth
-            user_response = self.client.auth.get_user(token)
+            client = await self._get_client()
+            user_response = await client.auth.get_user(token)
 
             if not user_response or not user_response.user:
                 raise AuthenticationError("Invalid or expired token")
@@ -87,7 +94,8 @@ class SupabaseAuthAdapter:
     async def get_user_info(self, token: str) -> dict:
         """Get additional user information from Supabase."""
         try:
-            user_response = self.client.auth.get_user(token)
+            client = await self._get_client()
+            user_response = await client.auth.get_user(token)
 
             if not user_response or not user_response.user:
                 return {}
