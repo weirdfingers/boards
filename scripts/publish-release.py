@@ -10,16 +10,74 @@ This script triggers the version-bump.yml workflow which will:
 """
 
 import argparse
+import json
 import subprocess
 import sys
+import time
 
 
-def trigger_workflow(bump_type: str) -> None:
+def get_latest_run_id() -> str | None:
+    """Get the databaseId of the latest version-bump.yml run."""
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "run",
+                "list",
+                "--workflow",
+                "version-bump.yml",
+                "--limit",
+                "1",
+                "--json",
+                "databaseId",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        data = json.loads(result.stdout)
+        if data:
+            return str(data[0]["databaseId"])
+        return None
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return None
+
+
+def get_latest_release_version() -> str | None:
+    """Get the tag name of the latest release."""
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "release",
+                "list",
+                "--limit",
+                "1",
+                "--json",
+                "tagName",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        data = json.loads(result.stdout)
+        if data:
+            tag = data[0]["tagName"]
+            if tag.startswith("v"):
+                return tag[1:]
+            return tag
+        return None
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return None
+
+
+def trigger_workflow(bump_type: str, wait: bool = False) -> None:
     """
     Trigger the GitHub Actions workflow.
 
     Args:
         bump_type: Type of version bump ("major", "minor", or "patch")
+        wait: Whether to wait for the workflow to complete and print the new version
 
     Raises:
         subprocess.CalledProcessError: If gh command fails
@@ -42,6 +100,11 @@ def trigger_workflow(bump_type: str) -> None:
         print("Error: Failed to run gh CLI.", file=sys.stderr)
         sys.exit(1)
 
+    # Get latest run ID before triggering if we need to wait
+    old_run_id = None
+    if wait:
+        old_run_id = get_latest_run_id()
+
     try:
         # Trigger the workflow
         subprocess.run(
@@ -59,14 +122,47 @@ def trigger_workflow(bump_type: str) -> None:
         )
 
         print("✓ Workflow triggered successfully!", file=sys.stderr)
-        print("\nMonitor the workflow at:", file=sys.stderr)
-        print("  gh run watch", file=sys.stderr)
-        print("Or view in browser:", file=sys.stderr)
-        print("  gh workflow view version-bump.yml --web", file=sys.stderr)
+
+        if not wait:
+            print("\nMonitor the workflow at:", file=sys.stderr)
+            print("  gh run watch", file=sys.stderr)
+            print("Or view in browser:", file=sys.stderr)
+            print("  gh workflow view version-bump.yml --web", file=sys.stderr)
+            return
+
+        print("Waiting for workflow run to start...", file=sys.stderr)
+
+        # Wait for new run
+        start_time = time.time()
+        new_run_id = None
+        while time.time() - start_time < 60:
+            current_id = get_latest_run_id()
+            if current_id and current_id != old_run_id:
+                new_run_id = current_id
+                break
+            time.sleep(2)
+
+        if not new_run_id:
+            print(
+                "Error: Timed out waiting for workflow run to start.", file=sys.stderr
+            )
+            sys.exit(1)
+
+        print(f"Workflow run started: {new_run_id}", file=sys.stderr)
+        print("Waiting for completion...", file=sys.stderr)
+
+        subprocess.run(["gh", "run", "watch", new_run_id], check=True)
+
+        # Workflow finished successfully
+        version = get_latest_release_version()
+        if version:
+            print(version)
+        else:
+            print("Warning: Could not determine new version.", file=sys.stderr)
 
     except subprocess.CalledProcessError as e:
-        print(f"Error triggering workflow: {e}", file=sys.stderr)
-        if e.stderr:
+        print(f"Error in workflow execution: {e}", file=sys.stderr)
+        if hasattr(e, "stderr") and e.stderr:
             print(e.stderr, file=sys.stderr)
         sys.exit(1)
 
@@ -81,11 +177,16 @@ def main():
         choices=["major", "minor", "patch"],
         help="Type of version bump",
     )
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="Wait for workflow completion and print new version",
+    )
 
     args = parser.parse_args()
 
     try:
-        trigger_workflow(args.bump_type)
+        trigger_workflow(args.bump_type, wait=args.wait)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

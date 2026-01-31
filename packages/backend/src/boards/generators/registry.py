@@ -30,7 +30,7 @@ class GeneratorRegistry:
         Raises:
             ValueError: If a generator with the same name is already registered
         """
-        logger.info("Registering generator", name=generator.name)
+        logger.debug("Registering generator", name=generator.name)
         if generator.name in self._generators:
             raise ValueError(f"Generator '{generator.name}' is already registered")
 

@@ -68,20 +68,22 @@ async def resolve_board_by_id(info: strawberry.Info, id: UUID) -> Board | None:
             )
             return None
 
-        # Convert SQLAlchemy model to GraphQL type
-        from ..types.board import Board as BoardType
+        # Convert SQLAlchemy model to GraphQL type with pre-loaded data
+        from ..types.board import board_from_db_model, board_member_from_db_model
+        from ..types.user import user_from_db_model
 
-        return BoardType(
-            id=board.id,
-            tenant_id=board.tenant_id,
-            owner_id=board.owner_id,
-            title=board.title,
-            description=board.description,
-            is_public=board.is_public,
-            settings=board.settings or {},
-            metadata=board.metadata_ or {},
-            created_at=board.created_at,
-            updated_at=board.updated_at,
+        return board_from_db_model(
+            board,
+            preloaded_owner=user_from_db_model(board.owner) if board.owner else None,
+            preloaded_members=[
+                board_member_from_db_model(
+                    member,
+                    preloaded_user=(user_from_db_model(member.user) if member.user else None),
+                )
+                for member in board.board_members
+            ]
+            if board.board_members
+            else None,
         )
 
 
@@ -151,21 +153,23 @@ async def resolve_my_boards(
         result = await session.execute(stmt)
         boards = result.scalars().all()
 
-        # Convert to GraphQL types
-        from ..types.board import Board as BoardType
+        # Convert to GraphQL types with pre-loaded data
+        from ..types.board import board_from_db_model, board_member_from_db_model
+        from ..types.user import user_from_db_model
 
         return [
-            BoardType(
-                id=board.id,
-                tenant_id=board.tenant_id,
-                owner_id=board.owner_id,
-                title=board.title,
-                description=board.description,
-                is_public=board.is_public,
-                settings=board.settings or {},
-                metadata=board.metadata_ or {},
-                created_at=board.created_at,
-                updated_at=board.updated_at,
+            board_from_db_model(
+                board,
+                preloaded_owner=user_from_db_model(board.owner) if board.owner else None,
+                preloaded_members=[
+                    board_member_from_db_model(
+                        member,
+                        preloaded_user=(user_from_db_model(member.user) if member.user else None),
+                    )
+                    for member in board.board_members
+                ]
+                if board.board_members
+                else None,
             )
             for board in boards
         ]
@@ -209,21 +213,23 @@ async def resolve_public_boards(
         result = await session.execute(stmt)
         boards = result.scalars().all()
 
-        # Convert to GraphQL types
-        from ..types.board import Board as BoardType
+        # Convert to GraphQL types with pre-loaded data
+        from ..types.board import board_from_db_model, board_member_from_db_model
+        from ..types.user import user_from_db_model
 
         return [
-            BoardType(
-                id=board.id,
-                tenant_id=board.tenant_id,
-                owner_id=board.owner_id,
-                title=board.title,
-                description=board.description,
-                is_public=board.is_public,
-                settings=board.settings or {},
-                metadata=board.metadata_ or {},
-                created_at=board.created_at,
-                updated_at=board.updated_at,
+            board_from_db_model(
+                board,
+                preloaded_owner=user_from_db_model(board.owner) if board.owner else None,
+                preloaded_members=[
+                    board_member_from_db_model(
+                        member,
+                        preloaded_user=(user_from_db_model(member.user) if member.user else None),
+                    )
+                    for member in board.board_members
+                ]
+                if board.board_members
+                else None,
             )
             for board in boards
         ]
@@ -277,21 +283,23 @@ async def search_boards(info: strawberry.Info, query: str, limit: int, offset: i
         result = await session.execute(stmt)
         boards = result.scalars().all()
 
-        # Convert to GraphQL types
-        from ..types.board import Board as BoardType
+        # Convert to GraphQL types with pre-loaded data
+        from ..types.board import board_from_db_model, board_member_from_db_model
+        from ..types.user import user_from_db_model
 
         return [
-            BoardType(
-                id=board.id,
-                tenant_id=board.tenant_id,
-                owner_id=board.owner_id,
-                title=board.title,
-                description=board.description,
-                is_public=board.is_public,
-                settings=board.settings or {},
-                metadata=board.metadata_ or {},
-                created_at=board.created_at,
-                updated_at=board.updated_at,
+            board_from_db_model(
+                board,
+                preloaded_owner=user_from_db_model(board.owner) if board.owner else None,
+                preloaded_members=[
+                    board_member_from_db_model(
+                        member,
+                        preloaded_user=(user_from_db_model(member.user) if member.user else None),
+                    )
+                    for member in board.board_members
+                ]
+                if board.board_members
+                else None,
             )
             for board in boards
         ]

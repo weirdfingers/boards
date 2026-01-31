@@ -9,7 +9,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "test": "vitest --run"
   },
   "keywords": [

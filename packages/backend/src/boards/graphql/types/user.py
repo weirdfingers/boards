@@ -2,6 +2,8 @@
 User GraphQL type definitions
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
@@ -9,6 +11,7 @@ from uuid import UUID
 import strawberry
 
 if TYPE_CHECKING:
+    from ...dbmodels import Users as UsersDB
     from .board import Board
 
 
@@ -29,7 +32,7 @@ class User:
     @strawberry.field
     async def boards(
         self, info: strawberry.Info
-    ) -> list[Annotated["Board", strawberry.lazy(".board")]]:  # noqa: E501
+    ) -> list[Annotated[Board, strawberry.lazy(".board")]]:
         """Get boards owned by this user."""
         # TODO: Implement data loader
         from ..resolvers.user import resolve_user_boards
@@ -39,9 +42,24 @@ class User:
     @strawberry.field
     async def member_boards(
         self, info: strawberry.Info
-    ) -> list[Annotated["Board", strawberry.lazy(".board")]]:  # noqa: E501
+    ) -> list[Annotated[Board, strawberry.lazy(".board")]]:
         """Get boards where user is a member."""
         # TODO: Implement data loader
         from ..resolvers.user import resolve_user_member_boards
 
         return await resolve_user_member_boards(self, info)
+
+
+def user_from_db_model(db_user: UsersDB) -> User:
+    """Convert a database User model to GraphQL User type."""
+    return User(
+        id=db_user.id,
+        tenant_id=db_user.tenant_id,
+        auth_provider=db_user.auth_provider,
+        auth_subject=db_user.auth_subject,
+        email=db_user.email,
+        display_name=db_user.display_name,
+        avatar_url=db_user.avatar_url,
+        created_at=db_user.created_at,
+        updated_at=db_user.updated_at,
+    )

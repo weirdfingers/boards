@@ -22,7 +22,9 @@ logger = get_logger(__name__)
 
 # Create the GraphQL schema
 extensions = []
-if settings.environment.lower() in ("production", "prod"):
+is_production = settings.environment.lower() in ("production", "prod")
+is_local_otel = settings.environment.lower() not in ("production", "prod") and settings.otel_enabled
+if is_production or is_local_otel:
     extensions.append(OpenTelemetryExtension)
 
 schema = strawberry.Schema(

@@ -4,7 +4,12 @@ Configuration management for Boards backend
 
 import os
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env file early so all environment variables are available
+# This ensures OTEL_* and other standard env vars work correctly
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -50,6 +55,11 @@ class Settings(BaseSettings):
     sql_echo: bool = False
     log_level: str = "INFO"
     google_logging_compat: bool = False  # Enable GCP Cloud Logging field formatting
+
+    # OpenTelemetry Settings
+    otel_enabled: bool = False  # Enable OTEL in local/dev environments
+    otel_endpoint: str = "localhost:4317"  # OTLP endpoint (Jaeger default)
+    otel_service_name: str = "weirdfingers-boards-api"  # Service name for traces
 
     # Tenant Settings (for multi-tenant mode)
     multi_tenant_mode: bool = False

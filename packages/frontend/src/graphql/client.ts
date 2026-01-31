@@ -51,6 +51,7 @@ export function createGraphQLClient({
 
   return createClient({
     url,
+    preferGetMethod: false,
     exchanges: [
       cacheExchange,
       authExchange(async () => {
@@ -92,7 +93,7 @@ export function createGraphQLClient({
             return error.graphQLErrors.some(
               (e) =>
                 e.extensions?.code === "UNAUTHENTICATED" ||
-                e.extensions?.code === "UNAUTHORIZED"
+                e.extensions?.code === "UNAUTHORIZED",
             );
           },
 
@@ -118,7 +119,7 @@ export function createGraphQLClient({
                       query: operation.query || "",
                       variables: operation.variables,
                     },
-                    sink
+                    sink,
                   ),
                 }),
               }),

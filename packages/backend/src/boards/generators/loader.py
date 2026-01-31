@@ -206,7 +206,7 @@ def load_generators_from_config(config_path: str | None = None) -> None:
                 instance = cls(**options) if options else cls()
                 _register_instance(instance, name_override)
                 requested_names.add(instance.name)
-                logger.info(
+                logger.debug(
                     "Registered generator via class",
                     class_path=qualified,
                     name=instance.name,
@@ -218,7 +218,7 @@ def load_generators_from_config(config_path: str | None = None) -> None:
                 instance = cls(**options) if options else cls()
                 _register_instance(instance, name_override)
                 requested_names.add(instance.name)
-                logger.info(
+                logger.debug(
                     "Registered generator via entrypoint",
                     entrypoint=ep_name,
                     name=instance.name,

@@ -80,6 +80,25 @@ def configure_logging(debug: bool = False, google_logging_compat: bool = False) 
         force=True,
     )
 
+    # Silence noisy third-party loggers that spam at DEBUG level
+    # These HTTP libraries output verbose protocol-level details (HPACK encoding, etc.)
+    noisy_loggers = [
+        "httpx",
+        "httpcore",
+        "httpcore.http2",
+        "httpcore.http11",
+        "httpcore.connection",
+        "hpack",
+        "h2",
+        "h11",
+        "urllib3",
+        "urllib3.connectionpool",
+        "asyncio",
+        "watchfiles",
+    ]
+    for logger_name in noisy_loggers:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
+
     # Configure structlog processors
     processors = [
         # Add context vars to the event dict from the OpenTelemetry context

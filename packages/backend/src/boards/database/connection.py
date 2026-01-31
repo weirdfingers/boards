@@ -7,6 +7,7 @@ import threading
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
 
+from opentelemetry import trace
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import (
@@ -156,10 +157,18 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                 _session_local = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
                 _sync_initialized = True
 
-                # Instrument Sync Engine
-                if settings.environment.lower() in ("production", "prod"):
+                # Instrument Sync Engine (production or local with OTEL enabled)
+                is_production = settings.environment.lower() in ("production", "prod")
+                is_local_otel = (
+                    settings.environment.lower() not in ("production", "prod")
+                    and settings.otel_enabled
+                )
+                if is_production or is_local_otel:
                     try:
-                        SQLAlchemyInstrumentor().instrument(engine=_engine)
+                        tracer_provider = trace.get_tracer_provider()
+                        SQLAlchemyInstrumentor().instrument(
+                            engine=_engine, tracer_provider=tracer_provider
+                        )
                     except Exception as e:
                         logger.warning("Failed to instrument sync engine", error=str(e))
 
@@ -222,10 +231,21 @@ def init_database(database_url: str | None = None, force_reinit: bool = False):
                     )
                     _async_db_ctx.initialized = True
 
-                    # Instrument Async Engine
-                    if settings.environment.lower() in ("production", "prod"):
+                    # Instrument Async Engine (production or local with OTEL enabled)
+                    is_production = settings.environment.lower() in ("production", "prod")
+                    is_local_otel = (
+                        settings.environment.lower() not in ("production", "prod")
+                        and settings.otel_enabled
+                    )
+                    if is_production or is_local_otel:
                         try:
-                            SQLAlchemyInstrumentor().instrument(engine=_async_db_ctx.engine)
+                            tracer_provider = trace.get_tracer_provider()
+                            # For async engines, must instrument the underlying sync_engine
+                            SQLAlchemyInstrumentor().instrument(
+                                engine=_async_db_ctx.engine.sync_engine,
+                                tracer_provider=tracer_provider,
+                            )
+                            logger.info("SQLAlchemy instrumentation enabled for async engine")
                         except Exception as e:
                             logger.warning("Failed to instrument async engine", error=str(e))
 

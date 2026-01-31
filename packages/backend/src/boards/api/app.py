@@ -7,11 +7,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from opentelemetry import trace
-from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from ..config import initialize_generator_api_keys, settings
 from ..database import init_database
@@ -168,40 +163,9 @@ def create_app() -> FastAPI:
     )
 
     # OpenTelemetry Instrumentation
-    if settings.environment.lower() in ("production", "prod"):
-        try:
-            # Create a span for the entire request lifecycle
-            # This ensures we have a root span even if FastAPI instrumentation misses it
-            # or if we need to trace things happening during startup
-            tracer_provider = TracerProvider()
+    from .otel import setup_opentelemetry
 
-            # Configure Cloud Trace Exporter
-            # We explicitly set project_id if available to ensure traces go to the right place
-            project_id = os.environ.get("GCP_PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT")
-            cloud_trace_exporter = CloudTraceSpanExporter(project_id=project_id)
-
-            tracer_provider.add_span_processor(BatchSpanProcessor(cloud_trace_exporter))
-            trace.set_tracer_provider(tracer_provider)
-
-            # Instrument FastAPI
-            # We add excluded_urls to avoid tracing health checks which clutter the traces
-            FastAPIInstrumentor.instrument_app(
-                app, tracer_provider=tracer_provider, excluded_urls="health,status,metrics"
-            )
-
-            # Instrument HTTPX
-            try:
-                from opentelemetry.instrumentation.httpx import (  # type: ignore
-                    HTTPXClientInstrumentor,
-                )
-
-                HTTPXClientInstrumentor().instrument(tracer_provider=tracer_provider)
-            except Exception as e:
-                logger.warning("Failed to instrument HTTPX", error=str(e))
-
-            logger.info("OpenTelemetry instrumentation enabled", project_id=project_id)
-        except Exception as e:
-            logger.error("Failed to initialize OpenTelemetry", error=str(e))
+    setup_opentelemetry(app)
 
     return app
 
