@@ -96,6 +96,20 @@ export const DESCENDANT_NODE_FRAGMENT = gql`
   }
 `;
 
+// Tag fragment
+export const TAG_FRAGMENT = gql`
+  fragment TagFragment on Tag {
+    id
+    tenantId
+    name
+    slug
+    description
+    metadata
+    createdAt
+    updatedAt
+  }
+`;
+
 // Auth queries
 export const GET_CURRENT_USER = gql`
   ${USER_FRAGMENT}
@@ -394,4 +408,111 @@ export enum ArtifactType {
   TEXT = "TEXT",
   LORA = "LORA",
   MODEL = "MODEL",
+}
+
+// Tag queries
+export const GET_TAGS = gql`
+  ${TAG_FRAGMENT}
+  query GetTags($limit: Int, $offset: Int) {
+    tags(limit: $limit, offset: $offset) {
+      ...TagFragment
+    }
+  }
+`;
+
+export const GET_TAG = gql`
+  ${TAG_FRAGMENT}
+  query GetTag($id: UUID!) {
+    tag(id: $id) {
+      ...TagFragment
+    }
+  }
+`;
+
+export const GET_TAG_BY_SLUG = gql`
+  ${TAG_FRAGMENT}
+  query GetTagBySlug($slug: String!) {
+    tagBySlug(slug: $slug) {
+      ...TagFragment
+    }
+  }
+`;
+
+export const GET_GENERATION_TAGS = gql`
+  ${TAG_FRAGMENT}
+  query GetGenerationTags($id: UUID!) {
+    generation(id: $id) {
+      tags {
+        ...TagFragment
+      }
+    }
+  }
+`;
+
+// Tag mutations
+export const CREATE_TAG = gql`
+  ${TAG_FRAGMENT}
+  mutation CreateTag($input: CreateTagInput!) {
+    createTag(input: $input) {
+      ...TagFragment
+    }
+  }
+`;
+
+export const UPDATE_TAG = gql`
+  ${TAG_FRAGMENT}
+  mutation UpdateTag($input: UpdateTagInput!) {
+    updateTag(input: $input) {
+      ...TagFragment
+    }
+  }
+`;
+
+export const DELETE_TAG = gql`
+  mutation DeleteTag($id: UUID!) {
+    deleteTag(id: $id)
+  }
+`;
+
+export const ADD_TAG_TO_GENERATION = gql`
+  ${TAG_FRAGMENT}
+  mutation AddTagToGeneration($generationId: UUID!, $tagId: UUID!) {
+    addTagToGeneration(generationId: $generationId, tagId: $tagId) {
+      ...TagFragment
+    }
+  }
+`;
+
+export const REMOVE_TAG_FROM_GENERATION = gql`
+  mutation RemoveTagFromGeneration($generationId: UUID!, $tagId: UUID!) {
+    removeTagFromGeneration(generationId: $generationId, tagId: $tagId)
+  }
+`;
+
+// Tag input types
+export interface CreateTagInput {
+  name: string;
+  slug?: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateTagInput {
+  id: string;
+  name?: string;
+  slug?: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// Tag type
+export interface Tag {
+  id: string;
+  tenantId: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
 }
