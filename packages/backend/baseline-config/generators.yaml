@@ -116,6 +116,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.kling_video_v2_5_turbo_pro_text_to_video.FalKlingVideoV25TurboProTextToVideoGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.kolors_virtual_try_on.FalKolorsVirtualTryOnGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.fal_minimax_hailuo_02_standard_text_to_video.FalMinimaxHailuo02StandardTextToVideoGenerator"
     enabled: true
 
