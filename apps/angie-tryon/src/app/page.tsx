@@ -3,20 +3,26 @@
 import { useCallback, useState } from "react";
 import { useSupabase } from "@/hooks/use-supabase";
 import { useOutfitSelections } from "@/hooks/use-outfit-selections";
+import { useOutfitGeneration } from "@/hooks/use-outfit-generation";
 import { useRecentItems } from "@/hooks/use-recent-items";
 import { Header } from "@/components/header";
 import { OutfitSlotList } from "@/components/outfit/outfit-slot-list";
 import { SelectionDrawer } from "@/components/outfit/selection-drawer";
 import { GenerateButton } from "@/components/outfit/generate-button";
+import { OutfitResult } from "@/components/outfit/outfit-result";
 import type { SlotType, SlotValue, InputMethod } from "@/components/outfit/types";
 
 export default function Home() {
   const { user } = useSupabase();
-  const { selections, setSlot, clearSlot, resetAll } =
+  const { selections, setSlot, clearSlot, resetAll, toGeneratorInput } =
     useOutfitSelections();
+  const outfitGeneration = useOutfitGeneration();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeSlotType, setActiveSlotType] = useState<SlotType | null>(null);
   const { recentItems, addRecentItem } = useRecentItems(activeSlotType);
+
+  const showResult =
+    outfitGeneration.state === "completed" && outfitGeneration.resultImageUrl;
 
   const handleSelectSlot = useCallback((type: SlotType) => {
     setActiveSlotType(type);
@@ -58,6 +64,19 @@ export default function Home() {
     resetAll();
   }, [resetAll]);
 
+  const handleGenerate = useCallback(() => {
+    const input = toGeneratorInput();
+    outfitGeneration.generate(input);
+  }, [toGeneratorInput, outfitGeneration]);
+
+  const handleRegenerate = useCallback(() => {
+    outfitGeneration.regenerate();
+  }, [outfitGeneration]);
+
+  const handleBackFromResult = useCallback(() => {
+    outfitGeneration.reset();
+  }, [outfitGeneration]);
+
   if (!user) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center p-4">
@@ -74,33 +93,49 @@ export default function Home() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <Header />
+      <Header
+        showBack={!!showResult}
+        onBack={handleBackFromResult}
+      />
       <main className="flex-1 px-4 pb-6">
         <div className="mx-auto w-full max-w-lg space-y-6">
-          <OutfitSlotList
-            selections={selections}
-            onSelectSlot={handleSelectSlot}
-            onEditSlot={handleEditSlot}
-            onClearSlot={handleClearSlot}
-            onResetAll={handleResetAll}
-          />
-          <GenerateButton
-            selections={selections}
-            onGenerate={() => {
-              // Wired up in at-ii1g (outfit generation flow)
-              console.log("Generate outfit", selections);
-            }}
-          />
+          {showResult ? (
+            <OutfitResult
+              imageUrl={outfitGeneration.resultImageUrl!}
+              onRegenerate={handleRegenerate}
+              onBack={handleBackFromResult}
+              isRegenerating={outfitGeneration.state === "generating"}
+            />
+          ) : (
+            <>
+              <OutfitSlotList
+                selections={selections}
+                onSelectSlot={handleSelectSlot}
+                onEditSlot={handleEditSlot}
+                onClearSlot={handleClearSlot}
+                onResetAll={handleResetAll}
+              />
+              <GenerateButton
+                selections={selections}
+                progress={outfitGeneration.progress ?? undefined}
+                error={outfitGeneration.error ?? undefined}
+                onGenerate={handleGenerate}
+                onRetry={handleGenerate}
+              />
+            </>
+          )}
         </div>
       </main>
-      <SelectionDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        slotType={activeSlotType}
-        items={recentItems}
-        onSelectItem={handleSelectItem}
-        onInputMethod={handleInputMethod}
-      />
+      {!showResult && (
+        <SelectionDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          slotType={activeSlotType}
+          items={recentItems}
+          onSelectItem={handleSelectItem}
+          onInputMethod={handleInputMethod}
+        />
+      )}
     </div>
   );
 }

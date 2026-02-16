@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@weirdfingers/boards':
+        specifier: workspace:^
+        version: link:packages/frontend
+      '@weirdfingers/boards-auth-supabase':
+        specifier: workspace:^
+        version: link:packages/auth-supabase
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.2
@@ -53,6 +60,12 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
+      '@weirdfingers/boards':
+        specifier: workspace:^
+        version: link:../../packages/frontend
+      '@weirdfingers/boards-auth-supabase':
+        specifier: workspace:^
+        version: link:../../packages/auth-supabase
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1

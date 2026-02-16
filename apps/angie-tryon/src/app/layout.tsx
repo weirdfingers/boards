@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import SupabaseProvider from "@/components/providers/supabase-provider";
+import { BoardsProviderWrapper } from "@/components/providers/boards-provider";
 import { createClient } from "@/utils/supabase/server";
 
 const inter = Inter({
@@ -34,7 +35,9 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} min-h-dvh antialiased`}>
-        <SupabaseProvider initialUser={user}>{children}</SupabaseProvider>
+        <SupabaseProvider initialUser={user}>
+          <BoardsProviderWrapper>{children}</BoardsProviderWrapper>
+        </SupabaseProvider>
       </body>
     </html>
   );

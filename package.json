@@ -29,5 +29,9 @@
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@weirdfingers/boards": "workspace:^",
+    "@weirdfingers/boards-auth-supabase": "workspace:^"
   }
 }
