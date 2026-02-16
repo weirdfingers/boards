@@ -7,6 +7,8 @@ export type SlotType =
   | "socks"
   | "hat";
 
+export type InputMethod = "camera" | "photos" | "paste";
+
 export interface SlotValue {
   id: string;
   name: string;

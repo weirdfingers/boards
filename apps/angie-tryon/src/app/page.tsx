@@ -4,23 +4,44 @@ import { useCallback, useState } from "react";
 import { useSupabase } from "@/hooks/use-supabase";
 import { Header } from "@/components/header";
 import { OutfitSlotList } from "@/components/outfit/outfit-slot-list";
-import type { SlotType, SlotValue } from "@/components/outfit/types";
+import { SelectionDrawer } from "@/components/outfit/selection-drawer";
+import type { SlotType, SlotValue, InputMethod } from "@/components/outfit/types";
 
 export default function Home() {
   const { user } = useSupabase();
   const [selections, setSelections] = useState<
     Partial<Record<SlotType, SlotValue | null>>
   >({});
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeSlotType, setActiveSlotType] = useState<SlotType | null>(null);
 
   const handleSelectSlot = useCallback((type: SlotType) => {
-    // Will open SelectionDrawer (at-e1fa)
-    console.log("select slot", type);
+    setActiveSlotType(type);
+    setDrawerOpen(true);
   }, []);
 
   const handleEditSlot = useCallback((type: SlotType) => {
-    // Will open SelectionDrawer in edit mode (at-e1fa)
-    console.log("edit slot", type);
+    setActiveSlotType(type);
+    setDrawerOpen(true);
   }, []);
+
+  const handleSelectItem = useCallback(
+    (item: SlotValue) => {
+      if (activeSlotType) {
+        setSelections((prev) => ({ ...prev, [activeSlotType]: item }));
+      }
+      setDrawerOpen(false);
+    },
+    [activeSlotType]
+  );
+
+  const handleInputMethod = useCallback(
+    (method: InputMethod) => {
+      // Downstream tickets: at-a2er (camera), at-0pyp (photos), at-vgk6 (paste)
+      console.log("input method", method, "for slot", activeSlotType);
+    },
+    [activeSlotType]
+  );
 
   const handleClearSlot = useCallback((type: SlotType) => {
     setSelections((prev) => ({ ...prev, [type]: null }));
@@ -59,6 +80,14 @@ export default function Home() {
           {/* Generate button will be added by at-wwr7 */}
         </div>
       </main>
+      <SelectionDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        slotType={activeSlotType}
+        items={[]}
+        onSelectItem={handleSelectItem}
+        onInputMethod={handleInputMethod}
+      />
     </div>
   );
 }
