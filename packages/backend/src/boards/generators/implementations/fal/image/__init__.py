@@ -26,6 +26,7 @@ from .nano_banana import FalNanoBananaGenerator
 from .nano_banana_edit import FalNanoBananaEditGenerator
 from .nano_banana_pro import FalNanoBananaProGenerator
 from .nano_banana_pro_edit import FalNanoBananaProEditGenerator
+from .outfit_generator import OutfitGenerator
 from .qwen_image import FalQwenImageGenerator
 from .qwen_image_edit import FalQwenImageEditGenerator
 from .reve_edit import FalReveEditGenerator
@@ -56,6 +57,7 @@ __all__ = [
     "FalImagen4PreviewFastGenerator",
     "FalKolorsVirtualTryOnGenerator",
     "FalNanoBananaGenerator",
+    "OutfitGenerator",
     "FalNanoBananaEditGenerator",
     "FalNanoBananaProGenerator",
     "FalNanoBananaProEditGenerator",
