@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useSupabase } from "@/hooks/use-supabase";
-import { usePersistedSelections } from "@/hooks/use-persisted-selections";
+import { useOutfitSelections } from "@/hooks/use-outfit-selections";
 import { useRecentItems } from "@/hooks/use-recent-items";
 import { Header } from "@/components/header";
 import { OutfitSlotList } from "@/components/outfit/outfit-slot-list";
@@ -12,8 +12,8 @@ import type { SlotType, SlotValue, InputMethod } from "@/components/outfit/types
 
 export default function Home() {
   const { user } = useSupabase();
-  const { selections, setSelection, resetSelections } =
-    usePersistedSelections();
+  const { selections, setSlot, clearSlot, resetAll } =
+    useOutfitSelections();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeSlotType, setActiveSlotType] = useState<SlotType | null>(null);
   const { recentItems, addRecentItem } = useRecentItems(activeSlotType);
@@ -31,12 +31,12 @@ export default function Home() {
   const handleSelectItem = useCallback(
     (item: SlotValue) => {
       if (activeSlotType) {
-        setSelection(activeSlotType, item);
+        setSlot(activeSlotType, item);
         addRecentItem(item);
       }
       setDrawerOpen(false);
     },
-    [activeSlotType, setSelection, addRecentItem]
+    [activeSlotType, setSlot, addRecentItem]
   );
 
   const handleInputMethod = useCallback(
@@ -49,14 +49,14 @@ export default function Home() {
 
   const handleClearSlot = useCallback(
     (type: SlotType) => {
-      setSelection(type, null);
+      clearSlot(type);
     },
-    [setSelection]
+    [clearSlot]
   );
 
   const handleResetAll = useCallback(() => {
-    resetSelections();
-  }, [resetSelections]);
+    resetAll();
+  }, [resetAll]);
 
   if (!user) {
     return (
