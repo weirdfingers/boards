@@ -5,6 +5,7 @@ import { useSupabase } from "@/hooks/use-supabase";
 import { useOutfitSelections } from "@/hooks/use-outfit-selections";
 import { useOutfitGeneration } from "@/hooks/use-outfit-generation";
 import { useRecentItems } from "@/hooks/use-recent-items";
+import { usePhotoUpload } from "@/hooks/use-photo-upload";
 import { Header } from "@/components/header";
 import { OutfitSlotList } from "@/components/outfit/outfit-slot-list";
 import { SelectionDrawer } from "@/components/outfit/selection-drawer";
@@ -20,6 +21,7 @@ export default function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeSlotType, setActiveSlotType] = useState<SlotType | null>(null);
   const { recentItems, addRecentItem } = useRecentItems(activeSlotType);
+  const photoUpload = usePhotoUpload();
 
   const showResult =
     outfitGeneration.state === "completed" && outfitGeneration.resultImageUrl;
@@ -45,12 +47,30 @@ export default function Home() {
     [activeSlotType, setSlot, addRecentItem]
   );
 
+  const handlePhotoItemReady = useCallback(
+    (item: SlotValue) => {
+      if (activeSlotType) {
+        setSlot(activeSlotType, item);
+        addRecentItem(item);
+      }
+    },
+    [activeSlotType, setSlot, addRecentItem]
+  );
+
+  const handlePhotoUploadComplete = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
+
   const handleInputMethod = useCallback(
     (method: InputMethod) => {
-      // Downstream tickets: at-a2er (camera), at-0pyp (photos), at-vgk6 (paste)
+      if (method === "photos" && activeSlotType) {
+        photoUpload.openFilePicker(activeSlotType);
+        return;
+      }
+      // Downstream tickets: at-a2er (camera), at-vgk6 (paste)
       console.log("input method", method, "for slot", activeSlotType);
     },
-    [activeSlotType]
+    [activeSlotType, photoUpload]
   );
 
   const handleClearSlot = useCallback(
@@ -134,8 +154,22 @@ export default function Home() {
           items={recentItems}
           onSelectItem={handleSelectItem}
           onInputMethod={handleInputMethod}
+          uploadState={photoUpload.isUploading ? photoUpload.uploadState : null}
         />
       )}
+      <input
+        ref={photoUpload.fileInputRef}
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) =>
+          photoUpload.handleFileChange(e, {
+            onItemReady: handlePhotoItemReady,
+            onComplete: handlePhotoUploadComplete,
+          })
+        }
+      />
     </div>
   );
 }

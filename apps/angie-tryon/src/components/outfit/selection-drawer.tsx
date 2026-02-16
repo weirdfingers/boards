@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, ImageIcon, ClipboardPaste } from "lucide-react";
+import { Camera, ImageIcon, ClipboardPaste, Loader2 } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/drawer";
 import { SLOT_CONFIGS } from "./types";
 import type { SlotType, SlotValue, InputMethod } from "./types";
+import type { PhotoUploadState } from "@/hooks/use-photo-upload";
 
 const INPUT_METHODS: {
   method: InputMethod;
@@ -29,6 +30,7 @@ interface SelectionDrawerProps {
   items: SlotValue[];
   onSelectItem: (item: SlotValue) => void;
   onInputMethod: (method: InputMethod) => void;
+  uploadState: PhotoUploadState | null;
 }
 
 export function SelectionDrawer({
@@ -38,6 +40,7 @@ export function SelectionDrawer({
   items,
   onSelectItem,
   onInputMethod,
+  uploadState,
 }: SelectionDrawerProps) {
   const slotLabel =
     SLOT_CONFIGS.find((c) => c.type === slotType)?.label ?? "";
@@ -77,6 +80,11 @@ export function SelectionDrawer({
                 ))}
               </div>
             </div>
+
+            {/* Upload Progress */}
+            {uploadState && uploadState.phase !== "idle" && (
+              <UploadProgress state={uploadState} />
+            )}
 
             {/* Saved Collection */}
             <div>
@@ -126,5 +134,54 @@ export function SelectionDrawer({
         </div>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+function UploadProgress({ state }: { state: PhotoUploadState }) {
+  const phaseLabel =
+    state.phase === "uploading"
+      ? "Uploading..."
+      : state.phase === "removing-background"
+        ? "Removing background..."
+        : state.phase === "completed"
+          ? "Done!"
+          : state.phase === "failed"
+            ? "Upload failed"
+            : "";
+
+  const progressText =
+    state.totalFiles > 1
+      ? `${state.completedFiles} of ${state.totalFiles} files`
+      : phaseLabel;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-3">
+        {state.phase !== "completed" && state.phase !== "failed" && (
+          <Loader2 className="size-5 shrink-0 animate-spin text-primary" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">
+            {state.totalFiles > 1 ? phaseLabel : progressText}
+          </p>
+          {state.totalFiles > 1 && (
+            <p className="text-xs text-muted-foreground">{progressText}</p>
+          )}
+          {state.error && (
+            <p className="mt-1 text-xs text-destructive">{state.error}</p>
+          )}
+        </div>
+      </div>
+      {(state.phase === "uploading" || state.phase === "removing-background") && (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{
+              width: `${state.phase === "removing-background" ? 100 : state.uploadProgress}%`,
+            }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
