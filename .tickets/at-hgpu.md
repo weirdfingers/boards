@@ -1,6 +1,6 @@
 ---
 id: at-hgpu
-status: open
+status: closed
 deps: [at-ytz2]
 links: []
 created: 2026-02-02T07:00:42Z

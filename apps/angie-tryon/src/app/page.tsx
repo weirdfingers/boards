@@ -1,59 +1,33 @@
 "use client";
 
 import { useSupabase } from "@/hooks/use-supabase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { Header } from "@/components/header";
 
 export default function Home() {
-  const { user, supabase } = useSupabase();
-  const router = useRouter();
+  const { user } = useSupabase();
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.refresh();
-  };
+  if (!user) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-semibold">AI Stylist</h1>
+          <p className="text-muted-foreground">This is a private application.</p>
+          <p className="text-sm text-muted-foreground">
+            Please check your messages for an invitation link.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Angie Tryon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {user ? (
-            <div className="space-y-4">
-              <p>Welcome back!</p>
-              <p className="text-sm text-gray-500">User ID: {user.id}</p>
-              <p className="text-sm text-gray-500">
-                Phone: {user.phone || "N/A"}
-              </p>
-
-              <Button
-                className="w-full"
-                onClick={() => router.push("/dashboard")}
-              >
-                Go to Dashboard
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleLogout}
-              >
-                Sign Out
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center space-y-4">
-              <p>This is a private application.</p>
-              <p className="text-sm text-gray-500">
-                Please check your messages for an invitation link.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className="flex min-h-dvh flex-col">
+      <Header />
+      <main className="flex-1 px-4 pb-6">
+        <div className="mx-auto w-full max-w-lg">
+          {/* Outfit slots and generate button will be added by at-uupb and at-wwr7 */}
+        </div>
+      </main>
     </div>
   );
 }
