@@ -5,6 +5,7 @@ import { useSupabase } from "@/hooks/use-supabase";
 import { Header } from "@/components/header";
 import { OutfitSlotList } from "@/components/outfit/outfit-slot-list";
 import { SelectionDrawer } from "@/components/outfit/selection-drawer";
+import { GenerateButton } from "@/components/outfit/generate-button";
 import type { SlotType, SlotValue, InputMethod } from "@/components/outfit/types";
 
 export default function Home() {
@@ -77,7 +78,13 @@ export default function Home() {
             onClearSlot={handleClearSlot}
             onResetAll={handleResetAll}
           />
-          {/* Generate button will be added by at-wwr7 */}
+          <GenerateButton
+            selections={selections}
+            onGenerate={() => {
+              // Wired up in at-ii1g (outfit generation flow)
+              console.log("Generate outfit", selections);
+            }}
+          />
         </div>
       </main>
       <SelectionDrawer
