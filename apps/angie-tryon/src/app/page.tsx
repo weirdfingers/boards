@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 import { useSupabase } from "@/hooks/use-supabase";
+import { usePersistedSelections } from "@/hooks/use-persisted-selections";
+import { useRecentItems } from "@/hooks/use-recent-items";
 import { Header } from "@/components/header";
 import { OutfitSlotList } from "@/components/outfit/outfit-slot-list";
 import { SelectionDrawer } from "@/components/outfit/selection-drawer";
@@ -10,11 +12,11 @@ import type { SlotType, SlotValue, InputMethod } from "@/components/outfit/types
 
 export default function Home() {
   const { user } = useSupabase();
-  const [selections, setSelections] = useState<
-    Partial<Record<SlotType, SlotValue | null>>
-  >({});
+  const { selections, setSelection, resetSelections } =
+    usePersistedSelections();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeSlotType, setActiveSlotType] = useState<SlotType | null>(null);
+  const { recentItems, addRecentItem } = useRecentItems(activeSlotType);
 
   const handleSelectSlot = useCallback((type: SlotType) => {
     setActiveSlotType(type);
@@ -29,11 +31,12 @@ export default function Home() {
   const handleSelectItem = useCallback(
     (item: SlotValue) => {
       if (activeSlotType) {
-        setSelections((prev) => ({ ...prev, [activeSlotType]: item }));
+        setSelection(activeSlotType, item);
+        addRecentItem(item);
       }
       setDrawerOpen(false);
     },
-    [activeSlotType]
+    [activeSlotType, setSelection, addRecentItem]
   );
 
   const handleInputMethod = useCallback(
@@ -44,13 +47,16 @@ export default function Home() {
     [activeSlotType]
   );
 
-  const handleClearSlot = useCallback((type: SlotType) => {
-    setSelections((prev) => ({ ...prev, [type]: null }));
-  }, []);
+  const handleClearSlot = useCallback(
+    (type: SlotType) => {
+      setSelection(type, null);
+    },
+    [setSelection]
+  );
 
   const handleResetAll = useCallback(() => {
-    setSelections({});
-  }, []);
+    resetSelections();
+  }, [resetSelections]);
 
   if (!user) {
     return (
@@ -91,7 +97,7 @@ export default function Home() {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         slotType={activeSlotType}
-        items={[]}
+        items={recentItems}
         onSelectItem={handleSelectItem}
         onInputMethod={handleInputMethod}
       />
