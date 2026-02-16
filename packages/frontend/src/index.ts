@@ -63,6 +63,14 @@ export type {
   UploadItem,
   UploadStatus,
 } from "./hooks/useMultiUpload";
+export { useUploadWithBackgroundRemoval } from "./hooks/useUploadWithBackgroundRemoval";
+export type {
+  ItemCategory,
+  ProcessingPhase,
+  BgRemovalProgress,
+  ProcessingResult,
+  UploadWithBackgroundRemovalHook,
+} from "./hooks/useUploadWithBackgroundRemoval";
 
 // Generator schema utilities
 export * from "./types/generatorSchema";
