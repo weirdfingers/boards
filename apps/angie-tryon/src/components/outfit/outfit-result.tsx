@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Share2, Download, RefreshCw } from "lucide-react";
+import { Share2, Download, RefreshCw, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,17 +13,41 @@ interface OutfitResultProps {
   isRegenerating?: boolean;
 }
 
+function useCanNativeShare() {
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    setCanShare(typeof navigator !== "undefined" && !!navigator.share);
+  }, []);
+  return canShare;
+}
+
 export function OutfitResult({
   imageUrl,
   onRegenerate,
   onBack,
   isRegenerating,
 }: OutfitResultProps) {
+  const canNativeShare = useCanNativeShare();
+  const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
+
+  const showCopiedFeedback = useCallback(() => {
+    setCopied(true);
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+  }, []);
+
   const handleShare = useCallback(async () => {
     if (!navigator.share) {
-      // Fallback: copy URL to clipboard
       try {
         await navigator.clipboard.writeText(imageUrl);
+        showCopiedFeedback();
       } catch {
         // Ignore clipboard errors
       }
@@ -31,17 +55,23 @@ export function OutfitResult({
     }
 
     try {
-      // Try sharing with the image file
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const file = new File([blob], "outfit.png", { type: blob.type });
 
-      await navigator.share({
-        title: "My AI Outfit",
-        files: [file],
-      });
-    } catch {
-      // User cancelled or share failed — try URL-only share
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: "My AI Outfit",
+          files: [file],
+        });
+      } else {
+        await navigator.share({
+          title: "My AI Outfit",
+          url: imageUrl,
+        });
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       try {
         await navigator.share({
           title: "My AI Outfit",
@@ -51,7 +81,7 @@ export function OutfitResult({
         // User cancelled
       }
     }
-  }, [imageUrl]);
+  }, [imageUrl, showCopiedFeedback]);
 
   const handleDownload = useCallback(async () => {
     try {
@@ -92,8 +122,22 @@ export function OutfitResult({
           className="h-12 gap-2 rounded-xl"
           onClick={handleShare}
         >
-          <Share2 className="size-4" />
-          Share
+          {canNativeShare ? (
+            <>
+              <Share2 className="size-4" />
+              Share
+            </>
+          ) : copied ? (
+            <>
+              <Check className="size-4" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="size-4" />
+              Copy Link
+            </>
+          )}
         </Button>
         <Button
           variant="outline"
