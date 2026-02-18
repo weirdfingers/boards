@@ -67,7 +67,11 @@ export default function Home() {
         photoUpload.openFilePicker(activeSlotType);
         return;
       }
-      // Downstream tickets: at-a2er (camera), at-vgk6 (paste)
+      if (method === "camera" && activeSlotType) {
+        photoUpload.openCamera(activeSlotType);
+        return;
+      }
+      // Downstream ticket: at-vgk6 (paste)
       console.log("input method", method, "for slot", activeSlotType);
     },
     [activeSlotType, photoUpload]
@@ -162,6 +166,19 @@ export default function Home() {
         type="file"
         multiple
         accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) =>
+          photoUpload.handleFileChange(e, {
+            onItemReady: handlePhotoItemReady,
+            onComplete: handlePhotoUploadComplete,
+          })
+        }
+      />
+      <input
+        ref={photoUpload.cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={(e) =>
           photoUpload.handleFileChange(e, {

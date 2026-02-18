@@ -30,12 +30,16 @@ export interface PhotoUploadState {
 export interface PhotoUploadHook {
   /** Open the file picker for the given slot. */
   openFilePicker: (slotType: SlotType) => void;
+  /** Open the camera for the given slot. Uses back camera for clothing, front for model. */
+  openCamera: (slotType: SlotType) => void;
   /** Current upload state. */
   uploadState: PhotoUploadState;
   /** Whether an upload is in progress. */
   isUploading: boolean;
   /** The hidden file input ref — render this in the DOM. */
   fileInputRef: React.RefObject<HTMLInputElement>;
+  /** The hidden camera input ref — render this in the DOM. */
+  cameraInputRef: React.RefObject<HTMLInputElement>;
   /** Handle file input change (called automatically). */
   handleFileChange: (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -53,6 +57,7 @@ export interface PhotoUploadHook {
 
 export function usePhotoUpload(): PhotoUploadHook {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const activeSlotRef = useRef<SlotType | null>(null);
   const callbacksRef = useRef<{
     onItemReady: (item: SlotValue) => void;
@@ -105,6 +110,20 @@ export function usePhotoUpload(): PhotoUploadHook {
         // Reset so re-selecting the same file triggers onChange
         fileInputRef.current.value = "";
         fileInputRef.current.click();
+      }
+    },
+    []
+  );
+
+  const openCamera = useCallback(
+    (slotType: SlotType) => {
+      activeSlotRef.current = slotType;
+      if (cameraInputRef.current) {
+        // Back camera for clothing, front camera for model photos
+        cameraInputRef.current.capture =
+          slotType === "model" ? "user" : "environment";
+        cameraInputRef.current.value = "";
+        cameraInputRef.current.click();
       }
     },
     []
@@ -240,6 +259,7 @@ export function usePhotoUpload(): PhotoUploadHook {
 
   return {
     openFilePicker,
+    openCamera,
     uploadState: {
       ...uploadState,
       phase: currentPhase,
@@ -247,6 +267,7 @@ export function usePhotoUpload(): PhotoUploadHook {
     },
     isUploading: upload.isProcessing,
     fileInputRef,
+    cameraInputRef,
     handleFileChange,
     setCallbacks,
   };
