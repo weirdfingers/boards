@@ -71,10 +71,15 @@ export default function Home() {
         photoUpload.openCamera(activeSlotType);
         return;
       }
-      // Downstream ticket: at-vgk6 (paste)
-      console.log("input method", method, "for slot", activeSlotType);
+      if (method === "paste" && activeSlotType) {
+        photoUpload.pasteFromClipboard(activeSlotType, {
+          onItemReady: handlePhotoItemReady,
+          onComplete: handlePhotoUploadComplete,
+        });
+        return;
+      }
     },
-    [activeSlotType, photoUpload]
+    [activeSlotType, photoUpload, handlePhotoItemReady, handlePhotoUploadComplete]
   );
 
   const handleClearSlot = useCallback(
@@ -158,7 +163,7 @@ export default function Home() {
           items={recentItems}
           onSelectItem={handleSelectItem}
           onInputMethod={handleInputMethod}
-          uploadState={photoUpload.isUploading ? photoUpload.uploadState : null}
+          uploadState={photoUpload.isUploading || photoUpload.uploadState.phase === "failed" ? photoUpload.uploadState : null}
         />
       )}
       <input

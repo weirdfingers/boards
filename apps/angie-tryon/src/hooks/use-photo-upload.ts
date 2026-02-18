@@ -32,6 +32,14 @@ export interface PhotoUploadHook {
   openFilePicker: (slotType: SlotType) => void;
   /** Open the camera for the given slot. Uses back camera for clothing, front for model. */
   openCamera: (slotType: SlotType) => void;
+  /** Paste image from clipboard for the given slot. */
+  pasteFromClipboard: (
+    slotType: SlotType,
+    callbacks: {
+      onItemReady: (item: SlotValue) => void;
+      onComplete: () => void;
+    }
+  ) => void;
   /** Current upload state. */
   uploadState: PhotoUploadState;
   /** Whether an upload is in progress. */
@@ -128,6 +136,26 @@ export function usePhotoUpload(): PhotoUploadHook {
     },
     []
   );
+
+  const setPasteError = useCallback((message: string) => {
+    setUploadState({
+      phase: "failed",
+      uploadProgress: 0,
+      totalFiles: 0,
+      completedFiles: 0,
+      error: message,
+    });
+    // Auto-clear after 3s so the error doesn't get stuck
+    setTimeout(() => {
+      setUploadState({
+        phase: "idle",
+        uploadProgress: 0,
+        totalFiles: 0,
+        completedFiles: 0,
+        error: null,
+      });
+    }, 3000);
+  }, []);
 
   const processFiles = useCallback(
     async (
@@ -234,6 +262,62 @@ export function usePhotoUpload(): PhotoUploadHook {
     [getDefaultBoardId, upload, tags, createTag]
   );
 
+  const pasteFromClipboard = useCallback(
+    async (
+      slotType: SlotType,
+      callbacks: {
+        onItemReady: (item: SlotValue) => void;
+        onComplete: () => void;
+      }
+    ) => {
+      activeSlotRef.current = slotType;
+
+      if (!navigator.clipboard?.read) {
+        setPasteError(
+          "Clipboard access is not supported in this browser."
+        );
+        return;
+      }
+
+      let clipboardItems: ClipboardItems;
+      try {
+        clipboardItems = await navigator.clipboard.read();
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "NotAllowedError") {
+          setPasteError(
+            "Clipboard access denied. Please allow clipboard access and try again."
+          );
+        } else {
+          setPasteError("Failed to read clipboard.");
+        }
+        return;
+      }
+
+      const imageFiles: File[] = [];
+      for (const item of clipboardItems) {
+        const imageType = item.types.find((t) => t.startsWith("image/"));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const extension = imageType.split("/")[1] ?? "png";
+          const file = new File([blob], `pasted-image.${extension}`, {
+            type: imageType,
+          });
+          imageFiles.push(file);
+        }
+      }
+
+      if (imageFiles.length === 0) {
+        setPasteError(
+          "No image found in clipboard. Copy an image and try again."
+        );
+        return;
+      }
+
+      await processFiles(imageFiles, callbacks);
+    },
+    [processFiles, setPasteError]
+  );
+
   const handleFileChange = useCallback(
     (
       e: React.ChangeEvent<HTMLInputElement>,
@@ -260,6 +344,7 @@ export function usePhotoUpload(): PhotoUploadHook {
   return {
     openFilePicker,
     openCamera,
+    pasteFromClipboard,
     uploadState: {
       ...uploadState,
       phase: currentPhase,
