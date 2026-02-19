@@ -50,13 +50,13 @@ def _rewrite_storage_url(storage_url: str) -> str:
         return storage_url
 
     # Common patterns to replace (localhost and 127.0.0.1 with various ports)
-    # In Docker, the public URL is typically http://localhost:8800 or http://localhost:8088
+    # In Docker, the public URL is typically http://localhost:8800 or http://localhost:8089
     # We need to replace it with the internal URL (http://api:8800)
     replacements = [
         ("http://localhost:8800", settings.internal_api_url),
         ("http://127.0.0.1:8800", settings.internal_api_url),
-        ("http://localhost:8088", settings.internal_api_url),
-        ("http://127.0.0.1:8088", settings.internal_api_url),
+        ("http://localhost:8089", settings.internal_api_url),
+        ("http://127.0.0.1:8089", settings.internal_api_url),
     ]
 
     rewritten_url = storage_url

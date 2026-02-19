@@ -1,0 +1,43 @@
+# Baseline generators configuration for Boards
+#
+# Set the path to this file via environment variable:
+#   export BOARDS_GENERATORS_CONFIG_PATH=/path/to/generators.yaml
+#
+# If not set, no generators will be loaded.
+
+strict_mode: true
+allow_unlisted: false
+
+# NOTE: Please keep generators in alphabetical order by class name for easier maintenance
+generators:
+  # Fal.ai generators
+  - class: "boards.generators.implementations.fal.image.bria_background_remove.FalBriaBackgroundRemoveGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.gemini_25_flash_image.FalGemini25FlashImageGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.gemini_25_flash_image_edit.FalGemini25FlashImageEditGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.kolors_virtual_try_on.FalKolorsVirtualTryOnGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.nano_banana_edit.FalNanoBananaEditGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.nano_banana.FalNanoBananaGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.nano_banana_pro.FalNanoBananaProGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.nano_banana_pro_edit.FalNanoBananaProEditGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.image.outfit_generator.OutfitGenerator"
+    enabled: true
+
+  # Kie.ai generators
+  - class: "boards.generators.implementations.kie.image.nano_banana_edit.KieNanoBananaEditGenerator"
+    enabled: true

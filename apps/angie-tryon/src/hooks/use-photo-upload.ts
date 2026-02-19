@@ -1,5 +1,6 @@
 "use client";
 
+import type { ChangeEvent, RefObject } from "react";
 import { useCallback, useRef, useState } from "react";
 import {
   useBoards,
@@ -45,12 +46,12 @@ export interface PhotoUploadHook {
   /** Whether an upload is in progress. */
   isUploading: boolean;
   /** The hidden file input ref — render this in the DOM. */
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: RefObject<HTMLInputElement>;
   /** The hidden camera input ref — render this in the DOM. */
-  cameraInputRef: React.RefObject<HTMLInputElement>;
+  cameraInputRef: RefObject<HTMLInputElement>;
   /** Handle file input change (called automatically). */
   handleFileChange: (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: ChangeEvent<HTMLInputElement>,
     callbacks: {
       onItemReady: (item: SlotValue) => void;
       onComplete: () => void;
@@ -78,7 +79,7 @@ export function usePhotoUpload(): PhotoUploadHook {
 
   // We'll tag with the slot type after upload; track the latest completed gen ID
   const [pendingTagGenId, setPendingTagGenId] = useState<string>("");
-  const tagGeneration = useTagGeneration(pendingTagGenId);
+  const _tagGeneration = useTagGeneration(pendingTagGenId);
 
   const [uploadState, setUploadState] = useState<PhotoUploadState>({
     phase: "idle",
@@ -279,7 +280,7 @@ export function usePhotoUpload(): PhotoUploadHook {
         return;
       }
 
-      let clipboardItems: ClipboardItems;
+      let clipboardItems: ClipboardItem[];
       try {
         clipboardItems = await navigator.clipboard.read();
       } catch (err) {
@@ -320,7 +321,7 @@ export function usePhotoUpload(): PhotoUploadHook {
 
   const handleFileChange = useCallback(
     (
-      e: React.ChangeEvent<HTMLInputElement>,
+      e: ChangeEvent<HTMLInputElement>,
       callbacks: {
         onItemReady: (item: SlotValue) => void;
         onComplete: () => void;

@@ -12,12 +12,12 @@ import { ApiConfigProvider, ApiConfig } from "../config/ApiConfigContext";
 interface BoardsProviderProps {
   children: ReactNode;
   /**
-   * Base URL for the backend API (e.g., "http://localhost:8088")
+   * Base URL for the backend API (e.g., "http://localhost:8089")
    * Used for REST endpoints like SSE streams
    */
   apiUrl: string;
   /**
-   * GraphQL endpoint URL (e.g., "http://localhost:8088/graphql")
+   * GraphQL endpoint URL (e.g., "http://localhost:8089/graphql")
    * If not provided, defaults to `${apiUrl}/graphql`
    */
   graphqlUrl?: string;

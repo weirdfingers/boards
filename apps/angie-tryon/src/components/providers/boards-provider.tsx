@@ -10,7 +10,7 @@ export function BoardsProviderWrapper({
   children: React.ReactNode;
 }) {
   const apiUrl =
-    process.env.NEXT_PUBLIC_BOARDS_API_URL || "http://localhost:8088";
+    process.env.NEXT_PUBLIC_BOARDS_API_URL || "http://localhost:8089";
 
   const authProvider = useMemo(
     () =>

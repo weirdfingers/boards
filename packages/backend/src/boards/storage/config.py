@@ -38,7 +38,7 @@ def load_storage_config(
                 "type": "local",
                 "config": {
                     "base_path": "/tmp/boards/storage",
-                    "public_url_base": "http://localhost:8088/api/storage",
+                    "public_url_base": "http://localhost:8089/api/storage",
                 },
             }
         },
@@ -148,7 +148,7 @@ def create_example_config() -> str:
                     "type": "local",
                     "config": {
                         "base_path": "/var/boards/storage",
-                        "public_url_base": "http://localhost:8088/api/storage",
+                        "public_url_base": "http://localhost:8089/api/storage",
                     },
                 },
                 "supabase": {

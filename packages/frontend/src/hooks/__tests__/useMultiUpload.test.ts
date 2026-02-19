@@ -37,7 +37,7 @@ vi.mock("../../auth/context", () => ({
 
 vi.mock("../../config/ApiConfigContext", () => ({
   useApiConfig: vi.fn(() => ({
-    apiUrl: "http://localhost:8088",
+    apiUrl: "http://localhost:8089",
   })),
 }));
 

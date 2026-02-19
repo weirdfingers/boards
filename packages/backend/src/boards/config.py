@@ -43,7 +43,7 @@ class Settings(BaseSettings):
 
     # API Settings
     api_host: str = "0.0.0.0"
-    api_port: int = 8088
+    api_port: int = 8089
     api_reload: bool = False
     cors_origins: list[str] = ["http://localhost:3033"]
 

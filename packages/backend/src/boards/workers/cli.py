@@ -41,6 +41,13 @@ def start_worker(
         except ImportError:
             logger.warning("No worker actors found - continuing with empty worker")
 
+        # Remove Dramatiq's auto-enabled Prometheus middleware
+        # (it starts an HTTP server we don't need and causes port conflicts)
+        import dramatiq
+
+        broker = dramatiq.get_broker()
+        broker.middleware = [m for m in broker.middleware if "prometheus" not in type(m).__module__]
+
         # Start the worker
         from dramatiq.cli import main as dramatiq_main
 

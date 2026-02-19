@@ -1,0 +1,23 @@
+storage:
+  default_provider: "supabase"
+  max_file_size: 104857600
+  allowed_content_types:
+    - "image/jpeg"
+    - "image/png"
+    - "image/webp"
+    - "image/gif"
+    - "video/mp4"
+    - "video/webm"
+    - "video/quicktime"
+    - "audio/mpeg"
+    - "audio/wav"
+    - "audio/ogg"
+    - "text/plain"
+    - "application/json"
+    - "text/markdown"
+    - "application/octet-stream"
+  providers:
+    supabase:
+      type: "supabase"
+  routing_rules:
+    - provider: "supabase"

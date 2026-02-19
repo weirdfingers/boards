@@ -6,12 +6,12 @@ import { createContext, useContext, ReactNode } from "react";
 
 export interface ApiConfig {
   /**
-   * Base URL for the backend API (e.g., "http://localhost:8088")
+   * Base URL for the backend API (e.g., "http://localhost:8089")
    * Used for REST endpoints like SSE streams
    */
   apiUrl: string;
   /**
-   * GraphQL endpoint URL (e.g., "http://localhost:8088/graphql")
+   * GraphQL endpoint URL (e.g., "http://localhost:8089/graphql")
    */
   graphqlUrl: string;
   /**

@@ -8,10 +8,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "localhost",
-        port: "8088",
-        pathname: "/api/storage/**",
+        protocol: "https",
+        hostname: "zayxusljqgchxxjoxkuw.supabase.co",
       },
     ],
   },

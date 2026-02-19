@@ -24,7 +24,7 @@ function useCanNativeShare() {
 export function OutfitResult({
   imageUrl,
   onRegenerate,
-  onBack,
+  onBack: _onBack,
   isRegenerating,
 }: OutfitResultProps) {
   const canNativeShare = useCanNativeShare();

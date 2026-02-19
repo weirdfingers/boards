@@ -30,9 +30,9 @@ def cli() -> None:
 )
 @click.option(
     "--port",
-    default=8088,
+    default=8089,
     type=int,
-    help="Port to bind to (default: 8088)",
+    help="Port to bind to (default: 8089)",
 )
 @click.option(
     "--reload",
