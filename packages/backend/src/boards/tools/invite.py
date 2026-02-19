@@ -50,7 +50,7 @@ def create_user_if_not_exists(supabase_client: Client, phone: str) -> str | None
         try:
             users_response = supabase_client.auth.admin.list_users()
             for u in users_response:
-                if u.phone == phone:
+                if u.email == dummy_email:
                     logger.info("Found existing user", user_id=u.id, phone=phone)
                     return u.id
 
