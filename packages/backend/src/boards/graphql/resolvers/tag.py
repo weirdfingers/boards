@@ -10,8 +10,10 @@ from uuid import UUID
 
 import strawberry
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from ...auth.context import AuthContext
 from ...database.connection import get_async_session
 from ...dbmodels import Boards, Generations, GenerationTags, Tags
 from ...logging import get_logger
@@ -164,6 +166,9 @@ async def create_tag(info: strawberry.Info, input: CreateTagInput) -> Tag:
         # Generate slug from name if not provided
         slug = input.slug if input.slug else slugify(input.name)
 
+        if not slug:
+            raise RuntimeError("Tag name must contain at least one alphanumeric character")
+
         # Check for duplicate slug in tenant
         existing_stmt = select(Tags).where(
             Tags.tenant_id == auth_context.tenant_id,
@@ -226,6 +231,8 @@ async def update_tag(info: strawberry.Info, input: UpdateTagInput) -> Tag:
             # Update slug if name changed and slug not explicitly provided
             if input.slug is None:
                 new_slug = slugify(input.name)
+                if not new_slug:
+                    raise RuntimeError("Tag name must contain at least one alphanumeric character")
                 # Check for duplicate slug
                 existing_stmt = select(Tags).where(
                     Tags.tenant_id == auth_context.tenant_id,
@@ -305,6 +312,49 @@ async def delete_tag(info: strawberry.Info, id: UUID) -> bool:
         return True
 
 
+async def _verify_generation_edit_access(
+    session: AsyncSession,
+    generation_id: UUID,
+    auth_context: AuthContext,
+) -> None:
+    """Verify the user has edit access to a generation's board.
+
+    Checks that the generation exists, belongs to the user's tenant,
+    and the user is the board owner or an editor/admin member.
+    """
+    gen_stmt = select(Generations).where(
+        Generations.id == generation_id,
+        Generations.tenant_id == auth_context.tenant_id,
+    )
+    gen_result = await session.execute(gen_stmt)
+    generation = gen_result.scalar_one_or_none()
+
+    if not generation:
+        raise RuntimeError("Generation not found")
+
+    board_stmt = (
+        select(Boards)
+        .where(Boards.id == generation.board_id)
+        .options(selectinload(Boards.board_members))
+    )
+    board_result = await session.execute(board_stmt)
+    board = board_result.scalar_one_or_none()
+
+    if not board or not can_access_board(board, auth_context):
+        raise RuntimeError("Access denied to generation")
+
+    is_owner = board.owner_id == auth_context.user_id
+    is_editor = any(
+        member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
+        for member in board.board_members
+    )
+
+    if not is_owner and not is_editor:
+        raise RuntimeError(
+            "Permission denied: only board owner or editor can modify generation tags"
+        )
+
+
 async def add_tag_to_generation(
     info: strawberry.Info,
     generation_id: UUID,
@@ -320,35 +370,7 @@ async def add_tag_to_generation(
         raise RuntimeError("Authentication required to add a tag to a generation")
 
     async with get_async_session() as session:
-        # Get the generation and verify board access
-        gen_stmt = select(Generations).where(Generations.id == generation_id)
-        gen_result = await session.execute(gen_stmt)
-        generation = gen_result.scalar_one_or_none()
-
-        if not generation:
-            raise RuntimeError("Generation not found")
-
-        # Check board access
-        board_stmt = (
-            select(Boards)
-            .where(Boards.id == generation.board_id)
-            .options(selectinload(Boards.board_members))
-        )
-        board_result = await session.execute(board_stmt)
-        board = board_result.scalar_one_or_none()
-
-        if not board or not can_access_board(board, auth_context):
-            raise RuntimeError("Access denied to generation")
-
-        # Check if user can edit (owner or editor)
-        is_owner = board.owner_id == auth_context.user_id
-        is_editor = any(
-            member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
-            for member in board.board_members
-        )
-
-        if not is_owner and not is_editor:
-            raise RuntimeError("Permission denied: only board owner or editor can tag generations")
+        await _verify_generation_edit_access(session, generation_id, auth_context)
 
         # Get the tag and verify it belongs to the same tenant
         tag_stmt = select(Tags).where(
@@ -411,37 +433,7 @@ async def remove_tag_from_generation(
         raise RuntimeError("Authentication required to remove a tag from a generation")
 
     async with get_async_session() as session:
-        # Get the generation and verify board access
-        gen_stmt = select(Generations).where(Generations.id == generation_id)
-        gen_result = await session.execute(gen_stmt)
-        generation = gen_result.scalar_one_or_none()
-
-        if not generation:
-            raise RuntimeError("Generation not found")
-
-        # Check board access
-        board_stmt = (
-            select(Boards)
-            .where(Boards.id == generation.board_id)
-            .options(selectinload(Boards.board_members))
-        )
-        board_result = await session.execute(board_stmt)
-        board = board_result.scalar_one_or_none()
-
-        if not board or not can_access_board(board, auth_context):
-            raise RuntimeError("Access denied to generation")
-
-        # Check if user can edit (owner or editor)
-        is_owner = board.owner_id == auth_context.user_id
-        is_editor = any(
-            member.user_id == auth_context.user_id and member.role in {"editor", "admin"}
-            for member in board.board_members
-        )
-
-        if not is_owner and not is_editor:
-            raise RuntimeError(
-                "Permission denied: only board owner or editor can remove tags from generations"
-            )
+        await _verify_generation_edit_access(session, generation_id, auth_context)
 
         # Find and delete the association
         assoc_stmt = select(GenerationTags).where(
