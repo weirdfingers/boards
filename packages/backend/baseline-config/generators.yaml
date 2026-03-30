@@ -146,6 +146,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.kolors_virtual_try_on.FalKolorsVirtualTryOnGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.kling_video_v26_pro_image_to_video.FalKlingVideoV26ProImageToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.kling_video_v26_pro_motion_control.FalKlingVideoV26ProMotionControlGenerator"
     enabled: true
 

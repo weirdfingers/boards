@@ -39,6 +39,9 @@ from .kling_video_v2_5_turbo_pro_image_to_video import (
 from .kling_video_v2_5_turbo_pro_text_to_video import (
     FalKlingVideoV25TurboProTextToVideoGenerator,
 )
+from .kling_video_v26_pro_image_to_video import (
+    FalKlingVideoV26ProImageToVideoGenerator,
+)
 from .kling_video_v3_pro_image_to_video import (
     FalKlingVideoV3ProImageToVideoGenerator,
 )
@@ -88,6 +91,7 @@ __all__ = [
     "FalKlingVideoO3StandardImageToVideoGenerator",
     "FalKlingVideoV25TurboProImageToVideoGenerator",
     "FalKlingVideoV25TurboProTextToVideoGenerator",
+    "FalKlingVideoV26ProImageToVideoGenerator",
     "FalKlingVideoV3ProImageToVideoGenerator",
     "FalKlingVideoV3ProTextToVideoGenerator",
     "FalKlingVideoV26ProMotionControlGenerator",
