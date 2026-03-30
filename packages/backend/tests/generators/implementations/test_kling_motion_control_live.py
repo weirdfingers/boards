@@ -40,7 +40,7 @@ def test_image_artifact():
     """
     return ImageArtifact(
         generation_id="test_image",
-        storage_url="https://placehold.co/512x512/ff9900/ffffff.png",
+        storage_url="https://v3b.fal.media/files/b/0a875302/8NaxQrQxDNHppHtqcchMm.png",
         format="png",
         width=512,
         height=512,
@@ -55,17 +55,14 @@ def test_video_artifact():
     Note: For live tests, this should be a real video URL with motion data.
     Using a placeholder for now - replace with actual test video URL.
     """
-    # This is a placeholder - in real tests, use an actual short video
-    # with clear human motion (e.g., a short dance clip)
     return VideoArtifact(
         generation_id="test_video",
-        # Using a sample video from a public source
-        storage_url="https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
+        storage_url="https://storage.googleapis.com/falserverless/kling/kling_output.mp4",
         format="mp4",
-        width=1280,
-        height=720,
-        duration=5.0,
-        fps=25.0,
+        width=640,
+        height=360,
+        duration=10.0,
+        fps=24,
     )
 
 
