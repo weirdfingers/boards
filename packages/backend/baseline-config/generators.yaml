@@ -35,6 +35,12 @@ generators:
   - class: "boards.generators.implementations.fal.video.creatify_lipsync.FalCreatifyLipsyncGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.fal_bytedance_seedance_v1_5_pro_image_to_video.FalBytedanceSeedanceV15ProImageToVideoGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.video.fal_bytedance_seedance_v1_5_pro_text_to_video.FalBytedanceSeedanceV15ProTextToVideoGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.fal_bytedance_seedance_v1_pro_image_to_video.FalBytedanceSeedanceV1ProImageToVideoGenerator"
     enabled: true
 

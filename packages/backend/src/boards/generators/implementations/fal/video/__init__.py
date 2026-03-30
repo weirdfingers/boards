@@ -4,6 +4,12 @@ from .bytedance_seedance_v1_pro_text_to_video import (
     FalBytedanceSeedanceV1ProTextToVideoGenerator,
 )
 from .creatify_lipsync import FalCreatifyLipsyncGenerator
+from .fal_bytedance_seedance_v1_5_pro_image_to_video import (
+    FalBytedanceSeedanceV15ProImageToVideoGenerator,
+)
+from .fal_bytedance_seedance_v1_5_pro_text_to_video import (
+    FalBytedanceSeedanceV15ProTextToVideoGenerator,
+)
 from .fal_bytedance_seedance_v1_pro_image_to_video import (
     FalBytedanceSeedanceV1ProImageToVideoGenerator,
 )
@@ -51,6 +57,8 @@ from .wan_pro_image_to_video import FalWanProImageToVideoGenerator
 __all__ = [
     "FalInfinitalkGenerator",
     "FalCreatifyLipsyncGenerator",
+    "FalBytedanceSeedanceV15ProImageToVideoGenerator",
+    "FalBytedanceSeedanceV15ProTextToVideoGenerator",
     "FalBytedanceSeedanceV1ProImageToVideoGenerator",
     "FalBytedanceSeedanceV1ProTextToVideoGenerator",
     "FalKlingVideoAiAvatarV2ProGenerator",
