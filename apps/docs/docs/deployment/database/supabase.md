@@ -137,10 +137,22 @@ Supabase allows connections from any IP by default. To restrict:
 
 ## Migrations
 
-Migrations run automatically on API startup. You can also run them via the Supabase SQL Editor:
+Boards manages its database schema using **Alembic** (not Supabase's built-in migration system). Migrations are located in `packages/backend/alembic/versions/` and run against the `boards` schema.
 
-1. Go to **SQL Editor** in your dashboard
-2. Run migration files from `packages/backend/src/boards/db/migrations/`
+To run migrations against your Supabase database:
+
+```bash
+# Set your Supabase connection string
+export BOARDS_DATABASE_URL=postgresql://postgres.[ref]:[pass]@db.[ref].supabase.co:5432/postgres
+
+# Run all migrations
+cd packages/backend
+uv run alembic upgrade head
+```
+
+:::note
+Boards uses custom PostgreSQL trigger functions (e.g., `boards.update_updated_at_column()` for auto-updating `updated_at` timestamps) instead of Supabase's `moddatetime` extension. This keeps migrations portable across any PostgreSQL host, not just Supabase. These triggers coexist safely with Supabase's own schemas (`auth`, `storage`, etc.) since all Boards objects live in the `boards` schema.
+:::
 
 ## Monitoring
 

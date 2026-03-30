@@ -23,6 +23,11 @@ This page documents all available GraphQL mutations in the Boards API. Mutations
 | [`deleteGeneration`](#deletegeneration) | Delete a generation | Yes |
 | [`regenerate`](#regenerate) | Re-run a generation | Yes |
 | [`uploadArtifact`](#uploadartifact) | Upload an artifact from URL | Yes |
+| [`createTag`](#createtag) | Create a new tag | Yes |
+| [`updateTag`](#updatetag) | Update an existing tag | Yes |
+| [`deleteTag`](#deletetag) | Delete a tag | Yes |
+| [`addTagToGeneration`](#addtagtogeneration) | Add a tag to a generation | Yes (owner/editor) |
+| [`removeTagFromGeneration`](#removetagfromgeneration) | Remove a tag from a generation | Yes (owner/editor) |
 
 ---
 
@@ -564,6 +569,205 @@ mutation UploadImage($boardId: UUID!) {
     storageUrl
     thumbnailUrl
   }
+}
+```
+
+---
+
+## Tag Mutations
+
+### createTag
+
+Create a new tag for the current tenant. If no slug is provided, one is auto-generated from the tag name.
+
+```graphql
+mutation {
+  createTag(input: CreateTagInput!): Tag!
+}
+```
+
+#### Input Type
+
+```graphql
+input CreateTagInput {
+  name: String!
+  slug: String
+  description: String
+  metadata: JSON
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String!` | - | Tag display name (required) |
+| `slug` | `String` | Auto-generated | URL-friendly identifier (must be unique per tenant) |
+| `description` | `String` | `null` | Optional description |
+| `metadata` | `JSON` | `null` | Additional metadata |
+
+#### Example
+
+```graphql
+mutation CreateTag {
+  createTag(input: {
+    name: "Favorite"
+    description: "My favorite generations"
+  }) {
+    id
+    name
+    slug
+    description
+    createdAt
+  }
+}
+```
+
+---
+
+### updateTag
+
+Update an existing tag. Only provided fields are updated.
+
+```graphql
+mutation {
+  updateTag(input: UpdateTagInput!): Tag!
+}
+```
+
+#### Input Type
+
+```graphql
+input UpdateTagInput {
+  id: UUID!
+  name: String
+  slug: String
+  description: String
+  metadata: JSON
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `UUID!` | Tag ID (required) |
+| `name` | `String` | New display name |
+| `slug` | `String` | New slug (must be unique per tenant) |
+| `description` | `String` | New description |
+| `metadata` | `JSON` | New metadata |
+
+#### Example
+
+```graphql
+mutation UpdateTag($tagId: UUID!) {
+  updateTag(input: {
+    id: $tagId
+    name: "Top Picks"
+    description: "My top picks from all generations"
+  }) {
+    id
+    name
+    slug
+    description
+    updatedAt
+  }
+}
+```
+
+---
+
+### deleteTag
+
+Delete a tag. This also removes all associations between the tag and any generations.
+
+```graphql
+mutation {
+  deleteTag(id: UUID!): Boolean!
+}
+```
+
+#### Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `id` | `UUID!` | Tag ID to delete |
+
+#### Returns
+
+`true` if deletion was successful.
+
+#### Example
+
+```graphql
+mutation DeleteTag($tagId: UUID!) {
+  deleteTag(id: $tagId)
+}
+```
+
+:::warning
+This operation is destructive and cannot be undone. The tag will be removed from all generations it was associated with.
+:::
+
+---
+
+### addTagToGeneration
+
+Add a tag to a generation. Requires owner or editor role on the generation's board.
+
+```graphql
+mutation {
+  addTagToGeneration(generationId: UUID!, tagId: UUID!): Tag!
+}
+```
+
+#### Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `generationId` | `UUID!` | The generation to tag |
+| `tagId` | `UUID!` | The tag to add |
+
+#### Returns
+
+The `Tag` that was added.
+
+#### Example
+
+```graphql
+mutation TagGeneration($genId: UUID!, $tagId: UUID!) {
+  addTagToGeneration(generationId: $genId, tagId: $tagId) {
+    id
+    name
+    slug
+  }
+}
+```
+
+---
+
+### removeTagFromGeneration
+
+Remove a tag from a generation. Requires owner or editor role on the generation's board.
+
+```graphql
+mutation {
+  removeTagFromGeneration(generationId: UUID!, tagId: UUID!): Boolean!
+}
+```
+
+#### Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `generationId` | `UUID!` | The generation to untag |
+| `tagId` | `UUID!` | The tag to remove |
+
+#### Returns
+
+`true` if the tag was successfully removed.
+
+#### Example
+
+```graphql
+mutation UntagGeneration($genId: UUID!, $tagId: UUID!) {
+  removeTagFromGeneration(generationId: $genId, tagId: $tagId)
 }
 ```
 

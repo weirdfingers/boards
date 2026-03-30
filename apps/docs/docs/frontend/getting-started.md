@@ -217,6 +217,97 @@ function GeneratorSelector({ onSelect }) {
 }
 ```
 
+### useManageTags
+
+CRUD operations for managing tags within your tenant:
+
+```tsx
+import { useManageTags } from "@weirdfingers/boards";
+
+function TagManager() {
+  const { tags, createTag, updateTag, deleteTag, loading } = useManageTags();
+
+  const handleCreate = async () => {
+    await createTag({
+      name: "Favorite",
+      description: "My favorite generations",
+    });
+  };
+
+  if (loading) return <div>Loading tags...</div>;
+
+  return (
+    <div>
+      <button onClick={handleCreate}>Create Tag</button>
+      {tags.map((tag) => (
+        <div key={tag.id}>
+          <span>{tag.name}</span>
+          <button onClick={() => deleteTag(tag.id)}>Delete</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### useTagGeneration
+
+Add and remove tags from a specific generation:
+
+```tsx
+import { useManageTags, useTagGeneration } from "@weirdfingers/boards";
+
+function GenerationTags({ generationId }: { generationId: string }) {
+  const { tags: allTags } = useManageTags();
+  const { tags, addTag, removeTag, hasTag } = useTagGeneration(generationId);
+
+  return (
+    <div>
+      <h3>Tags on this generation:</h3>
+      {tags.map((tag) => (
+        <span key={tag.id}>
+          {tag.name}
+          <button onClick={() => removeTag(tag.id)}>x</button>
+        </span>
+      ))}
+
+      <h3>Available tags:</h3>
+      {allTags
+        .filter((t) => !hasTag(t.id))
+        .map((tag) => (
+          <button key={tag.id} onClick={() => addTag(tag.id)}>
+            + {tag.name}
+          </button>
+        ))}
+    </div>
+  );
+}
+```
+
+### useTag / useTagBySlug
+
+Fetch a single tag by ID or by slug:
+
+```tsx
+import { useTag, useTagBySlug } from "@weirdfingers/boards";
+
+// By ID
+function TagDetail({ tagId }: { tagId: string }) {
+  const { tag, loading } = useTag(tagId);
+  if (loading) return <div>Loading...</div>;
+  if (!tag) return <div>Tag not found</div>;
+  return <h1>{tag.name}</h1>;
+}
+
+// By slug (useful for URL-based routing)
+function TagPage({ slug }: { slug: string }) {
+  const { tag, loading } = useTagBySlug(slug);
+  if (loading) return <div>Loading...</div>;
+  if (!tag) return <div>Tag not found</div>;
+  return <h1>{tag.name}</h1>;
+}
+```
+
 ## Advanced Usage
 
 ### Combining Hooks

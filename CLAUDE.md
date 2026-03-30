@@ -394,6 +394,21 @@ new_board.title = input.title
 new_board.descritpion = input.description  # Type checker will error!
 ```
 
+### Database Migrations: `updated_at` Triggers
+
+All tables with an `updated_at` column have a `BEFORE UPDATE` trigger that automatically sets `updated_at = CURRENT_TIMESTAMP`. When adding a new table with an `updated_at` column, you **must** also add a trigger for it in a migration:
+
+```python
+op.execute("""
+    CREATE TRIGGER trg_<table_name>_updated_at
+        BEFORE UPDATE ON boards.<table_name>
+        FOR EACH ROW
+        EXECUTE FUNCTION boards.update_updated_at_column();
+""")
+```
+
+The shared trigger function `boards.update_updated_at_column()` already exists. Do **not** manually set `updated_at` in application code -- the trigger handles it.
+
 ### GraphQL Schema Changes
 
 **CRITICAL**: When modifying GraphQL types in the backend, you MUST update the frontend in the same commit:
