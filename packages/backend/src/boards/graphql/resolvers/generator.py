@@ -2,8 +2,11 @@
 Generator resolvers for GraphQL API
 """
 
+from typing import cast
+
 import strawberry
 
+from ...generators.artifacts import ArtifactTypeName
 from ...generators.registry import registry
 from ..types.generation import ArtifactType
 from ..types.generator import GeneratorInfo
@@ -26,7 +29,7 @@ async def resolve_generators(
 
     # Get generators from registry
     if artifact_type:
-        generators = registry.list_by_artifact_type(artifact_type)
+        generators = registry.list_by_artifact_type(cast(ArtifactTypeName, artifact_type))
     else:
         generators = registry.list_all()
 

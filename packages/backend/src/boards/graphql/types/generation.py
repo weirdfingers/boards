@@ -17,7 +17,10 @@ if TYPE_CHECKING:
 
 @strawberry.enum
 class ArtifactType(Enum):
-    """Artifact type enumeration."""
+    """Artifact type enumeration.
+
+    Values must stay in sync with ArtifactTypeName in generators.artifacts.
+    """
 
     IMAGE = "image"
     VIDEO = "video"

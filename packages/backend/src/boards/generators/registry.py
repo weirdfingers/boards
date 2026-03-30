@@ -4,6 +4,7 @@ Generator registry system for discovering and managing generators.
 
 from boards.logging import get_logger
 
+from .artifacts import ArtifactTypeName
 from .base import BaseGenerator
 
 logger = get_logger(__name__)
@@ -57,7 +58,7 @@ class GeneratorRegistry:
         """
         return list(self._generators.values())
 
-    def list_by_artifact_type(self, artifact_type: str) -> list[BaseGenerator]:
+    def list_by_artifact_type(self, artifact_type: ArtifactTypeName) -> list[BaseGenerator]:
         """
         List generators that produce a specific artifact type.
 

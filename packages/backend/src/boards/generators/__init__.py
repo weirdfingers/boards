@@ -23,6 +23,8 @@ Example usage:
 """
 
 from .artifacts import (
+    ARTIFACT_TYPE_NAMES,
+    ArtifactTypeName,
     AudioArtifact,
     ImageArtifact,
     LoRArtifact,
@@ -44,6 +46,8 @@ __all__ = [
     "GeneratorRegistry",
     "registry",
     # Artifact types
+    "ArtifactTypeName",
+    "ARTIFACT_TYPE_NAMES",
     "AudioArtifact",
     "VideoArtifact",
     "ImageArtifact",

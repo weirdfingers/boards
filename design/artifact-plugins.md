@@ -57,6 +57,8 @@ from typing import Optional
 from pydantic import BaseModel
 from pathlib import Path
 
+from boards.generators.artifacts import ArtifactTypeName
+
 class PluginResult(BaseModel):
     """Result returned by a plugin after execution."""
     success: bool
@@ -76,7 +78,7 @@ class PluginContext(BaseModel):
     file_path: Path
 
     # Artifact metadata
-    artifact_type: str  # 'image', 'video', 'audio', 'text'
+    artifact_type: ArtifactTypeName
     mime_type: str
     file_size_bytes: int
     # Type-specific metadata (e.g., width/height for images, duration for video/audio)
@@ -112,7 +114,7 @@ class BaseArtifactPlugin(ABC):
     description: str
 
     # Artifact types this plugin applies to (empty = all types)
-    supported_artifact_types: list[str] = []
+    supported_artifact_types: list[ArtifactTypeName] = []
 
     @abstractmethod
     async def execute(self, context: PluginContext) -> PluginResult:
@@ -127,7 +129,7 @@ class BaseArtifactPlugin(ABC):
         """
         pass
 
-    def supports_artifact_type(self, artifact_type: str) -> bool:
+    def supports_artifact_type(self, artifact_type: ArtifactTypeName) -> bool:
         """Check if this plugin supports the given artifact type."""
         if not self.supported_artifact_types:
             return True  # Empty list means all types
@@ -147,7 +149,7 @@ class C2PASigningPlugin(BaseArtifactPlugin):
 
     name = "c2pa-signing"
     description = "Signs artifacts with C2PA Content Credentials"
-    supported_artifact_types = ["image", "video"]  # C2PA supports these
+    supported_artifact_types: list[ArtifactTypeName] = ["image", "video"]  # C2PA supports these
 
     def __init__(
         self,
@@ -199,7 +201,7 @@ class WatermarkPlugin(BaseArtifactPlugin):
 
     name = "watermark"
     description = "Adds visible watermark to images"
-    supported_artifact_types = ["image"]
+    supported_artifact_types: list[ArtifactTypeName] = ["image"]
 
     def __init__(
         self,
@@ -240,7 +242,7 @@ class ContentAnalysisPlugin(BaseArtifactPlugin):
 
     name = "content-analysis"
     description = "Runs content analysis and attaches metadata"
-    supported_artifact_types = []  # All types
+    supported_artifact_types: list[ArtifactTypeName] = []  # All types
 
     async def execute(self, context: PluginContext) -> PluginResult:
         # Run analysis (e.g., NSFW detection, quality scoring)
@@ -271,7 +273,7 @@ class ArtifactPluginRegistry:
             raise ValueError(f"Plugin with name '{plugin.name}' already registered")
         self._plugins.append(plugin)
 
-    def get_plugins_for_artifact(self, artifact_type: str) -> list[BaseArtifactPlugin]:
+    def get_plugins_for_artifact(self, artifact_type: ArtifactTypeName) -> list[BaseArtifactPlugin]:
         """Get ordered list of plugins that apply to the given artifact type."""
         return [p for p in self._plugins if p.supports_artifact_type(artifact_type)]
 
