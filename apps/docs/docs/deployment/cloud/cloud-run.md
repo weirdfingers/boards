@@ -10,20 +10,17 @@ sidebar_position: 1
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│                  Cloud Run                       │
-│  ┌─────────────┐         ┌─────────────────┐    │
-│  │  API Service │         │  Worker Service │    │
-│  │  (auto-scale)│         │  (min 1 replica)│    │
-│  └──────┬──────┘         └────────┬────────┘    │
-└─────────┼─────────────────────────┼─────────────┘
-          │                         │
-          ▼                         ▼
-    ┌──────────┐             ┌───────────┐
-    │Cloud SQL │             │ Memorystore│
-    │(Postgres)│             │  (Redis)   │
-    └──────────┘             └───────────┘
+```mermaid
+flowchart TB
+    subgraph CloudRun["Cloud Run"]
+        APIService["API Service<br/>(auto-scale)"]
+        WorkerService["Worker Service<br/>(min 1 replica)"]
+    end
+
+    APIService --> CloudSQL["Cloud SQL<br/>(Postgres)"]
+    APIService --> Memorystore["Memorystore<br/>(Redis)"]
+    WorkerService --> CloudSQL
+    WorkerService --> Memorystore
 ```
 
 ## Prerequisites

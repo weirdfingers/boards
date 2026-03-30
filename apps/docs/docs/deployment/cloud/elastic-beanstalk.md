@@ -10,28 +10,23 @@ sidebar_position: 2
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   Elastic Beanstalk                      │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │              Application Load Balancer           │    │
-│  └────────────────────────┬────────────────────────┘    │
-│                           │                              │
-│  ┌────────────────────────┼────────────────────────┐    │
-│  │                   Auto Scaling Group             │    │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐       │    │
-│  │  │   EC2    │  │   EC2    │  │   EC2    │       │    │
-│  │  │ API+Worker│  │ API+Worker│  │ API+Worker│     │    │
-│  │  └──────────┘  └──────────┘  └──────────┘       │    │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-     ┌─────────┐     ┌──────────┐    ┌───────────┐
-     │   RDS   │     │ElastiCache│    │    S3     │
-     │(Postgres)│     │ (Redis)  │    │ (Storage) │
-     └─────────┘     └──────────┘    └───────────┘
+```mermaid
+flowchart TB
+    subgraph EB["Elastic Beanstalk"]
+        ALB["Application Load Balancer"]
+
+        subgraph ASG["Auto Scaling Group"]
+            EC2_1["EC2<br/>API+Worker"]
+            EC2_2["EC2<br/>API+Worker"]
+            EC2_3["EC2<br/>API+Worker"]
+        end
+
+        ALB --> ASG
+    end
+
+    ASG --> RDS["RDS<br/>(Postgres)"]
+    ASG --> ElastiCache["ElastiCache<br/>(Redis)"]
+    ASG --> S3["S3<br/>(Storage)"]
 ```
 
 ## Prerequisites

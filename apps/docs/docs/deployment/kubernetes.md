@@ -16,33 +16,35 @@ Deploy Boards on Kubernetes using the pre-built container images. This guide pro
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Kubernetes Cluster                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Ingress   │  │   Service   │  │      Service        │  │
-│  │  (optional) │──│  boards-api │  │   boards-worker     │  │
-│  └─────────────┘  └──────┬──────┘  └──────────┬──────────┘  │
-│                          │                     │             │
-│  ┌───────────────────────┴─────────────────────┴──────────┐ │
-│  │                     Deployments                         │ │
-│  │  ┌─────────────┐              ┌─────────────┐          │ │
-│  │  │  API Pods   │              │ Worker Pods │          │ │
-│  │  │  (replicas) │              │  (replicas) │          │ │
-│  │  └─────────────┘              └─────────────┘          │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                          │                                   │
-│  ┌───────────────────────┴─────────────────────────────────┐ │
-│  │              ConfigMap / Secret                          │ │
-│  └──────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        ▼                  ▼                  ▼
-   ┌─────────┐       ┌──────────┐      ┌───────────┐
-   │PostgreSQL│       │  Redis   │      │  Storage  │
-   │(managed) │       │(managed) │      │ (S3/GCS)  │
-   └─────────┘       └──────────┘      └───────────┘
+```mermaid
+flowchart TB
+    subgraph K8s["Kubernetes Cluster"]
+        subgraph Services["Services"]
+            Ingress["Ingress<br/>(optional)"]
+            APISvc["Service<br/>boards-api"]
+            WorkerSvc["Service<br/>boards-worker"]
+        end
+
+        subgraph Deployments["Deployments"]
+            APIPods["API Pods<br/>(replicas)"]
+            WorkerPods["Worker Pods<br/>(replicas)"]
+        end
+
+        Config["ConfigMap / Secret"]
+
+        Ingress --> APISvc
+        APISvc --> APIPods
+        WorkerSvc --> WorkerPods
+        APIPods --> Config
+        WorkerPods --> Config
+    end
+
+    APIPods --> PostgreSQL["PostgreSQL<br/>(managed)"]
+    APIPods --> Redis["Redis<br/>(managed)"]
+    APIPods --> Storage["Storage<br/>(S3/GCS)"]
+    WorkerPods --> PostgreSQL
+    WorkerPods --> Redis
+    WorkerPods --> Storage
 ```
 
 For production, use managed services for PostgreSQL, Redis, and object storage rather than running them in Kubernetes.

@@ -17,34 +17,31 @@ sidebar_position: 5
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────┐
-│              Fly.io Organization         │
-│                                          │
-│  ┌─────────────────────────────────┐    │
-│  │           Fly Proxy             │    │
-│  │    (Global Load Balancing)      │    │
-│  └──────────────┬──────────────────┘    │
-│                 │                        │
-│  ┌──────────────┼──────────────────┐    │
-│  │         API Machines             │    │
-│  │  ┌────┐  ┌────┐  ┌────┐         │    │
-│  │  │ VM │  │ VM │  │ VM │         │    │
-│  │  └────┘  └────┘  └────┘         │    │
-│  └──────────────────────────────────┘   │
-│                 │                        │
-│  ┌──────────────┼──────────────────┐    │
-│  │        Worker Machines           │    │
-│  │  ┌────┐  ┌────┐                 │    │
-│  │  │ VM │  │ VM │                 │    │
-│  │  └────┘  └────┘                 │    │
-│  └──────────────────────────────────┘   │
-│                 │                        │
-│  ┌──────────────┴──────────────────┐    │
-│  │     Fly Postgres    Upstash     │    │
-│  │      (Cluster)      (Redis)     │    │
-│  └─────────────────────────────────┘    │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Fly["Fly.io Organization"]
+        FlyProxy["Fly Proxy<br/>(Global Load Balancing)"]
+
+        subgraph APIMachines["API Machines"]
+            VM1["VM"]
+            VM2["VM"]
+            VM3["VM"]
+        end
+
+        subgraph WorkerMachines["Worker Machines"]
+            WVM1["VM"]
+            WVM2["VM"]
+        end
+
+        subgraph Data["Data Services"]
+            FlyPostgres["Fly Postgres<br/>(Cluster)"]
+            Upstash["Upstash<br/>(Redis)"]
+        end
+
+        FlyProxy --> APIMachines
+        APIMachines --> Data
+        WorkerMachines --> Data
+    end
 ```
 
 ## Prerequisites
