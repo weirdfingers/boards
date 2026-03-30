@@ -1,5 +1,6 @@
 """Fal.ai image generators."""
 
+from .bria_background_remove import FalBriaBackgroundRemoveGenerator
 from .bytedance_seedream_v45_edit import FalBytedanceSeedreamV45EditGenerator
 from .clarity_upscaler import FalClarityUpscalerGenerator
 from .crystal_upscaler import FalCrystalUpscalerGenerator
@@ -22,6 +23,7 @@ from .imagen4_preview import FalImagen4PreviewGenerator
 from .imagen4_preview_fast import FalImagen4PreviewFastGenerator
 from .kolors_virtual_try_on import FalKolorsVirtualTryOnGenerator
 from .nano_banana import FalNanoBananaGenerator
+from .nano_banana_2 import FalNanoBanana2Generator
 from .nano_banana_edit import FalNanoBananaEditGenerator
 from .nano_banana_pro import FalNanoBananaProGenerator
 from .nano_banana_pro_edit import FalNanoBananaProEditGenerator
@@ -32,6 +34,7 @@ from .reve_text_to_image import FalReveTextToImageGenerator
 from .seedream_v45_text_to_image import FalSeedreamV45TextToImageGenerator
 
 __all__ = [
+    "FalBriaBackgroundRemoveGenerator",
     "FalBytedanceSeedreamV45EditGenerator",
     "FalClarityUpscalerGenerator",
     "FalCrystalUpscalerGenerator",
@@ -53,6 +56,7 @@ __all__ = [
     "FalImagen4PreviewGenerator",
     "FalImagen4PreviewFastGenerator",
     "FalKolorsVirtualTryOnGenerator",
+    "FalNanoBanana2Generator",
     "FalNanoBananaGenerator",
     "FalNanoBananaEditGenerator",
     "FalNanoBananaProGenerator",
