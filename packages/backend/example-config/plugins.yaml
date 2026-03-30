@@ -1,0 +1,37 @@
+# Artifact Plugins Configuration
+#
+# Plugins run after a generator produces an artifact but before it is
+# uploaded to remote storage.  They execute in the order listed below.
+#
+# Set BOARDS_PLUGINS_CONFIG_PATH to this file's path, or place it at
+# ./plugins.yaml in the working directory.
+
+strict_mode: true  # Fail startup if any plugin fails to load
+
+plugins:
+  # ── C2PA Content Credentials (stub – signing not yet implemented) ──
+  - class: "boards.plugins.implementations.c2pa.C2PASigningPlugin"
+    enabled: false
+    options:
+      signing_key_path: "/etc/boards/c2pa-signing-key.pem"
+      certificate_path: "/etc/boards/c2pa-certificate.pem"
+      claim_generator: "Boards/1.0"
+
+  # ── Visible Watermark ──────────────────────────────────────────────
+  - class: "boards.plugins.implementations.watermark.WatermarkPlugin"
+    enabled: false
+    options:
+      watermark_image_path: "/etc/boards/watermark.png"
+      position: "bottom-right"   # top-left | top-right | bottom-left | bottom-right | center
+      opacity: 0.3
+      margin: 10
+
+  # ── Content Analysis (skeleton) ────────────────────────────────────
+  - class: "boards.plugins.implementations.analysis.ContentAnalysisPlugin"
+    enabled: false
+
+  # ── Entry point from an external package ───────────────────────────
+  # - entrypoint: "myorg.custom-plugin"
+  #   enabled: false
+  #   options:
+  #     custom_setting: "value"

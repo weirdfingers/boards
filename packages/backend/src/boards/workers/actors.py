@@ -195,6 +195,18 @@ async def process_generation(generation_id: str) -> None:
                 batch_size=len(output.outputs),
             )
 
+        # Collect plugin results into output metadata
+        plugin_results = context.get_plugin_results()
+        if plugin_results:
+            output_metadata["plugin_results"] = [
+                {
+                    "success": pr.success,
+                    "error_message": pr.error_message,
+                    "metadata": pr.metadata,
+                }
+                for pr in plugin_results
+            ]
+
         # Finalize DB with storage URL and output metadata
         async with get_async_session() as session:
             await jobs_repo.finalize_success(

@@ -2,18 +2,24 @@
 Artifact resolution utilities for converting Generation references to actual files.
 """
 
+from __future__ import annotations
+
 import base64
 import os
 import tempfile
 import uuid
+from pathlib import Path
 from urllib.parse import urlparse
 
 import aiofiles
 import httpx
 
 from ..logging import get_logger
+from ..plugins.base import PluginContext, PluginResult
+from ..plugins.executor import ArtifactPluginExecutor
 from ..storage.base import StorageManager
 from .artifacts import (
+    ArtifactTypeName,
     AudioArtifact,
     ImageArtifact,
     LoRArtifact,
@@ -22,6 +28,20 @@ from .artifacts import (
 )
 
 logger = get_logger(__name__)
+
+# Module-level executor reference, set during worker boot via set_plugin_executor()
+_plugin_executor: ArtifactPluginExecutor | None = None
+
+
+def set_plugin_executor(executor: ArtifactPluginExecutor | None) -> None:
+    """Set the module-level plugin executor (called during worker initialization)."""
+    global _plugin_executor
+    _plugin_executor = executor
+
+
+def get_plugin_executor() -> ArtifactPluginExecutor | None:
+    """Get the current plugin executor (may be None if no plugins configured)."""
+    return _plugin_executor
 
 
 def _rewrite_storage_url(storage_url: str) -> str:
@@ -354,6 +374,73 @@ def _get_content_type_from_format(artifact_type: str, format: str) -> str:
     return type_map.get(format_lower, "application/octet-stream")
 
 
+async def _run_plugins_on_content(
+    content: bytes,
+    artifact_type: ArtifactTypeName,
+    mime_type: str,
+    format: str,
+    generation_id: str,
+    generator_name: str,
+    generator_inputs: dict,
+    board_id: str,
+    tenant_id: str,
+    user_id: str,
+) -> tuple[bytes, list[PluginResult]]:
+    """Run artifact plugins on downloaded content before upload.
+
+    Writes content to a temp file, runs plugins, reads the (possibly
+    modified) file back, and cleans up.
+
+    Returns:
+        Tuple of (final_content_bytes, list_of_plugin_results).
+        If no executor is configured the original content is returned.
+    """
+    executor = _plugin_executor
+    if executor is None or not executor.has_plugins_for(artifact_type):
+        return content, []
+
+    extension = f".{format.lower()}" if not format.startswith(".") else format.lower()
+    random_id = uuid.uuid4().hex[:8]
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=extension, prefix=f"boards_plugin_{random_id}_")
+    os.chmod(tmp_path, 0o600)
+
+    try:
+        os.close(tmp_fd)
+        async with aiofiles.open(tmp_path, "wb") as f:
+            await f.write(content)
+
+        ctx = PluginContext(
+            file_path=Path(tmp_path),
+            artifact_type=artifact_type,
+            mime_type=mime_type,
+            file_size_bytes=len(content),
+            generation_id=generation_id,
+            generator_name=generator_name,
+            generator_inputs=generator_inputs,
+            board_id=board_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+
+        final_path, results = await executor.execute_plugins(
+            file_path=Path(tmp_path), context=ctx
+        )
+
+        # Read the (possibly modified) file back
+        async with aiofiles.open(final_path, "rb") as f:
+            final_content = await f.read()
+
+        return final_content, results
+
+    finally:
+        # Clean up temp file(s)
+        for p in (tmp_path, ):
+            try:
+                os.unlink(p)
+            except FileNotFoundError:
+                pass
+
+
 async def store_image_result(
     storage_manager: StorageManager,
     generation_id: str,
@@ -363,26 +450,16 @@ async def store_image_result(
     format: str,
     width: int | None = None,
     height: int | None = None,
-) -> ImageArtifact:
-    """
-    Store an image result by downloading from provider URL and uploading to storage.
+    generator_name: str = "",
+    generator_inputs: dict | None = None,
+    user_id: str = "",
+) -> tuple[ImageArtifact, list[PluginResult]]:
+    """Store an image result by downloading from provider URL and uploading to storage.
 
-    Args:
-        storage_manager: Storage manager instance
-        generation_id: ID of the generation
-        tenant_id: Tenant ID for storage isolation
-        board_id: Board ID for organization
-        storage_url: Provider's temporary URL to download from
-        format: Image format (png, jpg, etc.)
-        width: Image width in pixels (optional)
-        height: Image height in pixels (optional)
+    Plugins (if configured) run on the downloaded content before upload.
 
     Returns:
-        ImageArtifact with permanent storage URL
-
-    Raises:
-        StorageException: If storage operation fails
-        httpx.HTTPError: If download fails
+        Tuple of (ImageArtifact with permanent storage URL, list of PluginResults).
     """
     logger.info(
         "Storing image result",
@@ -391,13 +468,23 @@ async def store_image_result(
         format=format,
     )
 
-    # Download content from provider URL
     content = await download_from_url(storage_url)
-
-    # Determine content type
     content_type = _get_content_type_from_format("image", format)
 
-    # Upload to storage system
+    # Run plugins before upload
+    content, plugin_results = await _run_plugins_on_content(
+        content=content,
+        artifact_type="image",
+        mime_type=content_type,
+        format=format,
+        generation_id=generation_id,
+        generator_name=generator_name,
+        generator_inputs=generator_inputs or {},
+        board_id=board_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
+
     artifact_ref = await storage_manager.store_artifact(
         artifact_id=generation_id,
         content=content,
@@ -414,14 +501,14 @@ async def store_image_result(
         storage_url=artifact_ref.storage_url[:50],
     )
 
-    # Return artifact with our permanent storage URL
-    return ImageArtifact(
+    artifact = ImageArtifact(
         generation_id=generation_id,
         storage_url=artifact_ref.storage_url,
         width=width,
         height=height,
         format=format,
     )
+    return artifact, plugin_results
 
 
 async def store_video_result(
@@ -435,28 +522,16 @@ async def store_video_result(
     height: int | None = None,
     duration: float | None = None,
     fps: float | None = None,
-) -> VideoArtifact:
-    """
-    Store a video result by downloading from provider URL and uploading to storage.
+    generator_name: str = "",
+    generator_inputs: dict | None = None,
+    user_id: str = "",
+) -> tuple[VideoArtifact, list[PluginResult]]:
+    """Store a video result by downloading from provider URL and uploading to storage.
 
-    Args:
-        storage_manager: Storage manager instance
-        generation_id: ID of the generation
-        tenant_id: Tenant ID for storage isolation
-        board_id: Board ID for organization
-        storage_url: Provider's temporary URL to download from
-        format: Video format (mp4, webm, etc.)
-        width: Video width in pixels (optional)
-        height: Video height in pixels (optional)
-        duration: Video duration in seconds (optional)
-        fps: Frames per second (optional)
+    Plugins (if configured) run on the downloaded content before upload.
 
     Returns:
-        VideoArtifact with permanent storage URL
-
-    Raises:
-        StorageException: If storage operation fails
-        httpx.HTTPError: If download fails
+        Tuple of (VideoArtifact with permanent storage URL, list of PluginResults).
     """
     logger.info(
         "Storing video result",
@@ -465,13 +540,22 @@ async def store_video_result(
         format=format,
     )
 
-    # Download content from provider URL
     content = await download_from_url(storage_url)
-
-    # Determine content type
     content_type = _get_content_type_from_format("video", format)
 
-    # Upload to storage system
+    content, plugin_results = await _run_plugins_on_content(
+        content=content,
+        artifact_type="video",
+        mime_type=content_type,
+        format=format,
+        generation_id=generation_id,
+        generator_name=generator_name,
+        generator_inputs=generator_inputs or {},
+        board_id=board_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
+
     artifact_ref = await storage_manager.store_artifact(
         artifact_id=generation_id,
         content=content,
@@ -488,8 +572,7 @@ async def store_video_result(
         storage_url=artifact_ref.storage_url[:50],
     )
 
-    # Return artifact with our permanent storage URL
-    return VideoArtifact(
+    artifact = VideoArtifact(
         generation_id=generation_id,
         storage_url=artifact_ref.storage_url,
         width=width,
@@ -498,6 +581,7 @@ async def store_video_result(
         duration=duration,
         fps=fps,
     )
+    return artifact, plugin_results
 
 
 async def store_audio_result(
@@ -510,27 +594,16 @@ async def store_audio_result(
     duration: float | None = None,
     sample_rate: int | None = None,
     channels: int | None = None,
-) -> AudioArtifact:
-    """
-    Store an audio result by downloading from provider URL and uploading to storage.
+    generator_name: str = "",
+    generator_inputs: dict | None = None,
+    user_id: str = "",
+) -> tuple[AudioArtifact, list[PluginResult]]:
+    """Store an audio result by downloading from provider URL and uploading to storage.
 
-    Args:
-        storage_manager: Storage manager instance
-        generation_id: ID of the generation
-        tenant_id: Tenant ID for storage isolation
-        board_id: Board ID for organization
-        storage_url: Provider's temporary URL to download from
-        format: Audio format (mp3, wav, etc.)
-        duration: Audio duration in seconds (optional)
-        sample_rate: Sample rate in Hz (optional)
-        channels: Number of audio channels (optional)
+    Plugins (if configured) run on the downloaded content before upload.
 
     Returns:
-        AudioArtifact with permanent storage URL
-
-    Raises:
-        StorageException: If storage operation fails
-        httpx.HTTPError: If download fails
+        Tuple of (AudioArtifact with permanent storage URL, list of PluginResults).
     """
     logger.info(
         "Storing audio result",
@@ -539,13 +612,22 @@ async def store_audio_result(
         format=format,
     )
 
-    # Download content from provider URL
     content = await download_from_url(storage_url)
-
-    # Determine content type
     content_type = _get_content_type_from_format("audio", format)
 
-    # Upload to storage system
+    content, plugin_results = await _run_plugins_on_content(
+        content=content,
+        artifact_type="audio",
+        mime_type=content_type,
+        format=format,
+        generation_id=generation_id,
+        generator_name=generator_name,
+        generator_inputs=generator_inputs or {},
+        board_id=board_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
+
     artifact_ref = await storage_manager.store_artifact(
         artifact_id=generation_id,
         content=content,
@@ -562,8 +644,7 @@ async def store_audio_result(
         storage_url=artifact_ref.storage_url[:50],
     )
 
-    # Return artifact with our permanent storage URL
-    return AudioArtifact(
+    artifact = AudioArtifact(
         generation_id=generation_id,
         storage_url=artifact_ref.storage_url,
         format=format,
@@ -571,6 +652,7 @@ async def store_audio_result(
         sample_rate=sample_rate,
         channels=channels,
     )
+    return artifact, plugin_results
 
 
 async def store_text_result(
@@ -580,24 +662,16 @@ async def store_text_result(
     board_id: str,
     content: str,
     format: str,
-) -> TextArtifact:
-    """
-    Store a text result by uploading to storage.
+    generator_name: str = "",
+    generator_inputs: dict | None = None,
+    user_id: str = "",
+) -> tuple[TextArtifact, list[PluginResult]]:
+    """Store a text result by uploading to storage.
 
-    Args:
-        storage_manager: Storage manager instance
-        generation_id: ID of the generation
-        tenant_id: Tenant ID for storage isolation
-        board_id: Board ID for organization
-        content: Text content to store
-        format: Text format (plain, markdown, html, etc.)
+    Plugins (if configured) run on the content before upload.
 
     Returns:
-        TextArtifact with permanent storage URL
-
-    Raises:
-        StorageException: If storage operation fails
-        httpx.HTTPError: If upload fails
+        Tuple of (TextArtifact with permanent storage URL, list of PluginResults).
     """
     logger.info(
         "Storing text result",
@@ -606,10 +680,24 @@ async def store_text_result(
         format=format,
     )
 
-    # Upload to storage system
+    raw_content = content.encode("utf-8")
+
+    raw_content, plugin_results = await _run_plugins_on_content(
+        content=raw_content,
+        artifact_type="text",
+        mime_type="text/plain",
+        format=format,
+        generation_id=generation_id,
+        generator_name=generator_name,
+        generator_inputs=generator_inputs or {},
+        board_id=board_id,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
+
     artifact_ref = await storage_manager.store_artifact(
         artifact_id=generation_id,
-        content=content.encode("utf-8"),
+        content=raw_content,
         artifact_type="text",
         content_type="text/plain",
         tenant_id=tenant_id,
@@ -623,10 +711,10 @@ async def store_text_result(
         storage_url=artifact_ref.storage_url[:50],
     )
 
-    # Return artifact with our permanent storage URL
-    return TextArtifact(
+    artifact = TextArtifact(
         generation_id=generation_id,
         storage_url=artifact_ref.storage_url,
         content=content[:50],
         format=format,
     )
+    return artifact, plugin_results
