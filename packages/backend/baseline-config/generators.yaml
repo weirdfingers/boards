@@ -270,6 +270,9 @@ generators:
   - class: "boards.generators.implementations.kie.video.veo3.KieVeo3Generator"
     enabled: true
 
+  - class: "boards.generators.implementations.kie.audio.suno_sounds.KieSunoSoundsGenerator"
+    enabled: true
+
   # OpenAI generators
   - class: "boards.generators.implementations.openai.image.dalle3.OpenAIDallE3Generator"
     enabled: true
