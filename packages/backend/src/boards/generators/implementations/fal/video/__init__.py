@@ -24,6 +24,9 @@ from .kling_video_ai_avatar_v2_pro import FalKlingVideoAiAvatarV2ProGenerator
 from .kling_video_ai_avatar_v2_standard import (
     FalKlingVideoAiAvatarV2StandardGenerator,
 )
+from .kling_video_o3_standard_image_to_video import (
+    FalKlingVideoO3StandardImageToVideoGenerator,
+)
 from .kling_video_v2_5_turbo_pro_image_to_video import (
     FalKlingVideoV25TurboProImageToVideoGenerator,
 )
@@ -64,6 +67,7 @@ __all__ = [
     "FalKlingVideoAiAvatarV2ProGenerator",
     "FalKlingVideoAiAvatarV2StandardGenerator",
     "FalKlingMotionControlGenerator",
+    "FalKlingVideoO3StandardImageToVideoGenerator",
     "FalKlingVideoV25TurboProImageToVideoGenerator",
     "FalKlingVideoV25TurboProTextToVideoGenerator",
     "FalKlingVideoV26ProMotionControlGenerator",
