@@ -72,6 +72,8 @@ __all__ = [
     "FalGrokImagineVideoReferenceToVideoGenerator",
     "FalBytedanceSeedanceV15ProImageToVideoGenerator",
     "FalBytedanceSeedanceV15ProTextToVideoGenerator",
+    "FalGrokImagineVideoExtendVideoGenerator",
+    "FalGrokImagineVideoReferenceToVideoGenerator",
     "FalBytedanceSeedanceV1ProImageToVideoGenerator",
     "FalBytedanceSeedanceV1ProTextToVideoGenerator",
     "FalKlingVideoAiAvatarV2ProGenerator",
