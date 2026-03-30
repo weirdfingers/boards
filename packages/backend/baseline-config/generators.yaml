@@ -104,6 +104,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.infinitalk.FalInfinitalkGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.video.kling_motion_control.FalKlingMotionControlGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.kling_video_ai_avatar_v2_pro.FalKlingVideoAiAvatarV2ProGenerator"
     enabled: true
 
@@ -117,6 +120,9 @@ generators:
     enabled: true
 
   - class: "boards.generators.implementations.fal.image.kolors_virtual_try_on.FalKolorsVirtualTryOnGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.video.kling_video_v26_pro_motion_control.FalKlingVideoV26ProMotionControlGenerator"
     enabled: true
 
   - class: "boards.generators.implementations.fal.video.fal_minimax_hailuo_02_standard_text_to_video.FalMinimaxHailuo02StandardTextToVideoGenerator"
