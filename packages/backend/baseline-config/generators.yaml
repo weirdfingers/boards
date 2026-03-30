@@ -152,6 +152,9 @@ generators:
   - class: "boards.generators.implementations.fal.video.kling_video_v26_pro_motion_control.FalKlingVideoV26ProMotionControlGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.audio.lyria3.FalLyria3Generator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.video.fal_minimax_hailuo_02_standard_text_to_video.FalMinimaxHailuo02StandardTextToVideoGenerator"
     enabled: true
 
