@@ -52,7 +52,6 @@ In order to support these scenarios, we need to
 ## Key Concepts
 
 **Generator** : a component of the system which takes inputs and generates outputs of one of the supported artifact types (image, audio, video, LoRA, …). This can be based on an AI model, e.g. flux, veo, etc.  
-**Provider** : a third party, typically a SaaS which provides access to one or more generators (often models).  
 **User**: an actor in the system. Has a specific role for a specific set of boards.  
 **Generation**: the result or output of a generator executing on a set of inputs, which can include other generations. The generation includes references to the files stored in some sort of online storage, local/remote/… . It also includes metadata about the creation, as well as the inputs, provider job id, etc.  
 **Board**: A collection of generations, and attached user role/rights information.
