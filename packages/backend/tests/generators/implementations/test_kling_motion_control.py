@@ -96,9 +96,7 @@ class TestKlingMotionControlInput:
                 character_orientation="invalid",  # type: ignore[arg-type]
             )
 
-    def test_all_character_orientation_options(
-        self, sample_image_artifact, sample_video_artifact
-    ):
+    def test_all_character_orientation_options(self, sample_image_artifact, sample_video_artifact):
         """Test all valid character_orientation options."""
         valid_orientations = ["image", "video"]
 
