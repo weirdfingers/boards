@@ -45,6 +45,17 @@ export type {
   AncestryNode,
   DescendantNode,
 } from "./hooks/useLineage";
+export {
+  useManageTags,
+  useTagGeneration,
+  useTag,
+  useTagBySlug,
+} from "./hooks/useTags";
+export type {
+  ManageTagsHook,
+  TagGenerationHook,
+  TagHook,
+} from "./hooks/useTags";
 export type {
   MultiUploadRequest,
   MultiUploadResult,

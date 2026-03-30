@@ -10,6 +10,7 @@ from ..access_control import BoardQueryRole, SortOrder
 from ..types.board import Board
 from ..types.generation import ArtifactType, Generation, GenerationStatus
 from ..types.generator import GeneratorInfo
+from ..types.tag import Tag
 from ..types.user import User
 
 
@@ -114,3 +115,29 @@ class Query:
         from ..resolvers.generator import resolve_generators
 
         return await resolve_generators(info, artifact_type)
+
+    @strawberry.field
+    async def tags(
+        self,
+        info: strawberry.Info,
+        limit: int | None = 100,
+        offset: int | None = 0,
+    ) -> list[Tag]:
+        """Get all tags for the current tenant."""
+        from ..resolvers.tag import resolve_tags
+
+        return await resolve_tags(info, limit or 100, offset or 0)
+
+    @strawberry.field
+    async def tag(self, info: strawberry.Info, id: UUID) -> Tag | None:
+        """Get a tag by ID."""
+        from ..resolvers.tag import resolve_tag_by_id
+
+        return await resolve_tag_by_id(info, id)
+
+    @strawberry.field
+    async def tag_by_slug(self, info: strawberry.Info, slug: str) -> Tag | None:
+        """Get a tag by slug."""
+        from ..resolvers.tag import resolve_tag_by_slug
+
+        return await resolve_tag_by_slug(info, slug)

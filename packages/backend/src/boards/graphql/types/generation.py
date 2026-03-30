@@ -11,6 +11,7 @@ import strawberry
 
 if TYPE_CHECKING:
     from .board import Board
+    from .tag import Tag
     from .user import User
 
 
@@ -164,3 +165,10 @@ class Generation:
         from ..resolvers.lineage import resolve_descendants
 
         return await resolve_descendants(self, info, max_depth)
+
+    @strawberry.field
+    async def tags(self, info: strawberry.Info) -> list[Annotated["Tag", strawberry.lazy(".tag")]]:
+        """Get tags associated with this generation."""
+        from ..resolvers.tag import resolve_generation_tags
+
+        return await resolve_generation_tags(self.id, info)

@@ -21,6 +21,9 @@ This page documents all available GraphQL queries in the Boards API. Queries are
 | [`generation`](#generation) | Get generation by ID | Depends* |
 | [`recentGenerations`](#recentgenerations) | Get recent generations with filters | Yes |
 | [`generators`](#generators) | Get available generators | No |
+| [`tags`](#tags) | Get all tags for the current tenant | Yes |
+| [`tag`](#tag) | Get a tag by ID | Yes |
+| [`tagBySlug`](#tagbyslug) | Get a tag by slug | Yes |
 
 *Depends on board visibility (public boards accessible without auth)
 
@@ -482,6 +485,118 @@ query GetImageGenerators {
         }
       }
     ]
+  }
+}
+```
+
+---
+
+## Tag Queries
+
+### tags
+
+Get all tags for the current tenant.
+
+```graphql
+query {
+  tags(
+    limit: Int = 100
+    offset: Int = 0
+  ): [Tag!]!
+}
+```
+
+#### Arguments
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `limit` | `Int` | `100` | Maximum number of tags to return |
+| `offset` | `Int` | `0` | Number of tags to skip |
+
+#### Example
+
+```graphql
+query GetAllTags {
+  tags(limit: 50) {
+    id
+    name
+    slug
+    description
+    metadata
+    createdAt
+  }
+}
+```
+
+---
+
+### tag
+
+Get a single tag by ID.
+
+```graphql
+query {
+  tag(id: UUID!): Tag
+}
+```
+
+#### Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `id` | `UUID!` | The tag's unique identifier |
+
+#### Returns
+
+`Tag` or `null` if not found.
+
+#### Example
+
+```graphql
+query GetTag($tagId: UUID!) {
+  tag(id: $tagId) {
+    id
+    name
+    slug
+    description
+    metadata
+    createdAt
+    updatedAt
+  }
+}
+```
+
+---
+
+### tagBySlug
+
+Get a single tag by its slug. Useful for URL-friendly tag lookups.
+
+```graphql
+query {
+  tagBySlug(slug: String!): Tag
+}
+```
+
+#### Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `slug` | `String!` | The tag's slug |
+
+#### Returns
+
+`Tag` or `null` if not found.
+
+#### Example
+
+```graphql
+query GetTagBySlug {
+  tagBySlug(slug: "favorite") {
+    id
+    name
+    slug
+    description
   }
 }
 ```

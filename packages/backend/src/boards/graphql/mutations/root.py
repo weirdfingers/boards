@@ -8,6 +8,7 @@ import strawberry
 
 from ..types.board import Board, BoardRole
 from ..types.generation import ArtifactType, Generation, UploadArtifactInput
+from ..types.tag import Tag
 
 
 # Input types for mutations
@@ -54,6 +55,27 @@ class CreateGenerationInput:
     generator_name: str
     artifact_type: ArtifactType
     input_params: strawberry.scalars.JSON  # type: ignore[reportInvalidTypeForm]
+
+
+@strawberry.input
+class CreateTagInput:
+    """Input for creating a new tag."""
+
+    name: str
+    slug: str | None = None
+    description: str | None = None
+    metadata: strawberry.scalars.JSON | None = None  # type: ignore[reportInvalidTypeForm]
+
+
+@strawberry.input
+class UpdateTagInput:
+    """Input for updating a tag."""
+
+    id: UUID
+    name: str | None = None
+    slug: str | None = None
+    description: str | None = None
+    metadata: strawberry.scalars.JSON | None = None  # type: ignore[reportInvalidTypeForm]
 
 
 @strawberry.type
@@ -146,3 +168,43 @@ class Mutation:
         from ..resolvers.upload import upload_artifact_from_url
 
         return await upload_artifact_from_url(info, input)
+
+    # Tag mutations
+    @strawberry.mutation(name="createTag")
+    async def create_tag(self, info: strawberry.Info, input: CreateTagInput) -> Tag:
+        """Create a new tag."""
+        from ..resolvers.tag import create_tag
+
+        return await create_tag(info, input)
+
+    @strawberry.mutation(name="updateTag")
+    async def update_tag(self, info: strawberry.Info, input: UpdateTagInput) -> Tag:
+        """Update an existing tag."""
+        from ..resolvers.tag import update_tag
+
+        return await update_tag(info, input)
+
+    @strawberry.mutation(name="deleteTag")
+    async def delete_tag(self, info: strawberry.Info, id: UUID) -> bool:
+        """Delete a tag."""
+        from ..resolvers.tag import delete_tag
+
+        return await delete_tag(info, id)
+
+    @strawberry.mutation(name="addTagToGeneration")
+    async def add_tag_to_generation(
+        self, info: strawberry.Info, generation_id: UUID, tag_id: UUID
+    ) -> Tag:
+        """Add a tag to a generation."""
+        from ..resolvers.tag import add_tag_to_generation
+
+        return await add_tag_to_generation(info, generation_id, tag_id)
+
+    @strawberry.mutation(name="removeTagFromGeneration")
+    async def remove_tag_from_generation(
+        self, info: strawberry.Info, generation_id: UUID, tag_id: UUID
+    ) -> bool:
+        """Remove a tag from a generation."""
+        from ..resolvers.tag import remove_tag_from_generation
+
+        return await remove_tag_from_generation(info, generation_id, tag_id)

@@ -9,7 +9,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Load .env file early so all environment variables are available
 # This ensures OTEL_* and other standard env vars work correctly
-load_dotenv()
+# Skip loading .env during tests to ensure test isolation
+if not os.getenv("BOARDS_TESTING"):
+    load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -103,7 +105,7 @@ class Settings(BaseSettings):
     ]
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=".env" if not os.getenv("BOARDS_TESTING") else None,
         env_prefix="BOARDS_",
         case_sensitive=False,
         # Allow extra fields for provider-specific configs

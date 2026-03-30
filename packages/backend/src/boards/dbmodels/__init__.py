@@ -77,6 +77,7 @@ class Tenants(Base):
     credit_transactions: Mapped[list["CreditTransactions"]] = relationship(
         "CreditTransactions", uselist=True, back_populates="tenant"
     )
+    tags: Mapped[list["Tags"]] = relationship("Tags", uselist=True, back_populates="tenant")
 
 
 class ProviderConfigs(Base):
@@ -382,6 +383,9 @@ class Generations(Base):
     credit_transactions: Mapped[list["CreditTransactions"]] = relationship(
         "CreditTransactions", uselist=True, back_populates="generation"
     )
+    generation_tags: Mapped[list["GenerationTags"]] = relationship(
+        "GenerationTags", uselist=True, back_populates="generation"
+    )
 
 
 class CreditTransactions(Base):
@@ -435,6 +439,80 @@ class CreditTransactions(Base):
     )
     tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="credit_transactions")
     user: Mapped["Users"] = relationship("Users", back_populates="credit_transactions")
+
+
+class Tags(Base):
+    __tablename__ = "tags"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id"],
+            ["tenants.id"],
+            ondelete="CASCADE",
+            name="tags_tenant_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="tags_pkey"),
+        UniqueConstraint("tenant_id", "slug", name="tags_tenant_id_slug_key"),
+        Index("idx_tags_tenant", "tenant_id"),
+        Index("idx_tags_slug", "slug"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, server_default=text("uuid_generate_v4()"))
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    metadata_: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, server_default=text("'{}'::jsonb")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(True), server_default=text("CURRENT_TIMESTAMP")
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(True), server_default=text("CURRENT_TIMESTAMP")
+    )
+
+    tenant: Mapped["Tenants"] = relationship("Tenants", back_populates="tags")
+    generation_tags: Mapped[list["GenerationTags"]] = relationship(
+        "GenerationTags", uselist=True, back_populates="tag"
+    )
+
+
+class GenerationTags(Base):
+    __tablename__ = "generation_tags"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["generation_id"],
+            ["generations.id"],
+            ondelete="CASCADE",
+            name="generation_tags_generation_id_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["tag_id"],
+            ["tags.id"],
+            ondelete="CASCADE",
+            name="generation_tags_tag_id_fkey",
+        ),
+        PrimaryKeyConstraint("id", name="generation_tags_pkey"),
+        UniqueConstraint(
+            "generation_id",
+            "tag_id",
+            name="generation_tags_generation_id_tag_id_key",
+        ),
+        Index("idx_generation_tags_generation", "generation_id"),
+        Index("idx_generation_tags_tag", "tag_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, server_default=text("uuid_generate_v4()"))
+    generation_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    tag_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(True), server_default=text("CURRENT_TIMESTAMP")
+    )
+
+    generation: Mapped["Generations"] = relationship(
+        "Generations", back_populates="generation_tags"
+    )
+    tag: Mapped["Tags"] = relationship("Tags", back_populates="generation_tags")
 
 
 # Expose for Alembic

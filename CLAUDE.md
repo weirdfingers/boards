@@ -394,6 +394,21 @@ new_board.title = input.title
 new_board.descritpion = input.description  # Type checker will error!
 ```
 
+### Database Migrations: `updated_at` Triggers
+
+All tables with an `updated_at` column have a `BEFORE UPDATE` trigger that automatically sets `updated_at = CURRENT_TIMESTAMP`. When adding a new table with an `updated_at` column, you **must** also add a trigger for it in a migration:
+
+```python
+op.execute("""
+    CREATE TRIGGER trg_<table_name>_updated_at
+        BEFORE UPDATE ON boards.<table_name>
+        FOR EACH ROW
+        EXECUTE FUNCTION boards.update_updated_at_column();
+""")
+```
+
+The shared trigger function `boards.update_updated_at_column()` already exists. Do **not** manually set `updated_at` in application code -- the trigger handles it.
+
 ### GraphQL Schema Changes
 
 **CRITICAL**: When modifying GraphQL types in the backend, you MUST update the frontend in the same commit:
@@ -442,3 +457,6 @@ But Claude Code must NOT:
 Unless the user explicitly asks for commits to be made.
 
 **CRITICAL**: Claude Code must NEVER push to remote repositories unless explicitly instructed to commit changes, always ask the user to push manually. This prevents accidental pushes to production or shared branches.
+
+## Task Management
+This project uses a CLI ticket system for task management. Run `tk help` when you need to use it.

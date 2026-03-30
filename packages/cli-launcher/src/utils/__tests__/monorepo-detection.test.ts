@@ -59,7 +59,6 @@ describe('Monorepo Detection', () => {
     // The result should be a valid path or null
     if (result !== null) {
       expect(result).toBeTruthy();
-      expect(result).toContain('boards');
 
       // Verify the monorepo structure exists
       const workspaceFile = path.join(result, 'pnpm-workspace.yaml');

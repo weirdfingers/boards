@@ -24,6 +24,7 @@ This page documents all GraphQL types available in the Boards API. Types are org
 | [`AdditionalFile`](#additionalfile) | Extra files from generation |
 | [`GeneratorInfo`](#generatorinfo) | Available generator metadata |
 | [`User`](#user) | User account information |
+| [`Tag`](#tag) | Tag for categorizing generations |
 
 ---
 
@@ -202,6 +203,7 @@ type Generation {
   inputArtifacts: [ArtifactLineage!]!
   ancestry(maxDepth: Int = 25): AncestryNode!
   descendants(maxDepth: Int = 25): DescendantNode!
+  tags: [Tag!]!
 }
 ```
 
@@ -233,6 +235,7 @@ type Generation {
 | `inputArtifacts` | `[ArtifactLineage!]!` | Input artifacts with roles |
 | `ancestry` | `AncestryNode!` | Full ancestry tree |
 | `descendants` | `DescendantNode!` | All derived generations |
+| `tags` | `[Tag!]!` | Tags associated with this generation |
 
 #### Example Query
 
@@ -518,6 +521,55 @@ query GetCurrentUser {
 
 ---
 
+## Tag Types
+
+### Tag
+
+A tag is a tenant-scoped label used for categorizing and organizing generations. Tags have unique slugs within a tenant, which are auto-generated from the tag name if not provided.
+
+```graphql
+type Tag {
+  id: UUID!
+  tenantId: UUID!
+  name: String!
+  slug: String!
+  description: String
+  metadata: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+```
+
+#### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `UUID!` | Unique identifier |
+| `tenantId` | `UUID!` | Tenant this tag belongs to |
+| `name` | `String!` | Display name of the tag |
+| `slug` | `String!` | URL-friendly identifier (unique per tenant) |
+| `description` | `String` | Optional description |
+| `metadata` | `JSON!` | Additional metadata |
+| `createdAt` | `DateTime!` | Creation timestamp |
+| `updatedAt` | `DateTime!` | Last update timestamp |
+
+#### Example Query
+
+```graphql
+query GetTags {
+  tags {
+    id
+    name
+    slug
+    description
+    metadata
+    createdAt
+  }
+}
+```
+
+---
+
 ## Scalar Types
 
 The API uses the following scalar types:
@@ -535,4 +587,5 @@ Type definitions are implemented in:
 - `packages/backend/src/boards/graphql/types/board.py`
 - `packages/backend/src/boards/graphql/types/generation.py`
 - `packages/backend/src/boards/graphql/types/generator.py`
+- `packages/backend/src/boards/graphql/types/tag.py`
 - `packages/backend/src/boards/graphql/types/user.py`

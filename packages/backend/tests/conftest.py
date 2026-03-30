@@ -3,6 +3,10 @@ Shared pytest fixtures and configuration for all tests.
 """
 
 import os
+
+# Set testing flag BEFORE any boards imports to prevent .env loading
+os.environ["BOARDS_TESTING"] = "1"
+
 import sys
 from collections.abc import Generator
 from pathlib import Path

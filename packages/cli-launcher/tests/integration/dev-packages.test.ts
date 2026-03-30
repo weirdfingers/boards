@@ -67,7 +67,7 @@ describe("--dev-packages flag", () => {
       // If running in CI/monorepo, should find it
       if (result) {
         expect(result).toBeTruthy();
-        expect(result).toContain("boards");
+        expect(await fs.pathExists(path.join(result, "pnpm-workspace.yaml"))).toBe(true);
       }
     });
 
