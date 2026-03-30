@@ -22,6 +22,7 @@ from .ideogram_v2 import FalIdeogramV2Generator
 from .imagen4_preview import FalImagen4PreviewGenerator
 from .imagen4_preview_fast import FalImagen4PreviewFastGenerator
 from .nano_banana import FalNanoBananaGenerator
+from .nano_banana_2 import FalNanoBanana2Generator
 from .nano_banana_edit import FalNanoBananaEditGenerator
 from .nano_banana_pro import FalNanoBananaProGenerator
 from .nano_banana_pro_edit import FalNanoBananaProEditGenerator
@@ -53,6 +54,7 @@ __all__ = [
     "FalIdeogramV2Generator",
     "FalImagen4PreviewGenerator",
     "FalImagen4PreviewFastGenerator",
+    "FalNanoBanana2Generator",
     "FalNanoBananaGenerator",
     "FalNanoBananaEditGenerator",
     "FalNanoBananaProGenerator",
