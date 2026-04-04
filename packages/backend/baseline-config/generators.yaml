@@ -267,6 +267,12 @@ generators:
   - class: "boards.generators.implementations.kie.video.runway_aleph.KieRunwayAlephGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.kie.video.seedance2.KieSeedance2Generator"
+    enabled: true
+
+  - class: "boards.generators.implementations.kie.video.seedance2_fast.KieSeedance2FastGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.kie.video.veo3.KieVeo3Generator"
     enabled: true
 
