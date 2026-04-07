@@ -50,6 +50,9 @@ generators:
   - class: "boards.generators.implementations.fal.image.bytedance_seedream_v45_edit.FalBytedanceSeedreamV45EditGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.fal.image.bytedance_seedream_v5_lite_edit.FalBytedanceSeedreamV5LiteEditGenerator"
+    enabled: true
+
   - class: "boards.generators.implementations.fal.audio.elevenlabs_tts_eleven_v3.FalElevenlabsTtsElevenV3Generator"
     enabled: true
 
@@ -141,6 +144,9 @@ generators:
     enabled: true
 
   - class: "boards.generators.implementations.fal.image.kolors_virtual_try_on.FalKolorsVirtualTryOnGenerator"
+    enabled: true
+
+  - class: "boards.generators.implementations.fal.video.kling_video_v26_pro_image_to_video.FalKlingVideoV26ProImageToVideoGenerator"
     enabled: true
 
   - class: "boards.generators.implementations.fal.video.kling_video_v26_pro_motion_control.FalKlingVideoV26ProMotionControlGenerator"
