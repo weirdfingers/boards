@@ -39,14 +39,14 @@ from .kling_video_v2_5_turbo_pro_image_to_video import (
 from .kling_video_v2_5_turbo_pro_text_to_video import (
     FalKlingVideoV25TurboProTextToVideoGenerator,
 )
-from .kling_video_v26_pro_image_to_video import (
-    FalKlingVideoV26ProImageToVideoGenerator,
-)
 from .kling_video_v3_pro_image_to_video import (
     FalKlingVideoV3ProImageToVideoGenerator,
 )
 from .kling_video_v3_pro_text_to_video import (
     FalKlingVideoV3ProTextToVideoGenerator,
+)
+from .kling_video_v26_pro_image_to_video import (
+    FalKlingVideoV26ProImageToVideoGenerator,
 )
 from .kling_video_v26_pro_motion_control import (
     FalKlingVideoV26ProMotionControlGenerator,
