@@ -57,6 +57,8 @@ from typing import Optional
 from pydantic import BaseModel
 from pathlib import Path
 
+from boards.generators.artifacts import ArtifactTypeName
+
 class PluginResult(BaseModel):
     """Result returned by a plugin after execution."""
     success: bool
@@ -76,7 +78,7 @@ class PluginContext(BaseModel):
     file_path: Path
 
     # Artifact metadata
-    artifact_type: str  # 'image', 'video', 'audio', 'text'
+    artifact_type: ArtifactTypeName
     mime_type: str
     file_size_bytes: int
     # Type-specific metadata (e.g., width/height for images, duration for video/audio)
@@ -112,7 +114,7 @@ class BaseArtifactPlugin(ABC):
     description: str
 
     # Artifact types this plugin applies to (empty = all types)
-    supported_artifact_types: list[str] = []
+    supported_artifact_types: list[ArtifactTypeName] = []
 
     @abstractmethod
     async def execute(self, context: PluginContext) -> PluginResult:
@@ -127,7 +129,7 @@ class BaseArtifactPlugin(ABC):
         """
         pass
 
-    def supports_artifact_type(self, artifact_type: str) -> bool:
+    def supports_artifact_type(self, artifact_type: ArtifactTypeName) -> bool:
         """Check if this plugin supports the given artifact type."""
         if not self.supported_artifact_types:
             return True  # Empty list means all types
@@ -147,7 +149,7 @@ class C2PASigningPlugin(BaseArtifactPlugin):
 
     name = "c2pa-signing"
     description = "Signs artifacts with C2PA Content Credentials"
-    supported_artifact_types = ["image", "video"]  # C2PA supports these
+    supported_artifact_types: list[ArtifactTypeName] = ["image", "video"]  # C2PA supports these
 
     def __init__(
         self,
@@ -199,7 +201,7 @@ class WatermarkPlugin(BaseArtifactPlugin):
 
     name = "watermark"
     description = "Adds visible watermark to images"
-    supported_artifact_types = ["image"]
+    supported_artifact_types: list[ArtifactTypeName] = ["image"]
 
     def __init__(
         self,
@@ -240,7 +242,7 @@ class ContentAnalysisPlugin(BaseArtifactPlugin):
 
     name = "content-analysis"
     description = "Runs content analysis and attaches metadata"
-    supported_artifact_types = []  # All types
+    supported_artifact_types: list[ArtifactTypeName] = []  # All types
 
     async def execute(self, context: PluginContext) -> PluginResult:
         # Run analysis (e.g., NSFW detection, quality scoring)
@@ -271,7 +273,7 @@ class ArtifactPluginRegistry:
             raise ValueError(f"Plugin with name '{plugin.name}' already registered")
         self._plugins.append(plugin)
 
-    def get_plugins_for_artifact(self, artifact_type: str) -> list[BaseArtifactPlugin]:
+    def get_plugins_for_artifact(self, artifact_type: ArtifactTypeName) -> list[BaseArtifactPlugin]:
         """Get ordered list of plugins that apply to the given artifact type."""
         return [p for p in self._plugins if p.supports_artifact_type(artifact_type)]
 
@@ -458,103 +460,97 @@ myorg.custom = "myorg_boards.plugins:CustomPlugin"
 
 ### Execution Flow
 
+Plugins are integrated into the `store_*_result()` functions in `generators/resolution.py`.
+When a generator calls `context.store_image_result()` (or video/audio/text), the flow is:
+
 ```
-Generator.generate()
+Generator calls context.store_image_result(storage_url, ...)
     ↓
-Artifact created (local temp file)
+Download content from provider URL → bytes
+    ↓
+Write bytes to temp file
     ↓
 Build PluginContext
     ↓
-PluginExecutor.execute_plugins()
+PluginExecutor.execute_plugins(temp_file, context)
     ↓ (for each plugin in order)
-    ├─→ Plugin.execute(context)
+    ├─→ Plugin.execute(context)    — plugin reads/modifies the temp file
     │       ↓
     │   PluginResult
     │       ↓
-    ├─→ If fail_generation=True and success=False → Fail generation
+    ├─→ If fail_generation=True and success=False → raise PluginExecutionError
     ├─→ If output_file_path provided → Update current path
     └─→ Continue to next plugin
     ↓
-Upload final artifact to storage
+Read (possibly modified) temp file back to bytes
     ↓
-Update generation record with plugin metadata
+Upload final bytes to storage
+    ↓
+Return (Artifact, list[PluginResult])
+    ↓
+Plugin results accumulated on GeneratorExecutionContext
+    ↓
+Serialized into output_metadata["plugin_results"] on finalize
 ```
 
-### Worker Code Integration
+### Worker Initialization
+
+Plugins are loaded at worker boot via `GeneratorLoaderMiddleware`:
 
 ```python
-# In GenerationWorker.execute()
+# In middleware.py — before_worker_boot()
 
-async def execute(self, job: GenerationJob):
-    """Execute a generation job."""
-    try:
-        context = await self._build_context(job)
-        generator = self.registry.get(job.generator_name)
+load_plugins_from_config()               # Load from plugins.yaml
+executor = ArtifactPluginExecutor(        # Create executor with timeouts
+    registry=plugin_registry,
+    plugin_timeout=settings.plugin_timeout,
+    total_timeout=settings.plugin_total_timeout,
+)
+set_plugin_executor(executor)             # Set module-level executor in resolution.py
+```
 
-        # 1. Run generator
-        output = await generator.generate(job.typed_inputs, context)
+### Context Integration
 
-        # 2. For each artifact produced, run plugins
-        for artifact_info in output.artifacts:
-            plugin_context = await self._build_plugin_context(
-                job=job,
-                artifact_info=artifact_info,
-                generator_name=generator.name,
-                generator_inputs=job.typed_inputs,
-            )
+```python
+# In context.py — store_*_result methods collect plugin results
 
-            try:
-                final_path, plugin_results = await self.plugin_executor.execute_plugins(
-                    file_path=artifact_info.local_path,
-                    context=plugin_context,
-                )
-
-                # Update artifact path if plugins modified it
-                artifact_info.local_path = final_path
-
-                # Collect plugin metadata for storage
-                artifact_info.plugin_metadata = self._collect_plugin_metadata(plugin_results)
-
-            except PluginExecutionError as e:
-                # Plugin requested generation failure
-                await self._handle_plugin_failure(job, e)
-                raise
-
-        # 3. Upload artifacts to storage (now with plugin modifications)
-        await self._upload_artifacts(output.artifacts)
-
-        # 4. Finalize
-        await self._finalize_success(job.id, output)
-
-    except Exception as e:
-        await self._handle_error(job, e)
-        raise
+result, plugin_results = await resolution.store_image_result(
+    storage_manager=self.storage_manager,
+    generation_id=target_generation_id,
+    ...,
+    generator_name=self.generator_name,   # Passed through for PluginContext
+    generator_inputs=self.input_params,
+    user_id=self.user_id,
+)
+self._plugin_results.extend(plugin_results)  # Accumulated per-generation
 ```
 
 ## Database Schema
 
 ### Plugin Execution Tracking
 
+Plugin results are stored in two places on the `generations` table:
+
+1. **`plugin_results` JSONB column** — dedicated column for structured plugin data
+2. **`output_metadata.plugin_results`** — also embedded in output metadata for convenience
+
 ```sql
--- Add plugin execution results to artifacts table
-ALTER TABLE artifacts ADD COLUMN plugin_results JSONB;
+-- Migration: add plugin_results column to generations table
+ALTER TABLE boards.generations ADD COLUMN plugin_results JSONB;
 
 -- Example plugin_results structure:
--- {
---   "executions": [
---     {
---       "plugin_name": "c2pa-signing",
---       "success": true,
---       "executed_at": "2026-01-16T10:30:00Z",
---       "metadata": { ... }
---     },
---     {
---       "plugin_name": "watermark",
---       "success": true,
---       "executed_at": "2026-01-16T10:30:01Z"
---     }
---   ]
--- }
+-- [
+--   {
+--     "success": true,
+--     "error_message": null,
+--     "metadata": { "c2pa_status": "signed" }
+--   },
+--   {
+--     "success": true,
+--     "error_message": null,
+--     "metadata": null
+--   }
+-- ]
 ```
 
 ### Generation Error Messages
@@ -562,7 +558,8 @@ ALTER TABLE artifacts ADD COLUMN plugin_results JSONB;
 The existing `error_message` field on the `generations` table is used to store plugin failure messages:
 
 ```python
-# When a plugin fails with fail_generation=True
+# When a plugin fails with fail_generation=True, PluginExecutionError propagates
+# through the worker error handler, which sets:
 generation.status = "failed"
 generation.error_message = f"Plugin '{plugin_name}' failed: {error_message}"
 ```
@@ -640,18 +637,20 @@ class PluginTimeoutConfig(BaseSettings):
 
 ### Phase 1: Core Infrastructure
 
-- [ ] `BaseArtifactPlugin` abstract class
-- [ ] `PluginContext` and `PluginResult` models
-- [ ] `ArtifactPluginRegistry` with ordered registration
-- [ ] `ArtifactPluginExecutor` with error handling
-- [ ] Configuration loader for `plugins.yaml`
-- [ ] Worker integration point
+- [x] `BaseArtifactPlugin` abstract class
+- [x] `PluginContext` and `PluginResult` models
+- [x] `ArtifactPluginRegistry` with ordered registration
+- [x] `ArtifactPluginExecutor` with error handling and timeout support
+- [x] Configuration loader for `plugins.yaml`
+- [x] Worker integration (middleware + resolution pipeline)
+- [x] `ArtifactTypeName` Literal type for strong typing
+- [x] Database migration for `plugin_results` column
 
 ### Phase 2: Built-in Plugins
 
-- [ ] C2PA signing plugin (using `c2pa-python`)
-- [ ] Basic watermark plugin
-- [ ] Content analysis plugin skeleton
+- [ ] C2PA signing plugin (stub created, needs `c2pa-python` integration)
+- [x] Basic watermark plugin (Pillow-based)
+- [x] Content analysis plugin skeleton
 
 ### Phase 3: Advanced Features
 

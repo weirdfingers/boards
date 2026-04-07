@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from ..progress.models import ProgressUpdate
 from .artifacts import (
+    ArtifactTypeName,
     AudioArtifact,
     DigitalArtifact,
     ImageArtifact,
@@ -33,7 +34,7 @@ class BaseGenerator(ABC):
 
     # Class attributes that subclasses must define
     name: str
-    artifact_type: str  # 'image', 'video', 'audio', 'text', 'lora'
+    artifact_type: ArtifactTypeName
     description: str
 
     @abstractmethod

@@ -367,6 +367,7 @@ class Generations(Base):
     )
     external_job_id: Mapped[str | None] = mapped_column(String(255))
     progress: Mapped[Decimal] = mapped_column(Numeric(5, 2), server_default=text("0.0"))
+    plugin_results: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error_message: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(True))
