@@ -18,6 +18,12 @@ from .fal_minimax_hailuo_02_standard_text_to_video import (
 )
 from .fal_pixverse_lipsync import FalPixverseLipsyncGenerator
 from .fal_sora_2_text_to_video import FalSora2TextToVideoGenerator
+from .grok_imagine_video_extend_video import (
+    FalGrokImagineVideoExtendVideoGenerator,
+)
+from .grok_imagine_video_reference_to_video import (
+    FalGrokImagineVideoReferenceToVideoGenerator,
+)
 from .infinitalk import FalInfinitalkGenerator
 from .kling_motion_control import FalKlingMotionControlGenerator
 from .kling_video_ai_avatar_v2_pro import FalKlingVideoAiAvatarV2ProGenerator
@@ -62,6 +68,8 @@ __all__ = [
     "FalCreatifyLipsyncGenerator",
     "FalBytedanceSeedanceV15ProImageToVideoGenerator",
     "FalBytedanceSeedanceV15ProTextToVideoGenerator",
+    "FalGrokImagineVideoExtendVideoGenerator",
+    "FalGrokImagineVideoReferenceToVideoGenerator",
     "FalBytedanceSeedanceV1ProImageToVideoGenerator",
     "FalBytedanceSeedanceV1ProTextToVideoGenerator",
     "FalKlingVideoAiAvatarV2ProGenerator",
