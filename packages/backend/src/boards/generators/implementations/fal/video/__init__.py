@@ -48,6 +48,8 @@ from .kling_video_v3_pro_text_to_video import (
 from .kling_video_v26_pro_motion_control import (
     FalKlingVideoV26ProMotionControlGenerator,
 )
+from .ltx_23_image_to_video import FalLtx23ImageToVideoGenerator
+from .ltx_23_text_to_video import FalLtx23TextToVideoGenerator
 from .minimax_hailuo_2_3_pro_image_to_video import (
     FalMinimaxHailuo23ProImageToVideoGenerator,
 )
@@ -80,6 +82,8 @@ __all__ = [
     "FalBytedanceSeedanceV1ProTextToVideoGenerator",
     "FalKlingVideoAiAvatarV2ProGenerator",
     "FalKlingVideoAiAvatarV2StandardGenerator",
+    "FalLtx23ImageToVideoGenerator",
+    "FalLtx23TextToVideoGenerator",
     "FalKlingMotionControlGenerator",
     "FalKlingVideoO3StandardImageToVideoGenerator",
     "FalKlingVideoV25TurboProImageToVideoGenerator",
