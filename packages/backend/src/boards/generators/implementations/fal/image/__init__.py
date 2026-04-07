@@ -7,6 +7,7 @@ from .crystal_upscaler import FalCrystalUpscalerGenerator
 from .fal_ideogram_character import FalIdeogramCharacterGenerator
 from .flux_2 import FalFlux2Generator
 from .flux_2_edit import FalFlux2EditGenerator
+from .flux_2_flex import FalFlux2FlexGenerator
 from .flux_2_pro import FalFlux2ProGenerator
 from .flux_2_pro_edit import FalFlux2ProEditGenerator
 from .flux_pro_kontext import FalFluxProKontextGenerator
@@ -40,6 +41,7 @@ __all__ = [
     "FalCrystalUpscalerGenerator",
     "FalFlux2Generator",
     "FalFlux2EditGenerator",
+    "FalFlux2FlexGenerator",
     "FalFlux2ProGenerator",
     "FalFlux2ProEditGenerator",
     "FalFluxProKontextGenerator",
