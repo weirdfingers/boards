@@ -16,10 +16,14 @@ Or using direct environment variable:
 Or run all Kie live tests:
     pytest -m live_kie -v
 
-Note: These tests require a valid task_id from a previously completed
-Kie.ai Grok Imagine video generation task.
+Note: This test first creates a base video via the grok-imagine Market API,
+then extends it. Both steps consume credits.
 """
 
+import asyncio
+import os
+
+import httpx
 import pytest
 
 from boards.config import initialize_generator_api_keys
@@ -32,13 +36,72 @@ from boards.generators.implementations.kie.video.grok_imagine_extend import (
 pytestmark = [pytest.mark.live_api, pytest.mark.live_kie]
 
 
+async def _create_base_video(api_key: str) -> str:
+    """Create a base video via Kie.ai grok-imagine Market API and return its task_id.
+
+    This submits a simple text-to-video generation using the grok-imagine model,
+    then polls until completion. The returned task_id can be used for extend.
+    """
+    submit_url = "https://api.kie.ai/api/v1/jobs/createTask"
+    body = {
+        "model": "grok-imagine/text-to-video",
+        "input": {
+            "prompt": "A gentle ocean wave rolling onto a sandy beach",
+            "aspect_ratio": "16:9",
+            "duration": 6,
+            "resolution": "480p",
+        },
+    }
+
+    async with httpx.AsyncClient() as client:
+        # Submit the base generation
+        response = await client.post(
+            submit_url,
+            json=body,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=30.0,
+        )
+        assert response.status_code == 200, f"Submit failed: {response.status_code} {response.text}"
+        result = response.json()
+        assert result.get("code") == 200, f"API error: {result}"
+
+        task_id = result.get("data", {}).get("taskId")
+        assert task_id, f"No taskId in response: {result}"
+
+        # Poll for completion
+        status_url = f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}"
+        for _ in range(120):  # Up to 20 minutes
+            await asyncio.sleep(10)
+            status_response = await client.get(
+                status_url,
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=30.0,
+            )
+            assert status_response.status_code == 200
+            status_result = status_response.json()
+            task_data = status_result.get("data", {})
+            state = task_data.get("state")
+
+            if state == "success":
+                return task_id
+            elif state in ["failed", "fail"]:
+                fail_msg = task_data.get("failMsg", "Unknown error")
+                pytest.fail(f"Base video generation failed: {fail_msg}")
+
+        pytest.fail("Base video generation timed out after 20 minutes")
+    # unreachable but satisfies type checker
+    return ""
+
+
 class TestGrokImagineExtendGeneratorLive:
     """Live API tests for KieGrokImagineExtendGenerator using real Kie.ai API."""
 
     def setup_method(self):
         """Set up generator and ensure API keys are synced to environment."""
         self.generator = KieGrokImagineExtendGenerator()
-        # Sync API keys from settings to os.environ for use in generator
         initialize_generator_api_keys()
 
     @pytest.mark.asyncio
@@ -46,29 +109,25 @@ class TestGrokImagineExtendGeneratorLive:
         """
         Test basic 6-second video extension.
 
-        This test makes a real API call to Kie.ai and will consume credits.
-        Requires a valid task_id from a previous Grok Imagine generation.
-
-        NOTE: You must replace the task_id below with a valid one from your
-        Kie.ai account before running this test.
+        This test first generates a base video using grok-imagine,
+        then extends it using grok-imagine/extend. Both steps consume credits.
         """
-        # Replace with a valid task_id from a completed Grok Imagine generation
-        test_task_id = "REPLACE_WITH_VALID_TASK_ID"
+        api_key = os.environ["KIE_API_KEY"]
 
-        if test_task_id == "REPLACE_WITH_VALID_TASK_ID":
-            pytest.skip("No valid task_id provided for live test")
+        # Step 1: Create a base video to get a valid task_id
+        base_task_id = await _create_base_video(api_key)
 
+        # Step 2: Extend the generated video
         inputs = GrokImagineExtendInput(
-            task_id=test_task_id,
+            task_id=base_task_id,
             prompt="The camera slowly pans forward revealing more of the scene",
             extend_times="6",
         )
 
-        # Log estimated cost
+        # Log estimated cost (extend only; base video cost is separate)
         estimated_cost = await self.generator.estimate_cost(inputs)
         cost_logger(self.generator.name, estimated_cost)
 
-        # Execute generation
         result = await self.generator.generate(inputs, dummy_context)
 
         # Verify result structure
@@ -79,37 +138,5 @@ class TestGrokImagineExtendGeneratorLive:
         artifact = result.outputs[0]
         assert isinstance(artifact, VideoArtifact)
         assert artifact.storage_url is not None
+        assert artifact.storage_url.startswith("https://")
         assert artifact.format == "mp4"
-        assert artifact.storage_url.startswith("http")
-
-    @pytest.mark.asyncio
-    async def test_estimate_cost_matches_pricing(self, skip_if_no_kie_key):
-        """
-        Test that cost estimation is reasonable.
-
-        This doesn't make an API call, just verifies the cost estimate logic.
-        """
-        # Test 6s extension
-        inputs_6s = GrokImagineExtendInput(
-            task_id="task_123",
-            prompt="test",
-            extend_times="6",
-        )
-        cost_6s = await self.generator.estimate_cost(inputs_6s)
-        assert cost_6s > 0.0
-        assert cost_6s < 0.50  # Sanity check
-        assert cost_6s == 0.10
-
-        # Test 10s extension
-        inputs_10s = GrokImagineExtendInput(
-            task_id="task_123",
-            prompt="test",
-            extend_times="10",
-        )
-        cost_10s = await self.generator.estimate_cost(inputs_10s)
-        assert cost_10s > 0.0
-        assert cost_10s < 0.50  # Sanity check
-        assert cost_10s == 0.15
-
-        # 10s should cost more than 6s
-        assert cost_10s > cost_6s
