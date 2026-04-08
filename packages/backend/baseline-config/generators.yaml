@@ -258,6 +258,9 @@ generators:
   - class: "boards.generators.implementations.kie.image.nano_banana_edit.KieNanoBananaEditGenerator"
     enabled: true
 
+  - class: "boards.generators.implementations.kie.audio.suno_v5_5.KieSunoV55Generator"
+    enabled: true
+
   - class: "boards.generators.implementations.kie.video.runway_aleph.KieRunwayAlephGenerator"
     enabled: true
 
