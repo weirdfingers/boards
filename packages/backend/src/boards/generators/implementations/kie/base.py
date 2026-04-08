@@ -199,7 +199,7 @@ class KieMarketAPIGenerator(KieBaseGenerator):
 
                 if state == "success":
                     return task_data
-                elif state == "failed":
+                elif state in ["failed", "fail"]:
                     error_msg = task_data.get("failMsg", "Unknown error")
                     raise ValueError(f"Generation failed: {error_msg}")
                 elif state not in ["waiting", "pending", "processing", None]:
