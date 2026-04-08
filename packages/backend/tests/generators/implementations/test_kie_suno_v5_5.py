@@ -219,10 +219,16 @@ class TestKieSunoV55Generator:
                 "msg": "success",
                 "data": {
                     "taskId": fake_task_id,
-                    "successFlag": 1,
+                    "status": "SUCCESS",
                     "response": {
-                        "taskId": fake_task_id,
-                        "resultUrls": [fake_audio_url],
+                        "sunoData": [
+                            {
+                                "id": "audio_001",
+                                "audioUrl": fake_audio_url,
+                                "title": "Happy Song",
+                                "duration": 120.0,
+                            }
+                        ],
                     },
                 },
             }
@@ -313,10 +319,16 @@ class TestKieSunoV55Generator:
                 "msg": "success",
                 "data": {
                     "taskId": fake_task_id,
-                    "successFlag": 1,
+                    "status": "SUCCESS",
                     "response": {
-                        "taskId": fake_task_id,
-                        "resultUrls": [fake_audio_url],
+                        "sunoData": [
+                            {
+                                "id": "audio_002",
+                                "audioUrl": fake_audio_url,
+                                "title": "Chill Beats",
+                                "duration": 90.0,
+                            }
+                        ],
                     },
                 },
             }
@@ -471,7 +483,13 @@ class TestKieSunoV55Generator:
         lyrics_prop = schema["properties"]["lyrics"]
         assert lyrics_prop["maxLength"] == 5000
 
-    def test_status_url(self):
-        """Test status URL generation."""
-        url = self.generator._get_status_url("task_123")
-        assert url == "https://api.kie.ai/api/v1/suno/record-info?taskId=task_123"
+    @pytest.mark.asyncio
+    async def test_estimate_cost_fixed(self):
+        """Test that cost estimation returns fixed rate for Suno V5.5."""
+        input_data = SunoV55Input(
+            title="Test",
+            style="pop",
+            instrumental=True,
+        )
+        cost = await self.generator.estimate_cost(input_data)
+        assert cost == 0.06
