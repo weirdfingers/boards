@@ -8,7 +8,6 @@ See: https://docs.kie.ai/suno-api/generate-sounds
 """
 
 import asyncio
-import json
 from typing import Any, Literal
 
 import httpx
@@ -211,22 +210,18 @@ class KieSunoSoundsGenerator(KieDedicatedAPIGenerator):
         result_data = await self._poll_for_completion(task_id, api_key, context)
 
         # Extract audio items from response
-        # Suno returns results in data.data[] array
-        audio_items = result_data.get("data")
-        if not audio_items:
-            # Also try parsing resultJson if present
-            result_json = result_data.get("resultJson")
-            if result_json and isinstance(result_json, str):
-                parsed = json.loads(result_json)
-                audio_items = parsed.get("data", [])
+        # Suno Sounds returns results in data.response.sunoData[] array
+        # (same pattern as Suno V5.5 music generation)
+        response_data = result_data.get("response", {})
+        audio_items = response_data.get("sunoData", [])
 
-        if not audio_items or not isinstance(audio_items, list):
-            raise ValueError(f"No audio data returned from Kie.ai API. Response: {result_data}")
+        if not audio_items:
+            raise ValueError(f"No sunoData in response. Response: {result_data}")
 
         # Store each audio artifact
         artifacts = []
         for idx, item in enumerate(audio_items):
-            audio_url = item.get("audio_url")
+            audio_url = item.get("audioUrl")
             if not audio_url:
                 continue
 

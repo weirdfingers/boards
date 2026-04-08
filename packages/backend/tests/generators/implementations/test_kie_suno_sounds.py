@@ -223,20 +223,23 @@ class TestKieSunoSoundsGenerator:
                     "callbackType": "complete",
                     "task_id": fake_task_id,
                     "status": "SUCCESS",
-                    "data": [
-                        {
-                            "id": "audio-id-1",
-                            "audio_url": fake_audio_url,
-                            "stream_audio_url": "https://storage.kie.ai/stream.mp3",
-                            "image_url": "https://storage.kie.ai/cover.jpeg",
-                            "prompt": "dramatic thunder rolling",
-                            "model_name": "chirp-v3-5",
-                            "title": "Thunder Storm",
-                            "tags": "ambient, nature",
-                            "createTime": "2025-01-01 00:00:00",
-                            "duration": 198.44,
-                        }
-                    ],
+                    "response": {
+                        "taskId": fake_task_id,
+                        "sunoData": [
+                            {
+                                "id": "audio-id-1",
+                                "audioUrl": fake_audio_url,
+                                "streamAudioUrl": "https://storage.kie.ai/stream.mp3",
+                                "imageUrl": "https://storage.kie.ai/cover.jpeg",
+                                "prompt": "dramatic thunder rolling",
+                                "modelName": "chirp-v3-5",
+                                "title": "Thunder Storm",
+                                "tags": "ambient, nature",
+                                "createTime": 1700000000000,
+                                "duration": 198.44,
+                            }
+                        ],
+                    },
                 },
             }
 
@@ -322,18 +325,21 @@ class TestKieSunoSoundsGenerator:
                 "data": {
                     "status": "SUCCESS",
                     "task_id": fake_task_id,
-                    "data": [
-                        {
-                            "id": "audio-1",
-                            "audio_url": "https://storage.kie.ai/out1.mp3",
-                            "duration": 120.5,
-                        },
-                        {
-                            "id": "audio-2",
-                            "audio_url": "https://storage.kie.ai/out2.mp3",
-                            "duration": 130.2,
-                        },
-                    ],
+                    "response": {
+                        "taskId": fake_task_id,
+                        "sunoData": [
+                            {
+                                "id": "audio-1",
+                                "audioUrl": "https://storage.kie.ai/out1.mp3",
+                                "duration": 120.5,
+                            },
+                            {
+                                "id": "audio-2",
+                                "audioUrl": "https://storage.kie.ai/out2.mp3",
+                                "duration": 130.2,
+                            },
+                        ],
+                    },
                 },
             }
 
