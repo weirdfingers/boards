@@ -109,6 +109,7 @@ class KieSeedance2FastGenerator(KieMarketAPIGenerator):
             "aspect_ratio": inputs.aspect_ratio,
             "duration": inputs.duration,
             "generate_audio": inputs.generate_audio,
+            "web_search": False,
         }
 
         # Upload artifact inputs if provided
