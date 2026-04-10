@@ -43,11 +43,15 @@ For production workloads:
 
 1. **Kubernetes** - Full control with K8s manifests → [Kubernetes Guide](./kubernetes.md)
 2. **Cloud Platform** - Managed infrastructure:
+   - [Railway](./cloud/railway.md) - Simple PaaS (**config included in scaffolded projects**)
+   - [Fly.io](./cloud/fly-io.md) - Edge deployment (**config included in scaffolded projects**)
    - [Google Cloud Run](./cloud/cloud-run.md) - Serverless containers
    - [AWS Elastic Beanstalk](./cloud/elastic-beanstalk.md) - Managed containers
-   - [Railway](./cloud/railway.md) - Simple PaaS
    - [Render](./cloud/render.md) - Unified cloud platform
-   - [Fly.io](./cloud/fly-io.md) - Edge deployment
+
+:::tip Scaffolded Deploy Config
+Projects created with `npx @weirdfingers/baseboards up` include ready-to-use configuration files for Railway (`railway.json`) and Fly.io (`fly.api.toml`, `fly.web.toml`, `fly.worker.toml`), plus a `DEPLOY.md` with step-by-step instructions and `.env.production.example` for environment variable reference.
+:::
 
 ## Configuration Checklist
 

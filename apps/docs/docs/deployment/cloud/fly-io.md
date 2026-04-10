@@ -59,7 +59,20 @@ curl -L https://fly.io/install.sh | sh
 fly auth login
 ```
 
-## Quick Start
+## Quick Start with Scaffolded Config
+
+Projects scaffolded with `npx @weirdfingers/baseboards up` include pre-configured Fly.io config files for all three services. See `DEPLOY.md` in your scaffolded project for step-by-step instructions.
+
+```bash
+# Your scaffolded project includes:
+# fly.api.toml          — API service config (uvicorn + migrations)
+# fly.web.toml          — Frontend config (Next.js)
+# fly.worker.toml       — Worker service config
+# .env.production.example — Reference for all production env vars
+# DEPLOY.md             — Step-by-step deployment guide
+```
+
+## Quick Start (Manual)
 
 ### 1. Create PostgreSQL
 
@@ -79,9 +92,17 @@ fly redis create --name boards-redis
 
 Or use the Upstash dashboard directly.
 
-### 3. Create API Application
+### 3. Create Object Storage (Tigris)
 
-Create `fly.toml` for the API:
+```bash
+fly storage create --name boards-storage
+```
+
+Save the credentials from the output (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, `BUCKET_NAME`). Set them as secrets on both the API and worker apps.
+
+### 4. Create API Application
+
+Create `fly.toml` for the API (or use the included `fly.api.toml` from your scaffolded project):
 
 ```toml
 app = "boards-api"

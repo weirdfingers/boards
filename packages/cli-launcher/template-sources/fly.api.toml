@@ -1,0 +1,46 @@
+# Fly.io configuration for the Boards API service
+# Deploy with: fly launch --config fly.api.toml --copy-config --no-deploy
+#              fly deploy --config fly.api.toml
+
+app = "boards-api"
+primary_region = "iad"
+
+[build]
+  image = "ghcr.io/weirdfingers/boards-backend:latest"
+
+[deploy]
+  release_command = "alembic -c /app/src/boards/alembic.ini upgrade head"
+
+[env]
+  BOARDS_LOG_FORMAT = "json"
+  BOARDS_LOG_LEVEL = "info"
+  BOARDS_AUTH_PROVIDER = "none"
+  BOARDS_STORAGE_CONFIG_PATH = "/app/config/storage_config.yaml"
+  BOARDS_GENERATORS_CONFIG_PATH = "/app/config/generators.yaml"
+  PORT = "8800"
+  PYTHONUNBUFFERED = "1"
+
+[http_service]
+  internal_port = 8800
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[http_service.concurrency]
+  type = "requests"
+  hard_limit = 250
+  soft_limit = 200
+
+[[http_service.checks]]
+  grace_period = "15s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

@@ -282,6 +282,16 @@ This is **not recommended** for most users. The pre-built images are the support
 EOF
     log_success "  Created api/README.md"
 
+    # Copy deployment configuration files
+    log_info "  Copying deployment configuration files..."
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/railway.json" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/fly.api.toml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/fly.web.toml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/fly.worker.toml" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/DEPLOY.md" "$template_dir/"
+    cp "$PROJECT_ROOT/packages/cli-launcher/template-sources/env.production.example" "$template_dir/.env.production.example"
+    log_success "  Copied railway.json, fly.*.toml, DEPLOY.md, .env.production.example"
+
     # Ensure extensions directories exist
     log_info "  Setting up extensions directories..."
     mkdir -p "$template_dir/extensions/generators"

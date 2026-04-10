@@ -31,7 +31,22 @@ storage:
         base_path: "/app/data/storage"
         public_url_base: "http://localhost:8800/api/storage"
 
+    # S3-compatible storage (production)
+    # Works with AWS S3, Railway Buckets, Fly.io Tigris, MinIO,
+    # Cloudflare R2, DigitalOcean Spaces, Backblaze B2, etc.
+    # Uncomment and configure for production deployments.
+    # s3:
+    #   type: "s3"
+    #   config:
+    #     bucket: "${BUCKET_NAME}"          # or hardcode your bucket name
+    #     region: "auto"                    # use "auto" for non-AWS providers
+    #     # endpoint_url: "${AWS_ENDPOINT_URL_S3}"  # required for non-AWS S3-compatible services
+    #   # Credentials via environment variables:
+    #   #   AWS_ACCESS_KEY_ID=...
+    #   #   AWS_SECRET_ACCESS_KEY=...
+
   # Routing rules to select providers based on conditions
   routing_rules:
     # Default fallback (no conditions = always matches)
+    # Change to "s3" for production deployments
     - provider: "local"
