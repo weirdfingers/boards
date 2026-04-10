@@ -1,0 +1,26 @@
+# Fly.io configuration for the Boards worker service
+# Deploy with: fly launch --config fly.worker.toml --copy-config --no-deploy
+#              fly deploy --config fly.worker.toml
+
+app = "boards-worker"
+primary_region = "iad"
+
+[build]
+  image = "ghcr.io/weirdfingers/boards-backend:latest"
+
+[env]
+  BOARDS_LOG_FORMAT = "json"
+  BOARDS_LOG_LEVEL = "info"
+  BOARDS_AUTH_PROVIDER = "none"
+  BOARDS_STORAGE_CONFIG_PATH = "/app/config/storage_config.yaml"
+  BOARDS_GENERATORS_CONFIG_PATH = "/app/config/generators.yaml"
+  PYTHONUNBUFFERED = "1"
+
+# Worker does not serve HTTP traffic — disable auto-stop so it runs continuously
+[processes]
+  worker = "boards-worker --log-level info --processes 1 --threads 1"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 1024

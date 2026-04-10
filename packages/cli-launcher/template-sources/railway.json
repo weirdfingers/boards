@@ -1,0 +1,76 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "services": {
+    "api": {
+      "source": {
+        "image": "ghcr.io/weirdfingers/boards-backend:latest"
+      },
+      "networking": {
+        "serviceDomain": {},
+        "tcpProxies": {}
+      },
+      "variables": {
+        "PORT": "8800",
+        "BOARDS_DATABASE_URL": "${{Postgres.DATABASE_URL}}",
+        "BOARDS_REDIS_URL": "${{Redis.REDIS_URL}}",
+        "BOARDS_LOG_FORMAT": "json",
+        "BOARDS_LOG_LEVEL": "info",
+        "BOARDS_AUTH_PROVIDER": "none",
+        "BOARDS_CORS_ORIGINS": "[\"https://${{web.RAILWAY_PUBLIC_DOMAIN}}\"]",
+        "BOARDS_STORAGE_CONFIG_PATH": "/app/config/storage_config.yaml",
+        "BOARDS_GENERATORS_CONFIG_PATH": "/app/config/generators.yaml",
+        "PYTHONUNBUFFERED": "1"
+      },
+      "deploy": {
+        "startCommand": "alembic -c /app/src/boards/alembic.ini upgrade head && uvicorn boards.api.app:app --host 0.0.0.0 --port $PORT",
+        "healthcheckPath": "/health",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      }
+    },
+    "worker": {
+      "source": {
+        "image": "ghcr.io/weirdfingers/boards-backend:latest"
+      },
+      "variables": {
+        "BOARDS_DATABASE_URL": "${{Postgres.DATABASE_URL}}",
+        "BOARDS_REDIS_URL": "${{Redis.REDIS_URL}}",
+        "BOARDS_INTERNAL_API_URL": "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:8800",
+        "BOARDS_LOG_FORMAT": "json",
+        "BOARDS_LOG_LEVEL": "info",
+        "BOARDS_AUTH_PROVIDER": "none",
+        "BOARDS_STORAGE_CONFIG_PATH": "/app/config/storage_config.yaml",
+        "BOARDS_GENERATORS_CONFIG_PATH": "/app/config/generators.yaml",
+        "PYTHONUNBUFFERED": "1"
+      },
+      "deploy": {
+        "startCommand": "boards-worker --log-level info --processes 1 --threads 1",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      }
+    },
+    "web": {
+      "source": {
+        "dockerfile": "Dockerfile.web",
+        "context": "web"
+      },
+      "networking": {
+        "serviceDomain": {},
+        "tcpProxies": {}
+      },
+      "variables": {
+        "NEXT_PUBLIC_API_URL": "https://${{api.RAILWAY_PUBLIC_DOMAIN}}",
+        "NEXT_PUBLIC_GRAPHQL_URL": "https://${{api.RAILWAY_PUBLIC_DOMAIN}}/graphql",
+        "NEXT_PUBLIC_AUTH_PROVIDER": "none"
+      },
+      "deploy": {
+        "healthcheckPath": "/",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      }
+    }
+  }
+}

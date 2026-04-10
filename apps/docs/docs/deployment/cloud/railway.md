@@ -35,7 +35,18 @@ flowchart TB
     end
 ```
 
-## Quick Start
+## Quick Start with Scaffolded Config
+
+Projects scaffolded with `npx @weirdfingers/baseboards up` include a pre-configured `railway.json` that defines all three services (api, worker, web) with proper environment variable wiring. See `DEPLOY.md` in your scaffolded project for step-by-step instructions.
+
+```bash
+# Your scaffolded project includes:
+# railway.json          — Multi-service Railway configuration
+# .env.production.example — Reference for all production env vars
+# DEPLOY.md             — Step-by-step deployment guide
+```
+
+## Quick Start (Manual)
 
 ### 1. Create a Railway Project
 
@@ -54,28 +65,42 @@ flowchart TB
 1. Click **+ New** > **Database** > **Add Redis**
 2. Note the `REDIS_URL` from the **Variables** tab
 
-### 4. Deploy API Service
+### 4. Add Object Storage (Railway Buckets)
+
+1. Click **+ New** > **Add** > **Object Storage (S3-compatible)**
+2. Railway provisions an S3-compatible bucket with credentials
+3. Note the storage credentials from the **Variables** tab:
+   - `RAILWAY_STORAGE_ENDPOINT`
+   - `RAILWAY_STORAGE_ACCESS_KEY_ID`
+   - `RAILWAY_STORAGE_SECRET_ACCESS_KEY`
+   - `RAILWAY_STORAGE_BUCKET_NAME`
+
+### 5. Deploy API Service
 
 1. Click **+ New** > **Docker Image**
 2. Enter: `ghcr.io/weirdfingers/boards-backend:latest`
 3. Configure the service:
 
 **Settings tab:**
-- Start Command: `uvicorn boards.api.app:app --host 0.0.0.0 --port $PORT`
+- Start Command: `alembic -c /app/src/boards/alembic.ini upgrade head && uvicorn boards.api.app:app --host 0.0.0.0 --port $PORT`
 - Port: Leave as auto-detected
 
 **Variables tab:**
 ```
 BOARDS_DATABASE_URL=${{Postgres.DATABASE_URL}}
 BOARDS_REDIS_URL=${{Redis.REDIS_URL}}
-BOARDS_GENERATOR_API_KEYS={"fal": "your-key", "openai": "your-key"}
 BOARDS_AUTH_PROVIDER=none
 BOARDS_LOG_FORMAT=json
+BOARDS_CORS_ORIGINS=["https://${{web.RAILWAY_PUBLIC_DOMAIN}}"]
+BOARDS_JWT_SECRET=<generate-a-random-secret>
+AWS_ACCESS_KEY_ID=${{storage.RAILWAY_STORAGE_ACCESS_KEY_ID}}
+AWS_SECRET_ACCESS_KEY=${{storage.RAILWAY_STORAGE_SECRET_ACCESS_KEY}}
+REPLICATE_API_TOKEN=your-token
 ```
 
 4. Click **Deploy**
 
-### 5. Deploy Worker Service
+### 6. Deploy Worker Service
 
 1. Click **+ New** > **Docker Image**
 2. Enter: `ghcr.io/weirdfingers/boards-backend:latest`
@@ -88,9 +113,11 @@ BOARDS_LOG_FORMAT=json
 ```
 BOARDS_DATABASE_URL=${{Postgres.DATABASE_URL}}
 BOARDS_REDIS_URL=${{Redis.REDIS_URL}}
-BOARDS_GENERATOR_API_KEYS={"fal": "your-key", "openai": "your-key"}
 BOARDS_INTERNAL_API_URL=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:8800
 BOARDS_LOG_FORMAT=json
+AWS_ACCESS_KEY_ID=${{storage.RAILWAY_STORAGE_ACCESS_KEY_ID}}
+AWS_SECRET_ACCESS_KEY=${{storage.RAILWAY_STORAGE_SECRET_ACCESS_KEY}}
+REPLICATE_API_TOKEN=your-token
 ```
 
 4. Click **Deploy**
@@ -104,35 +131,28 @@ For generators and storage config, you have two options:
 Set config directly in environment:
 
 ```
-BOARDS_STORAGE_PROVIDER=s3
 AWS_ACCESS_KEY_ID=xxxxx
 AWS_SECRET_ACCESS_KEY=xxxxx
 ```
 
 ### Option 2: GitHub Repository
 
-Deploy from a repository with config files:
-
-1. Create a repository with:
+Deploy from a repository with config files (scaffolded projects already have this structure):
 
 ```
 ├── config/
 │   ├── generators.yaml
 │   └── storage_config.yaml
-└── railway.toml
+├── railway.json
+├── fly.api.toml
+├── fly.web.toml
+├── fly.worker.toml
+├── Dockerfile.web
+├── .env.production.example
+└── DEPLOY.md
 ```
 
-2. Create `railway.toml`:
-
-```toml
-[build]
-dockerfilePath = "Dockerfile"
-
-[deploy]
-startCommand = "uvicorn boards.api.app:app --host 0.0.0.0 --port $PORT"
-```
-
-3. Connect repository to Railway
+Connect your repository to Railway and it will use the `railway.json` configuration automatically.
 
 ## Domain Configuration
 

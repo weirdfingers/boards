@@ -185,6 +185,8 @@ providers:
 ```
 
 **Compatible services:**
+- Railway Buckets (auto-provisioned with `railway.json`)
+- Fly.io Tigris (via `fly storage create`)
 - MinIO
 - Cloudflare R2
 - DigitalOcean Spaces
