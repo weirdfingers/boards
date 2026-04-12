@@ -14,6 +14,7 @@ from ..generators.artifacts import (
 )
 from ..jobs import repository as jobs_repo
 from ..logging import get_logger
+from ..plugins.base import PluginResult
 from ..progress.models import ProgressUpdate
 from ..progress.publisher import ProgressPublisher
 from ..storage.base import StorageManager
@@ -45,6 +46,7 @@ class GeneratorExecutionContext:
         self.input_params = input_params
         self._batch_id: str | None = None
         self._batch_generations: list[str] = []
+        self._plugin_results: list[PluginResult] = []
         logger.info(
             "Created execution context",
             generation_id=str(generation_id),
@@ -92,7 +94,7 @@ class GeneratorExecutionContext:
             # Determine which generation_id to use
             target_generation_id = await self._get_or_create_generation_for_output(output_index)
 
-            result = await resolution.store_image_result(
+            result, plugin_results = await resolution.store_image_result(
                 storage_manager=self.storage_manager,
                 generation_id=target_generation_id,
                 tenant_id=self.tenant_id,
@@ -101,7 +103,11 @@ class GeneratorExecutionContext:
                 format=format,
                 width=width,
                 height=height,
+                generator_name=self.generator_name,
+                generator_inputs=self.input_params,
+                user_id=self.user_id,
             )
+            self._plugin_results.extend(plugin_results)
             logger.info(
                 "Image result stored",
                 generation_id=target_generation_id,
@@ -145,7 +151,7 @@ class GeneratorExecutionContext:
             # Determine which generation_id to use
             target_generation_id = await self._get_or_create_generation_for_output(output_index)
 
-            result = await resolution.store_video_result(
+            result, plugin_results = await resolution.store_video_result(
                 storage_manager=self.storage_manager,
                 generation_id=target_generation_id,
                 tenant_id=self.tenant_id,
@@ -156,7 +162,11 @@ class GeneratorExecutionContext:
                 height=height,
                 duration=duration,
                 fps=fps,
+                generator_name=self.generator_name,
+                generator_inputs=self.input_params,
+                user_id=self.user_id,
             )
+            self._plugin_results.extend(plugin_results)
             logger.info(
                 "Video result stored",
                 generation_id=target_generation_id,
@@ -198,7 +208,7 @@ class GeneratorExecutionContext:
             # Determine which generation_id to use
             target_generation_id = await self._get_or_create_generation_for_output(output_index)
 
-            result = await resolution.store_audio_result(
+            result, plugin_results = await resolution.store_audio_result(
                 storage_manager=self.storage_manager,
                 generation_id=target_generation_id,
                 tenant_id=self.tenant_id,
@@ -208,7 +218,11 @@ class GeneratorExecutionContext:
                 duration=duration,
                 sample_rate=sample_rate,
                 channels=channels,
+                generator_name=self.generator_name,
+                generator_inputs=self.input_params,
+                user_id=self.user_id,
             )
+            self._plugin_results.extend(plugin_results)
             logger.info(
                 "Audio result stored",
                 generation_id=target_generation_id,
@@ -244,14 +258,18 @@ class GeneratorExecutionContext:
             # Determine which generation_id to use
             target_generation_id = await self._get_or_create_generation_for_output(output_index)
 
-            result = await resolution.store_text_result(
+            result, plugin_results = await resolution.store_text_result(
                 storage_manager=self.storage_manager,
                 generation_id=target_generation_id,
                 tenant_id=self.tenant_id,
                 board_id=self.board_id,
                 content=content,
                 format=format,
+                generator_name=self.generator_name,
+                generator_inputs=self.input_params,
+                user_id=self.user_id,
             )
+            self._plugin_results.extend(plugin_results)
             logger.info(
                 "Text result stored",
                 generation_id=target_generation_id,
@@ -294,6 +312,10 @@ class GeneratorExecutionContext:
         )
         async with get_async_session() as session:
             await jobs_repo.set_external_job_id(session, self.generation_id, external_id)
+
+    def get_plugin_results(self) -> list[PluginResult]:
+        """Return all plugin results accumulated during this execution."""
+        return list(self._plugin_results)
 
     async def _get_or_create_generation_for_output(self, output_index: int) -> str:
         """Get or create a generation record for the given output index.

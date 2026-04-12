@@ -102,7 +102,7 @@ async def test_store_image_result_integration(tmp_path: Path):
         )
 
         # Store the image result
-        artifact = await store_image_result(
+        artifact, plugin_results = await store_image_result(
             storage_manager=storage_manager,
             generation_id=generation_id,
             tenant_id=tenant_id,

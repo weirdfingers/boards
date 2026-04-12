@@ -5,7 +5,13 @@ These Pydantic models represent different types of generated content
 that can be used as inputs and outputs for generators.
 """
 
+from typing import Literal, get_args
+
 from pydantic import BaseModel, Field
+
+ArtifactTypeName = Literal["image", "video", "audio", "text", "lora", "model"]
+
+ARTIFACT_TYPE_NAMES: tuple[str, ...] = get_args(ArtifactTypeName)
 
 
 class DigitalArtifact(BaseModel):

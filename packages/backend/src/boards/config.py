@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     generators_config_path: str | None = None
     generator_api_keys: dict[str, str] = {}
 
+    # Plugins Configuration
+    plugins_config_path: str | None = None
+    plugin_timeout: float = 60.0  # Per-plugin execution timeout (seconds)
+    plugin_total_timeout: float = 300.0  # Total time for all plugins on one artifact
+
     # Environment
     environment: str = "development"  # 'development', 'staging', 'production'
     debug: bool = True

@@ -253,7 +253,7 @@ class TestStoreResults:
                 return_value=mock_stream_context
             )
 
-            result = await store_image_result(
+            result, plugin_results = await store_image_result(
                 storage_manager=storage_manager,
                 generation_id="gen_123",
                 tenant_id="tenant_123",
@@ -271,6 +271,8 @@ class TestStoreResults:
         assert result.height == 1024
         # Storage URL should be different from input URL
         assert "storage" in result.storage_url or result.storage_url.startswith("file://")
+        # No plugins configured, so no plugin results
+        assert plugin_results == []
 
     @pytest.mark.skip(reason="Replaced by test_storage_integration.py tests")
     @pytest.mark.asyncio
